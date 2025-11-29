@@ -2,8 +2,8 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2025-11-29T00:28:29.191Z",
-  "blockNumber": 39,
+  "timestamp": "2025-11-29T04:44:29.003Z",
+  "blockNumber": 26,
   "contracts": {
     "ChessOnChain": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
   }
