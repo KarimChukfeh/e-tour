@@ -630,7 +630,14 @@ contract ChessOnChain is ETour {
         
         // Reset timeout
         _initializeMatchTimeoutState(matchId, tierId);
-        
+
+        // Clear moving player's check status (they made a legal move, so not in check)
+        if (playerColor == PieceColor.White) {
+            matchData.whiteInCheck = false;
+        } else {
+            matchData.blackInCheck = false;
+        }
+
         // Check for game end conditions
         PieceColor opponentColor = (playerColor == PieceColor.White) ? PieceColor.Black : PieceColor.White;
         
