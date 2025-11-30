@@ -177,4 +177,140 @@ describe("ChessOnChain Tests", function () {
             expect(tournament.status).to.equal(1); // InProgress
         });
     });
+
+    describe("Pawn Promotion", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 2;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        // Additional squares for promotion test
+        const promoSquares = {
+            // White pawns
+            a2: 8, a4: 24, a5: 32, a6: 40, a7: 48, a8: 56,
+            // Black pawns
+            b7: 49, b5: 33, b6: 41,
+            // Other pieces
+            b8: 57,  // Black knight starting
+            c6: 42,
+            h7: 55, h5: 39, h6: 47,
+        };
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should allow pawn promotion to Queen", async function () {
+            // Strategy: Use h-file pawn, capture diagonally to g-file, promote on g8
+            // g8 knight must move first so g8 is empty for promotion
+
+            const sq = {
+                h2: 15, h4: 31,  // white h-pawn
+                g5: 38, g6: 46, g7: 54, g8: 62,  // g-file squares
+                g7_pawn: 54,  // black g-pawn starts here
+                g8_knight: 62, f6: 45, h5: 39,  // black knight g8 -> f6 -> h5
+                a7: 48, a6: 40,  // black a-pawn for waste moves
+            };
+
+            // 1. h2-h4
+            await chess.connect(whitePlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.h2, sq.h4, PieceType.None
+            );
+
+            // 2. g7-g5 (black g-pawn moves, opens diagonal for white)
+            await chess.connect(blackPlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.g7_pawn, sq.g5, PieceType.None
+            );
+
+            // 3. h4xg5 (white captures diagonally)
+            await chess.connect(whitePlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.h4, sq.g5, PieceType.None
+            );
+
+            // 4. Ng8-f6 (black knight moves away from g8!)
+            await chess.connect(blackPlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.g8_knight, sq.f6, PieceType.None
+            );
+
+            // 5. g5-g6
+            await chess.connect(whitePlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.g5, sq.g6, PieceType.None
+            );
+
+            // 6. Nf6-h5 (black knight moves again)
+            await chess.connect(blackPlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.f6, sq.h5, PieceType.None
+            );
+
+            // 7. g6-g7
+            await chess.connect(whitePlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.g6, sq.g7, PieceType.None
+            );
+
+            // 8. a7-a6 (black makes any move)
+            await chess.connect(blackPlayer).makeMove(
+                tierId, instanceId, roundNumber, matchNumber,
+                sq.a7, sq.a6, PieceType.None
+            );
+
+            // 9. g7-g8=Q (PROMOTION! g8 is now empty since knight moved)
+            await expect(
+                chess.connect(whitePlayer).makeMove(
+                    tierId, instanceId, roundNumber, matchNumber,
+                    sq.g7, sq.g8, PieceType.Queen
+                )
+            ).to.emit(chess, "PawnPromoted");
+
+            // Verify the pawn is now a queen
+            const board = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
+            expect(board[sq.g8].pieceType).to.equal(PieceType.Queen);
+        });
+
+        it("Should reject promotion with PieceType.None", async function () {
+            // Same strategy as above - get pawn to g7
+            const sq = {
+                h2: 15, h4: 31,
+                g5: 38, g6: 46, g7: 54, g8: 62,
+                g7_pawn: 54,
+                g8_knight: 62, f6: 45, h5: 39,
+                a7: 48, a6: 40,
+            };
+
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h2, sq.h4, PieceType.None);
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g7_pawn, sq.g5, PieceType.None);
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h4, sq.g5, PieceType.None);
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g8_knight, sq.f6, PieceType.None);
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g5, sq.g6, PieceType.None);
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.f6, sq.h5, PieceType.None);
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g6, sq.g7, PieceType.None);
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.a7, sq.a6, PieceType.None);
+
+            // Try to promote with PieceType.None - should fail
+            await expect(
+                chess.connect(whitePlayer).makeMove(
+                    tierId, instanceId, roundNumber, matchNumber,
+                    sq.g7, sq.g8, PieceType.None
+                )
+            ).to.be.revertedWith("Invalid move");
+        });
+    });
 });
