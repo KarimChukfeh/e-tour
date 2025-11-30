@@ -145,9 +145,41 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${ticTacBlockAddress} "${etourAddress}"`);
     console.log("");
 
+    // Print dummy wallet private keys for local development
+    if (hre.network.name === "localhost" || hre.network.name === "hardhat") {
+        console.log("=" .repeat(60));
+        console.log("Dummy Wallet Private Keys (Anvil/Hardhat Test Accounts)");
+        console.log("=" .repeat(60));
+        console.log("WARNING: These are well-known test keys. NEVER use on mainnet!");
+        console.log("");
+
+        // Anvil's default mnemonic generates these deterministic private keys
+        const testPrivateKeys = [
+            { index: 0, key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" },
+            { index: 1, key: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" },
+            { index: 2, key: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a" },
+            { index: 3, key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" },
+            { index: 4, key: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a" },
+            { index: 5, key: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba" },
+            { index: 6, key: "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e" },
+            { index: 7, key: "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356" },
+            { index: 8, key: "0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97" },
+            { index: 9, key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6" },
+        ];
+
+        const signers = await hre.ethers.getSigners();
+        for (let i = 0; i < Math.min(signers.length, testPrivateKeys.length); i++) {
+            const balance = await hre.ethers.provider.getBalance(signers[i].address);
+            console.log(`Account #${i}: ${signers[i].address}`);
+            console.log(`  Private Key: ${testPrivateKeys[i].key}`);
+            console.log(`  Balance: ${hre.ethers.formatEther(balance)} ETH`);
+            console.log("");
+        }
+    }
+
     // Final summary
     console.log("=" .repeat(60));
-    console.log("🎉 DEPLOYMENT SUCCESSFUL! 🎉");
+    console.log("DEPLOYMENT SUCCESSFUL!");
     console.log("=" .repeat(60));
     console.log("");
     console.log("📋 Deployment Summary:");
