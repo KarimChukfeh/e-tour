@@ -20,9 +20,9 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
         await game.waitForDeployment();
     });
 
-    // Helper to sign the commit message
-    async function signCommitMessage(signer, tierId, instanceId, roundNumber, matchNumber) {
-        const messageHash = await game.getCommitMessage(tierId, instanceId, roundNumber, matchNumber, signer.address);
+    // Helper to sign the tournament commit message (signed once at enrollment, used for all matches)
+    async function signCommitMessage(signer, tierId, instanceId) {
+        const messageHash = await game.getCommitMessage(tierId, instanceId, signer.address);
         const signature = await signer.signMessage(hre.ethers.getBytes(messageHash));
         return signature;
     }
@@ -48,7 +48,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
     describe("Signature Verification", function () {
         it("Should verify valid signature", async function () {
-            const messageHash = await game.getCommitMessage(0, 0, 0, 0, player1.address);
+            const messageHash = await game.getCommitMessage(0, 0, player1.address);
             const signature = await player1.signMessage(hre.ethers.getBytes(messageHash));
 
             const isValid = await game.verifySignature(messageHash, signature, player1.address);
@@ -56,7 +56,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
         });
 
         it("Should reject signature from wrong signer", async function () {
-            const messageHash = await game.getCommitMessage(0, 0, 0, 0, player1.address);
+            const messageHash = await game.getCommitMessage(0, 0, player1.address);
             const signature = await player2.signMessage(hre.ethers.getBytes(messageHash));
 
             const isValid = await game.verifySignature(messageHash, signature, player1.address);
@@ -66,7 +66,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
     describe("Commitment Generation", function () {
         it("Should generate consistent commitment", async function () {
-            const signature = await signCommitMessage(player1, 0, 0, 0, 0);
+            const signature = await signCommitMessage(player1, 0, 0);
 
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, signature);
             const commitment2 = await generateCommitment(PLAYER1_SHIPS, signature);
@@ -75,7 +75,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
         });
 
         it("Should generate different commitments for different boards", async function () {
-            const signature = await signCommitMessage(player1, 0, 0, 0, 0);
+            const signature = await signCommitMessage(player1, 0, 0);
 
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, signature);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, signature);
@@ -153,7 +153,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should allow players to commit their boards", async function () {
             // Player 1 commits
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
 
             await expect(game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1))
@@ -166,7 +166,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
             expect(state.phase).to.equal(1); // Still AwaitingCommitments
 
             // Player 2 commits
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
 
             await expect(game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2))
@@ -180,7 +180,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
         });
 
         it("Should prevent double commitment", async function () {
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
 
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
@@ -192,11 +192,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should allow reveal after both commit", async function () {
             // Both commit
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -222,11 +222,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should reject reveal with wrong signature", async function () {
             // Both commit with their own signatures
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -238,11 +238,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should reject reveal with wrong ship positions", async function () {
             // Commit with PLAYER1_SHIPS
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -265,11 +265,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             // Complete commit-reveal
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -352,11 +352,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -426,11 +426,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 
@@ -507,7 +507,7 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should allow timeout claim during commitment phase", async function () {
             // Only player1 commits
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
@@ -522,11 +522,11 @@ describe("EternalBattleship - Commit-Reveal with Wallet Signatures", function ()
 
         it("Should allow timeout claim during reveal phase", async function () {
             // Both commit
-            const sig1 = await signCommitMessage(player1, tierId, instanceId, 0, 0);
+            const sig1 = await signCommitMessage(player1, tierId, instanceId);
             const commitment1 = await generateCommitment(PLAYER1_SHIPS, sig1);
             await game.connect(player1).commitBoard(tierId, instanceId, 0, 0, commitment1);
 
-            const sig2 = await signCommitMessage(player2, tierId, instanceId, 0, 0);
+            const sig2 = await signCommitMessage(player2, tierId, instanceId);
             const commitment2 = await generateCommitment(PLAYER2_SHIPS, sig2);
             await game.connect(player2).commitBoard(tierId, instanceId, 0, 0, commitment2);
 

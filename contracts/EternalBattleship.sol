@@ -9,21 +9,24 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
  * @title EternalBattleship
  * @dev Battleship game implementing ETour tournament protocol with hidden information
  *
- * Commit-Reveal Scheme with Wallet Signatures:
- * - Players commit a hash of their board layout + wallet-signature-derived salt
- * - The salt is derived from signing a deterministic message with their wallet
+ * Commit-Reveal Scheme with Tournament-Level Wallet Signatures:
+ * - Players sign ONCE at enrollment to generate their tournament secret
+ * - The same signature/secret is used for ALL matches in that tournament
+ * - Salt is derived from signing a deterministic message (tierId + instanceId + player)
  * - Players can always regenerate their secret by re-signing the same message
  * - On reveal, contract verifies signature and reconstructs the commitment
  * - No private keys stored - only commitments and revealed data
  *
  * Game Flow:
- * 1. Match starts in AwaitingCommitments phase
- * 2. Both players submit commitments (hash of board + signature-derived salt)
- * 3. Once both committed, phase moves to AwaitingReveals
- * 4. Both players reveal boards with their signatures for verification
- * 5. Once both revealed, gameplay begins (InProgress phase)
- * 6. Players alternate firing shots - hit/miss revealed immediately
- * 7. First player to sink all opponent ships wins
+ * 1. Player enrolls and signs tournament message to generate secret
+ * 2. Match starts in AwaitingCommitments phase
+ * 3. Both players submit commitments (hash of board + signature-derived salt)
+ * 4. Once both committed, phase moves to AwaitingReveals
+ * 5. Both players reveal boards with their signatures for verification
+ * 6. Once both revealed, gameplay begins (InProgress phase)
+ * 7. Players alternate firing shots - hit/miss revealed immediately
+ * 8. First player to sink all opponent ships wins
+ * 9. For subsequent rounds, same tournament signature is reused
  *
  * Part of the RW3 (Reclaim Web3) movement.
  */
@@ -199,22 +202,19 @@ contract EternalBattleship is ETour {
     // ============ Signature & Commitment Helpers ============
 
     /**
-     * @dev Get the message that players must sign to generate their commitment salt
+     * @dev Get the message that players must sign to generate their tournament secret
      * This message is deterministic and can be regenerated anytime
+     * Players sign ONCE at enrollment and use the same secret for all matches in the tournament
      */
     function getCommitMessage(
         uint8 tierId,
         uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
         address player
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(
-            "EternalBattleship:commit:",
+            "EternalBattleship:tournament:",
             tierId,
             instanceId,
-            roundNumber,
-            matchNumber,
             player
         ));
     }
@@ -617,8 +617,8 @@ contract EternalBattleship is ETour {
         require(playerBoard.hasCommitted, "Must commit first");
         require(!playerBoard.hasRevealed, "Already revealed");
 
-        // 1. Verify signature is from msg.sender for this specific match
-        bytes32 messageHash = getCommitMessage(tierId, instanceId, roundNumber, matchNumber, msg.sender);
+        // 1. Verify signature is from msg.sender for this tournament
+        bytes32 messageHash = getCommitMessage(tierId, instanceId, msg.sender);
         require(verifySignature(messageHash, signature, msg.sender), "Invalid signature");
 
         // 2. Derive salt from signature
