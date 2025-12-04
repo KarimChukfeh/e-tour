@@ -65,6 +65,21 @@ contract EternalBattleship is ETour {
         Completed
     }
 
+    // ============ Phase & State Constants (for client clarity) ============
+
+    // MatchPhase values
+    uint8 public constant PHASE_NOT_STARTED = 0;
+    uint8 public constant PHASE_AWAITING_COMMITMENTS = 1;
+    uint8 public constant PHASE_AWAITING_REVEALS = 2;
+    uint8 public constant PHASE_IN_PROGRESS = 3;
+    uint8 public constant PHASE_COMPLETED = 4;
+
+    // CellState values
+    uint8 public constant CELL_EMPTY = 0;
+    uint8 public constant CELL_SHIP = 1;
+    uint8 public constant CELL_HIT = 2;
+    uint8 public constant CELL_MISS = 3;
+
     // ============ Game-Specific Structs ============
 
     struct PlayerBoard {
