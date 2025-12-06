@@ -316,4 +316,4 @@ ETour is the foundational protocol for Web3 gaming - universal tournament infras
 
 
 
-./start-anvil.sh && npm run compile && npx hardhat run scripts/deploy-tictacchain.js --network localhost && npx hardhat run scripts/deploy-chessonchain.js --network localhost && npx hardhat run scripts/deploy-battleship.js --network localhost
+./start-anvil.sh && npm run compile && npx hardhat run scripts/deploy-tictacchain.js --network localhost && npx hardhat run scripts/deploy-chessonchain.js --network localhost && npx hardhat run scripts/deploy-connectfour.js --network localhost
