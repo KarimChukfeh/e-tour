@@ -2,9 +2,9 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2025-12-06T06:10:03.531Z",
-  "blockNumber": 12,
+  "timestamp": "2025-12-06T06:39:05.197Z",
+  "blockNumber": 93,
   "contracts": {
-    "TicTacChain": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    "ChessOnChain": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
   }
 }
