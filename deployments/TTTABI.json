@@ -3,7 +3,7 @@
   "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-06T10:20:06.197Z",
+  "deployedAt": "2025-12-07T09:05:43.044Z",
   "abi": [
     {
       "inputs": [],
@@ -963,34 +963,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "blockLastMove",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

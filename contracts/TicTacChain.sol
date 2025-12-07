@@ -116,55 +116,13 @@ contract TicTacChain is ETour {
         _registerTier(
             0,                              // tierId
             2,                              // playerCount
-            12,                             // instanceCount
+            100,                            // instanceCount
             0.001 ether,                    // entryFee
             Mode.Classic,                   // mode (no blocking)
             DEFAULT_ENROLLMENT_WINDOW,      // enrollmentWindow
             DEFAULT_MATCH_MOVE_TIMEOUT,     // matchMoveTimeout
             DEFAULT_ESCALATION_INTERVAL,    // escalationInterval
             tier0Prizes                     // prizeDistribution
-        );
-
-        // ============ Tier 1: 4-Player Pro ============
-        uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 60;   // 1st place: 60%
-        tier1Prizes[1] = 30;   // 2nd place: 30%
-        tier1Prizes[2] = 10;   // 3rd place: 10%
-        tier1Prizes[3] = 0;    // 4th place: 0%
-        
-        _registerTier(
-            1,                              // tierId
-            4,                              // playerCount
-            10,                             // instanceCount
-            0.002 ether,                    // entryFee
-            Mode.Pro,                       // mode
-            DEFAULT_ENROLLMENT_WINDOW,
-            DEFAULT_MATCH_MOVE_TIMEOUT,
-            DEFAULT_ESCALATION_INTERVAL,
-            tier1Prizes
-        );
-
-        // ============ Tier 2: 8-Player Pro ============
-        uint8[] memory tier2Prizes = new uint8[](8);
-        tier2Prizes[0] = 50;   // 1st
-        tier2Prizes[1] = 25;   // 2nd
-        tier2Prizes[2] = 15;   // 3rd
-        tier2Prizes[3] = 10;   // 4th
-        tier2Prizes[4] = 0;    // 5th-8th
-        tier2Prizes[5] = 0;
-        tier2Prizes[6] = 0;
-        tier2Prizes[7] = 0;
-        
-        _registerTier(
-            2,                              // tierId
-            8,                              // playerCount
-            8,                              // instanceCount
-            0.004 ether,                    // entryFee
-            Mode.Pro,
-            DEFAULT_ENROLLMENT_WINDOW,
-            DEFAULT_MATCH_MOVE_TIMEOUT,
-            DEFAULT_ESCALATION_INTERVAL,
-            tier2Prizes
         );
     }
 
@@ -182,7 +140,7 @@ contract TicTacChain is ETour {
                 tournament.tierId = tierId;
                 tournament.instanceId = instanceId;
                 tournament.status = TournamentStatus.Enrolling;
-                tournament.mode = (tierId == 0) ? Mode.Classic : Mode.Pro;
+                tournament.mode = (tierId == 0) ? Mode.Classic : Mode.Classic;
                 tournament.currentRound = 0;
                 tournament.enrolledCount = 0;
                 tournament.prizePool = 0;
@@ -494,55 +452,6 @@ contract TicTacChain is ETour {
         }
 
         matchData.currentTurn = (matchData.currentTurn == matchData.player1) ? matchData.player2 : matchData.player1;
-    }
-
-    /**
-     * @dev Block the opponent's last move (Pro mode only)
-     * Kept for ABI compatibility but functionally disabled in classic mode
-     */
-    function blockLastMove(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player in this match");
-        require(msg.sender == matchData.currentTurn, "Not your turn");
-        require(tournament.mode == Mode.Pro, "Blocking only available in Pro mode");
-
-        bool hasUsedBlock = (msg.sender == matchData.player1) ? matchData.player1UsedBlock : matchData.player2UsedBlock;
-        require(!hasUsedBlock, "You have already used your block");
-        require(matchData.lastMovedCell != 255, "No move to block");
-
-        Cell myCell = (msg.sender == matchData.player1) ? Cell.X : Cell.O;
-        uint8 myMoveCount = 0;
-        for (uint8 i = 0; i < 9; i++) {
-            if (matchData.board[i] == myCell) {
-                myMoveCount++;
-            }
-        }
-        require(myMoveCount > 0, "Cannot block as your first move");
-        require(!_hasWinningMove(matchData.board, myCell), "Cannot block when you can win this turn");
-
-        address opponent = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-
-        if (msg.sender == matchData.player1) {
-            matchData.player1UsedBlock = true;
-        } else {
-            matchData.player2UsedBlock = true;
-        }
-
-        matchData.board[matchData.lastMovedCell] = Cell.Empty;
-        matchData.blockedPlayer = opponent;
-        matchData.blockedCell = matchData.lastMovedCell;
-        matchData.currentTurn = opponent;
-
-        emit MoveBlocked(matchId, msg.sender, matchData.lastMovedCell, opponent);
     }
 
     // ============ Timeout Functions ============
