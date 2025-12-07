@@ -1141,6 +1141,241 @@ abstract contract ETour is ReentrancyGuard {
         round.totalMatches = currentMatchIndex;
     }
 
+    // ============ Escalation Level 2 & 3 (Tournament-Level Timeout) ============
+
+    /**
+     * @dev Check if a player has advanced in the tournament
+     * Used for Escalation Level 2 - allows advanced players to force eliminate stalled matches
+     *
+     * A player is considered "advanced" if:
+     * 1. They won a match in any round up to the stalled round, OR
+     * 2. They were placed in a round AFTER the stalled round (walkover/auto-advance)
+     */
+    function _isPlayerInAdvancedRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 stalledRoundNumber,
+        address player
+    ) internal view returns (bool) {
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address winner, bool isDraw, MatchStatus status) = _getMatchResult(matchId);
+
+                if (status == MatchStatus.Completed &&
+                    winner == player &&
+                    !isDraw) {
+                    return true;
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address p1, address p2) = _getMatchPlayers(matchId);
+
+                if (p1 == player || p2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Escalation Level 2: Advanced players can force eliminate stalled matches
+     * Both players in the stalled match forfeit their entry fees
+     */
+    function forceEliminateStalledMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        (, , MatchStatus status) = _getMatchResult(matchId);
+        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
+
+        require(status == MatchStatus.InProgress, "Match not active");
+        require(block.timestamp >= timeoutState.escalation2Start, "Tier 2 not reached");
+        require(
+            _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
+            "Must be in advanced round to eliminate"
+        );
+
+        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation2_AdvancedPlayers);
+
+        (address player1, address player2) = _getMatchPlayers(matchId);
+        uint256 entryFee = _tierConfigs[tierId].entryFee;
+        playerForfeitedAmounts[tierId][instanceId][player1] += entryFee;
+        playerForfeitedAmounts[tierId][instanceId][player2] += entryFee;
+
+        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 2: Eliminated by advanced player");
+        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 2: Eliminated by advanced player");
+
+        _completeMatchDoubleElimination(tierId, instanceId, roundNumber, matchNumber);
+    }
+
+    /**
+     * @dev Escalation Level 3: External players can claim a match slot by replacement
+     * Both original players forfeit, claimant advances as winner
+     */
+    function claimMatchSlotByReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        (, , MatchStatus status) = _getMatchResult(matchId);
+        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
+
+        require(status == MatchStatus.InProgress, "Match not active");
+        require(block.timestamp >= timeoutState.escalation3Start, "Tier 3 timeout not reached");
+
+        // Prevent enrolled players from using Tier 3 if they're actively playing or won current round
+        if (isEnrolled[tierId][instanceId][msg.sender]) {
+            uint8 currentRound = tournaments[tierId][instanceId].currentRound;
+
+            for (uint8 r = 0; r <= currentRound; r++) {
+                for (uint8 m = 0; m < rounds[tierId][instanceId][r].totalMatches; m++) {
+                    bytes32 checkMatchId = _getMatchId(tierId, instanceId, r, m);
+                    (address checkWinner, , MatchStatus checkStatus) = _getMatchResult(checkMatchId);
+                    (address checkP1, address checkP2) = _getMatchPlayers(checkMatchId);
+
+                    if (checkStatus == MatchStatus.InProgress &&
+                        (checkP1 == msg.sender || checkP2 == msg.sender)) {
+                        revert("Cannot use Tier 3 while actively playing in this tournament");
+                    }
+
+                    if (r == currentRound &&
+                        checkStatus == MatchStatus.Completed &&
+                        checkWinner == msg.sender) {
+                        revert("Cannot use Tier 3 after winning in current round");
+                    }
+                }
+            }
+        }
+
+        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation3_ExternalPlayers);
+
+        (address player1, address player2) = _getMatchPlayers(matchId);
+        uint256 entryFee = _tierConfigs[tierId].entryFee;
+        playerForfeitedAmounts[tierId][instanceId][player1] += entryFee;
+        playerForfeitedAmounts[tierId][instanceId][player2] += entryFee;
+
+        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 3: Replaced by external player");
+        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 3: Replaced by external player");
+
+        _completeMatchByReplacement(tierId, instanceId, roundNumber, matchNumber, msg.sender);
+    }
+
+    /**
+     * @dev Complete a match by double elimination (both players eliminated, no winner)
+     */
+    function _completeMatchDoubleElimination(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        (address player1, address player2) = _getMatchPlayers(matchId);
+
+        _completeMatchWithResult(matchId, address(0), false);
+        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
+
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
+
+        _removePlayerActiveMatch(player1, matchId);
+        _removePlayerActiveMatch(player2, matchId);
+
+        playerStats[player1].matchesPlayed++;
+        playerStats[player2].matchesPlayed++;
+
+        emit MatchCompleted(matchId, address(0), false);
+
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        round.completedMatches++;
+
+        if (round.completedMatches == round.totalMatches) {
+            if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
+                _processOrphanedWinners(tierId, instanceId, roundNumber);
+            }
+            _completeRound(tierId, instanceId, roundNumber);
+        }
+    }
+
+    /**
+     * @dev Complete a match by replacement (external player takes over as winner)
+     */
+    function _completeMatchByReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address replacementPlayer
+    ) internal {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        (address player1, address player2) = _getMatchPlayers(matchId);
+
+        _completeMatchWithResult(matchId, replacementPlayer, false);
+        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
+
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
+
+        _removePlayerActiveMatch(player1, matchId);
+        _removePlayerActiveMatch(player2, matchId);
+
+        playerStats[player1].matchesPlayed++;
+        playerStats[player2].matchesPlayed++;
+
+        // Add replacement player to tournament if not already enrolled
+        if (!isEnrolled[tierId][instanceId][replacementPlayer]) {
+            enrolledPlayers[tierId][instanceId].push(replacementPlayer);
+            isEnrolled[tierId][instanceId][replacementPlayer] = true;
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            tournament.enrolledCount++;
+        }
+
+        playerStats[replacementPlayer].matchesPlayed++;
+        playerStats[replacementPlayer].matchesWon++;
+
+        emit MatchCompleted(matchId, replacementPlayer, false);
+
+        TierConfig storage config = _tierConfigs[tierId];
+        if (roundNumber < config.totalRounds - 1) {
+            _advanceWinner(tierId, instanceId, roundNumber, matchNumber, replacementPlayer);
+        }
+
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        round.completedMatches++;
+
+        if (round.completedMatches == round.totalMatches) {
+            if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
+                _processOrphanedWinners(tierId, instanceId, roundNumber);
+            }
+            _completeRound(tierId, instanceId, roundNumber);
+        }
+    }
+
     // ============ Caching Functions ============
 
     function _cacheTournamentData(uint8 tierId, uint8 instanceId, address winner) internal {
