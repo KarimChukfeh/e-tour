@@ -23,9 +23,9 @@ contract ChessOnChain is ETour {
     uint8 public constant NO_SQUARE = 255;
     
     // Timeout configuration for chess (longer than tic-tac-toe)
-    uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 1 hours;
-    uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 5 minutes;
-    uint256 public constant DEFAULT_ESCALATION_INTERVAL = 3 minutes;
+    uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 2 minutes;
+    uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 1 minutes;
+    uint256 public constant DEFAULT_ESCALATION_INTERVAL = 1 minutes;
 
     // ============ Game-Specific Enums ============
 
