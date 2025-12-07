@@ -22,8 +22,11 @@ contract TicTacChain is ETour {
     uint8 public constant NO_CELL = 255;
 
     // Timeout configuration (can be adjusted per deployment)
+    uint256 public constant DEMO_ENROLLMENT_WINDOW = 2 minutes;
     uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 30 minutes;
+    uint256 public constant DEMO_MATCH_MOVE_TIMEOUT = 1 minutes;
     uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 1 minutes;
+    uint256 public constant DEMO_ESCALATION_INTERVAL = 1 minutes;
     uint256 public constant DEFAULT_ESCALATION_INTERVAL = 1 minutes;
 
     // ============ Game-Specific Enums ============
@@ -116,13 +119,36 @@ contract TicTacChain is ETour {
         _registerTier(
             0,                              // tierId
             2,                              // playerCount
-            100,                            // instanceCount
+            64,                             // instanceCount
             0.001 ether,                    // entryFee
             Mode.Classic,                   // mode (no blocking)
-            DEFAULT_ENROLLMENT_WINDOW,      // enrollmentWindow
-            DEFAULT_MATCH_MOVE_TIMEOUT,     // matchMoveTimeout
-            DEFAULT_ESCALATION_INTERVAL,    // escalationInterval
+            DEMO_ENROLLMENT_WINDOW,      // enrollmentWindow
+            DEMO_MATCH_MOVE_TIMEOUT,     // matchMoveTimeout
+            DEMO_ESCALATION_INTERVAL,    // escalationInterval
             tier0Prizes                     // prizeDistribution
+        );
+
+        // ============ Tier 1: 8-Player Classic ============
+        uint8[] memory tier1Prizes = new uint8[](8);
+        tier1Prizes[0] = 50;   // 1st
+        tier1Prizes[1] = 25;   // 2nd
+        tier1Prizes[2] = 15;   // 3rd
+        tier1Prizes[3] = 10;   // 4th
+        tier1Prizes[4] = 0;    // 5th-8th
+        tier1Prizes[5] = 0;
+        tier1Prizes[6] = 0;
+        tier1Prizes[7] = 0;
+
+        _registerTier(
+            1,                              // tierId
+            8,                              // playerCount
+            16,                             // instanceCount
+            0.004 ether,                    // entryFee
+            Mode.Classic,
+            DEMO_ENROLLMENT_WINDOW,
+            DEMO_MATCH_MOVE_TIMEOUT,
+            DEMO_ESCALATION_INTERVAL,
+            tier1Prizes
         );
     }
 

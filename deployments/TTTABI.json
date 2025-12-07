@@ -3,7 +3,7 @@
   "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-07T09:05:43.044Z",
+  "deployedAt": "2025-12-07T10:13:51.488Z",
   "abi": [
     {
       "inputs": [],
@@ -820,6 +820,45 @@
     {
       "inputs": [],
       "name": "DEFAULT_MATCH_MOVE_TIMEOUT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEMO_ENROLLMENT_WINDOW",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEMO_ESCALATION_INTERVAL",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEMO_MATCH_MOVE_TIMEOUT",
       "outputs": [
         {
           "internalType": "uint256",
