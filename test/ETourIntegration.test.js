@@ -1228,11 +1228,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [190]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            await game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0);
-
-            // Stalled player should have forfeited amount recorded
-            const forfeitedAmount = await game.playerForfeitedAmounts(tierId, instanceId, stalledPlayer);
-            expect(forfeitedAmount).to.be.gt(0);
+            // Verify PlayerForfeited event is emitted for replaced players
+            await expect(
+                game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
+            ).to.emit(game, "PlayerForfeited");
         });
     });
 
@@ -1676,9 +1675,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             ).to.emit(game, "TimeoutVictoryClaimed")
               .withArgs(tierId, instanceId, 0, 0, firstPlayer.address, secondPlayer.address);
 
-            // Verify forfeited amount is tracked in storage
-            const forfeitedAmount = await game.playerForfeitedAmounts(tierId, instanceId, secondPlayer.address);
-            expect(forfeitedAmount).to.equal(TIER_0_FEE);
+            // Timeout loser loses their entry fee (tracked via leaderboard earnings, not forfeited amounts)
+            const leaderboard = await game.getLeaderboard();
+            const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
+            expect(loserEntry).to.not.be.undefined;
+            // Loser should have negative earnings (paid entry fee, got no prize)
+            expect(loserEntry.earnings).to.be.lt(0);
         });
 
         it("Should correctly distribute prize pool after abandoned enrollment claim", async function () {

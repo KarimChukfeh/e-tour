@@ -154,9 +154,6 @@ abstract contract ETour is ReentrancyGuard {
     address[] internal _leaderboardPlayers;
     mapping(address => bool) internal _isOnLeaderboard;
 
-    // Forfeit tracking
-    mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerForfeitedAmounts;
-
     // ============ Events ============
     
     event TierRegistered(uint8 indexed tierId, uint8 playerCount, uint8 instanceCount, uint256 entryFee);
@@ -412,7 +409,6 @@ abstract contract ETour is ReentrancyGuard {
 
         for (uint256 i = 0; i < tournament.enrolledCount; i++) {
             address player = enrolledPlayers[tierId][instanceId][i];
-            playerForfeitedAmounts[tierId][instanceId][player] += config.entryFee;
             emit PlayerForfeited(tierId, instanceId, player, config.entryFee, "Enrollment abandoned");
         }
 
@@ -1198,8 +1194,6 @@ abstract contract ETour is ReentrancyGuard {
 
         (address player1, address player2) = _getMatchPlayers(matchId);
         uint256 entryFee = _tierConfigs[tierId].entryFee;
-        playerForfeitedAmounts[tierId][instanceId][player1] += entryFee;
-        playerForfeitedAmounts[tierId][instanceId][player2] += entryFee;
 
         emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 2: Eliminated by advanced player");
         emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 2: Eliminated by advanced player");
@@ -1252,8 +1246,6 @@ abstract contract ETour is ReentrancyGuard {
 
         (address player1, address player2) = _getMatchPlayers(matchId);
         uint256 entryFee = _tierConfigs[tierId].entryFee;
-        playerForfeitedAmounts[tierId][instanceId][player1] += entryFee;
-        playerForfeitedAmounts[tierId][instanceId][player2] += entryFee;
 
         emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 3: Replaced by external player");
         emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 3: Replaced by external player");
@@ -1443,6 +1435,7 @@ abstract contract ETour is ReentrancyGuard {
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
             Round storage round = rounds[tierId][instanceId][roundNum];
+            round.totalMatches = 0;
             round.completedMatches = 0;
             round.initialized = false;
             round.drawCount = 0;
@@ -1451,6 +1444,16 @@ abstract contract ETour is ReentrancyGuard {
             uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNum);
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
+
+                // Clear drawParticipants for both match players
+                (address p1, address p2) = _getMatchPlayers(matchId);
+                if (p1 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p1];
+                }
+                if (p2 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p2];
+                }
+
                 _resetMatchGame(matchId);
             }
         }

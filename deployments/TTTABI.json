@@ -3,7 +3,7 @@
   "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-16T10:38:53.215Z",
+  "deployedAt": "2025-12-16T13:37:01.900Z",
   "abi": [
     {
       "inputs": [],
@@ -2368,35 +2368,6 @@
           "internalType": "int256",
           "name": "",
           "type": "int256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerForfeitedAmounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",

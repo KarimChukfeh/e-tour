@@ -532,7 +532,6 @@ contract ConnectFourOnChain is ETour {
         matchData.timeoutState.timeoutActive = true;
 
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        playerForfeitedAmounts[tierId][instanceId][loser] += _tierConfigs[tierId].entryFee;
 
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
