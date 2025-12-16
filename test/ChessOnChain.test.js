@@ -313,4 +313,374 @@ describe("ChessOnChain Tests", function () {
             ).to.be.revertedWith("Invalid move");
         });
     });
+
+    describe("Castling", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 3;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        // Square indices for castling
+        const sq = {
+            e1: 4, g1: 6, c1: 2,  // White king castling squares
+            e2: 12, e4: 28,
+            d2: 11, d4: 27,
+            b1: 1, c3: 18,  // White knight moves
+            f1: 5, c4: 26,  // White bishop moves
+            d1: 3, f3: 21,  // White queen moves
+            e7: 52, e5: 36,
+            d7: 51, d6: 43,
+            g8: 62, f6: 45,
+        };
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should allow kingside castling", async function () {
+            // Clear path for kingside castling: move knight and bishop
+            // 1. e2-e4
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e2, sq.e4, PieceType.None);
+            // 2. e7-e5
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e7, sq.e5, PieceType.None);
+            // 3. Bf1-c4
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.f1, sq.c4, PieceType.None);
+            // 4. d7-d6
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.d7, sq.d6, PieceType.None);
+            // 5. Ng1-f3
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g1, sq.f3, PieceType.None);
+            // 6. Ng8-f6
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g8, sq.f6, PieceType.None);
+
+            // 7. O-O (kingside castling: e1-g1)
+            await expect(
+                chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e1, sq.g1, PieceType.None)
+            ).to.emit(chess, "CastlingPerformed");
+
+            // Verify king and rook positions
+            const board = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
+            expect(board[sq.g1].pieceType).to.equal(PieceType.King); // King on g1
+            expect(board[5].pieceType).to.equal(PieceType.Rook);     // Rook on f1
+        });
+
+        it("Should report correct castling rights", async function () {
+            const rights = await chess.getCastlingRights(tierId, instanceId, roundNumber, matchNumber);
+            expect(rights.whiteKingSide).to.be.true;
+            expect(rights.whiteQueenSide).to.be.true;
+            expect(rights.blackKingSide).to.be.true;
+            expect(rights.blackQueenSide).to.be.true;
+        });
+    });
+
+    describe("Resignation", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 4;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should allow player to resign", async function () {
+            await expect(
+                chess.connect(whitePlayer).resign(tierId, instanceId, roundNumber, matchNumber)
+            ).to.emit(chess, "Resignation")
+             .and.to.emit(chess, "TournamentCompleted");
+
+            // Tournament should reset after 2-player tournament completes
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling
+        });
+
+        it("Should declare opponent as winner on resignation", async function () {
+            const tx = await chess.connect(whitePlayer).resign(tierId, instanceId, roundNumber, matchNumber);
+            const receipt = await tx.wait();
+
+            // Find Resignation event
+            const resignEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed?.name === "Resignation";
+                } catch { return false; }
+            });
+
+            expect(resignEvent).to.not.be.undefined;
+            const parsed = chess.interface.parseLog(resignEvent);
+            expect(parsed.args.winner).to.equal(blackPlayer.address);
+        });
+
+        it("Should reject resignation from non-player", async function () {
+            const [,,, nonPlayer] = await hre.ethers.getSigners();
+            await expect(
+                chess.connect(nonPlayer).resign(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("Not a player");
+        });
+    });
+
+    describe("Draw by Agreement", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 5;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should allow opponent to accept draw", async function () {
+            // Black can accept draw (since it's White's turn)
+            await expect(
+                chess.connect(blackPlayer).acceptDraw(tierId, instanceId, roundNumber, matchNumber)
+            ).to.emit(chess, "TournamentCompleted");
+
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset
+        });
+
+        it("Should reject draw acceptance from current turn player", async function () {
+            await expect(
+                chess.connect(whitePlayer).acceptDraw(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("Current turn player must wait for opponent");
+        });
+    });
+
+    describe("Timeout Claims", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 6;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should allow timeout claim after timeout period", async function () {
+            // Fast forward past timeout (1 minute)
+            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            await expect(
+                chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
+            ).to.emit(chess, "TimeoutVictoryClaimed");
+        });
+
+        it("Should reject early timeout claim", async function () {
+            await expect(
+                chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("Timeout not reached");
+        });
+
+        it("Should reject timeout claim on your own turn", async function () {
+            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            await expect(
+                chess.connect(whitePlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("Cannot claim timeout on your own turn");
+        });
+    });
+
+    describe("View Functions", function () {
+        const tierId = 0;
+        const instanceId = 7;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+        });
+
+        it("Should return chess match data", async function () {
+            const match = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.status).to.equal(1); // InProgress
+            expect(match.fullMoveNumber).to.equal(1);
+        });
+
+        it("Should return board state", async function () {
+            const board = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
+            expect(board.length).to.equal(64);
+
+            // Check initial position - white king on e1 (square 4)
+            expect(board[4].pieceType).to.equal(PieceType.King);
+            // Black king on e8 (square 60)
+            expect(board[60].pieceType).to.equal(PieceType.King);
+        });
+
+        it("Should return move history", async function () {
+            const history = await chess.getMoveHistory(tierId, instanceId, roundNumber, matchNumber);
+            expect(history).to.equal("0x"); // Empty initially
+        });
+
+        it("Should return RW3 compliance declaration", async function () {
+            const declaration = await chess.declareRW3();
+            expect(declaration).to.include("ChessOnChain");
+            expect(declaration).to.include("RW3 COMPLIANCE");
+        });
+    });
+
+    describe("Scholar's Mate (Checkmate)", function () {
+        let whitePlayer, blackPlayer;
+        const tierId = 0;
+        const instanceId = 8;
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        // Squares for Scholar's Mate
+        const sq = {
+            e2: 12, e4: 28,
+            e7: 52, e5: 36,
+            f1: 5, c4: 26,
+            b8: 57, c6: 42,
+            d1: 3, h5: 39, f7: 53,
+        };
+
+        beforeEach(async function () {
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchState[0] === player1.address) {
+                whitePlayer = player1;
+                blackPlayer = player2;
+            } else {
+                whitePlayer = player2;
+                blackPlayer = player1;
+            }
+        });
+
+        it("Should detect checkmate (Scholar's Mate)", async function () {
+            // Scholar's Mate sequence:
+            // 1. e2-e4
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e2, sq.e4, PieceType.None);
+            // 2. e7-e5
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e7, sq.e5, PieceType.None);
+            // 3. Bf1-c4
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.f1, sq.c4, PieceType.None);
+            // 4. Nb8-c6
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.b8, sq.c6, PieceType.None);
+            // 5. Qd1-h5
+            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.d1, sq.h5, PieceType.None);
+            // 6. Ng8-f6?? (blunder)
+            const nf6 = 45;
+            const g8 = 62;
+            await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, g8, nf6, PieceType.None);
+
+            // 7. Qh5xf7# (CHECKMATE!)
+            await expect(
+                chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None)
+            ).to.emit(chess, "CheckmateDeclared")
+             .and.to.emit(chess, "TournamentCompleted");
+
+            // Tournament should be completed and reset
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling (reset)
+        });
+    });
+
+    describe("4-Player Tournament", function () {
+        const tierId = 1;
+        const instanceId = 0;
+        const entryFee = hre.ethers.parseEther("0.02");
+
+        it("Should handle 4-player tournament bracket", async function () {
+            // Get fresh signers for this test
+            const signers = await hre.ethers.getSigners();
+            const p1 = signers[0];
+            const p2 = signers[1];
+            const p3 = signers[2];
+            const p4 = signers[3];
+
+            // Enroll 4 different players
+            await chess.connect(p1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(p2).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(p3).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(p4).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            // Check tournament started
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(1); // InProgress
+
+            // Check round 0 has 2 matches
+            const round0 = await chess.rounds(tierId, instanceId, 0);
+            expect(round0.totalMatches).to.equal(2);
+        });
+    });
+
+    describe("Player Stats", function () {
+        it("Should track player statistics", async function () {
+            const tierId = 0;
+            const instanceId = 9;
+            const entryFee = hre.ethers.parseEther("0.01");
+
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            const matchState = await chess.getChessMatch(tierId, instanceId, 0, 0);
+            const whitePlayer = matchState[0] === player1.address ? player1 : player2;
+
+            // Resign to complete quickly
+            await chess.connect(whitePlayer).resign(tierId, instanceId, 0, 0);
+
+            const loser = whitePlayer;
+            const winner = loser === player1 ? player2 : player1;
+
+            const winnerStats = await chess.getPlayerStats(winner.address);
+            expect(winnerStats.matchesWon).to.be.gte(1);
+            expect(winnerStats.tournamentsWon).to.be.gte(1);
+        });
+    });
 });
