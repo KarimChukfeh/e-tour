@@ -1496,4 +1496,454 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(stats.tournamentsPlayed).to.be.gte(1);
         });
     });
+
+    describe("Escalation Victory and Prize Distribution", function () {
+        it("Should award full prize pool when timeout claim wins 2-player tournament", async function () {
+            const tierId = 0;
+            const instanceId = 20;
+
+            // Track balance before
+            const balanceBefore = await hre.ethers.provider.getBalance(player1.address);
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // First player makes a move
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+
+            // Fast forward past timeout
+            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // First player claims timeout win - should win tournament
+            const tx = await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+            const receipt = await tx.wait();
+
+            // Check TournamentCompleted event was emitted
+            const tournamentCompletedEvent = receipt.logs.find(
+                log => log.fragment && log.fragment.name === "TournamentCompleted"
+            );
+            expect(tournamentCompletedEvent).to.not.be.undefined;
+
+            // Winner should be the timeout claimer
+            expect(tournamentCompletedEvent.args.winner).to.equal(firstPlayer.address);
+
+            // Prize should be ~90% of total entry fees (2 * 0.01 ETH * 90% = 0.018 ETH)
+            const expectedPrize = (TIER_0_FEE * 2n * 90n) / 100n;
+            expect(tournamentCompletedEvent.args.prizeAmount).to.equal(expectedPrize);
+
+            // Verify leaderboard shows positive earnings for winner
+            const leaderboard = await game.getLeaderboard();
+            const winnerEntry = leaderboard.find(e => e.player === firstPlayer.address);
+            expect(winnerEntry.earnings).to.be.gt(0n);
+        });
+
+        it("Should award full prize pool when Escalation Level 2 leads to tournament victory", async function () {
+            const tierId = 1;
+            const instanceId = 10;
+
+            const allPlayers = [player1, player2, player3, player4, player5, player6, player7, player8];
+            for (const player of allPlayers) {
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            }
+
+            // Complete matches 1, 2, 3 in round 0 to leave only match 0 stalled
+            async function winMatch(roundNum, matchNum) {
+                const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
+                if (match.status !== 1n) return null; // Not in progress
+
+                const fpAddr = match.currentTurn;
+                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
+                const fp = allPlayers.find(p => p.address === fpAddr);
+                const sp = allPlayers.find(p => p.address === spAddr);
+
+                if (!fp || !sp) return null;
+
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
+                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 1);
+                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 4);
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 2);
+                return fp;
+            }
+
+            // Win matches 1, 2, 3 - these players advance
+            const winner1 = await winMatch(0, 1);
+            await winMatch(0, 2);
+            await winMatch(0, 3);
+
+            // Start match 0 with a single move (so timeout clock starts)
+            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
+            const fp0 = allPlayers.find(p => p.address === match0.currentTurn);
+            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 4);
+
+            // Fast forward past Escalation 2 timeout
+            await hre.ethers.provider.send("evm_increaseTime", [130]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // Winner1 (advanced player) force eliminates stalled match 0
+            await game.connect(winner1).forceEliminateStalledMatch(tierId, instanceId, 0, 0);
+
+            // Now complete round 1 (semis)
+            await winMatch(1, 0);
+            await winMatch(1, 1);
+
+            // Complete finals
+            const finalMatch = await game.getMatch(tierId, instanceId, 2, 0);
+            const finalFpAddr = finalMatch.currentTurn;
+            const finalSpAddr = finalMatch.player1 === finalFpAddr ? finalMatch.player2 : finalMatch.player1;
+            const finalFp = allPlayers.find(p => p.address === finalFpAddr);
+            const finalSp = allPlayers.find(p => p.address === finalSpAddr);
+
+            await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 0);
+            await game.connect(finalSp).makeMove(tierId, instanceId, 2, 0, 3);
+            await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 1);
+            await game.connect(finalSp).makeMove(tierId, instanceId, 2, 0, 4);
+
+            // Final move wins tournament
+            const tx = await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 2);
+            const receipt = await tx.wait();
+
+            // Should have TournamentCompleted event
+            const tournamentCompletedEvent = receipt.logs.find(
+                log => log.fragment && log.fragment.name === "TournamentCompleted"
+            );
+            expect(tournamentCompletedEvent).to.not.be.undefined;
+
+            // Winner gets prize
+            expect(tournamentCompletedEvent.args.prizeAmount).to.be.gt(0n);
+        });
+
+        it("Should allow Escalation Level 3 replacement player to win tournament and get prize", async function () {
+            const tierId = 0;
+            const instanceId = 21;
+
+            // player1 and player2 enroll
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Start the match
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+
+            // Fast forward past Escalation 3 timeout (1 min move + 2 min = 3 min total)
+            await hre.ethers.provider.send("evm_increaseTime", [200]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // player3 (external) claims the match slot via replacement
+            const tx = await game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0);
+            const receipt = await tx.wait();
+
+            // Tournament should be completed with player3 as winner (since it's finals)
+            const tournamentCompletedEvent = receipt.logs.find(
+                log => log.fragment && log.fragment.name === "TournamentCompleted"
+            );
+            expect(tournamentCompletedEvent).to.not.be.undefined;
+            expect(tournamentCompletedEvent.args.winner).to.equal(player3.address);
+
+            // player3 should have positive earnings (got prize without paying entry)
+            const leaderboard = await game.getLeaderboard();
+            const player3Entry = leaderboard.find(e => e.player === player3.address);
+            // Note: player3 didn't pay entry fee, but got prize
+            expect(player3Entry).to.not.be.undefined;
+        });
+
+        it("Should track forfeited amounts for eliminated players on escalation", async function () {
+            const tierId = 0;
+            const instanceId = 22;
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+
+            // Fast forward and claim timeout
+            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // Claim timeout win - should emit TimeoutVictoryClaimed
+            await expect(
+                game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
+            ).to.emit(game, "TimeoutVictoryClaimed")
+              .withArgs(tierId, instanceId, 0, 0, firstPlayer.address, secondPlayer.address);
+
+            // Verify forfeited amount is tracked in storage
+            const forfeitedAmount = await game.playerForfeitedAmounts(tierId, instanceId, secondPlayer.address);
+            expect(forfeitedAmount).to.equal(TIER_0_FEE);
+        });
+
+        it("Should correctly distribute prize pool after abandoned enrollment claim", async function () {
+            const tierId = 0;
+            const instanceId = 23;
+
+            // Single player enrolls
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Fast forward past escalation 2 window
+            await hre.ethers.provider.send("evm_increaseTime", [500]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            const balanceBefore = await hre.ethers.provider.getBalance(player3.address);
+
+            // player3 (external) claims the abandoned enrollment pool
+            const tx = await game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId);
+            const receipt = await tx.wait();
+
+            const balanceAfter = await hre.ethers.provider.getBalance(player3.address);
+            const gasUsed = receipt.gasUsed * receipt.gasPrice;
+
+            // player3 should have received the prize pool (90% of entry fee)
+            const expectedClaim = (TIER_0_FEE * 90n) / 100n;
+            const actualGain = balanceAfter - balanceBefore + gasUsed;
+            expect(actualGain).to.equal(expectedClaim);
+
+            // Check EnrollmentPoolClaimed event
+            const claimEvent = receipt.logs.find(
+                log => log.fragment && log.fragment.name === "EnrollmentPoolClaimed"
+            );
+            expect(claimEvent).to.not.be.undefined;
+            expect(claimEvent.args.claimant).to.equal(player3.address);
+            expect(claimEvent.args.amount).to.equal(expectedClaim);
+        });
+    });
+
+    describe("playerPrizes and Leaderboard Consistency", function () {
+        // playerPrizes is permanent and persists after tournament reset
+
+        it("Should have playerPrizes equal to prize amount for winner in 2-player tournament", async function () {
+            const tierId = 0;
+            const instanceId = 24;
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // Win the match
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
+
+            // Check playerPrizes for winner (should be 90% of total entry fees)
+            const expectedPrize = (TIER_0_FEE * 2n * 90n) / 100n;
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, firstPlayer.address);
+            expect(winnerPrize).to.equal(expectedPrize);
+
+            // Loser should have 0 prize
+            const loserPrize = await game.playerPrizes(tierId, instanceId, secondPlayer.address);
+            expect(loserPrize).to.equal(0n);
+        });
+
+        it("Should have leaderboard earnings equal to (playerPrizes - entryFee) for winner", async function () {
+            const tierId = 0;
+            const instanceId = 25;
+
+            const earningsBefore1 = await game.playerEarnings(player1.address);
+            const earningsBefore2 = await game.playerEarnings(player2.address);
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
+
+            // Get playerPrizes (now permanent after tournament reset)
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, firstPlayer.address);
+
+            // Get leaderboard earnings change
+            const earningsAfter1 = await game.playerEarnings(firstPlayer.address);
+            const earningsAfter2 = await game.playerEarnings(secondPlayer.address);
+
+            const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+            const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+
+            // Winner's earnings change should equal (prize - entryFee)
+            const winnerEarningsChange = earningsAfter1 - firstEarningsBefore;
+            expect(winnerEarningsChange).to.equal(winnerPrize - TIER_0_FEE);
+
+            // Loser's earnings change should equal -entryFee
+            const loserEarningsChange = earningsAfter2 - secondEarningsBefore;
+            expect(loserEarningsChange).to.equal(-TIER_0_FEE);
+        });
+
+        it("Should have consistent playerPrizes and leaderboard for 8-player tournament", async function () {
+            const tierId = 1;
+            const instanceId = 11;
+
+            const allPlayers = [player1, player2, player3, player4, player5, player6, player7, player8];
+
+            // Track earnings before
+            const earningsBefore = {};
+            for (const p of allPlayers) {
+                earningsBefore[p.address] = await game.playerEarnings(p.address);
+            }
+
+            // Enroll all players
+            for (const player of allPlayers) {
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            }
+
+            // Helper to win a match
+            async function winMatch(roundNum, matchNum) {
+                const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
+                if (match.status !== 1n) return null;
+
+                const fpAddr = match.currentTurn;
+                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
+                const fp = allPlayers.find(p => p.address === fpAddr);
+                const sp = allPlayers.find(p => p.address === spAddr);
+
+                if (!fp || !sp) return null;
+
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
+                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 1);
+                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 4);
+                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 2);
+                return fp.address;
+            }
+
+            // Complete tournament
+            await winMatch(0, 0);
+            await winMatch(0, 1);
+            await winMatch(0, 2);
+            await winMatch(0, 3);
+            await winMatch(1, 0);
+            await winMatch(1, 1);
+            const tournamentWinner = await winMatch(2, 0);
+
+            // Check consistency for all players
+            for (const p of allPlayers) {
+                const prize = await game.playerPrizes(tierId, instanceId, p.address);
+                const earningsAfter = await game.playerEarnings(p.address);
+                const earningsChange = earningsAfter - earningsBefore[p.address];
+
+                // Earnings change should equal (prize - entryFee)
+                const expectedChange = prize - TIER_1_FEE;
+                expect(earningsChange).to.equal(expectedChange);
+            }
+
+            // Winner should have positive prize and earnings
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, tournamentWinner);
+            expect(winnerPrize).to.be.gt(0n);
+            expect(winnerPrize - TIER_1_FEE).to.be.gt(0n);
+        });
+
+        it("Should have consistent playerPrizes and leaderboard after timeout victory", async function () {
+            const tierId = 0;
+            const instanceId = 26;
+
+            const earningsBefore1 = await game.playerEarnings(player1.address);
+            const earningsBefore2 = await game.playerEarnings(player2.address);
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // First player makes a move
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+
+            // Fast forward and claim timeout
+            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Check playerPrizes (permanent)
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, firstPlayer.address);
+            const loserPrize = await game.playerPrizes(tierId, instanceId, secondPlayer.address);
+
+            // Winner should get full prize pool
+            const expectedPrize = (TIER_0_FEE * 2n * 90n) / 100n;
+            expect(winnerPrize).to.equal(expectedPrize);
+            expect(loserPrize).to.equal(0n);
+
+            // Check leaderboard consistency
+            const earningsAfter1 = await game.playerEarnings(firstPlayer.address);
+            const earningsAfter2 = await game.playerEarnings(secondPlayer.address);
+
+            const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+            const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+
+            // Winner: prize - entryFee
+            expect(earningsAfter1 - firstEarningsBefore).to.equal(winnerPrize - TIER_0_FEE);
+            // Loser: -entryFee
+            expect(earningsAfter2 - secondEarningsBefore).to.equal(-TIER_0_FEE);
+        });
+
+        it("Should have consistent playerPrizes and leaderboard for draw finals", async function () {
+            const tierId = 0;
+            const instanceId = 27;
+
+            const earningsBefore1 = await game.playerEarnings(player1.address);
+            const earningsBefore2 = await game.playerEarnings(player2.address);
+
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // Play to draw
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 1);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 7);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 6);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
+            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5);
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
+
+            // Both players should get half the prize (permanent)
+            const prizePool = (TIER_0_FEE * 2n * 90n) / 100n;
+            const expectedPrizePerPlayer = prizePool / 2n;
+
+            const prize1 = await game.playerPrizes(tierId, instanceId, firstPlayer.address);
+            const prize2 = await game.playerPrizes(tierId, instanceId, secondPlayer.address);
+
+            expect(prize1).to.equal(expectedPrizePerPlayer);
+            expect(prize2).to.equal(expectedPrizePerPlayer);
+
+            // Check leaderboard consistency
+            const earningsAfter1 = await game.playerEarnings(firstPlayer.address);
+            const earningsAfter2 = await game.playerEarnings(secondPlayer.address);
+
+            const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+            const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
+
+            // Both: prize - entryFee
+            expect(earningsAfter1 - firstEarningsBefore).to.equal(prize1 - TIER_0_FEE);
+            expect(earningsAfter2 - secondEarningsBefore).to.equal(prize2 - TIER_0_FEE);
+        });
+    });
 });
+
+// Helper to convert BigInt to int256 for comparison
+function int256(val) {
+    return BigInt(val);
+}

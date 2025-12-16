@@ -1437,7 +1437,7 @@ abstract contract ETour is ReentrancyGuard {
             address player = players[i];
             isEnrolled[tierId][instanceId][player] = false;
             delete playerRanking[tierId][instanceId][player];
-            delete playerPrizes[tierId][instanceId][player];
+            // Note: playerPrizes is intentionally NOT deleted - it's permanent historical record
         }
         delete enrolledPlayers[tierId][instanceId];
 
