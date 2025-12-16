@@ -696,8 +696,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(Number(firstPlacePct) + Number(secondPlacePct)).to.equal(100);
         });
 
-        it("Should track completed tournaments count", async function () {
-            const countBefore = await game.getCompletedTournamentCount();
+        it("Should track player earnings on leaderboard - winner has positive, loser negative", async function () {
+            const countBefore = await game.getLeaderboardCount();
 
             // Complete a tournament
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
@@ -713,18 +713,33 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            const countAfter = await game.getCompletedTournamentCount();
-            expect(countAfter).to.equal(countBefore + 1n);
+            const leaderboard = await game.getLeaderboard();
+            const countAfter = await game.getLeaderboardCount();
+
+            // Should have added 2 players to leaderboard
+            expect(countAfter - countBefore).to.equal(2n);
+
+            // Find winner and loser in leaderboard
+            const winnerEntry = leaderboard.find(e => e.player === firstPlayer.address);
+            const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
+
+            // Winner should have positive net earnings (prize - entry fee)
+            // Prize pool = 2 * 0.01 ETH * 90% = 0.018 ETH, winner gets 100%
+            // Net = 0.018 - 0.01 = 0.008 ETH
+            expect(winnerEntry.earnings).to.be.gt(0n);
+
+            // Loser should have negative net earnings (-entry fee)
+            expect(loserEntry.earnings).to.equal(-TIER_0_FEE);
         });
 
-        it("Should retrieve completed tournament data", async function () {
-            // Complete a tournament first
+        it("Should return full leaderboard with all players", async function () {
+            // Complete a tournament to populate leaderboard
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+            let match = await game.getMatch(tierId, instanceId, 0, 0);
+            let firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            let secondPlayer = match.currentTurn === player1.address ? player2 : player1;
 
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
@@ -732,19 +747,22 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            const count = await game.getCompletedTournamentCount();
-            const cached = await game.getCompletedTournament(count - 1n);
+            const leaderboard = await game.getLeaderboard();
 
-            expect(cached.exists).to.be.true;
-            expect(cached.tierId).to.equal(tierId);
-            expect(cached.instanceId).to.equal(instanceId);
-            expect(cached.winner).to.equal(firstPlayer.address);
-            expect(cached.participantCount).to.equal(2);
+            // Leaderboard should be an array of {player, earnings} entries
+            expect(Array.isArray(leaderboard)).to.be.true;
+            expect(leaderboard.length).to.be.gte(2);
+
+            // Each entry should have player address and earnings
+            for (const entry of leaderboard) {
+                expect(entry.player).to.match(/^0x[a-fA-F0-9]{40}$/);
+                expect(typeof entry.earnings).to.equal("bigint");
+            }
         });
 
-        it("Should return all completed tournaments", async function () {
-            const all = await game.getAllCompletedTournaments();
-            expect(Array.isArray(all)).to.be.true;
+        it("Should return leaderboard count", async function () {
+            const count = await game.getLeaderboardCount();
+            expect(typeof count).to.equal("bigint");
         });
     });
 
@@ -964,14 +982,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await expect(
                 game.connect(player1).forceStartTournament(tierId, instanceId)
             ).to.be.revertedWith("Not enrolling");
-        });
-
-        it("Should reject getCompletedTournament with invalid index", async function () {
-            const count = await game.getCompletedTournamentCount();
-
-            await expect(
-                game.getCompletedTournament(count + 100n)
-            ).to.be.revertedWith("Index out of bounds");
         });
 
         it("Should reject getPrizePercentage for invalid tier", async function () {

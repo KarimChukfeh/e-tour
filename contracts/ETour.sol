@@ -128,30 +128,6 @@ abstract contract ETour is ReentrancyGuard {
         uint256 forfeitPool;
     }
 
-    struct PrizeWinner {
-        address player;
-        uint8 ranking;
-        uint256 prize;
-    }
-
-    struct CachedTournamentData {
-        bool exists;
-        uint8 tierId;
-        uint8 instanceId;
-        uint256 tournamentId;
-        uint256 timestamp;
-        Mode mode;
-        TournamentCompletionType completionType;
-        uint256 totalPrizePool;
-        uint256 totalAwarded;
-        address winner;
-        uint8 participantCount;
-        uint256 startTime;
-        uint256 duration;
-        uint8 matchCount;
-        PrizeWinner[] prizeWinners;
-    }
-
     // ============ State Variables ============
 
     // Tier configuration - set by implementing contract
@@ -173,10 +149,10 @@ abstract contract ETour is ReentrancyGuard {
     mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerPrizes;
     mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(address => bool))))) public drawParticipants;
 
-    // Tournament cache
-    CachedTournamentData[] public completedTournaments;
-    uint256 public globalTournamentIdCounter;
-    mapping(uint256 => uint256) public tournamentCompletionBlocks;
+    // Player earnings tracking (net profit: payouts minus entry fees)
+    mapping(address => int256) public playerEarnings;
+    address[] internal _leaderboardPlayers;
+    mapping(address => bool) internal _isOnLeaderboard;
 
     // Forfeit tracking
     mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerForfeitedAmounts;
@@ -200,7 +176,7 @@ abstract contract ETour is ReentrancyGuard {
     event OwnerFeePaid(address indexed owner, uint256 amount);
     event ProtocolFeePaid(address indexed recipient, uint256 amount);
     event PrizeDistributed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 rank, uint256 amount);
-    event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, uint256 indexed tournamentId, address winner);
+    event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, address winner);
     event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed starter, uint8 playerCount);
     event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
     event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
@@ -445,7 +421,7 @@ abstract contract ETour is ReentrancyGuard {
 
         emit EnrollmentPoolClaimed(tierId, instanceId, msg.sender, claimAmount);
 
-        _cacheAbandonedTournament(tierId, instanceId, msg.sender, claimAmount);
+        _updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
         _resetTournamentAfterCompletion(tierId, instanceId);
     }
 
@@ -477,7 +453,7 @@ abstract contract ETour is ReentrancyGuard {
             emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
             emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, false, address(0));
 
-            _cacheTournamentData(tierId, instanceId, soloWinner);
+            _updatePlayerEarnings(tierId, instanceId, soloWinner);
             _resetTournamentAfterCompletion(tierId, instanceId);
             return;
         }
@@ -768,7 +744,7 @@ abstract contract ETour is ReentrancyGuard {
         uint256 winnerPrize = playerPrizes[tierId][instanceId][winner];
         emit TournamentCompleted(tierId, instanceId, winner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
 
-        _cacheTournamentData(tierId, instanceId, winner);
+        _updatePlayerEarnings(tierId, instanceId, winner);
         _resetTournamentAfterCompletion(tierId, instanceId);
     }
 
@@ -795,7 +771,7 @@ abstract contract ETour is ReentrancyGuard {
         _distributeEqualPrizes(tierId, instanceId, remainingPlayers, winnersPot);
 
         emit TournamentCompletedAllDraw(tierId, instanceId, roundNumber, uint8(remainingPlayers.length), prizePerPlayer);
-        _cacheTournamentData(tierId, instanceId, address(0));
+        _updatePlayerEarnings(tierId, instanceId, address(0));
         _resetTournamentAfterCompletion(tierId, instanceId);
     }
 
@@ -1378,100 +1354,56 @@ abstract contract ETour is ReentrancyGuard {
 
     // ============ Caching Functions ============
 
-    function _cacheTournamentData(uint8 tierId, uint8 instanceId, address winner) internal {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+    function _updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) internal {
         TierConfig storage config = _tierConfigs[tierId];
         address[] storage players = enrolledPlayers[tierId][instanceId];
+        int256 entryFee = int256(config.entryFee);
 
-        CachedTournamentData memory cache;
-
-        cache.exists = true;
-        cache.tierId = tierId;
-        cache.instanceId = instanceId;
-        cache.tournamentId = globalTournamentIdCounter++;
-        cache.timestamp = block.timestamp;
-        cache.mode = tournament.mode;
-
-        if (tournament.hasStartedViaTimeout) {
-            cache.completionType = TournamentCompletionType.PartialStart;
-        } else {
-            cache.completionType = TournamentCompletionType.Regular;
-        }
-
-        cache.totalPrizePool = tournament.prizePool;
-        cache.totalAwarded = 0;
-        cache.winner = winner;
-        cache.participantCount = uint8(players.length);
-        cache.startTime = tournament.startTime;
-        cache.duration = block.timestamp - tournament.startTime;
-
-        cache.matchCount = 0;
-        for (uint8 r = 0; r < config.totalRounds; r++) {
-            Round storage roundData = rounds[tierId][instanceId][r];
-            cache.matchCount += roundData.totalMatches;
-        }
-
-        cache.prizeWinners = new PrizeWinner[](players.length);
+        // Deduct entry fee from all participants, add prize to those who earned
         for (uint8 i = 0; i < players.length; i++) {
             address player = players[i];
+            _trackOnLeaderboard(player);
+            playerEarnings[player] -= entryFee;
+
             uint256 prize = playerPrizes[tierId][instanceId][player];
-
-            cache.prizeWinners[i] = PrizeWinner({
-                player: player,
-                ranking: playerRanking[tierId][instanceId][player],
-                prize: prize
-            });
-
-            cache.totalAwarded += prize;
+            if (prize > 0) {
+                playerEarnings[player] += int256(prize);
+            }
         }
 
-        completedTournaments.push(cache);
-        tournamentCompletionBlocks[cache.tournamentId] = block.number;
-
-        emit TournamentCached(tierId, instanceId, cache.tournamentId, winner);
+        emit TournamentCached(tierId, instanceId, winner);
     }
 
-    function _cacheAbandonedTournament(
+    function _updateAbandonedEarnings(
         uint8 tierId,
         uint8 instanceId,
-        address,
+        address claimer,
         uint256 claimAmount
     ) internal {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TierConfig storage config = _tierConfigs[tierId];
         address[] storage players = enrolledPlayers[tierId][instanceId];
+        int256 entryFee = int256(config.entryFee);
 
-        CachedTournamentData memory cache;
-
-        cache.exists = true;
-        cache.tierId = tierId;
-        cache.instanceId = instanceId;
-        cache.tournamentId = globalTournamentIdCounter++;
-        cache.timestamp = block.timestamp;
-        cache.mode = tournament.mode;
-        cache.completionType = TournamentCompletionType.Abandoned;
-
-        cache.totalPrizePool = tournament.prizePool;
-        cache.totalAwarded = claimAmount;
-
-        cache.winner = address(0);
-        cache.participantCount = uint8(players.length);
-        cache.startTime = 0;
-        cache.duration = 0;
-        cache.matchCount = 0;
-
-        cache.prizeWinners = new PrizeWinner[](players.length);
+        // Deduct entry fee from all enrolled players (they lost their fee to abandoned pool)
         for (uint8 i = 0; i < players.length; i++) {
-            cache.prizeWinners[i] = PrizeWinner({
-                player: players[i],
-                ranking: 0,
-                prize: 0
-            });
+            _trackOnLeaderboard(players[i]);
+            playerEarnings[players[i]] -= entryFee;
         }
 
-        completedTournaments.push(cache);
-        tournamentCompletionBlocks[cache.tournamentId] = block.number;
+        // Credit the claimer with the claim amount
+        if (claimAmount > 0) {
+            _trackOnLeaderboard(claimer);
+            playerEarnings[claimer] += int256(claimAmount);
+        }
 
-        emit TournamentCached(tierId, instanceId, cache.tournamentId, address(0));
+        emit TournamentCached(tierId, instanceId, address(0));
+    }
+
+    function _trackOnLeaderboard(address player) internal {
+        if (!_isOnLeaderboard[player]) {
+            _isOnLeaderboard[player] = true;
+            _leaderboardPlayers.push(player);
+        }
     }
 
     function _resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) internal virtual {
@@ -1612,17 +1544,24 @@ abstract contract ETour is ReentrancyGuard {
         return _tierPrizeDistribution[tierId];
     }
 
-    function getAllCompletedTournaments() external view returns (CachedTournamentData[] memory) {
-        return completedTournaments;
+    struct LeaderboardEntry {
+        address player;
+        int256 earnings;
     }
 
-    function getCompletedTournament(uint256 index) external view returns (CachedTournamentData memory) {
-        require(index < completedTournaments.length, "Index out of bounds");
-        return completedTournaments[index];
+    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
+        LeaderboardEntry[] memory entries = new LeaderboardEntry[](_leaderboardPlayers.length);
+        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
+            entries[i] = LeaderboardEntry({
+                player: _leaderboardPlayers[i],
+                earnings: playerEarnings[_leaderboardPlayers[i]]
+            });
+        }
+        return entries;
     }
 
-    function getCompletedTournamentCount() external view returns (uint256) {
-        return completedTournaments.length;
+    function getLeaderboardCount() external view returns (uint256) {
+        return _leaderboardPlayers.length;
     }
 
     /**
