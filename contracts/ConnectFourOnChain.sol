@@ -188,33 +188,6 @@ contract ConnectFourOnChain is ETour {
             DEFAULT_ESCALATION_INTERVAL,
             tier3Prizes
         );
-
-        // ============ Tier 4: 32-Player ============
-        uint8[] memory tier4Prizes = new uint8[](32);
-        tier4Prizes[0] = 35;   // 1st
-        tier4Prizes[1] = 20;   // 2nd
-        tier4Prizes[2] = 12;   // 3rd
-        tier4Prizes[3] = 10;   // 4th
-        tier4Prizes[4] = 8;    // 5th
-        tier4Prizes[5] = 7;    // 6th
-        tier4Prizes[6] = 5;    // 7th
-        tier4Prizes[7] = 3;    // 8th
-        // 9th-32nd: 0%
-        for (uint8 i = 8; i < 32; i++) {
-            tier4Prizes[i] = 0;
-        }
-        
-        _registerTier(
-            4,                              // tierId
-            32,                             // playerCount
-            4,                              // instanceCount
-            0.015 ether,                    // entryFee
-            Mode.Classic,
-            DEFAULT_ENROLLMENT_WINDOW,
-            DEFAULT_MATCH_MOVE_TIMEOUT,
-            DEFAULT_ESCALATION_INTERVAL,
-            tier4Prizes
-        );
     }
 
     // ============ Pre-allocation ============
