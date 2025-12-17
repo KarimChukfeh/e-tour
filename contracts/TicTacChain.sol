@@ -128,22 +128,19 @@ contract TicTacChain is ETour {
             tier0Prizes                     // prizeDistribution
         );
 
-        // ============ Tier 1: 8-Player Classic ============
-        uint8[] memory tier1Prizes = new uint8[](8);
-        tier1Prizes[0] = 50;   // 1st
-        tier1Prizes[1] = 25;   // 2nd
-        tier1Prizes[2] = 15;   // 3rd
-        tier1Prizes[3] = 10;   // 4th
-        tier1Prizes[4] = 0;    // 5th-8th
-        tier1Prizes[5] = 0;
-        tier1Prizes[6] = 0;
-        tier1Prizes[7] = 0;
+        // ============ Tier 1: 4-Player Classic ============
+        // Semi-final + Final bracket, winner takes majority
+        uint8[] memory tier1Prizes = new uint8[](4);
+        tier1Prizes[0] = 60;   // 1st place: 60%
+        tier1Prizes[1] = 30;   // 2nd place: 30%
+        tier1Prizes[2] = 10;   // 3rd place: 10%
+        tier1Prizes[3] = 0;    // 4th place: 0%
 
         _registerTier(
             1,                              // tierId
-            8,                              // playerCount
-            16,                             // instanceCount
-            0.004 ether,                    // entryFee
+            4,                              // playerCount
+            10,                             // instanceCount
+            0.002 ether,                    // entryFee
             Mode.Classic,
             DEMO_ENROLLMENT_WINDOW,
             DEMO_MATCH_MOVE_TIMEOUT,
@@ -151,19 +148,22 @@ contract TicTacChain is ETour {
             tier1Prizes
         );
 
-        // ============ Tier 2: 4-Player Classic ============
-        // Semi-final + Final bracket, winner takes majority
-        uint8[] memory tier2Prizes = new uint8[](4);
-        tier2Prizes[0] = 60;   // 1st place: 60%
-        tier2Prizes[1] = 30;   // 2nd place: 30%
-        tier2Prizes[2] = 10;   // 3rd place: 10%
-        tier2Prizes[3] = 0;    // 4th place: 0%
+        // ============ Tier 2: 8-Player Classic ============
+        uint8[] memory tier2Prizes = new uint8[](8);
+        tier2Prizes[0] = 50;   // 1st
+        tier2Prizes[1] = 25;   // 2nd
+        tier2Prizes[2] = 15;   // 3rd
+        tier2Prizes[3] = 10;   // 4th
+        tier2Prizes[4] = 0;    // 5th-8th
+        tier2Prizes[5] = 0;
+        tier2Prizes[6] = 0;
+        tier2Prizes[7] = 0;
 
         _registerTier(
             2,                              // tierId
-            4,                              // playerCount
-            10,                             // instanceCount
-            0.002 ether,                    // entryFee
+            8,                              // playerCount
+            16,                             // instanceCount
+            0.004 ether,                    // entryFee
             Mode.Classic,
             DEMO_ENROLLMENT_WINDOW,
             DEMO_MATCH_MOVE_TIMEOUT,
