@@ -28,8 +28,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(await game.owner()).to.equal(owner.address);
         });
 
-        it("Should have 5 tiers configured", async function () {
-            expect(await game.tierCount()).to.equal(5);
+        it("Should have 4 tiers configured", async function () {
+            expect(await game.tierCount()).to.equal(4);
         });
 
         it("Should have correct tier configurations", async function () {
