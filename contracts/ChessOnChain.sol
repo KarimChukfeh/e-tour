@@ -152,9 +152,9 @@ contract ChessOnChain is ETour {
 
         // ============ Tier 1: 4-Player ============
         uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 65;   // 1st: 65%
+        tier1Prizes[0] = 75;   // 1st: 75%
         tier1Prizes[1] = 25;   // 2nd: 25%
-        tier1Prizes[2] = 10;   // 3rd: 10%
+        tier1Prizes[2] = 0;    // 3rd: 0%
         tier1Prizes[3] = 0;    // 4th: 0%
 
         _registerTier(

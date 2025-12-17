@@ -124,9 +124,9 @@ contract ConnectFourOnChain is ETour {
 
         // ============ Tier 1: 4-Player ============
         uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 60;   // 1st place: 60%
-        tier1Prizes[1] = 30;   // 2nd place: 30%
-        tier1Prizes[2] = 10;   // 3rd place: 10%
+        tier1Prizes[0] = 75;   // 1st place: 75%
+        tier1Prizes[1] = 25;   // 2nd place: 25%
+        tier1Prizes[2] = 0;    // 3rd place: 0%
         tier1Prizes[3] = 0;    // 4th place: 0%
         
         _registerTier(
@@ -143,9 +143,9 @@ contract ConnectFourOnChain is ETour {
 
         // ============ Tier 2: 8-Player ============
         uint8[] memory tier2Prizes = new uint8[](8);
-        tier2Prizes[0] = 50;   // 1st
-        tier2Prizes[1] = 25;   // 2nd
-        tier2Prizes[2] = 15;   // 3rd
+        tier2Prizes[0] = 60;   // 1st
+        tier2Prizes[1] = 20;   // 2nd
+        tier2Prizes[2] = 10;   // 3rd
         tier2Prizes[3] = 10;   // 4th
         tier2Prizes[4] = 0;    // 5th-8th
         tier2Prizes[5] = 0;
@@ -166,9 +166,9 @@ contract ConnectFourOnChain is ETour {
 
         // ============ Tier 3: 16-Player ============
         uint8[] memory tier3Prizes = new uint8[](16);
-        tier3Prizes[0] = 40;   // 1st
-        tier3Prizes[1] = 25;   // 2nd
-        tier3Prizes[2] = 15;   // 3rd
+        tier3Prizes[0] = 55;   // 1st
+        tier3Prizes[1] = 15;   // 2nd
+        tier3Prizes[2] = 10;   // 3rd
         tier3Prizes[3] = 10;   // 4th
         tier3Prizes[4] = 5;    // 5th
         tier3Prizes[5] = 5;    // 6th
