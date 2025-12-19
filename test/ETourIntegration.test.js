@@ -2170,9 +2170,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
     });
 
     describe("All-Draw Round Scenarios", function () {
-        it("Should handle single draw in 4-player semi-finals", async function () {
-            // This tests that a draw in one semi-final works correctly
-            // The all-draws-in-round case is complex and involves contract edge cases
+        it("Should handle all semi-finals drawing - all 4 players share prize", async function () {
+            // When all matches in semi-finals draw, no one advances to finals
+            // All 4 semi-finalists share the prize pool equally
             const tierId = 1; // 4-player tier
             const instanceId = 6;
 
@@ -2182,38 +2182,69 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Verify tournament started
-            const tournament = await game.tournaments(tierId, instanceId);
+            let tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1); // InProgress
+            const prizePool = tournament.prizePool;
 
-            // Get match 0
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match0.status).to.equal(1n); // InProgress
-
-            // Find players for match 0
             const allPlayers = [player1, player2, player3, player4];
-            const fp0 = allPlayers.find(p => p.address === match0.currentTurn);
-            const sp0 = allPlayers.find(p => p.address === (match0.player1 === match0.currentTurn ? match0.player2 : match0.player1));
 
-            // Play Match 0 to draw using the proven draw pattern
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 0);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 4);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 2);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 1);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 7);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 6);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 3);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 5);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 8);
+            // Helper function to play a match to draw, returns last transaction
+            async function playMatchToDraw(matchNum) {
+                const match = await game.getMatch(tierId, instanceId, 0, matchNum);
+                expect(match.status).to.equal(1n, `Match ${matchNum} should be InProgress`);
 
-            // Verify Match 0 is complete and was a draw
-            const match0After = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match0After.status).to.equal(2n); // Completed
-            expect(match0After.isDraw).to.be.true;
+                const fp = allPlayers.find(p => p.address === match.currentTurn);
+                const sp = allPlayers.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
-            // Round 0 should have 1 completed match, 1 draw
-            const round0 = await game.rounds(tierId, instanceId, 0);
-            expect(round0.completedMatches).to.equal(1);
-            expect(round0.drawCount).to.equal(1);
+                // Draw pattern
+                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
+                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
+                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 2);
+                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 1);
+                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 7);
+                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 6);
+                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 3);
+                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 5);
+                // Return the last transaction
+                return game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 8);
+            }
+
+            // Play both semi-final matches to draw
+            await playMatchToDraw(0);
+
+            // Verify match 0 completed and match 1 is still active
+            let match0 = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(match0.status).to.equal(2n); // Completed
+            expect(match0.isDraw).to.be.true;
+
+            let match1 = await game.getMatch(tierId, instanceId, 0, 1);
+            expect(match1.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
+
+            // Play match 1 and verify TournamentCompletedAllDraw event
+            const tx = await playMatchToDraw(1);
+            await expect(tx)
+                .to.emit(game, "TournamentCompletedAllDraw")
+                .withArgs(tierId, instanceId, 0, 4, prizePool / 4n);
+
+            // After all-draw completion, tournament resets (match data is cleared)
+            // But playerPrizes persists as historical record
+            tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
+
+            // All 4 players should have equal prizes
+            const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
+            const prize2 = await game.playerPrizes(tierId, instanceId, player2.address);
+            const prize3 = await game.playerPrizes(tierId, instanceId, player3.address);
+            const prize4 = await game.playerPrizes(tierId, instanceId, player4.address);
+
+            // All should be equal
+            expect(prize1).to.equal(prize2);
+            expect(prize2).to.equal(prize3);
+            expect(prize3).to.equal(prize4);
+
+            // Each should get 1/4 of the prize pool
+            const expectedPrize = prizePool / 4n;
+            expect(prize1).to.equal(expectedPrize);
         });
 
         it("Should complete tournament when finals also draws (co-winners)", async function () {
