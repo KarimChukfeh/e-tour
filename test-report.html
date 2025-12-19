@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETour Protocol - Test Report</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-green: #3fb950;
+            --accent-blue: #58a6ff;
+            --accent-purple: #a371f7;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --border-color: #30363d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .stat-value.pass { color: var(--accent-green); }
+        .stat-value.total { color: var(--accent-blue); }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: #282e36;
+        }
+
+        .section-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            flex-grow: 1;
+        }
+
+        .section-count {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .section-content {
+            padding: 1.5rem;
+        }
+
+        .section-content.collapsed {
+            display: none;
+        }
+
+        /* Test Item Styles */
+        .test-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .test-icon {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .test-name {
+            flex-grow: 1;
+        }
+
+        .test-badge {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+        }
+
+        .badge-pass {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        /* Diagram Styles */
+        .diagram-container {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram-title {
+            font-size: 1rem;
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        /* Bracket Diagram */
+        .bracket {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            min-width: fit-content;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bracket-match {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            min-width: 120px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .bracket-match.winner {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 10px rgba(63, 185, 80, 0.3);
+        }
+
+        .bracket-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Flow Diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .flow-step {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .flow-arrow {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .flow-step.action { border-left: 3px solid var(--accent-blue); }
+        .flow-step.event { border-left: 3px solid var(--accent-purple); }
+        .flow-step.result { border-left: 3px solid var(--accent-green); }
+        .flow-step.error { border-left: 3px solid var(--accent-red); }
+
+        /* Escalation Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+        }
+
+        .timeline-item.level-1::before { background: var(--accent-green); }
+        .timeline-item.level-2::before { background: var(--accent-orange); }
+        .timeline-item.level-3::before { background: var(--accent-red); }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Prize Distribution Table */
+        .prize-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .prize-table th,
+        .prize-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .prize-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .prize-table tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Tier Cards */
+        .tier-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .tier-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .tier-card-title {
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .tier-card-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .tier-card-label {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Game Category */
+        .game-category {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .game-category-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .game-category-title h2 {
+            font-size: 1.8rem;
+        }
+
+        .game-badge {
+            background: var(--accent-purple);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-bar {
+                gap: 1.5rem;
+            }
+
+            .bracket {
+                flex-direction: column;
+            }
+        }
+
+        /* Chevron Animation */
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .section-header.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ETour Protocol Test Report</h1>
+            <p class="subtitle">Comprehensive test coverage for on-chain tournament infrastructure</p>
+
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value pass">170</div>
+                    <div class="stat-label">Tests Passing</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value total">0</div>
+                    <div class="stat-label">Tests Failing</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color: var(--accent-purple);">2</div>
+                    <div class="stat-label">Game Contracts</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color: var(--accent-orange);">35</div>
+                    <div class="stat-label">Test Categories</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- TicTacChain Tests -->
+        <div class="game-category">
+            <div class="game-category-title">
+                <h2>TicTacChain</h2>
+                <span class="game-badge">107 Tests</span>
+            </div>
+
+            <!-- Tournament Flow Overview -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🏆</span>
+                    <span class="section-title">Tournament Flow Overview</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Standard Tournament Lifecycle</div>
+                        <div class="flow-diagram">
+                            <div class="flow-step action">Player Enrolls</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step event">PlayerEnrolled</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step action">Pool Full / Force Start</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step event">TournamentStarted</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step action">Matches Played</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step event">MatchCompleted</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step result">TournamentCompleted</div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-container">
+                        <div class="diagram-title">8-Player Tournament Bracket</div>
+                        <div class="bracket">
+                            <div class="bracket-round">
+                                <div class="bracket-label">Quarter-Finals</div>
+                                <div class="bracket-match">P1 vs P2</div>
+                                <div class="bracket-match">P3 vs P4</div>
+                                <div class="bracket-match">P5 vs P6</div>
+                                <div class="bracket-match">P7 vs P8</div>
+                            </div>
+                            <div style="font-size: 2rem; color: var(--text-secondary);">→</div>
+                            <div class="bracket-round">
+                                <div class="bracket-label">Semi-Finals</div>
+                                <div class="bracket-match">W1 vs W2</div>
+                                <div class="bracket-match">W3 vs W4</div>
+                            </div>
+                            <div style="font-size: 2rem; color: var(--text-secondary);">→</div>
+                            <div class="bracket-round">
+                                <div class="bracket-label">Finals</div>
+                                <div class="bracket-match winner">Champion</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tier-cards">
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 0</div>
+                            <div class="tier-card-value">2</div>
+                            <div class="tier-card-label">Players • 0.001 ETH</div>
+                        </div>
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 1</div>
+                            <div class="tier-card-value">4</div>
+                            <div class="tier-card-label">Players • 0.002 ETH</div>
+                        </div>
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 2</div>
+                            <div class="tier-card-value">8</div>
+                            <div class="tier-card-label">Players • 0.004 ETH</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment Tests -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🚀</span>
+                    <span class="section-title">Deployment & Configuration</span>
+                    <span class="section-count">6</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should deploy successfully</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct owner</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have 3 tiers configured</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier 0 configuration (2-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier 1 configuration (4-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier 2 configuration (8-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tournament Enrollment -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">📝</span>
+                    <span class="section-title">Tournament Enrollment</span>
+                    <span class="section-count">5</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Fee Distribution</div>
+                        <div class="flow-diagram">
+                            <div class="flow-step">Entry Fee: 100%</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step result">Prize Pool: 90%</div>
+                            <span class="flow-arrow">+</span>
+                            <div class="flow-step action">Owner: 7.5%</div>
+                            <span class="flow-arrow">+</span>
+                            <div class="flow-step event">Protocol: 2.5%</div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should enroll players and auto-start when full (2-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should split entry fees correctly (90% prize pool, 10% owner)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject incorrect entry fee</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject duplicate enrollment</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject invalid tier</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tournament Logic -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">⚙️</span>
+                    <span class="section-title">Tournament Logic</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should initialize round with correct match count (8-player = 4 matches)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle force start after enrollment timeout</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Play -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🎮</span>
+                    <span class="section-title">Game Play (TicTacToe)</span>
+                    <span class="section-count">6</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">TicTacToe Board Layout</div>
+                        <div style="font-family: monospace; font-size: 1.2rem; text-align: center;">
+                            <div style="display: inline-grid; grid-template-columns: repeat(3, 50px); gap: 2px; background: var(--border-color); padding: 2px;">
+                                <div style="background: var(--bg-secondary); padding: 15px;">0</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">1</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">2</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">3</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">4</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">5</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">6</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">7</div>
+                                <div style="background: var(--bg-secondary); padding: 15px;">8</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow players to make moves</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should switch turns after each move</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject move when not your turn</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject move to occupied cell</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject invalid cell index</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject move from non-player</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Win Detection -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🏅</span>
+                    <span class="section-title">Win Detection</span>
+                    <span class="section-count">4</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Win Conditions</div>
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Horizontal</div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; background: var(--border-color); padding: 2px;">
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Vertical</div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; background: var(--border-color); padding: 2px;">
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Diagonal</div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 30px); gap: 2px; background: var(--border-color); padding: 2px;">
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--bg-secondary); padding: 8px;"></div>
+                                    <div style="background: var(--accent-green); padding: 8px; color: var(--bg-primary);">X</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect horizontal win (top row)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect vertical win (left column)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect diagonal win (0, 4, 8)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect draw when board is full with no winner</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeout Escalation -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">⏱️</span>
+                    <span class="section-title">Timeout & Escalation System</span>
+                    <span class="section-count">12</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Escalation Timeline</div>
+                        <div class="timeline">
+                            <div class="timeline-item level-1">
+                                <div class="timeline-title">Level 1 - Claim Timeout Win</div>
+                                <div class="timeline-desc">After move timeout (1 min), opponent can claim victory</div>
+                            </div>
+                            <div class="timeline-item level-2">
+                                <div class="timeline-title">Level 2 - Force Eliminate Stalled Match</div>
+                                <div class="timeline-desc">After +1 min, advanced player can force eliminate both players</div>
+                            </div>
+                            <div class="timeline-item level-3">
+                                <div class="timeline-title">Level 3 - External Player Replacement</div>
+                                <div class="timeline-desc">After +1 min, any external player can replace both and win</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow timeout claim after timeout period</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject early timeout claim</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject timeout claim on your own turn</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track timeout escalation timestamps</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject Escalation 2 force eliminate before timeout</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject Escalation 3 replacement claim before timeout</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow advanced player to force eliminate after Escalation 2 timeout</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject force eliminate from non-advanced player</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow external player to claim match slot after Escalation 3 timeout</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track forfeit amount for replaced player</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should update lastMoveTime after each move</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow timeout claim after move timeout elapses</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prize Distribution -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">💰</span>
+                    <span class="section-title">Prize Distribution</span>
+                    <span class="section-count">6</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Prize Distribution by Tier</div>
+                        <table class="prize-table">
+                            <thead>
+                                <tr>
+                                    <th>Place</th>
+                                    <th>2-Player</th>
+                                    <th>4-Player</th>
+                                    <th>8-Player</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1st</td>
+                                    <td style="color: var(--accent-green);">100%</td>
+                                    <td style="color: var(--accent-green);">60%</td>
+                                    <td style="color: var(--accent-green);">50%</td>
+                                </tr>
+                                <tr>
+                                    <td>2nd</td>
+                                    <td>0%</td>
+                                    <td>30%</td>
+                                    <td>25%</td>
+                                </tr>
+                                <tr>
+                                    <td>3rd-4th</td>
+                                    <td>-</td>
+                                    <td>10% (shared)</td>
+                                    <td>12.5% each</td>
+                                </tr>
+                                <tr>
+                                    <td>5th-8th</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should distribute prizes correctly (2-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle draw finals with co-winners</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should correctly split fees (90% pool, 7.5% owner, 2.5% protocol)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle prize distribution with odd total (rounding)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should distribute prizes correctly in 8-player tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle all semi-finals drawing - all 4 players share prize</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All-Draw Scenarios -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🤝</span>
+                    <span class="section-title">Draw Scenarios</span>
+                    <span class="section-count">4</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Draw Handling Logic</div>
+                        <div class="flow-diagram">
+                            <div class="flow-step">Match Draws</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step error">Both Players Eliminated</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step">All Round Matches Draw?</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step result">All Share Prize Equally</div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle finals draw with co-winners</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle 8-player tournament with multiple draws in first round</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle all semi-finals drawing - all 4 players share prize</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete tournament when finals also draws (co-winners)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Force Start & Odd Players -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">⚡</span>
+                    <span class="section-title">Force Start & Odd Players</span>
+                    <span class="section-count">7</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Walkover Logic for Odd Players</div>
+                        <div class="flow-diagram">
+                            <div class="flow-step">Odd Player Count</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step action">Random Selection</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step result">One Player Gets Walkover (Bye)</div>
+                            <span class="flow-arrow">→</span>
+                            <div class="flow-step">Auto-advance to Next Round</div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject force start from non-enrolled player</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should set hasStartedViaTimeout flag when force started</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle single player force start with immediate win</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle force start with 3 players (requires walkover)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle force start with 5 players</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle force start with 7 players</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete tournament started with odd players</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Double Timeout -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">⏸️</span>
+                    <span class="section-title">Double Timeout Scenarios</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow Escalation 2 force eliminate when both players inactive</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle Escalation 3 replacement when neither player moved</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abandoned Enrollment -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🚫</span>
+                    <span class="section-title">Abandoned Enrollment Pool</span>
+                    <span class="section-count">4</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject claim before escalation2 window</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow external player to claim abandoned pool after escalation2</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should emit PlayerForfeited for all enrolled players</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject claim when no enrollment pool exists</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escalation Victory & Prize -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🎯</span>
+                    <span class="section-title">Escalation Victory & Prize Distribution</span>
+                    <span class="section-count">5</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should award full prize pool when timeout claim wins 2-player tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should award full prize pool when Escalation Level 2 leads to tournament victory</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow Escalation Level 3 replacement player to win tournament and get prize</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track forfeited amounts for eliminated players on escalation</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should correctly distribute prize pool after abandoned enrollment claim</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Tournament Flows -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🏟️</span>
+                    <span class="section-title">Full Tournament Flows</span>
+                    <span class="section-count">3</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete 2-player tournament and distribute prizes</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete full 8-player bracket tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete 8-player tournament with wins and draws</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Tournament Progression -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🔄</span>
+                    <span class="section-title">Advanced Tournament Progression</span>
+                    <span class="section-count">1</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle walkover when odd number of players in round</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard & Stats -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">📊</span>
+                    <span class="section-title">Leaderboard & Stats Consistency</span>
+                    <span class="section-count">5</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have playerPrizes equal to prize amount for winner in 2-player tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have leaderboard earnings equal to (playerPrizes - entryFee) for winner</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have consistent playerPrizes and leaderboard for 8-player tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have consistent playerPrizes and leaderboard after timeout victory</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have consistent playerPrizes and leaderboard for draw finals</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Tournament Player -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">👥</span>
+                    <span class="section-title">Multi-Tournament Player Scenarios</span>
+                    <span class="section-count">4</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow same player to enroll in different instances</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow same player in different tiers</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track player active matches across tournaments</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should correctly update stats across multiple tournaments</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escalation Edge Cases -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🔒</span>
+                    <span class="section-title">Escalation Edge Cases</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject Escalation 3 from player actively playing in same tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track forfeit amounts correctly during Escalation 2</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Functions -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">👁️</span>
+                    <span class="section-title">View Functions Coverage</span>
+                    <span class="section-count">14</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return match data correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return RW3 compliance declaration</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return correct tournament info via getTournamentInfo</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track player active matches correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return enrolled players list</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return round info correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return player stats correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return tier overview correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return prize distribution for tier</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return individual prize percentages</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should track player earnings on leaderboard - winner has positive, loser negative</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return full leaderboard with all players</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return leaderboard count</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should expose ENTRY_FEES, INSTANCE_COUNTS, TIER_SIZES helpers</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invalid Operations -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">❌</span>
+                    <span class="section-title">Invalid Operations & Error Handling</span>
+                    <span class="section-count">8</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject invalid instance ID</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject enrollment in full tournament</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject force start when tournament already in progress</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject getPrizePercentage for invalid tier</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject getPrizePercentage for invalid ranking</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject enrollment at max instanceId</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject enrollment in non-existent tier</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle enrollment at exact tier boundaries</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tournament Reset -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🔁</span>
+                    <span class="section-title">Tournament Reset & Cleanup</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should properly reset all state after tournament completion</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow re-enrollment after tournament reset</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gas Optimization -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">⛽</span>
+                    <span class="section-title">Gas Optimization</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have reasonable gas costs for enrollment (~270k gas)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have reasonable gas costs for making a move (~108k gas)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ConnectFour Tests -->
+        <div class="game-category">
+            <div class="game-category-title">
+                <h2>ConnectFourOnChain</h2>
+                <span class="game-badge">63 Tests</span>
+            </div>
+
+            <!-- Deployment -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🚀</span>
+                    <span class="section-title">Deployment & Tier Configuration</span>
+                    <span class="section-count">5</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="tier-cards">
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 0</div>
+                            <div class="tier-card-value">2</div>
+                            <div class="tier-card-label">Players</div>
+                        </div>
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 1</div>
+                            <div class="tier-card-value">4</div>
+                            <div class="tier-card-label">Players</div>
+                        </div>
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 2</div>
+                            <div class="tier-card-value">8</div>
+                            <div class="tier-card-label">Players</div>
+                        </div>
+                        <div class="tier-card">
+                            <div class="tier-card-title">Tier 3</div>
+                            <div class="tier-card-value">16</div>
+                            <div class="tier-card-label">Players</div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should deploy successfully as ETour implementation</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct owner</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have 4 tiers configured</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier configurations</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct game constants (7 columns, 6 rows)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Play -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🎮</span>
+                    <span class="section-title">Game Play (Connect Four)</span>
+                    <span class="section-count">8</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">Connect Four Board (7x6)</div>
+                        <div style="font-family: monospace; text-align: center;">
+                            <div style="display: inline-grid; grid-template-columns: repeat(7, 40px); gap: 2px; background: var(--accent-blue); padding: 4px; border-radius: 8px;">
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--accent-red); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--accent-red); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--accent-red); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--accent-red); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                                <div style="background: var(--bg-secondary); height: 35px; border-radius: 50%;"></div>
+                            </div>
+                            <div style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.8rem;">4 in a row = Win!</div>
+                        </div>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow first player to make move</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should place piece at bottom of column (gravity)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should stack pieces correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should switch turns after each move</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject move when not your turn</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject move to full column</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject invalid column</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should check column availability</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Win Detection -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🏅</span>
+                    <span class="section-title">Win Detection</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect horizontal win (4 in a row)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should detect vertical win (4 in a column)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tournament ETour Integration -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🔗</span>
+                    <span class="section-title">ETour Integration</span>
+                    <span class="section-count">10</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow player enrollment</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should auto-start 2-player tournament when full</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should correctly split entry fees (90% prize pool)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject incorrect entry fee</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject duplicate enrollment</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should create match when tournament starts</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should initialize empty board</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should set random first player</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should complete tournament and distribute prizes</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should update player stats after match</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Round Tournaments -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🏆</span>
+                    <span class="section-title">Multi-Round Tournaments</span>
+                    <span class="section-count">3</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should handle 4-player tournament bracket</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should allow timeout claim after timeout period</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should reject early timeout claim</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Round-Based Prize Distribution -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">💰</span>
+                    <span class="section-title">Round-Based Prize Distribution</span>
+                    <span class="section-count">8</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="diagram-container">
+                        <div class="diagram-title">8-Player Prize Distribution</div>
+                        <table class="prize-table">
+                            <thead>
+                                <tr>
+                                    <th>Elimination Round</th>
+                                    <th>Rank</th>
+                                    <th>Prize %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Finals Winner</td>
+                                    <td style="color: var(--accent-green);">1st</td>
+                                    <td>50%</td>
+                                </tr>
+                                <tr>
+                                    <td>Finals Loser</td>
+                                    <td>2nd</td>
+                                    <td>25%</td>
+                                </tr>
+                                <tr>
+                                    <td>Semi-Final Losers (both)</td>
+                                    <td>3rd-4th</td>
+                                    <td>12.5% each</td>
+                                </tr>
+                                <tr>
+                                    <td>Quarter-Final Losers</td>
+                                    <td>5th-8th</td>
+                                    <td>0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier 2 configuration (8-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should start 8-player tournament with correct bracket structure</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should award equal prizes to 3rd and 4th place (semi-final losers)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should award 0% to round 0 losers (5th-8th place)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct tier 3 configuration (16-player)</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have correct prize distribution percentages for 16-player tier</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should start 16-player tournament with correct bracket structure</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should return match data correctly</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABI Compatibility -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span class="section-icon">🔌</span>
+                    <span class="section-title">ABI Compatibility</span>
+                    <span class="section-count">2</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have all ETour required functions</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                    <div class="test-item">
+                        <span class="test-icon">✓</span>
+                        <span class="test-name">Should have Connect Four specific functions</span>
+                        <span class="test-badge badge-pass">PASS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; padding: 3rem 0; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 3rem;">
+            <p>ETour Protocol Test Report • Generated 2025-12-19</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">170 tests • 100% passing</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+        }
+
+        // Expand first few sections by default
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section-content');
+            // Keep most collapsed by default for cleaner view
+        });
+    </script>
+</body>
+</html>
