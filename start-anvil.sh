@@ -20,7 +20,7 @@ exec anvil \
   --chain-id 412346 \
   --hardfork cancun \
   --block-time 1 \
-  --accounts 10 \
+  --accounts 30 \
   --balance 10000 \
   --gas-limit 1125899906842624 \
   --block-base-fee-per-gas 10000000 \
