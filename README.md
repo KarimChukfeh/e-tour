@@ -1,26 +1,36 @@
-# ETour Protocol + TicTacBlock - Dual Contract Deployment
+# ETour Protocol - Multi-Game Tournament Platform
 
 ## Overview
 
-This project deploys **two smart contracts** on the same local Hardhat blockchain node:
+This project implements **blockchain-based tournament infrastructure** with multiple game implementations:
 
-1. **ETour.sol** - Universal tournament protocol (425 lines)
+### Contracts
+
+1. **ETour.sol** - Universal tournament protocol (abstract base)
    - Stateless tournament infrastructure
    - Reusable across any competitive game
    - "The HTTP of blockchain gaming"
 
-2. **TicTacBlock.sol** - Tic-tac-toe tournament game
-   - Integrates with ETour protocol
-   - Multi-tiered tournament system (7 tiers)
-   - Classic and Pro game modes
-   - Prize distribution and timeout mechanics
+2. **TicTacChain.sol** - Tic-tac-toe tournament game
+   - Inherits from ETour protocol
+   - 6 tournament tiers (2-128 players)
+   - Classic game mode with timeout mechanics
+
+3. **ChessOnChain.sol** - Chess tournament game
+   - Full chess rule enforcement
+   - Castling, en passant, promotion support
+   - 2 tournament tiers
+
+4. **ConnectFourOnChain.sol** - Connect Four tournament game
+   - Gravity-based piece dropping
+   - 5 tournament tiers (2-32 players)
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────┐
 │         ETour Protocol              │
-│  (Universal Tournament Logic)       │
+│   (Abstract Tournament Base)        │
 │                                     │
 │  • calculateTotalRounds()           │
 │  • calculateRoundMatchCount()       │
@@ -28,17 +38,13 @@ This project deploys **two smart contracts** on the same local Hardhat blockchai
 │  • calculatePrizeAmounts()          │
 │  • Tournament validation            │
 └──────────────┬──────────────────────┘
-               │ Uses
-               ▼
-┌─────────────────────────────────────┐
-│        TicTacBlock Game             │
-│   (Tic-Tac-Toe Implementation)      │
-│                                     │
-│  • Tournament enrollment            │
-│  • Game logic (blocking mechanic)   │
-│  • Match management                 │
-│  • Prize distribution               │
-└─────────────────────────────────────┘
+               │ Inherits
+    ┌──────────┼──────────┬───────────┐
+    ▼          ▼          ▼           ▼
+┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐
+│TicTac   │ │Chess    │ │Connect   │ │Future    │
+│Chain    │ │OnChain  │ │Four      │ │Games...  │
+└─────────┘ └─────────┘ └──────────┘ └──────────┘
 ```
 
 ## Quick Start
@@ -63,54 +69,79 @@ npm test
 
 ### 4. Deploy to Local Network
 
-#### Option A: Hardhat Node
+#### Option A: Deploy All Games
 
 ```bash
 # Terminal 1: Start Hardhat node
 npm run node
 
-# Terminal 2: Deploy contracts
-npm run deploy:localhost
+# Terminal 2: Deploy all contracts
+npm run deploy:all
 ```
 
-#### Option B: Anvil Node (with EIP-4844 support)
+#### Option B: Deploy Individual Games
+
+```bash
+# Start node first
+npm run node
+
+# Deploy individual contracts
+npx hardhat run scripts/deploy-tictacchain.js --network localhost
+npx hardhat run scripts/deploy-chessonchain.js --network localhost
+npx hardhat run scripts/deploy-connectfour.js --network localhost
+```
+
+#### Option C: Anvil Node (with EIP-4844 support)
 
 ```bash
 # Terminal 1: Start Anvil
 ./start-anvil.sh
 
 # Terminal 2: Deploy contracts
-npm run deploy:localhost
+npm run deploy:all
 ```
 
 ## Deployment Artifacts
 
 After deployment, you'll find the following files in `deployments/`:
 
-- **`localhost.json`** - Network metadata with both contract addresses
-- **`ETour-localhost.json`** - ETour contract ABI and address
-- **`TicTacBlock-localhost.json`** - TicTacBlock contract ABI and address
+- **`localhost.json`** - Network metadata with contract addresses
+- **`TTTABI.json`** - TicTacChain contract ABI and address
+- **`COCABI.json`** - ChessOnChain contract ABI and address
+- **`CFOCABI.json`** - ConnectFourOnChain contract ABI and address
 
 ## Integration with React Client
 
-To connect your React client at `/Users/karim/Documents/workspace/zero-trust/tic-tac-react/`:
+The frontend is located at `/Users/karim/Documents/workspace/zero-trust/tic-tac-react/`.
+
+### Sync ABIs to Frontend
+
+```bash
+npm run sync:abis
+```
+
+This copies the compiled ABIs to the frontend project with correct naming.
+
+### Manual Integration
 
 ```javascript
-// Update your React app configuration
-import ETourABI from './abis/ETour-localhost.json';
-import TicTacBlockABI from './abis/TicTacBlock-localhost.json';
+import TicTacChainABI from './TicTacChainABI.json';
+import ChessABI from './COCABI.json';
+import ConnectFourABI from './CFOCABI.json';
 
-const ETOUR_ADDRESS = "0x...";        // From ETour-localhost.json
-const TICTACBLOCK_ADDRESS = "0x...";  // From TicTacBlock-localhost.json
+const TICTACCHAIN_ADDRESS = "0x...";  // From TTTABI.json
+const CHESS_ADDRESS = "0x...";         // From COCABI.json
+const CONNECTFOUR_ADDRESS = "0x...";   // From CFOCABI.json
 
 // Create contract instances
-const etourContract = new ethers.Contract(ETOUR_ADDRESS, ETourABI.abi, provider);
-const gameContract = new ethers.Contract(TICTACBLOCK_ADDRESS, TicTacBlockABI.abi, provider);
+const ticTacChain = new ethers.Contract(TICTACCHAIN_ADDRESS, TicTacChainABI.abi, provider);
+const chess = new ethers.Contract(CHESS_ADDRESS, ChessABI.abi, provider);
+const connectFour = new ethers.Contract(CONNECTFOUR_ADDRESS, ConnectFourABI.abi, provider);
 ```
 
 ## Contract Features
 
-### ETour Protocol
+### ETour Protocol (Inherited by all games)
 
 **Pure Functions (Stateless):**
 - `calculateTotalRounds(playerCount)` - Tournament depth
@@ -122,29 +153,46 @@ const gameContract = new ethers.Contract(TICTACBLOCK_ADDRESS, TicTacBlockABI.abi
 - `canStartTournament(enrolled, max)` - Full enrollment check
 - `isPowerOfTwo(n)` - Power of 2 validation
 
-### TicTacBlock Game
+### TicTacChain
 
-**Tournament Management:**
-- 7 tiers (2, 4, 8, 16, 64, 128, 2-player Pro)
-- Multiple instances per tier (2-12 concurrent tournaments)
+**Tournament Configuration:**
+- 6 tiers (2, 4, 8, 16, 32, 64 players)
+- Multiple instances per tier
 - Auto-start when full enrollment
 - Force-start after timeout
 
-**Game Modes:**
-- **Classic**: Standard tic-tac-toe
-- **Pro**: Includes blocking mechanic
+**Game Features:**
+- 3x3 board
+- Win detection (rows, columns, diagonals)
+- Draw detection and replay
 
-**Anti-Stalling System:**
-- Move timeouts (1 minute base)
-- Opponent can claim victory
-- Advanced/external player intervention
+### ChessOnChain
+
+**Tournament Configuration:**
+- 2 tiers (2-player duels, 4-player mini tournaments)
+- Full chess rules enforcement
+
+**Game Features:**
+- All piece movements validated
+- Castling, en passant, promotion
+- Check/checkmate detection
+
+### ConnectFourOnChain
+
+**Tournament Configuration:**
+- 5 tiers (2, 4, 8, 16, 32 players)
+
+**Game Features:**
+- 6x7 board with gravity mechanics
+- 4-in-a-row win detection
+- Column-based move system
 
 ## Network Configuration
 
 ### Localhost (Hardhat/Anvil)
 - **URL:** http://127.0.0.1:8545
-- **Chain ID:** 31337
-- **Gas Limit:** 30M (Hardhat) / 1.125e18 (Anvil)
+- **Chain ID:** 412346 (localhost config)
+- **Gas Limit:** 1B
 
 ### Supported Networks
 - Arbitrum Sepolia (testnet)
@@ -166,8 +214,8 @@ npm run test:report       # Generate detailed HTML report
 npm run compile           # Compile contracts
 
 # Deployment
-npm run deploy            # Deploy to default network
-npm run deploy:localhost  # Deploy to localhost
+npm run deploy:all        # Deploy all games to localhost
+npm run sync:abis         # Sync ABIs to frontend
 
 # Local Node
 npm run node              # Start Hardhat node
@@ -183,15 +231,23 @@ npm run arbitrum:stop     # Stop Arbitrum node
 ```
 e-tour/
 ├── contracts/
-│   ├── ETour.sol              # Universal tournament protocol
-│   └── TicTacBlock.sol        # Tic-tac-toe game
+│   ├── ETour.sol              # Universal tournament protocol (abstract)
+│   ├── TicTacChain.sol        # Tic-tac-toe game
+│   ├── ChessOnChain.sol       # Chess game
+│   └── ConnectFourOnChain.sol # Connect Four game
 ├── scripts/
-│   └── deploy.js              # Dual-contract deployment
+│   ├── deploy-tictacchain.js  # TicTacChain deployment
+│   ├── deploy-chessonchain.js # ChessOnChain deployment
+│   ├── deploy-connectfour.js  # ConnectFour deployment
+│   ├── deploy-all.js          # Deploy all games
+│   └── sync-abis.js           # Sync ABIs to frontend
 ├── test/
-│   └── ETourIntegration.test.js  # Integration tests
+│   ├── ETourIntegration.test.js
+│   ├── ChessOnChain.test.js
+│   └── ConnectFourOnChain.test.js
 ├── docs/
-│   ├── DELIVERY_SUMMARY.md    # Project overview
-│   └── DeploymentGuide.md     # Detailed deployment guide
+│   ├── DELIVERY_SUMMARY.md
+│   └── DeploymentGuide.md
 ├── deployments/               # Generated deployment artifacts
 ├── artifacts/                 # Compiled contract artifacts (generated)
 ├── cache/                     # Hardhat cache (generated)
@@ -204,11 +260,10 @@ e-tour/
 
 ## Key Features
 
-### Dual Contract Benefits
-1. **Separation of Concerns**: Tournament logic separate from game logic
-2. **Reusability**: ETour can be used by other games
-3. **Upgradability**: Can deploy new games using same ETour instance
-4. **Gas Optimization**: Shared logic reduces deployment costs
+### Multi-Game Architecture
+1. **Separation of Concerns**: Tournament logic in ETour, game rules in each contract
+2. **Reusability**: ETour abstract contract inherited by all games
+3. **Extensibility**: Easy to add new games following the same pattern
 
 ### Tournament Features
 - Entry fees: 0.001 - 0.01 ETH depending on tier
@@ -219,7 +274,7 @@ e-tour/
 
 ### Anti-Griefing Measures
 - Enrollment timeouts
-- Move timeouts with escalation
+- Move timeouts with escalation (3 levels)
 - Stuck tournament resolution
 - External player intervention
 
@@ -227,11 +282,11 @@ e-tour/
 
 The test suite covers:
 - ETour protocol functions (calculations, validations)
-- TicTacBlock integration with ETour
+- Game-specific integration with ETour
 - Tournament enrollment and auto-start
 - Fee splitting (90/7.5/2.5%)
 - Match initialization and gameplay
-- Blocking mechanic (Pro mode)
+- Timeout escalation system
 - ABI compatibility
 - Gas optimization
 
@@ -253,10 +308,10 @@ REPORT_GAS=false
 ## Troubleshooting
 
 ### "Stack too deep" errors
-✅ Already handled with `viaIR: true` in hardhat.config.js
+Already handled with `viaIR: true` in hardhat.config.js
 
 ### Contract size too large
-✅ Already configured with `allowUnlimitedContractSize: true`
+Already configured with `allowUnlimitedContractSize: true`
 
 ### Gas estimation errors
 - Increase gas limit in hardhat.config.js
@@ -275,8 +330,8 @@ For more detailed information, see:
 
 ## Development Roadmap
 
-### Phase 1: Local Development ✅
-- [x] Dual contract deployment
+### Phase 1: Local Development
+- [x] Multi-game contract deployment
 - [x] Integration testing
 - [x] React client integration
 
@@ -298,25 +353,3 @@ For more detailed information, see:
 ## License
 
 MIT
-
-## Support
-
-For issues or questions:
-1. Check the documentation in `docs/`
-2. Review test files for examples
-3. Verify network configuration
-4. Ensure all dependencies are installed
-
----
-
-**The revolution has begun! 🚀**
-
-ETour is the foundational protocol for Web3 gaming - universal tournament infrastructure that any competitive game can use.
-
-
-
-
-./start-anvil.sh
-npx hardhat run scripts/deploy-tictacchain.js --network localhost
-npx hardhat run scripts/deploy-chessonchain.js --network localhost
-npx hardhat run scripts/deploy-connectfour.js --network localhost

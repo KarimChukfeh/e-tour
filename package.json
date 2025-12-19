@@ -6,8 +6,11 @@
     "test": "hardhat test",
     "test:report": "SCIENTIFIC_REPORT=true hardhat test",
     "compile": "hardhat compile",
-    "deploy": "hardhat run scripts/deploy.js",
-    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:all": "hardhat run scripts/deploy-all.js --network localhost",
+    "deploy:tictacchain": "hardhat run scripts/deploy-tictacchain.js --network localhost",
+    "deploy:chess": "hardhat run scripts/deploy-chessonchain.js --network localhost",
+    "deploy:connectfour": "hardhat run scripts/deploy-connectfour.js --network localhost",
+    "sync:abis": "node scripts/sync-abis.js",
     "node": "hardhat node",
     "reset": "hardhat run scripts/reset.js --network localhost",
     "arbitrum:start": "docker compose up -d nitro-devnode",
@@ -32,7 +35,7 @@
   ],
   "author": "",
   "license": "MIT",
-  "description": "ETour universal tournament protocol with TicTacBlock game - Dual contract deployment on Ethereum",
+  "description": "ETour universal tournament protocol with TicTacChain, ChessOnChain, and ConnectFourOnChain games",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.22.0"
