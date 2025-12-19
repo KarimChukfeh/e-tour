@@ -9,7 +9,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
 
     const TIER_0_FEE = hre.ethers.parseEther("0.001"); // 2-player tier
-    const TIER_1_FEE = hre.ethers.parseEther("0.004"); // 8-player tier
+    const TIER_1_FEE = hre.ethers.parseEther("0.002"); // 4-player tier
+    const TIER_2_FEE = hre.ethers.parseEther("0.004"); // 8-player tier
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6, player7, player8] = await hre.ethers.getSigners();
@@ -28,8 +29,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(await game.owner()).to.equal(owner.address);
         });
 
-        it("Should have 2 tiers configured", async function () {
-            expect(await game.tierCount()).to.equal(2);
+        it("Should have 3 tiers configured", async function () {
+            expect(await game.tierCount()).to.equal(3);
         });
 
         it("Should have correct tier 0 configuration (2-player)", async function () {
@@ -39,11 +40,18 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(tier0.entryFee).to.equal(TIER_0_FEE);
         });
 
-        it("Should have correct tier 1 configuration (8-player)", async function () {
+        it("Should have correct tier 1 configuration (4-player)", async function () {
             const tier1 = await game.tierConfigs(1);
-            expect(tier1.playerCount).to.equal(8);
-            expect(tier1.instanceCount).to.equal(16);
+            expect(tier1.playerCount).to.equal(4);
+            expect(tier1.instanceCount).to.equal(10);
             expect(tier1.entryFee).to.equal(TIER_1_FEE);
+        });
+
+        it("Should have correct tier 2 configuration (8-player)", async function () {
+            const tier2 = await game.tierConfigs(2);
+            expect(tier2.playerCount).to.equal(8);
+            expect(tier2.instanceCount).to.equal(16);
+            expect(tier2.entryFee).to.equal(TIER_2_FEE);
         });
     });
 
@@ -125,18 +133,18 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     describe("Tournament Logic", function () {
         it("Should initialize round with correct match count (8-player = 4 matches)", async function () {
-            const tierId = 1; // 8-player tier
+            const tierId = 2; // 8-player tier
             const instanceId = 0;
 
             // Enroll 8 players
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player7).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player8).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player7).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player8).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
             // Tournament should have started
             const tournament = await game.tournaments(tierId, instanceId);
@@ -149,12 +157,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should handle force start after enrollment timeout", async function () {
-            const tierId = 1; // 8-player tier
+            const tierId = 2; // 8-player tier
             const instanceId = 0;
 
             // Enroll only 2 players (less than required 8)
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
             // Tournament should still be enrolling
             let tournament = await game.tournaments(tierId, instanceId);
@@ -839,13 +847,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     describe("8-Player Tournament Full Flow", function () {
         it("Should complete full 8-player bracket tournament", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 1;
 
             // Enroll 8 players
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Tournament should have started
@@ -921,13 +929,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should reject Escalation 2 force eliminate before timeout", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 2;
 
-            // Need 8 players for tier 1
+            // Need 8 players for tier 2
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Try to force eliminate immediately - should fail
@@ -1137,13 +1145,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     describe("Escalation Level 2 - Force Eliminate Stalled Match", function () {
         it("Should allow advanced player to force eliminate after Escalation 2 timeout", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 5;
 
-            // Enroll 8 players for tier 1
+            // Enroll 8 players for tier 2
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Complete match 1 first so the winner is "advanced"
@@ -1174,12 +1182,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should reject force eliminate from non-advanced player", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 6;
 
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Fast forward past Escalation 2 without completing any matches
@@ -1268,12 +1276,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should handle 8-player tournament with multiple draws in first round", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 7;
 
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Helper to play a match to draw
@@ -1340,13 +1348,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // This tests the orphaned winner logic
             // When a round has odd players, one gets a bye/walkover
 
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 8;
 
             // Enroll 8 players
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Complete 3 matches normally, draw the 4th
@@ -1437,12 +1445,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     describe("Complete Tournament Flow with Mixed Results", function () {
         it("Should complete 8-player tournament with wins and draws", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 9;
 
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             async function playMatchToWin(roundNum, matchNum) {
@@ -1542,12 +1550,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should award full prize pool when Escalation Level 2 leads to tournament victory", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 10;
 
             const allPlayers = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of allPlayers) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Complete matches 1, 2, 3 in round 0 to leave only match 0 stalled
@@ -1789,7 +1797,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should have consistent playerPrizes and leaderboard for 8-player tournament", async function () {
-            const tierId = 1;
+            const tierId = 2;
             const instanceId = 11;
 
             const allPlayers = [player1, player2, player3, player4, player5, player6, player7, player8];
@@ -1802,7 +1810,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Enroll all players
             for (const player of allPlayers) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             // Helper to win a match
@@ -1841,14 +1849,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 const earningsChange = earningsAfter - earningsBefore[p.address];
 
                 // Earnings change should equal (prize - entryFee)
-                const expectedChange = prize - TIER_1_FEE;
+                const expectedChange = prize - TIER_2_FEE;
                 expect(earningsChange).to.equal(expectedChange);
             }
 
             // Winner should have positive prize and earnings
             const winnerPrize = await game.playerPrizes(tierId, instanceId, tournamentWinner);
             expect(winnerPrize).to.be.gt(0n);
-            expect(winnerPrize - TIER_1_FEE).to.be.gt(0n);
+            expect(winnerPrize - TIER_2_FEE).to.be.gt(0n);
         });
 
         it("Should have consistent playerPrizes and leaderboard after timeout victory", async function () {
