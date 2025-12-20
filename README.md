@@ -1441,3 +1441,18 @@ At scale, operational revenue provides significant runway for development, audit
 ---
 
 *This whitepaper describes ETour Protocol as designed for deployment on Arbitrum One. The protocol operates autonomously according to its smart contract code. This document is for informational purposes and does not constitute financial advice.*
+
+
+
+
+
+
+
+
+------ 
+
+
+./start-anvil.sh
+npx hardhat run scripts/deploy-tictacchain.js --network localhost
+npx hardhat run scripts/deploy-chessonchain.js --network localhost
+npx hardhat run scripts/deploy-connectfour.js --network localhost
