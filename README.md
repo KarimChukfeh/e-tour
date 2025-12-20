@@ -1453,6 +1453,9 @@ At scale, operational revenue provides significant runway for development, audit
 
 
 ./start-anvil.sh
+
 npx hardhat run scripts/deploy-tictacchain.js --network localhost
+
 npx hardhat run scripts/deploy-chessonchain.js --network localhost
+
 npx hardhat run scripts/deploy-connectfour.js --network localhost
