@@ -93,6 +93,26 @@ contract ChessOnChain is ETour {
         PieceType promotion;  // For pawn promotion (None if not promoting)
     }
 
+    /**
+     * @dev Extended match data for Chess including common fields and game-specific state
+     */
+    struct ChessMatchData {
+        ETour.CommonMatchData common;         // Embedded common data
+        Piece[64] board;                      // 8x8 chess board
+        address currentTurn;
+        address firstPlayer;
+        bool whiteInCheck;
+        bool blackInCheck;
+        uint8 enPassantSquare;
+        uint16 halfMoveClock;
+        uint16 fullMoveNumber;
+        bool whiteKingSideCastle;             // Castling rights
+        bool whiteQueenSideCastle;
+        bool blackKingSideCastle;
+        bool blackQueenSideCastle;
+        bytes moveHistory;
+    }
+
     // ============ Game-Specific State ============
 
     mapping(bytes32 => ChessMatch) public chessMatches;
@@ -447,6 +467,111 @@ contract ChessOnChain is ETour {
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
+    }
+
+    function _isMatchActive(bytes32 matchId) internal view override returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        // Active if player1 assigned and not completed
+        return matchData.player1 != address(0) &&
+               matchData.status != MatchStatus.Completed;
+    }
+
+    function _getActiveMatchData(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory) {
+        ChessMatch storage matchData = chessMatches[matchId];
+
+        // Derive loser
+        address loser = address(0);
+        if (!matchData.isDraw && matchData.winner != address(0)) {
+            loser = (matchData.winner == matchData.player1)
+                ? matchData.player2
+                : matchData.player1;
+        }
+
+        return ETour.CommonMatchData({
+            player1: matchData.player1,
+            player2: matchData.player2,
+            winner: matchData.winner,
+            loser: loser,
+            status: matchData.status,
+            isDraw: matchData.isDraw,
+            startTime: matchData.startTime,
+            lastMoveTime: matchData.lastMoveTime,
+            endTime: 0,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: false
+        });
+    }
+
+    function _getMatchFromCache(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory data, bool exists) {
+        // Get player addresses from matchId
+        (address player1, address player2) = _getMatchPlayers(matchId);
+
+        // Check if players exist
+        if (player1 == address(0) && player2 == address(0)) {
+            return (data, false);
+        }
+
+        // CRITICAL: ChessOnChain cache uses different key with timestamp
+        // Must perform linear search through cache entries
+        for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
+            CachedChessMatch storage cached = matchCache[i];
+
+            if (!cached.exists) continue;
+
+            // Match by players and tournament context
+            if (cached.player1 == player1 &&
+                cached.player2 == player2 &&
+                cached.tierId == tierId &&
+                cached.instanceId == instanceId &&
+                cached.roundNumber == roundNumber &&
+                cached.matchNumber == matchNumber) {
+
+                // Found it! Populate CommonMatchData
+                address loser = address(0);
+                if (!cached.isDraw && cached.winner != address(0)) {
+                    loser = (cached.winner == cached.player1)
+                        ? cached.player2
+                        : cached.player1;
+                }
+
+                data = ETour.CommonMatchData({
+                    player1: cached.player1,
+                    player2: cached.player2,
+                    winner: cached.winner,
+                    loser: loser,
+                    status: MatchStatus.Completed,
+                    isDraw: cached.isDraw,
+                    startTime: cached.startTime,
+                    lastMoveTime: cached.endTime,
+                    endTime: cached.endTime,
+                    tierId: cached.tierId,
+                    instanceId: cached.instanceId,
+                    roundNumber: cached.roundNumber,
+                    matchNumber: cached.matchNumber,
+                    isCached: true
+                });
+
+                return (data, true);
+            }
+        }
+
+        // Not found in cache
+        return (data, false);
     }
 
     // ============ Timeout Functions ============
@@ -1220,6 +1345,78 @@ contract ChessOnChain is ETour {
     }
 
     // ============ View Functions ============
+
+    /**
+     * @dev Get complete Chess match data with automatic cache fallback
+     * NEW: Unifies fragmented getChessMatch/getBoard/getCastlingRights/getMoveHistory
+     */
+    function getMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public view returns (ChessMatchData memory) {
+        // Call base to get common data with cache fallback
+        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+
+        ChessMatchData memory fullData;
+        fullData.common = common;
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        if (common.isCached) {
+            // Populate from cache - LIMITED DATA!
+            // Chess cache has minimal data (no board, no history)
+            // Initialize empty board (default values)
+            for (uint8 i = 0; i < 64; i++) {
+                fullData.board[i] = Piece({pieceType: PieceType.None, color: PieceColor.None});
+            }
+            fullData.currentTurn = address(0);
+            fullData.firstPlayer = common.player1;  // Assume player1 was first
+            fullData.whiteInCheck = false;
+            fullData.blackInCheck = false;
+            fullData.enPassantSquare = 0;
+            fullData.halfMoveClock = 0;
+
+            // Get totalMoves from cache (linear search again - already done in _getMatchFromCache)
+            for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
+                if (matchCache[i].exists &&
+                    matchCache[i].player1 == common.player1 &&
+                    matchCache[i].player2 == common.player2 &&
+                    matchCache[i].tierId == tierId &&
+                    matchCache[i].instanceId == instanceId &&
+                    matchCache[i].roundNumber == roundNumber &&
+                    matchCache[i].matchNumber == matchNumber) {
+                    fullData.fullMoveNumber = matchCache[i].totalMoves;
+                    break;
+                }
+            }
+
+            fullData.whiteKingSideCastle = false;
+            fullData.whiteQueenSideCastle = false;
+            fullData.blackKingSideCastle = false;
+            fullData.blackQueenSideCastle = false;
+            fullData.moveHistory = "";  // Not stored in cache
+        } else {
+            // Populate from active storage - COMPLETE DATA
+            ChessMatch storage matchData = chessMatches[matchId];
+            fullData.board = matchData.board;
+            fullData.currentTurn = matchData.currentTurn;
+            fullData.firstPlayer = matchData.firstPlayer;
+            fullData.whiteInCheck = matchData.whiteInCheck;
+            fullData.blackInCheck = matchData.blackInCheck;
+            fullData.enPassantSquare = matchData.enPassantSquare;
+            fullData.halfMoveClock = matchData.halfMoveClock;
+            fullData.fullMoveNumber = matchData.fullMoveNumber;
+            fullData.whiteKingSideCastle = !matchData.whiteKingMoved && !matchData.whiteRookHMoved;
+            fullData.whiteQueenSideCastle = !matchData.whiteKingMoved && !matchData.whiteRookAMoved;
+            fullData.blackKingSideCastle = !matchData.blackKingMoved && !matchData.blackRookHMoved;
+            fullData.blackQueenSideCastle = !matchData.blackKingMoved && !matchData.blackRookAMoved;
+            fullData.moveHistory = moveHistory[matchId];
+        }
+
+        return fullData;
+    }
 
     function getChessMatch(
         uint8 tierId,

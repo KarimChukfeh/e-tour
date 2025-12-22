@@ -128,6 +128,36 @@ abstract contract ETour is ReentrancyGuard {
         uint256 forfeitPool;
     }
 
+    /**
+     * @dev Common match data shared across all game implementations
+     * Used by standardized getMatch() function with automatic cache fallback
+     */
+    struct CommonMatchData {
+        // Player Information
+        address player1;
+        address player2;
+        address winner;
+        address loser;          // Derived: (winner == player1) ? player2 : player1
+
+        // Match State
+        MatchStatus status;
+        bool isDraw;
+
+        // Timing
+        uint256 startTime;
+        uint256 lastMoveTime;
+        uint256 endTime;        // Only populated for cached matches
+
+        // Tournament Context
+        uint8 tierId;
+        uint8 instanceId;
+        uint8 roundNumber;
+        uint8 matchNumber;
+
+        // Data Source Indicator
+        bool isCached;          // true = from cache, false = from active storage
+    }
+
     // ============ State Variables ============
 
     // Tier configuration - set by implementing contract
@@ -314,6 +344,50 @@ abstract contract ETour is ReentrancyGuard {
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal virtual;
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal virtual;
+
+    /**
+     * @dev Check if match is active in game-specific storage
+     * @param matchId The match identifier
+     * @return true if match exists and is not completed/cancelled
+     */
+    function _isMatchActive(bytes32 matchId) internal view virtual returns (bool);
+
+    /**
+     * @dev Get active match data from game-specific storage
+     * Must populate CommonMatchData from active match and derive loser
+     * @param matchId The match identifier
+     * @param tierId Tournament tier ID
+     * @param instanceId Instance ID within tier
+     * @param roundNumber Round number (0-based)
+     * @param matchNumber Match number within round (0-based)
+     * @return Common match data with isCached = false
+     */
+    function _getActiveMatchData(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view virtual returns (CommonMatchData memory);
+
+    /**
+     * @dev Get match data from game-specific cache
+     * Must: Get player addresses, lookup cache, verify context, derive loser
+     * @param matchId The match identifier
+     * @param tierId Tournament tier ID
+     * @param instanceId Instance ID within tier
+     * @param roundNumber Round number (0-based)
+     * @param matchNumber Match number within round (0-based)
+     * @return data Common match data with isCached = true
+     * @return exists false if not in cache or context doesn't match
+     */
+    function _getMatchFromCache(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view virtual returns (CommonMatchData memory data, bool exists);
 
     // ============ Enrollment Functions ============
     
@@ -1497,6 +1571,45 @@ abstract contract ETour is ReentrancyGuard {
     ) {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         return (round.totalMatches, round.completedMatches, round.initialized);
+    }
+
+    /**
+     * @dev Get common match data with automatic cache fallback
+     * Internal helper used by game-specific getMatch() functions
+     *
+     * Flow:
+     * 1. Check active match storage via _isMatchActive()
+     * 2. If active, return live data via _getActiveMatchData()
+     * 3. If not active, check cache via _getMatchFromCache()
+     * 4. If in cache, return cached data
+     * 5. If neither, revert with "Match not found"
+     *
+     * @param tierId Tournament tier ID
+     * @param instanceId Instance ID within tier
+     * @param roundNumber Round number (0-based)
+     * @param matchNumber Match number within round (0-based)
+     * @return commonData Common match data with automatic cache fallback
+     */
+    function _getMatchCommon(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view returns (CommonMatchData memory commonData) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Try active match first
+        if (_isMatchActive(matchId)) {
+            return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        }
+
+        // Fallback to cache
+        (CommonMatchData memory cachedData, bool exists) = _getMatchFromCache(
+            matchId, tierId, instanceId, roundNumber, matchNumber
+        );
+
+        require(exists, "Match not found in active storage or cache");
+        return cachedData;
     }
 
     function getPlayerStats(address player) external view returns (

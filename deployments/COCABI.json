@@ -3,7 +3,7 @@
   "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-22T04:54:17.922Z",
+  "deployedAt": "2025-12-22T11:30:44.650Z",
   "abi": [
     {
       "inputs": [],
@@ -1909,6 +1909,196 @@
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "getMatch",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "player1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "player2",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "winner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "loser",
+                  "type": "address"
+                },
+                {
+                  "internalType": "enum ETour.MatchStatus",
+                  "name": "status",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isDraw",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastMoveTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "tierId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "instanceId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "roundNumber",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "matchNumber",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isCached",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct ETour.CommonMatchData",
+              "name": "common",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum ChessOnChain.PieceType",
+                  "name": "pieceType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "enum ChessOnChain.PieceColor",
+                  "name": "color",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct ChessOnChain.Piece[64]",
+              "name": "board",
+              "type": "tuple[64]"
+            },
+            {
+              "internalType": "address",
+              "name": "currentTurn",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "firstPlayer",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "whiteInCheck",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "blackInCheck",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "enPassantSquare",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "halfMoveClock",
+              "type": "uint16"
+            },
+            {
+              "internalType": "uint16",
+              "name": "fullMoveNumber",
+              "type": "uint16"
+            },
+            {
+              "internalType": "bool",
+              "name": "whiteKingSideCastle",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "whiteQueenSideCastle",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "blackKingSideCastle",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "blackQueenSideCastle",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "moveHistory",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct ChessOnChain.ChessMatchData",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",

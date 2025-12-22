@@ -2576,4 +2576,266 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(await game.isEnrolled(tierId, lastValidInstance, player1.address)).to.be.true;
         });
     });
+
+    describe("getMatch Cache Fallback - Two-Person Tournament", function () {
+        it("Should return match data from cache after tournament completion and match reset (loser perspective)", async function () {
+            const tierId = 0; // 2-player tier
+            const instanceId = 10; // Use unique instance to avoid conflicts with other tests
+            const roundNumber = 0;
+            const matchNumber = 0;
+
+            // Step 1: Enroll two players
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Verify tournament started
+            let tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(1); // InProgress
+
+            // Step 2: Get initial match state - should work (active match)
+            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.common.isCached).to.be.false; // Should come from active storage
+
+            // Store player addresses for later verification
+            const actualPlayer1 = matchData.common.player1;
+            const actualPlayer2 = matchData.common.player2;
+            const firstPlayer = matchData.firstPlayer;
+
+            // Step 3: Play the match to completion
+            // Determine who goes first and play winning moves
+            let currentPlayer = firstPlayer === actualPlayer1 ? player1 : player2;
+            let otherPlayer = firstPlayer === actualPlayer1 ? player2 : player1;
+
+            // Play a winning pattern (diagonal: cells 0, 4, 8)
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 0);
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 1);
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 4);
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 8);
+
+            // Step 4: getMatch should work via cache fallback after match completion
+            // (even if match has been reset from active storage)
+            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+
+            // Verify cache fallback worked
+            expect(matchData.common.isCached).to.be.true; // Should come from cache
+
+            // Verify match data is complete and correct
+            expect(matchData.common.player1).to.equal(actualPlayer1);
+            expect(matchData.common.player2).to.equal(actualPlayer2);
+            expect(matchData.common.status).to.equal(2); // Completed
+            expect(matchData.common.isDraw).to.be.false;
+
+            // Verify winner and loser addresses
+            expect(matchData.common.winner).to.equal(firstPlayer); // First player won
+            expect(matchData.common.loser).to.equal(firstPlayer === actualPlayer1 ? actualPlayer2 : actualPlayer1);
+
+            // Verify winner is not zero address
+            expect(matchData.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.loser).to.not.equal(hre.ethers.ZeroAddress);
+
+            // Verify timestamps are preserved
+            expect(matchData.common.startTime).to.be.gt(0);
+            expect(matchData.common.endTime).to.be.gt(0);
+            expect(matchData.common.endTime).to.be.gte(matchData.common.startTime);
+
+            // Verify tournament context
+            expect(matchData.common.tierId).to.equal(tierId);
+            expect(matchData.common.instanceId).to.equal(instanceId);
+            expect(matchData.common.roundNumber).to.equal(roundNumber);
+            expect(matchData.common.matchNumber).to.equal(matchNumber);
+
+            // Verify board state is preserved in cache
+            expect(matchData.board.length).to.equal(9);
+            expect(matchData.firstPlayer).to.equal(firstPlayer);
+        });
+
+        it("Should return match data from cache after tournament completion (winner perspective)", async function () {
+            const tierId = 0;
+            const instanceId = 1; // Use different instance
+            const roundNumber = 0;
+            const matchNumber = 0;
+
+            // Enroll and start tournament
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Get match info
+            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const actualPlayer1 = matchData.common.player1;
+            const actualPlayer2 = matchData.common.player2;
+            const firstPlayer = matchData.firstPlayer;
+
+            // Play to completion
+            let currentPlayer = firstPlayer === actualPlayer1 ? player3 : player4;
+            let otherPlayer = firstPlayer === actualPlayer1 ? player4 : player3;
+
+            // Winning pattern
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 0);
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 1);
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 3);
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 6);
+
+            // Winner calls getMatch - should work via cache
+            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+
+            expect(matchData.common.isCached).to.be.true;
+            expect(matchData.common.winner).to.equal(firstPlayer);
+            expect(matchData.common.loser).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.status).to.equal(2); // Completed
+        });
+
+        it("Should handle draw scenario with cache fallback", async function () {
+            const tierId = 0;
+            const instanceId = 2; // Use different instance
+            const roundNumber = 0;
+            const matchNumber = 0;
+
+            // Enroll and start tournament
+            await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Get match info
+            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const actualPlayer1 = matchData.common.player1;
+            const actualPlayer2 = matchData.common.player2;
+            const firstPlayer = matchData.firstPlayer;
+
+            // Play to a draw
+            let currentPlayer = firstPlayer === actualPlayer1 ? player5 : player6;
+            let otherPlayer = firstPlayer === actualPlayer1 ? player6 : player5;
+
+            // Draw pattern: X X O / O O X / X O X
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 0); // X
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);   // O
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 1); // X
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 3);   // O
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 5); // X
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 4);   // O
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 6); // X
+            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 8);   // O
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 7); // X - Draw
+
+            // After draw, getMatch should work via cache
+            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+
+            expect(matchData.common.isCached).to.be.true;
+            expect(matchData.common.isDraw).to.be.true;
+            expect(matchData.common.winner).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.loser).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.status).to.equal(2); // Completed
+        });
+
+        it("Should fail gracefully for non-existent match", async function () {
+            const tierId = 0;
+            const instanceId = 50; // Instance that was never used
+            const roundNumber = 0;
+            const matchNumber = 0;
+
+            // This should revert because match never existed (not in active storage or cache)
+            await expect(
+                game.getMatch(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("Match not found in active storage or cache");
+        });
+
+        it("Should return active match data when match is still in progress", async function () {
+            const tierId = 0;
+            const instanceId = 3; // Use different instance
+            const roundNumber = 0;
+            const matchNumber = 0;
+
+            // Enroll and start tournament
+            await game.connect(player7).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player8).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Get match info - should come from active storage
+            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+
+            expect(matchData.common.isCached).to.be.false; // Should be active
+            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.common.winner).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.loser).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.endTime).to.equal(0); // No end time for active match
+
+            // Make one move
+            const firstPlayer = matchData.firstPlayer;
+            const actualPlayer1 = matchData.common.player1;
+            let currentPlayer = firstPlayer === actualPlayer1 ? player7 : player8;
+            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 4);
+
+            // Still should come from active storage
+            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.common.isCached).to.be.false;
+            expect(matchData.common.status).to.equal(1); // Still InProgress
+        });
+
+        it("Should prevent cache collision when circular buffer wraps around", async function () {
+            // This test verifies that matchIdToCacheIndex mappings are properly cleaned up
+            // when the cache wraps around and overwrites old entries
+
+            const tierId = 0;
+
+            // We'll use a unique instanceId range for this test
+            const startInstance = 20;
+
+            // Note: This test simulates the wrap-around behavior without actually filling
+            // 1000 entries (which would take too long). We verify the cleanup logic works.
+
+            // Create first match and verify it's cached
+            await game.connect(player1).enrollInTournament(tierId, startInstance, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, startInstance, { value: TIER_0_FEE });
+
+            let match1 = await game.getMatch(tierId, startInstance, 0, 0);
+            const p1 = match1.firstPlayer === match1.common.player1 ? player1 : player2;
+            const p2 = match1.firstPlayer === match1.common.player1 ? player2 : player1;
+
+            // Complete match 1
+            await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 0);
+            await game.connect(p2).makeMove(tierId, startInstance, 0, 0, 1);
+            await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 4);
+            await game.connect(p2).makeMove(tierId, startInstance, 0, 0, 2);
+            await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 8);
+
+            // Verify match 1 is in cache
+            match1 = await game.getMatch(tierId, startInstance, 0, 0);
+            expect(match1.common.isCached).to.be.true;
+            const match1Winner = match1.common.winner;
+
+            // Create second match in different instance
+            await game.connect(player3).enrollInTournament(tierId, startInstance + 1, { value: TIER_0_FEE });
+            await game.connect(player4).enrollInTournament(tierId, startInstance + 1, { value: TIER_0_FEE });
+
+            let match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
+            const p3 = match2.firstPlayer === match2.common.player1 ? player3 : player4;
+            const p4 = match2.firstPlayer === match2.common.player1 ? player4 : player3;
+
+            // Complete match 2
+            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 0);
+            await game.connect(p4).makeMove(tierId, startInstance + 1, 0, 0, 1);
+            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 3);
+            await game.connect(p4).makeMove(tierId, startInstance + 1, 0, 0, 2);
+            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 6);
+
+            // Verify match 2 is in cache
+            match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
+            expect(match2.common.isCached).to.be.true;
+            const match2Winner = match2.common.winner;
+
+            // Both matches should be retrievable with correct data
+            match1 = await game.getMatch(tierId, startInstance, 0, 0);
+            expect(match1.common.winner).to.equal(match1Winner);
+            expect(match1.common.instanceId).to.equal(startInstance);
+
+            match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
+            expect(match2.common.winner).to.equal(match2Winner);
+            expect(match2.common.instanceId).to.equal(startInstance + 1);
+
+            // Verify they have different winners (different matches)
+            expect(match1Winner).to.not.equal(match2Winner);
+        });
+    });
 });

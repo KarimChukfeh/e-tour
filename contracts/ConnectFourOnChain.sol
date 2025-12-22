@@ -75,6 +75,18 @@ contract ConnectFourOnChain is ETour {
         uint8 moveCount;
     }
 
+    /**
+     * @dev Extended match data for ConnectFour including common fields and game-specific state
+     */
+    struct ConnectFourMatchData {
+        ETour.CommonMatchData common;     // Embedded common data
+        Cell[TOTAL_CELLS] board;          // 6x7 board (42 cells)
+        address currentTurn;
+        address firstPlayer;
+        uint8 moveCount;
+        uint8 lastColumn;
+    }
+
     // ============ Game-Specific State ============
 
     mapping(bytes32 => Match) public matches;
@@ -468,6 +480,111 @@ contract ConnectFourOnChain is ETour {
         matchData.isDraw = isDraw;
     }
 
+    function _isMatchActive(bytes32 matchId) internal view override returns (bool) {
+        Match storage matchData = matches[matchId];
+        // Active if player1 assigned and not completed
+        return matchData.player1 != address(0) &&
+               matchData.status != MatchStatus.Completed;
+    }
+
+    function _getActiveMatchData(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory) {
+        Match storage matchData = matches[matchId];
+
+        // Derive loser
+        address loser = address(0);
+        if (!matchData.isDraw && matchData.winner != address(0)) {
+            loser = (matchData.winner == matchData.player1)
+                ? matchData.player2
+                : matchData.player1;
+        }
+
+        return ETour.CommonMatchData({
+            player1: matchData.player1,
+            player2: matchData.player2,
+            winner: matchData.winner,
+            loser: loser,
+            status: matchData.status,
+            isDraw: matchData.isDraw,
+            startTime: matchData.startTime,
+            lastMoveTime: matchData.lastMoveTime,
+            endTime: 0,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: false
+        });
+    }
+
+    function _getMatchFromCache(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory data, bool exists) {
+        // Get player addresses from matchId
+        (address player1, address player2) = _getMatchPlayers(matchId);
+
+        // Check if players exist
+        if (player1 == address(0) && player2 == address(0)) {
+            return (data, false);
+        }
+
+        // Compute cache key
+        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
+        uint16 index = cacheKeyToIndex[matchKey];
+
+        // Verify cache entry exists
+        if (!matchCache[index].exists || cacheKeys[index] != matchKey) {
+            return (data, false);
+        }
+
+        CachedMatchData storage cached = matchCache[index];
+
+        // CRITICAL: Verify context matches (players may have played multiple times)
+        if (cached.tierId != tierId ||
+            cached.instanceId != instanceId ||
+            cached.roundNumber != roundNumber ||
+            cached.matchNumber != matchNumber) {
+            return (data, false);
+        }
+
+        // Derive loser
+        address loser = address(0);
+        if (!cached.isDraw && cached.winner != address(0)) {
+            loser = (cached.winner == cached.player1)
+                ? cached.player2
+                : cached.player1;
+        }
+
+        // Populate CommonMatchData
+        data = ETour.CommonMatchData({
+            player1: cached.player1,
+            player2: cached.player2,
+            winner: cached.winner,
+            loser: loser,
+            status: MatchStatus.Completed,
+            isDraw: cached.isDraw,
+            startTime: cached.startTime,
+            lastMoveTime: cached.endTime,
+            endTime: cached.endTime,
+            tierId: cached.tierId,
+            instanceId: cached.instanceId,
+            roundNumber: cached.roundNumber,
+            matchNumber: cached.matchNumber,
+            isCached: true
+        });
+
+        return (data, true);
+    }
+
     // ============ Timeout Functions ============
 
     function _initializeMatchTimeoutState(bytes32 matchId, uint8 tierId) internal {
@@ -725,41 +842,47 @@ contract ConnectFourOnChain is ETour {
 
     // ============ View Functions ============
 
+    /**
+     * @dev Get complete ConnectFour match data with automatic cache fallback
+     * Replaces legacy tuple return with structured data
+     * BREAKING CHANGE: Returns struct instead of tuple
+     */
     function getMatch(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (
-        address player1,
-        address player2,
-        address currentTurn,
-        address winner,
-        Cell[TOTAL_CELLS] memory board,
-        MatchStatus status,
-        bool isDraw,
-        uint256 startTime,
-        uint256 lastMoveTime,
-        address firstPlayer,
-        uint8 moveCount,
-        uint8 lastColumn
-    ) {
+    ) public view returns (ConnectFourMatchData memory) {
+        // Call base to get common data with cache fallback
+        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+
+        ConnectFourMatchData memory fullData;
+        fullData.common = common;
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-        return (
-            matchData.player1,
-            matchData.player2,
-            matchData.currentTurn,
-            matchData.winner,
-            matchData.board,
-            matchData.status,
-            matchData.isDraw,
-            matchData.startTime,
-            matchData.lastMoveTime,
-            matchData.firstPlayer,
-            matchData.moveCount,
-            matchData.lastColumn
-        );
+
+        if (common.isCached) {
+            // Populate from cache
+            bytes32 matchKey = keccak256(abi.encodePacked(common.player1, common.player2));
+            uint16 index = cacheKeyToIndex[matchKey];
+            CachedMatchData storage cached = matchCache[index];
+
+            fullData.board = cached.board;
+            fullData.firstPlayer = cached.firstPlayer;
+            fullData.currentTurn = address(0);  // N/A for completed matches
+            fullData.moveCount = cached.moveCount;
+            fullData.lastColumn = 0;
+        } else {
+            // Populate from active storage
+            Match storage matchData = matches[matchId];
+            fullData.board = matchData.board;
+            fullData.currentTurn = matchData.currentTurn;
+            fullData.firstPlayer = matchData.firstPlayer;
+            fullData.moveCount = matchData.moveCount;
+            fullData.lastColumn = matchData.lastColumn;
+        }
+
+        return fullData;
     }
 
     function getCachedMatch(address player1, address player2) external view returns (CachedMatchData memory) {

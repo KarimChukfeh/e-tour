@@ -77,6 +77,21 @@ contract TicTacChain is ETour {
         bool player2UsedBlock;
     }
 
+    /**
+     * @dev Extended match data for TicTacToe including common fields and game-specific state
+     */
+    struct TicTacToeMatchData {
+        ETour.CommonMatchData common;     // Embedded common data
+        Cell[9] board;                    // 3x3 board
+        address currentTurn;
+        address firstPlayer;
+        uint8 lastMovedCell;
+        address blockedPlayer;            // Legacy field
+        uint8 blockedCell;                // Legacy field
+        bool player1UsedBlock;            // Legacy field
+        bool player2UsedBlock;            // Legacy field
+    }
+
     // ============ Game-Specific State ============
 
     mapping(bytes32 => Match) public matches;
@@ -87,6 +102,8 @@ contract TicTacChain is ETour {
     uint16 public nextCacheIndex;
     mapping(bytes32 => uint16) public cacheKeyToIndex;
     bytes32[MATCH_CACHE_SIZE] private cacheKeys;
+    mapping(bytes32 => uint16) private matchIdToCacheIndex; // Direct matchId lookup
+    bytes32[MATCH_CACHE_SIZE] private cacheMatchIds; // Track which matchId is at each index
 
     // ============ Game-Specific Events ============
 
@@ -349,9 +366,15 @@ contract TicTacChain is ETour {
         bytes32 matchKey = keccak256(abi.encodePacked(matchData.player1, matchData.player2));
         uint16 cacheIndex = nextCacheIndex;
 
+        // Clean up old mappings for the entry being overwritten
         bytes32 oldKey = cacheKeys[cacheIndex];
         if (oldKey != bytes32(0)) {
             delete cacheKeyToIndex[oldKey];
+        }
+
+        bytes32 oldMatchId = cacheMatchIds[cacheIndex];
+        if (oldMatchId != bytes32(0)) {
+            delete matchIdToCacheIndex[oldMatchId]; // CRITICAL: Clean up old matchId mapping
         }
 
         matchCache[cacheIndex] = CachedMatchData({
@@ -374,6 +397,8 @@ contract TicTacChain is ETour {
 
         cacheKeys[cacheIndex] = matchKey;
         cacheKeyToIndex[matchKey] = cacheIndex;
+        matchIdToCacheIndex[matchId] = cacheIndex;
+        cacheMatchIds[cacheIndex] = matchId; // Track which matchId is at this index
 
         nextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
 
@@ -448,6 +473,141 @@ contract TicTacChain is ETour {
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
+    }
+
+    function _isMatchActive(bytes32 matchId) internal view override returns (bool) {
+        Match storage matchData = matches[matchId];
+        // Active if player1 assigned and not completed
+        return matchData.player1 != address(0) &&
+               matchData.status != MatchStatus.Completed;
+    }
+
+    function _getActiveMatchData(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory) {
+        Match storage matchData = matches[matchId];
+
+        // Derive loser
+        address loser = address(0);
+        if (!matchData.isDraw && matchData.winner != address(0)) {
+            loser = (matchData.winner == matchData.player1)
+                ? matchData.player2
+                : matchData.player1;
+        }
+
+        return ETour.CommonMatchData({
+            player1: matchData.player1,
+            player2: matchData.player2,
+            winner: matchData.winner,
+            loser: loser,
+            status: matchData.status,
+            isDraw: matchData.isDraw,
+            startTime: matchData.startTime,
+            lastMoveTime: matchData.lastMoveTime,
+            endTime: 0,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: false
+        });
+    }
+
+    function _getMatchFromCache(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view override returns (ETour.CommonMatchData memory data, bool exists) {
+        // Try direct matchId lookup first (works even after match reset)
+        uint16 index = matchIdToCacheIndex[matchId];
+
+        // Verify cache entry exists and context matches
+        if (matchCache[index].exists &&
+            matchCache[index].tierId == tierId &&
+            matchCache[index].instanceId == instanceId &&
+            matchCache[index].roundNumber == roundNumber &&
+            matchCache[index].matchNumber == matchNumber) {
+
+            CachedMatchData storage cached = matchCache[index];
+
+            // Derive loser
+            address loser = address(0);
+            if (!cached.isDraw && cached.winner != address(0)) {
+                loser = (cached.winner == cached.player1)
+                    ? cached.player2
+                    : cached.player1;
+            }
+
+            // Populate CommonMatchData
+            data = ETour.CommonMatchData({
+                player1: cached.player1,
+                player2: cached.player2,
+                winner: cached.winner,
+                loser: loser,
+                status: MatchStatus.Completed,
+                isDraw: cached.isDraw,
+                startTime: cached.startTime,
+                lastMoveTime: cached.endTime,
+                endTime: cached.endTime,
+                tierId: cached.tierId,
+                instanceId: cached.instanceId,
+                roundNumber: cached.roundNumber,
+                matchNumber: cached.matchNumber,
+                isCached: true
+            });
+
+            return (data, true);
+        }
+
+        // Fallback: Try player-based lookup (for backwards compatibility)
+        (address player1, address player2) = _getMatchPlayers(matchId);
+        if (player1 != address(0) || player2 != address(0)) {
+            bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
+            uint16 altIndex = cacheKeyToIndex[matchKey];
+
+            if (matchCache[altIndex].exists &&
+                cacheKeys[altIndex] == matchKey &&
+                matchCache[altIndex].tierId == tierId &&
+                matchCache[altIndex].instanceId == instanceId &&
+                matchCache[altIndex].roundNumber == roundNumber &&
+                matchCache[altIndex].matchNumber == matchNumber) {
+
+                CachedMatchData storage cached = matchCache[altIndex];
+                address loser = address(0);
+                if (!cached.isDraw && cached.winner != address(0)) {
+                    loser = (cached.winner == cached.player1)
+                        ? cached.player2
+                        : cached.player1;
+                }
+
+                data = ETour.CommonMatchData({
+                    player1: cached.player1,
+                    player2: cached.player2,
+                    winner: cached.winner,
+                    loser: loser,
+                    status: MatchStatus.Completed,
+                    isDraw: cached.isDraw,
+                    startTime: cached.startTime,
+                    lastMoveTime: cached.endTime,
+                    endTime: cached.endTime,
+                    tierId: cached.tierId,
+                    instanceId: cached.instanceId,
+                    roundNumber: cached.roundNumber,
+                    matchNumber: cached.matchNumber,
+                    isCached: true
+                });
+
+                return (data, true);
+            }
+        }
+
+        return (data, false);
     }
 
     // ============ Gameplay Functions ============
@@ -588,47 +748,53 @@ contract TicTacChain is ETour {
 
     // ============ View Functions ============
 
+    /**
+     * @dev Get complete TicTacToe match data with automatic cache fallback
+     * Replaces legacy tuple return with structured data
+     * BREAKING CHANGE: Returns struct instead of tuple
+     */
     function getMatch(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (
-        address player1,
-        address player2,
-        address currentTurn,
-        address winner,
-        Cell[9] memory board,
-        MatchStatus status,
-        bool isDraw,
-        uint256 startTime,
-        uint256 lastMoveTime,
-        address firstPlayer,
-        uint8 lastMovedCell,
-        address blockedPlayer,
-        uint8 blockedCell,
-        bool player1UsedBlock,
-        bool player2UsedBlock
-    ) {
+    ) public view returns (TicTacToeMatchData memory) {
+        // Call base to get common data with cache fallback
+        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+
+        TicTacToeMatchData memory fullData;
+        fullData.common = common;
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-        return (
-            matchData.player1,
-            matchData.player2,
-            matchData.currentTurn,
-            matchData.winner,
-            matchData.board,
-            matchData.status,
-            matchData.isDraw,
-            matchData.startTime,
-            matchData.lastMoveTime,
-            matchData.firstPlayer,
-            matchData.lastMovedCell,
-            matchData.blockedPlayer,
-            matchData.blockedCell,
-            matchData.player1UsedBlock,
-            matchData.player2UsedBlock
-        );
+
+        if (common.isCached) {
+            // Populate from cache
+            bytes32 matchKey = keccak256(abi.encodePacked(common.player1, common.player2));
+            uint16 index = cacheKeyToIndex[matchKey];
+            CachedMatchData storage cached = matchCache[index];
+
+            fullData.board = cached.board;
+            fullData.firstPlayer = cached.firstPlayer;
+            fullData.currentTurn = address(0);  // N/A for completed matches
+            fullData.lastMovedCell = 0;
+            fullData.blockedPlayer = address(0);
+            fullData.blockedCell = 0;
+            fullData.player1UsedBlock = false;
+            fullData.player2UsedBlock = false;
+        } else {
+            // Populate from active storage
+            Match storage matchData = matches[matchId];
+            fullData.board = matchData.board;
+            fullData.currentTurn = matchData.currentTurn;
+            fullData.firstPlayer = matchData.firstPlayer;
+            fullData.lastMovedCell = matchData.lastMovedCell;
+            fullData.blockedPlayer = matchData.blockedPlayer;
+            fullData.blockedCell = matchData.blockedCell;
+            fullData.player1UsedBlock = matchData.player1UsedBlock;
+            fullData.player2UsedBlock = matchData.player2UsedBlock;
+        }
+
+        return fullData;
     }
 
     function getCachedMatch(address player1, address player2) external view returns (CachedMatchData memory) {
