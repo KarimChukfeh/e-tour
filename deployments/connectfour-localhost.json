@@ -2,8 +2,8 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2025-12-22T17:57:15.942Z",
-  "blockNumber": 137,
+  "timestamp": "2025-12-24T20:47:11.849Z",
+  "blockNumber": 12,
   "contracts": {
     "ConnectFourOnChain": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
   }

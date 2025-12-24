@@ -1390,6 +1390,129 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const round1 = await game.rounds(tierId, instanceId, 1);
             expect(round1.initialized).to.be.true;
         });
+
+        it("Should NOT have stale finals data from previous tournament", async function () {
+            const tierId = 1; // 4-player tier
+            const instanceId = 9; // Use instance ID within valid range (tier 1 has 10 instances: 0-9)
+
+            // ========== FIRST TOURNAMENT ==========
+            console.log("\n========== FIRST TOURNAMENT ==========");
+
+            // Enroll 4 players for first tournament
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+
+            // Helper function to play a match to completion
+            async function playMatchToWin(roundNum, matchNum, players) {
+                const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
+                if (match.common.status !== 1n) return null; // Not InProgress
+
+                const fp = match.currentTurn;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+
+                const fpSigner = players.find(p => p.address === fp);
+                const spSigner = players.find(p => p.address === sp);
+
+                if (!fpSigner || !spSigner) return null;
+
+                // Win pattern
+                await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 0);
+                await game.connect(spSigner).makeMove(tierId, instanceId, roundNum, matchNum, 3);
+                await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 1);
+                await game.connect(spSigner).makeMove(tierId, instanceId, roundNum, matchNum, 4);
+                await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 2);
+
+                const finalMatch = await game.getMatch(tierId, instanceId, roundNum, matchNum);
+                return finalMatch.common.winner;
+            }
+
+            // Complete first tournament fully
+            const players = [player1, player2, player3, player4];
+
+            // Complete both semifinals
+            await playMatchToWin(0, 0, players);
+            await playMatchToWin(0, 1, players);
+
+            // Capture finalists BEFORE finals completes (so we have the data before it's cached/cleared)
+            const firstTournamentFinalsBeforeComplete = await game.getMatch(tierId, instanceId, 1, 0);
+            const firstTournamentFinalist1 = firstTournamentFinalsBeforeComplete.common.player1;
+            const firstTournamentFinalist2 = firstTournamentFinalsBeforeComplete.common.player2;
+            console.log("First Tournament Finalists:", firstTournamentFinalist1, firstTournamentFinalist2);
+
+            // Complete finals
+            const firstTournamentWinner = await playMatchToWin(1, 0, players);
+            console.log("First Tournament Winner:", firstTournamentWinner);
+
+            // Verify first tournament completed and reset
+            let tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling (tournament auto-resets after completion)
+
+            // ========== SECOND TOURNAMENT ==========
+            console.log("\n========== SECOND TOURNAMENT ==========");
+
+            // Enroll different 4 players for second tournament (using player5, player6, player7, player8)
+            await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player7).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player8).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+
+            // Verify second tournament started
+            tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(1); // InProgress
+
+            // Get semifinal 0 match details for second tournament
+            const sf0Before = await game.getMatch(tierId, instanceId, 0, 0);
+            const sf0Player1 = sf0Before.common.player1;
+            const sf0Player2 = sf0Before.common.player2;
+
+            console.log("Second Tournament Semifinal 0 Players:", sf0Player1, sf0Player2);
+
+            // Play semifinal 0 to completion
+            const secondTournamentPlayers = [player5, player6, player7, player8];
+            const sf0Winner = await playMatchToWin(0, 0, secondTournamentPlayers);
+
+            console.log("Second Tournament Semifinal 0 Winner:", sf0Winner);
+
+            // CRITICAL TEST: Check finals state BEFORE second semifinal completes
+            const round1 = await game.rounds(tierId, instanceId, 1);
+            expect(round1.initialized).to.be.true;
+            expect(round1.totalMatches).to.equal(1);
+
+            const secondTournamentFinalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
+
+            console.log("\nSecond Tournament Finals after SF0:");
+            console.log("  player1:", secondTournamentFinalsMatch.common.player1);
+            console.log("  player2:", secondTournamentFinalsMatch.common.player2);
+            console.log("  status:", secondTournamentFinalsMatch.common.status);
+
+            // CRITICAL BUG CHECK: Finals should NOT contain any players from first tournament
+            expect(secondTournamentFinalsMatch.common.player1).to.not.equal(firstTournamentFinalist1,
+                "Finals should NOT have stale data from first tournament finalist 1");
+            expect(secondTournamentFinalsMatch.common.player1).to.not.equal(firstTournamentFinalist2,
+                "Finals should NOT have stale data from first tournament finalist 2");
+            expect(secondTournamentFinalsMatch.common.player2).to.not.equal(firstTournamentFinalist1,
+                "Finals should NOT have stale data from first tournament finalist 1");
+            expect(secondTournamentFinalsMatch.common.player2).to.not.equal(firstTournamentFinalist2,
+                "Finals should NOT have stale data from first tournament finalist 2");
+
+            // ASSERTIONS: Expected behavior for second tournament
+            // Since semifinal matchNumber=0 is even, winner goes to slot 0
+            expect(secondTournamentFinalsMatch.common.player1).to.equal(sf0Winner,
+                "Finals slot 0 should have the current tournament semifinal winner");
+            expect(secondTournamentFinalsMatch.common.player2).to.equal(hre.ethers.ZeroAddress,
+                "Finals slot 1 should be empty (waiting for semifinal 1)");
+            expect(secondTournamentFinalsMatch.common.status).to.equal(0,
+                "Finals should be NotStarted");
+
+            // Verify finals is NOT in any first tournament players' active matches
+            for (const oldPlayer of [player1, player2, player3, player4]) {
+                const activeMatches = await game.getPlayerActiveMatches(oldPlayer.address);
+                expect(activeMatches).to.have.lengthOf(0,
+                    `Old tournament player ${oldPlayer.address} should have no active matches`);
+            }
+        });
     });
 
     describe("Match Timeout State Tracking", function () {

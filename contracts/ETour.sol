@@ -1509,13 +1509,18 @@ abstract contract ETour is ReentrancyGuard {
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
             Round storage round = rounds[tierId][instanceId][roundNum];
+
+            // IMPORTANT: Calculate matchCount BEFORE resetting round metadata
+            // because _getMatchCountForRound() relies on previous round's totalMatches
+            uint8 matchCount = round.totalMatches > 0 ? round.totalMatches : _getMatchCountForRound(tierId, instanceId, roundNum);
+
+            // Now reset round metadata
             round.totalMatches = 0;
             round.completedMatches = 0;
             round.initialized = false;
             round.drawCount = 0;
             round.allMatchesDrew = false;
 
-            uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNum);
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
 
@@ -1603,7 +1608,16 @@ abstract contract ETour is ReentrancyGuard {
             return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         }
 
-        // Fallback to cache
+        // Check if this round has been initialized in current tournament
+        // If round is initialized, match storage exists (even if cleared) and we should NOT fallback to cache
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        if (round.initialized) {
+            // Round is initialized, so match belongs to current tournament
+            // Return cleared storage instead of cached data from previous tournament
+            return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        }
+
+        // Round not initialized - fallback to cache for historical data lookup
         (CommonMatchData memory cachedData, bool exists) = _getMatchFromCache(
             matchId, tierId, instanceId, roundNumber, matchNumber
         );
