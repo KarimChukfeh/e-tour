@@ -179,7 +179,7 @@ abstract contract ETour is ReentrancyGuard {
     mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerPrizes;
     mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(address => bool))))) public drawParticipants;
 
-    // Player earnings tracking (net profit: payouts minus entry fees)
+    // Player earnings tracking (total winnings from prizes)
     mapping(address => int256) public playerEarnings;
     address[] internal _leaderboardPlayers;
     mapping(address => bool) internal _isOnLeaderboard;
@@ -1421,15 +1421,12 @@ abstract contract ETour is ReentrancyGuard {
     // ============ Caching Functions ============
 
     function _updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) internal {
-        TierConfig storage config = _tierConfigs[tierId];
         address[] storage players = enrolledPlayers[tierId][instanceId];
-        int256 entryFee = int256(config.entryFee);
 
-        // Deduct entry fee from all participants, add prize to those who earned
+        // Add prize winnings to players who earned
         for (uint8 i = 0; i < players.length; i++) {
             address player = players[i];
             _trackOnLeaderboard(player);
-            playerEarnings[player] -= entryFee;
 
             uint256 prize = playerPrizes[tierId][instanceId][player];
             if (prize > 0) {
@@ -1446,14 +1443,11 @@ abstract contract ETour is ReentrancyGuard {
         address claimer,
         uint256 claimAmount
     ) internal {
-        TierConfig storage config = _tierConfigs[tierId];
         address[] storage players = enrolledPlayers[tierId][instanceId];
-        int256 entryFee = int256(config.entryFee);
 
-        // Deduct entry fee from all enrolled players (they lost their fee to abandoned pool)
+        // Track all enrolled players on leaderboard (no earnings changes for them)
         for (uint8 i = 0; i < players.length; i++) {
             _trackOnLeaderboard(players[i]);
-            playerEarnings[players[i]] -= entryFee;
         }
 
         // Credit the claimer with the claim amount
