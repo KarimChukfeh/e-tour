@@ -67,8 +67,6 @@ abstract contract ETour is ReentrancyGuard {
         uint256 entryFee;           // Entry fee in wei
         Mode mode;                  // Classic or Pro mode
         uint256 enrollmentWindow;   // Time window for enrollment before escalation
-        uint256 matchMoveTimeout;   // Time allowed per move before timeout escalation
-        uint256 escalationInterval; // Time between escalation levels
         uint8 totalRounds;          // Calculated: log2(playerCount)
         bool initialized;           // Whether this tier has been configured
     }
@@ -110,15 +108,6 @@ abstract contract ETour is ReentrancyGuard {
         uint256 tournamentsPlayed;
         uint256 matchesWon;
         uint256 matchesPlayed;
-    }
-
-    struct MatchTimeoutState {
-        uint256 escalation1Start;
-        uint256 escalation2Start;
-        uint256 escalation3Start;
-        EscalationLevel activeEscalation;
-        bool timeoutActive;
-        uint256 forfeitAmount;
     }
 
     struct EnrollmentTimeoutState {
@@ -225,8 +214,6 @@ abstract contract ETour is ReentrancyGuard {
      * @param entryFee Entry fee in wei
      * @param mode Classic or Pro mode
      * @param enrollmentWindow Time before enrollment escalation starts
-     * @param matchMoveTimeout Time per move before timeout
-     * @param escalationInterval Time between escalation levels
      * @param prizeDistribution Array of percentages (must sum to 100, index 0 = 1st place)
      */
     function _registerTier(
@@ -236,8 +223,6 @@ abstract contract ETour is ReentrancyGuard {
         uint256 entryFee,
         Mode mode,
         uint256 enrollmentWindow,
-        uint256 matchMoveTimeout,
-        uint256 escalationInterval,
         uint8[] memory prizeDistribution
     ) internal {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
@@ -258,8 +243,6 @@ abstract contract ETour is ReentrancyGuard {
             entryFee: entryFee,
             mode: mode,
             enrollmentWindow: enrollmentWindow,
-            matchMoveTimeout: matchMoveTimeout,
-            escalationInterval: escalationInterval,
             totalRounds: _log2(playerCount),
             initialized: true
         });
@@ -333,17 +316,25 @@ abstract contract ETour is ReentrancyGuard {
 
     function _getMatchPlayers(bytes32 matchId) internal view virtual returns (address player1, address player2);
 
-    function _setMatchTimeoutState(bytes32 matchId, MatchTimeoutState memory state) internal virtual;
-
-    function _getMatchTimeoutState(bytes32 matchId) internal view virtual returns (MatchTimeoutState memory);
-
-    function _setMatchTimedOut(bytes32 matchId, address claimant, EscalationLevel level) internal virtual;
-
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal virtual;
 
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal virtual;
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal virtual;
+
+    /**
+     * @dev Get the total time (in seconds) each player has for the entire match
+     * Implementing contracts should return a fixed value (e.g., 300 for 5 minutes)
+     * @return Time in seconds per player for the match
+     */
+    function _getMatchTimePerPlayer() internal view virtual returns (uint256);
+
+    /**
+     * @dev Get the time increment (in seconds) added after each move
+     * Implementing contracts should return 0 for no increment, or a value like 3 for Fischer increment
+     * @return Time increment in seconds
+     */
+    function _getTimeIncrement() internal view virtual returns (uint256);
 
     /**
      * @dev Check if match is active in game-specific storage
@@ -408,7 +399,7 @@ abstract contract ETour is ReentrancyGuard {
             tournament.firstEnrollmentTimestamp = block.timestamp;
 
             tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.enrollmentWindow;
-            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.escalationInterval;
+            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.enrollmentWindow;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
         }
@@ -1241,90 +1232,6 @@ abstract contract ETour is ReentrancyGuard {
         }
 
         return false;
-    }
-
-    /**
-     * @dev Escalation Level 2: Advanced players can force eliminate stalled matches
-     * Both players in the stalled match forfeit their entry fees
-     */
-    function forceEliminateStalledMatch(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
-
-        require(status == MatchStatus.InProgress, "Match not active");
-        require(block.timestamp >= timeoutState.escalation2Start, "Tier 2 not reached");
-        require(
-            _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
-            "Must be in advanced round to eliminate"
-        );
-
-        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation2_AdvancedPlayers);
-
-        (address player1, address player2) = _getMatchPlayers(matchId);
-        uint256 entryFee = _tierConfigs[tierId].entryFee;
-
-        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 2: Eliminated by advanced player");
-        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 2: Eliminated by advanced player");
-
-        _completeMatchDoubleElimination(tierId, instanceId, roundNumber, matchNumber);
-    }
-
-    /**
-     * @dev Escalation Level 3: External players can claim a match slot by replacement
-     * Both original players forfeit, claimant advances as winner
-     */
-    function claimMatchSlotByReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
-
-        require(status == MatchStatus.InProgress, "Match not active");
-        require(block.timestamp >= timeoutState.escalation3Start, "Tier 3 timeout not reached");
-
-        // Prevent enrolled players from using Tier 3 if they're actively playing or won current round
-        if (isEnrolled[tierId][instanceId][msg.sender]) {
-            uint8 currentRound = tournaments[tierId][instanceId].currentRound;
-
-            for (uint8 r = 0; r <= currentRound; r++) {
-                for (uint8 m = 0; m < rounds[tierId][instanceId][r].totalMatches; m++) {
-                    bytes32 checkMatchId = _getMatchId(tierId, instanceId, r, m);
-                    (address checkWinner, , MatchStatus checkStatus) = _getMatchResult(checkMatchId);
-                    (address checkP1, address checkP2) = _getMatchPlayers(checkMatchId);
-
-                    if (checkStatus == MatchStatus.InProgress &&
-                        (checkP1 == msg.sender || checkP2 == msg.sender)) {
-                        revert("Cannot use Tier 3 while actively playing in this tournament");
-                    }
-
-                    if (r == currentRound &&
-                        checkStatus == MatchStatus.Completed &&
-                        checkWinner == msg.sender) {
-                        revert("Cannot use Tier 3 after winning in current round");
-                    }
-                }
-            }
-        }
-
-        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation3_ExternalPlayers);
-
-        (address player1, address player2) = _getMatchPlayers(matchId);
-        uint256 entryFee = _tierConfigs[tierId].entryFee;
-
-        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 3: Replaced by external player");
-        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 3: Replaced by external player");
-
-        _completeMatchByReplacement(tierId, instanceId, roundNumber, matchNumber, msg.sender);
     }
 
     /**

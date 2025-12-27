@@ -128,9 +128,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.status).to.equal(1); // InProgress
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.status).to.equal(1); // InProgress
+            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should initialize empty board", async function () {
@@ -149,7 +149,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.currentTurn).to.be.oneOf([match.player1, match.player2]);
+            expect(match.currentTurn).to.be.oneOf([match.common.player1, match.common.player2]);
             expect(match.firstPlayer).to.equal(match.currentTurn);
         });
     });
@@ -402,7 +402,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Tier 1 timeout not reached");
+            ).to.be.revertedWith("Opponent has not run out of time");
         });
     });
 
@@ -415,9 +415,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.status).to.equal(1);
+            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.status).to.equal(1);
             expect(match.moveCount).to.equal(0);
         });
 

@@ -52,11 +52,10 @@ contract TicTacChain is ETour {
         uint8 blockedCell;
         bool player1UsedBlock;
         bool player2UsedBlock;
-        // Timeout Fields
-        MatchTimeoutState timeoutState;
-        bool isTimedOut;
-        address timeoutClaimant;
-        uint256 timeoutClaimReward;
+        // Time Bank Fields (chess clock style)
+        uint256 player1TimeRemaining;
+        uint256 player2TimeRemaining;
+        uint256 lastMoveTimestamp;
     }
 
     struct CachedMatchData {
@@ -90,6 +89,9 @@ contract TicTacChain is ETour {
         uint8 blockedCell;                // Legacy field
         bool player1UsedBlock;            // Legacy field
         bool player2UsedBlock;            // Legacy field
+        uint256 player1TimeRemaining;     // Time bank for player1 (seconds)
+        uint256 player2TimeRemaining;     // Time bank for player2 (seconds)
+        uint256 lastMoveTimestamp;        // Timestamp of last move
     }
 
     // ============ Game-Specific State ============
@@ -140,8 +142,6 @@ contract TicTacChain is ETour {
             0.001 ether,                    // entryFee
             Mode.Classic,                   // mode (no blocking)
             DEMO_ENROLLMENT_WINDOW,      // enrollmentWindow
-            DEMO_MATCH_MOVE_TIMEOUT,     // matchMoveTimeout
-            DEMO_ESCALATION_INTERVAL,    // escalationInterval
             tier0Prizes                     // prizeDistribution
         );
 
@@ -160,8 +160,6 @@ contract TicTacChain is ETour {
             0.002 ether,                    // entryFee
             Mode.Classic,
             DEMO_ENROLLMENT_WINDOW,
-            DEMO_MATCH_MOVE_TIMEOUT,
-            DEMO_ESCALATION_INTERVAL,
             tier1Prizes
         );
 
@@ -183,8 +181,6 @@ contract TicTacChain is ETour {
             0.004 ether,                    // entryFee
             Mode.Classic,
             DEMO_ENROLLMENT_WINDOW,
-            DEMO_MATCH_MOVE_TIMEOUT,
-            DEMO_ESCALATION_INTERVAL,
             tier2Prizes
         );
     }
@@ -308,10 +304,14 @@ contract TicTacChain is ETour {
             matchData.board[i] = Cell.Empty;
         }
 
+        // Initialize time banks for both players
+        uint256 timePerPlayer = _getMatchTimePerPlayer();
+        matchData.player1TimeRemaining = timePerPlayer;
+        matchData.player2TimeRemaining = timePerPlayer;
+        matchData.lastMoveTimestamp = block.timestamp;
+
         _addPlayerActiveMatch(player1, matchId);
         _addPlayerActiveMatch(player2, matchId);
-
-        _initializeMatchTimeoutState(matchId, tierId);
 
         emit MatchStarted(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
@@ -333,16 +333,6 @@ contract TicTacChain is ETour {
         matchData.blockedCell = NO_CELL;
         matchData.player1UsedBlock = false;
         matchData.player2UsedBlock = false;
-
-        matchData.isTimedOut = false;
-        matchData.timeoutClaimant = address(0);
-        matchData.timeoutClaimReward = 0;
-        matchData.timeoutState.escalation1Start = 0;
-        matchData.timeoutState.escalation2Start = 0;
-        matchData.timeoutState.escalation3Start = 0;
-        matchData.timeoutState.activeEscalation = EscalationLevel.None;
-        matchData.timeoutState.timeoutActive = false;
-        matchData.timeoutState.forfeitAmount = 0;
 
         for (uint8 i = 0; i < 9; i++) {
             matchData.board[i] = Cell.Empty;
@@ -410,21 +400,12 @@ contract TicTacChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _setMatchTimeoutState(bytes32 matchId, MatchTimeoutState memory state) internal override {
-        Match storage matchData = matches[matchId];
-        matchData.timeoutState = state;
+    function _getMatchTimePerPlayer() internal pure override returns (uint256) {
+        return 5 minutes; // 300 seconds total time per player
     }
 
-    function _getMatchTimeoutState(bytes32 matchId) internal view override returns (MatchTimeoutState memory) {
-        return matches[matchId].timeoutState;
-    }
-
-    function _setMatchTimedOut(bytes32 matchId, address claimant, EscalationLevel level) internal override {
-        Match storage matchData = matches[matchId];
-        matchData.isTimedOut = true;
-        matchData.timeoutClaimant = claimant;
-        matchData.timeoutState.activeEscalation = level;
-        matchData.timeoutState.timeoutActive = true;
+    function _getTimeIncrement() internal pure override returns (uint256) {
+        return 0; // No increment per move
     }
 
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal override {
@@ -465,7 +446,11 @@ contract TicTacChain is ETour {
             matchData.board[i] = Cell.Empty;
         }
 
-        _initializeMatchTimeoutState(matchId, tierId);
+        // Initialize time banks for both players
+        uint256 timePerPlayer = _getMatchTimePerPlayer();
+        matchData.player1TimeRemaining = timePerPlayer;
+        matchData.player2TimeRemaining = timePerPlayer;
+        matchData.lastMoveTimestamp = block.timestamp;
     }
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal override {
@@ -639,11 +624,34 @@ contract TicTacChain is ETour {
             matchData.blockedCell = NO_CELL;
         }
 
+        // Update time bank for current player
+        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+        uint256 timeIncrement = _getTimeIncrement();
+
+        if (msg.sender == matchData.player1) {
+            // Deduct time used by player1
+            if (timeElapsed >= matchData.player1TimeRemaining) {
+                matchData.player1TimeRemaining = 0;
+            } else {
+                matchData.player1TimeRemaining -= timeElapsed;
+                // Add increment after move
+                matchData.player1TimeRemaining += timeIncrement;
+            }
+        } else {
+            // Deduct time used by player2
+            if (timeElapsed >= matchData.player2TimeRemaining) {
+                matchData.player2TimeRemaining = 0;
+            } else {
+                matchData.player2TimeRemaining -= timeElapsed;
+                // Add increment after move
+                matchData.player2TimeRemaining += timeIncrement;
+            }
+        }
+
         matchData.board[cellIndex] = (msg.sender == matchData.player1) ? Cell.X : Cell.O;
         matchData.lastMoveTime = block.timestamp;
+        matchData.lastMoveTimestamp = block.timestamp;
         matchData.lastMovedCell = cellIndex;
-
-        _initializeMatchTimeoutState(matchId, tierId);
 
         emit MoveMade(matchId, msg.sender, cellIndex);
 
@@ -662,22 +670,6 @@ contract TicTacChain is ETour {
 
     // ============ Timeout Functions ============
 
-    function _initializeMatchTimeoutState(bytes32 matchId, uint8 tierId) internal {
-        Match storage matchData = matches[matchId];
-        uint256 baseTime = matchData.lastMoveTime;
-
-        // Use tier-specific timeout configuration
-        TierConfig storage config = _tierConfigs[tierId];
-        
-        matchData.timeoutState.escalation1Start = baseTime + config.matchMoveTimeout;
-        matchData.timeoutState.escalation2Start = matchData.timeoutState.escalation1Start + config.escalationInterval;
-        matchData.timeoutState.escalation3Start = matchData.timeoutState.escalation2Start + config.escalationInterval;
-
-        matchData.timeoutState.activeEscalation = EscalationLevel.None;
-        matchData.timeoutState.timeoutActive = false;
-        matchData.timeoutState.forfeitAmount = config.entryFee;
-    }
-
     function claimTimeoutWin(
         uint8 tierId,
         uint8 instanceId,
@@ -690,14 +682,22 @@ contract TicTacChain is ETour {
         require(matchData.status == MatchStatus.InProgress, "Match not active");
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
         require(msg.sender != matchData.currentTurn, "Cannot claim timeout on your own turn");
-        require(block.timestamp >= matchData.timeoutState.escalation1Start, "Tier 1 timeout not reached");
 
-        matchData.isTimedOut = true;
-        matchData.timeoutClaimant = msg.sender;
-        matchData.timeoutState.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
-        matchData.timeoutState.timeoutActive = true;
+        // Calculate time elapsed since last move
+        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
 
-        address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
+        // Determine opponent's remaining time
+        uint256 opponentTimeRemaining;
+        address loser = matchData.currentTurn;
+
+        if (matchData.currentTurn == matchData.player1) {
+            opponentTimeRemaining = matchData.player1TimeRemaining;
+        } else {
+            opponentTimeRemaining = matchData.player2TimeRemaining;
+        }
+
+        // Check if opponent has run out of time
+        require(timeElapsed >= opponentTimeRemaining, "Opponent has not run out of time");
 
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
@@ -781,6 +781,9 @@ contract TicTacChain is ETour {
             fullData.blockedCell = 0;
             fullData.player1UsedBlock = false;
             fullData.player2UsedBlock = false;
+            fullData.player1TimeRemaining = 0;  // N/A for completed matches
+            fullData.player2TimeRemaining = 0;
+            fullData.lastMoveTimestamp = 0;
         } else {
             // Populate from active storage
             Match storage matchData = matches[matchId];
@@ -792,9 +795,53 @@ contract TicTacChain is ETour {
             fullData.blockedCell = matchData.blockedCell;
             fullData.player1UsedBlock = matchData.player1UsedBlock;
             fullData.player2UsedBlock = matchData.player2UsedBlock;
+            fullData.player1TimeRemaining = matchData.player1TimeRemaining;
+            fullData.player2TimeRemaining = matchData.player2TimeRemaining;
+            fullData.lastMoveTimestamp = matchData.lastMoveTimestamp;
         }
 
         return fullData;
+    }
+
+    /**
+     * @dev Get real-time remaining time for both players
+     * Calculates current player's time by subtracting elapsed time since last move
+     * Returns stored time for waiting player
+     */
+    function getCurrentTimeRemaining(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public view returns (uint256 player1Time, uint256 player2Time) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // For completed or not started matches, return stored values
+        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+        if (common.status != ETour.MatchStatus.InProgress) {
+            return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
+        }
+
+        // Calculate elapsed time since last move
+        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+
+        // Calculate real-time remaining for current player
+        if (matchData.currentTurn == common.player1) {
+            // Player 1's turn - deduct elapsed time
+            player1Time = matchData.player1TimeRemaining > timeElapsed
+                ? matchData.player1TimeRemaining - timeElapsed
+                : 0;
+            player2Time = matchData.player2TimeRemaining;
+        } else {
+            // Player 2's turn - deduct elapsed time
+            player1Time = matchData.player1TimeRemaining;
+            player2Time = matchData.player2TimeRemaining > timeElapsed
+                ? matchData.player2TimeRemaining - timeElapsed
+                : 0;
+        }
+
+        return (player1Time, player2Time);
     }
 
     function getCachedMatch(address player1, address player2) external view returns (CachedMatchData memory) {

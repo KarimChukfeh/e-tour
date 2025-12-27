@@ -3,7 +3,7 @@
   "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-25T01:13:55.879Z",
+  "deployedAt": "2025-12-27T04:52:59.459Z",
   "abi": [
     {
       "inputs": [],
@@ -1046,34 +1046,6 @@
           "type": "uint8"
         }
       ],
-      "name": "claimMatchSlotByReplacement",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
       "name": "claimTimeoutWin",
       "outputs": [],
       "stateMutability": "nonpayable",
@@ -1176,34 +1148,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "forceEliminateStalledMatch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1507,6 +1451,45 @@
           "internalType": "uint8",
           "name": "instanceId",
           "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "getCurrentTimeRemaining",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "player1Time",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "player2Time",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
         }
       ],
       "name": "getEnrolledPlayers",
@@ -1686,6 +1669,21 @@
               "internalType": "uint8",
               "name": "lastColumn",
               "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "player1TimeRemaining",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "player2TimeRemaining",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastMoveTimestamp",
+              "type": "uint256"
             }
           ],
           "internalType": "struct ConnectFourOnChain.ConnectFourMatchData",
@@ -2270,55 +2268,18 @@
           "type": "uint8"
         },
         {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "escalation1Start",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "escalation2Start",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "escalation3Start",
-              "type": "uint256"
-            },
-            {
-              "internalType": "enum ETour.EscalationLevel",
-              "name": "activeEscalation",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bool",
-              "name": "timeoutActive",
-              "type": "bool"
-            },
-            {
-              "internalType": "uint256",
-              "name": "forfeitAmount",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ETour.MatchTimeoutState",
-          "name": "timeoutState",
-          "type": "tuple"
-        },
-        {
-          "internalType": "bool",
-          "name": "isTimedOut",
-          "type": "bool"
-        },
-        {
-          "internalType": "address",
-          "name": "timeoutClaimant",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "player1TimeRemaining",
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "timeoutClaimReward",
+          "name": "player2TimeRemaining",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastMoveTimestamp",
           "type": "uint256"
         }
       ],

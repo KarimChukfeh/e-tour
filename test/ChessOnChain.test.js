@@ -516,7 +516,7 @@ describe("ChessOnChain Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Timeout not reached");
+            ).to.be.revertedWith("Opponent has not run out of time");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
