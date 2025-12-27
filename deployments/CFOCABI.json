@@ -3,7 +3,7 @@
   "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-27T04:52:59.459Z",
+  "deployedAt": "2025-12-27T06:24:05.740Z",
   "abi": [
     {
       "inputs": [],
@@ -1695,6 +1695,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getMatchTimePerPlayer",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -1944,6 +1957,19 @@
           "internalType": "uint8[]",
           "name": "percentages",
           "type": "uint8[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTimeIncrement",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",

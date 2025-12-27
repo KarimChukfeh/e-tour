@@ -401,7 +401,7 @@ contract TicTacChain is ETour {
     }
 
     function _getMatchTimePerPlayer() internal pure override returns (uint256) {
-        return 5 minutes; // 300 seconds total time per player
+        return 2 minutes; // 120 seconds total time per player
     }
 
     function _getTimeIncrement() internal pure override returns (uint256) {

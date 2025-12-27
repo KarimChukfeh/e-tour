@@ -337,6 +337,24 @@ abstract contract ETour is ReentrancyGuard {
     function _getTimeIncrement() internal view virtual returns (uint256);
 
     /**
+     * @dev Public getter for match time per player
+     * Exposes the time control setting to clients
+     * @return Time in seconds that each player gets for the entire match
+     */
+    function getMatchTimePerPlayer() public view returns (uint256) {
+        return _getMatchTimePerPlayer();
+    }
+
+    /**
+     * @dev Public getter for time increment per move
+     * Exposes the time increment setting to clients
+     * @return Time in seconds added after each move (0 for no increment)
+     */
+    function getTimeIncrement() public view returns (uint256) {
+        return _getTimeIncrement();
+    }
+
+    /**
      * @dev Check if match is active in game-specific storage
      * @param matchId The match identifier
      * @return true if match exists and is not completed/cancelled
