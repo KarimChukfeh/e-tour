@@ -1365,7 +1365,8 @@ abstract contract ETour is ReentrancyGuard {
 
     /**
      * @dev Level 3 Escalation: External player replaces stalled players
-     * Callable by anyone (even non-enrolled)
+     * Callable by non-advanced players and external players
+     * NOT callable by advanced players (prevents tournament position paradox)
      * Replacement player wins the match and advances in tournament
      */
     function claimMatchSlotByReplacement(
@@ -1384,6 +1385,11 @@ abstract contract ETour is ReentrancyGuard {
         // Require match is stalled and Level 3 window is active
         require(timeout.isStalled, "Match not stalled");
         require(block.timestamp >= timeout.escalation2Start, "Level 3 not active yet");
+
+        // Prevent advanced players from claiming (they should use L2 instead)
+        // This prevents paradoxical tournament states where a player is in multiple rounds
+        require(!_isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
+                "Advanced players cannot claim L3");
 
         // Mark escalation level and complete match with replacement winner
         timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
