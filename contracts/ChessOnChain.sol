@@ -155,6 +155,15 @@ contract ChessOnChain is ETour {
      * Simplified configuration with only 2-player and 4-player tiers
      */
     function _registerChessOnChainTiers() internal {
+        // 1 minute for all escalation windows
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 1 minutes,      // 60 seconds per player
+            matchLevel2Delay: 1 minutes,        // L2 starts 1 min after timeout
+            matchLevel3Delay: 2 minutes,        // L3 starts 2 min after timeout (cumulative)
+            enrollmentWindow: 1 minutes,        // 1 min to fill tournament
+            enrollmentLevel2Delay: 1 minutes    // L2 starts 1 min after L1
+        });
+
         // ============ Tier 0: 2-Player ============
         uint8[] memory tier0Prizes = new uint8[](2);
         tier0Prizes[0] = 100;  // Winner takes all
@@ -166,7 +175,7 @@ contract ChessOnChain is ETour {
             10,                             // instanceCount
             0.01 ether,                     // entryFee
             Mode.Classic,
-            DEFAULT_ENROLLMENT_WINDOW,
+            timeouts,
             tier0Prizes
         );
 
@@ -183,7 +192,7 @@ contract ChessOnChain is ETour {
             5,                              // instanceCount
             0.02 ether,                     // entryFee
             Mode.Pro,
-            DEFAULT_ENROLLMENT_WINDOW,
+            timeouts,
             tier1Prizes
         );
     }
@@ -396,12 +405,35 @@ contract ChessOnChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _getMatchTimePerPlayer() internal pure override returns (uint256) {
-        return 5 minutes; // 300 seconds total time per player
-    }
-
     function _getTimeIncrement() internal pure override returns (uint256) {
         return 0; // No increment per move
+    }
+
+    /**
+     * @dev Check if the current player has run out of time
+     * Used by escalation system to detect stalled matches
+     */
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view override returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+
+        // If match is not in progress, return false
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Calculate time elapsed since last move
+        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+
+        // Get current player's remaining time
+        uint256 currentPlayerTimeRemaining;
+        if (matchData.currentTurn == matchData.player1) {
+            currentPlayerTimeRemaining = matchData.player1TimeRemaining;
+        } else {
+            currentPlayerTimeRemaining = matchData.player2TimeRemaining;
+        }
+
+        // Current player has timed out if elapsed time >= their remaining time
+        return timeElapsed >= currentPlayerTimeRemaining;
     }
 
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal override {
@@ -438,7 +470,7 @@ contract ChessOnChain is ETour {
         _setupInitialPosition(matchId);
 
         // Initialize time banks for both players
-        uint256 timePerPlayer = _getMatchTimePerPlayer();
+        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
@@ -586,6 +618,10 @@ contract ChessOnChain is ETour {
 
         // Check if opponent has run out of time
         require(timeElapsed >= opponentTimeRemaining, "Opponent has not run out of time");
+
+        // Mark match as stalled to enable escalation if this claim isn't executed
+        // This starts escalation timers for advanced players and external replacements
+        _markMatchStalled(matchId, tierId);
 
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 

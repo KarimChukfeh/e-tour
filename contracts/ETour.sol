@@ -58,6 +58,18 @@ abstract contract ETour is ReentrancyGuard {
     // ============ Configuration Structs ============
 
     /**
+     * @dev Timeout configuration for escalation windows
+     * All values in seconds
+     */
+    struct TimeoutConfig {
+        uint256 matchTimePerPlayer;           // Time each player gets for entire match (e.g., 60 = 1 minute)
+        uint256 matchLevel2Delay;             // Delay after player timeout before L2 (advanced players) active
+        uint256 matchLevel3Delay;             // Delay after player timeout before L3 (anyone) active
+        uint256 enrollmentWindow;             // Time to wait for tournament to fill before L1
+        uint256 enrollmentLevel2Delay;        // Delay after L1 before L2 (external claim) active
+    }
+
+    /**
      * @dev Configuration for a single tournament tier
      * Provided by implementing contract via _registerTier()
      */
@@ -66,7 +78,7 @@ abstract contract ETour is ReentrancyGuard {
         uint8 instanceCount;        // How many concurrent instances of this tier
         uint256 entryFee;           // Entry fee in wei
         Mode mode;                  // Classic or Pro mode
-        uint256 enrollmentWindow;   // Time window for enrollment before escalation
+        TimeoutConfig timeouts;     // Timeout configuration for escalation windows
         uint8 totalRounds;          // Calculated: log2(playerCount)
         bool initialized;           // Whether this tier has been configured
     }
@@ -115,6 +127,17 @@ abstract contract ETour is ReentrancyGuard {
         uint256 escalation2Start;
         EscalationLevel activeEscalation;
         uint256 forfeitPool;
+    }
+
+    /**
+     * @dev Match-level timeout state for anti-stalling escalation
+     * Tracks when a match becomes stalled and enables progressive intervention
+     */
+    struct MatchTimeoutState {
+        uint256 escalation1Start;      // When Level 2 (advanced players) can act
+        uint256 escalation2Start;      // When Level 3 (external players) can act
+        EscalationLevel activeEscalation;
+        bool isStalled;                // Set to true when a player runs out of time
     }
 
     /**
@@ -173,6 +196,9 @@ abstract contract ETour is ReentrancyGuard {
     address[] internal _leaderboardPlayers;
     mapping(address => bool) internal _isOnLeaderboard;
 
+    // Match-level timeout tracking for anti-stalling escalation
+    mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
+
     // ============ Events ============
     
     event TierRegistered(uint8 indexed tierId, uint8 playerCount, uint8 instanceCount, uint256 entryFee);
@@ -213,7 +239,7 @@ abstract contract ETour is ReentrancyGuard {
      * @param instanceCount How many concurrent tournament instances
      * @param entryFee Entry fee in wei
      * @param mode Classic or Pro mode
-     * @param enrollmentWindow Time before enrollment escalation starts
+     * @param timeouts Timeout configuration for escalation windows
      * @param prizeDistribution Array of percentages (must sum to 100, index 0 = 1st place)
      */
     function _registerTier(
@@ -222,7 +248,7 @@ abstract contract ETour is ReentrancyGuard {
         uint8 instanceCount,
         uint256 entryFee,
         Mode mode,
-        uint256 enrollmentWindow,
+        TimeoutConfig memory timeouts,
         uint8[] memory prizeDistribution
     ) internal {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
@@ -242,7 +268,7 @@ abstract contract ETour is ReentrancyGuard {
             instanceCount: instanceCount,
             entryFee: entryFee,
             mode: mode,
-            enrollmentWindow: enrollmentWindow,
+            timeouts: timeouts,
             totalRounds: _log2(playerCount),
             initialized: true
         });
@@ -265,10 +291,26 @@ abstract contract ETour is ReentrancyGuard {
         uint8 playerCount,
         uint8 instanceCount,
         uint256 entryFee,
-        uint8 totalRounds
+        uint8 totalRounds,
+        TimeoutConfig memory timeouts
     ) {
         TierConfig storage config = _tierConfigs[tierId];
-        return (config.playerCount, config.instanceCount, config.entryFee, config.totalRounds);
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee,
+            config.totalRounds,
+            config.timeouts
+        );
+    }
+
+    /**
+     * @dev Get timeout configuration for a tier
+     * Provides all escalation timing information to clients
+     */
+    function getTimeoutConfig(uint8 tierId) external view returns (TimeoutConfig memory) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        return _tierConfigs[tierId].timeouts;
     }
 
     /**
@@ -323,13 +365,6 @@ abstract contract ETour is ReentrancyGuard {
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal virtual;
 
     /**
-     * @dev Get the total time (in seconds) each player has for the entire match
-     * Implementing contracts should return a fixed value (e.g., 300 for 5 minutes)
-     * @return Time in seconds per player for the match
-     */
-    function _getMatchTimePerPlayer() internal view virtual returns (uint256);
-
-    /**
      * @dev Get the time increment (in seconds) added after each move
      * Implementing contracts should return 0 for no increment, or a value like 3 for Fischer increment
      * @return Time increment in seconds
@@ -337,12 +372,21 @@ abstract contract ETour is ReentrancyGuard {
     function _getTimeIncrement() internal view virtual returns (uint256);
 
     /**
+     * @dev Check if the current player in a match has run out of time
+     * This is used by escalation logic to detect stalled matches
+     * @param matchId The match identifier
+     * @return true if current player has run out of time (timeout is claimable)
+     */
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view virtual returns (bool);
+
+    /**
      * @dev Public getter for match time per player
      * Exposes the time control setting to clients
+     * @param tierId The tier to get match time for
      * @return Time in seconds that each player gets for the entire match
      */
-    function getMatchTimePerPlayer() public view returns (uint256) {
-        return _getMatchTimePerPlayer();
+    function getMatchTimePerPlayer(uint8 tierId) public view returns (uint256) {
+        return _tierConfigs[tierId].timeouts.matchTimePerPlayer;
     }
 
     /**
@@ -416,8 +460,8 @@ abstract contract ETour is ReentrancyGuard {
             tournament.firstEnroller = msg.sender;
             tournament.firstEnrollmentTimestamp = block.timestamp;
 
-            tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.enrollmentWindow;
-            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.enrollmentWindow;
+            tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.timeouts.enrollmentWindow;
+            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
         }
@@ -935,6 +979,19 @@ abstract contract ETour is ReentrancyGuard {
         return keccak256(abi.encodePacked(tierId, instanceId, roundNumber, matchNumber));
     }
 
+    /**
+     * @dev Public wrapper for _getMatchId to allow external queries
+     * Useful for off-chain tools and testing
+     */
+    function getMatchId(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public pure returns (bytes32) {
+        return _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+    }
+
     function _addPlayerActiveMatch(address player, bytes32 matchId) internal {
         playerActiveMatches[player].push(matchId);
         playerMatchIndex[player][matchId] = playerActiveMatches[player].length - 1;
@@ -1197,6 +1254,141 @@ abstract contract ETour is ReentrancyGuard {
     }
 
     // ============ Escalation Level 2 & 3 (Tournament-Level Timeout) ============
+
+    /**
+     * @dev Internal function to mark a match as stalled when timeout is claimable
+     * Sets escalation timers to enable progressive intervention
+     * Called by game contracts when a player runs out of time
+     * @param matchId The match identifier
+     * @param tierId The tier ID (for config)
+     * @param timeoutOccurredAt When the timeout actually happened (0 = use current time)
+     */
+    function _markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) internal {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        if (!timeout.isStalled) {
+            timeout.isStalled = true;
+            TierConfig storage config = _tierConfigs[tierId];
+
+            // If timeoutOccurredAt is 0, use current time
+            uint256 baseTime = timeoutOccurredAt == 0 ? block.timestamp : timeoutOccurredAt;
+
+            // Use tier-specific timeout configuration
+            timeout.escalation1Start = baseTime + config.timeouts.matchLevel2Delay;
+            timeout.escalation2Start = baseTime + config.timeouts.matchLevel3Delay;
+            timeout.activeEscalation = EscalationLevel.None;
+        }
+    }
+
+    /**
+     * @dev Convenience overload that uses current time as timeout timestamp
+     */
+    function _markMatchStalled(bytes32 matchId, uint8 tierId) internal {
+        _markMatchStalled(matchId, tierId, 0);
+    }
+
+    /**
+     * @dev Check if a match should be marked as stalled and mark it if needed
+     * A match is stalled if it's in progress and a player's time has run out
+     * Returns true if match is stalled (was already or just marked)
+     */
+    function _checkAndMarkStalled(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal returns (bool) {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If already marked as stalled, return true
+        if (timeout.isStalled) {
+            return true;
+        }
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match common data to check status
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has run out of time (using game-specific time bank logic)
+        if (_hasCurrentPlayerTimedOut(matchId)) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            // Calculate when the timeout occurred for accurate escalation timing
+            // Timeout occurs at: lastMoveTime + currentPlayer's timeRemaining
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+
+            // Mark as stalled with escalation timers starting from timeout occurrence
+            _markMatchStalled(matchId, tierId, timeoutOccurredAt);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Level 2 Escalation: Advanced player forces elimination of stalled match
+     * Callable by any player who has advanced past this round
+     * Both stalled players are eliminated, match completes with no winner
+     */
+    function forceEliminateStalledMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check and mark match as stalled if it qualifies
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
+
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // Require match is stalled and Level 2 is active
+        require(timeout.isStalled, "Match not stalled");
+        require(block.timestamp >= timeout.escalation1Start, "Level 2 not active yet");
+
+        // Require caller is an advanced player
+        require(_isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
+                "Not an advanced player");
+
+        // Mark escalation level and double eliminate both players
+        timeout.activeEscalation = EscalationLevel.Escalation2_AdvancedPlayers;
+        _completeMatchDoubleElimination(tierId, instanceId, roundNumber, matchNumber);
+    }
+
+    /**
+     * @dev Level 3 Escalation: External player replaces stalled players
+     * Callable by anyone (even non-enrolled)
+     * Replacement player wins the match and advances in tournament
+     */
+    function claimMatchSlotByReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check and mark match as stalled if it qualifies
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
+
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // Require match is stalled and Level 3 window is active
+        require(timeout.isStalled, "Match not stalled");
+        require(block.timestamp >= timeout.escalation2Start, "Level 3 not active yet");
+
+        // Mark escalation level and complete match with replacement winner
+        timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
+        _completeMatchByReplacement(tierId, instanceId, roundNumber, matchNumber, msg.sender);
+    }
 
     /**
      * @dev Check if a player has advanced in the tournament

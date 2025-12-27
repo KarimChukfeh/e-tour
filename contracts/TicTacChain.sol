@@ -129,19 +129,28 @@ contract TicTacChain is ETour {
      * Other games implementing ETour would define their own tiers here.
      */
     function _registerTicTacChainTiers() internal {
+        // 1 minute for all escalation windows
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 1 minutes,      // 60 seconds per player
+            matchLevel2Delay: 1 minutes,        // L2 starts 1 min after timeout
+            matchLevel3Delay: 2 minutes,        // L3 starts 2 min after timeout (cumulative)
+            enrollmentWindow: 1 minutes,        // 1 min to fill tournament
+            enrollmentLevel2Delay: 1 minutes    // L2 starts 1 min after L1
+        });
+
         // ============ Tier 0: 2-Player Classic (Entry Level) ============
         // Simple head-to-head, winner takes all
         uint8[] memory tier0Prizes = new uint8[](2);
         tier0Prizes[0] = 100;  // 1st place: 100%
         tier0Prizes[1] = 0;    // 2nd place: 0%
-        
+
         _registerTier(
             0,                              // tierId
             2,                              // playerCount
             64,                             // instanceCount
             0.001 ether,                    // entryFee
             Mode.Classic,                   // mode (no blocking)
-            DEMO_ENROLLMENT_WINDOW,      // enrollmentWindow
+            timeouts,                       // timeout configuration
             tier0Prizes                     // prizeDistribution
         );
 
@@ -159,7 +168,7 @@ contract TicTacChain is ETour {
             10,                             // instanceCount
             0.002 ether,                    // entryFee
             Mode.Classic,
-            DEMO_ENROLLMENT_WINDOW,
+            timeouts,
             tier1Prizes
         );
 
@@ -180,7 +189,7 @@ contract TicTacChain is ETour {
             16,                             // instanceCount
             0.004 ether,                    // entryFee
             Mode.Classic,
-            DEMO_ENROLLMENT_WINDOW,
+            timeouts,
             tier2Prizes
         );
     }
@@ -305,7 +314,7 @@ contract TicTacChain is ETour {
         }
 
         // Initialize time banks for both players
-        uint256 timePerPlayer = _getMatchTimePerPlayer();
+        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
@@ -400,12 +409,35 @@ contract TicTacChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _getMatchTimePerPlayer() internal pure override returns (uint256) {
-        return 2 minutes; // 120 seconds total time per player
-    }
-
     function _getTimeIncrement() internal pure override returns (uint256) {
         return 0; // No increment per move
+    }
+
+    /**
+     * @dev Check if the current player has run out of time
+     * Used by escalation system to detect stalled matches
+     */
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view override returns (bool) {
+        Match storage matchData = matches[matchId];
+
+        // If match is not in progress, return false
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Calculate time elapsed since last move
+        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+
+        // Get current player's remaining time
+        uint256 currentPlayerTimeRemaining;
+        if (matchData.currentTurn == matchData.player1) {
+            currentPlayerTimeRemaining = matchData.player1TimeRemaining;
+        } else {
+            currentPlayerTimeRemaining = matchData.player2TimeRemaining;
+        }
+
+        // Current player has timed out if elapsed time >= their remaining time
+        return timeElapsed >= currentPlayerTimeRemaining;
     }
 
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal override {
@@ -447,7 +479,7 @@ contract TicTacChain is ETour {
         }
 
         // Initialize time banks for both players
-        uint256 timePerPlayer = _getMatchTimePerPlayer();
+        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
@@ -698,6 +730,10 @@ contract TicTacChain is ETour {
 
         // Check if opponent has run out of time
         require(timeElapsed >= opponentTimeRemaining, "Opponent has not run out of time");
+
+        // Mark match as stalled to enable escalation if this claim isn't executed
+        // This starts escalation timers for advanced players and external replacements
+        _markMatchStalled(matchId, tierId);
 
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
