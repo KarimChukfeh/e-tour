@@ -247,6 +247,9 @@ contract TicTacChain is ETour {
                         matchData.blockedCell = NO_CELL;
                         matchData.player1UsedBlock = false;
                         matchData.player2UsedBlock = false;
+                        matchData.player1TimeRemaining = 0;
+                        matchData.player2TimeRemaining = 0;
+                        matchData.lastMoveTimestamp = 0;
 
                         for (uint8 i = 0; i < 9; i++) {
                             matchData.board[i] = Cell.Empty;

@@ -1541,6 +1541,139 @@ abstract contract ETour is ReentrancyGuard {
         }
     }
 
+    // ============ Escalation Availability Helpers (Public View) ============
+
+    /**
+     * @dev Check if Level 1 escalation (opponent timeout claim) is available
+     * @return available True if opponent can claim timeout victory
+     */
+    function isMatchEscL1Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        return _hasCurrentPlayerTimedOut(matchId);
+    }
+
+    /**
+     * @dev Check if Level 2 escalation (advanced player force eliminate) is available
+     * @return available True if L2 time window is active
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation (external player replacement) is available
+     * @return available True if L3 time window is active
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
+    }
+
+    /**
+     * @notice Check if a specific address is an advanced player in the tournament
+     * @dev Returns true if the player has won a match and advanced past the specified round
+     * @param player The address to check
+     * @param tierId The tier ID
+     * @param instanceId The instance ID
+     * @param roundNumber The round number being queried
+     * @return isAdvanced True if the player has advanced past the given round
+     */
+    function isPlayerInAdvancedRound(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) external view returns (bool isAdvanced) {
+        return _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, player);
+    }
+
     // ============ Caching Functions ============
 
     function _updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) internal {

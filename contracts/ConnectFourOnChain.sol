@@ -255,6 +255,9 @@ contract ConnectFourOnChain is ETour {
                         matchData.isDraw = false;
                         matchData.moveCount = 0;
                         matchData.lastColumn = NO_COLUMN;
+                        matchData.player1TimeRemaining = 0;
+                        matchData.player2TimeRemaining = 0;
+                        matchData.lastMoveTimestamp = 0;
 
                         for (uint8 i = 0; i < TOTAL_CELLS; i++) {
                             matchData.board[i] = Cell.Empty;
@@ -319,6 +322,12 @@ contract ConnectFourOnChain is ETour {
         for (uint8 i = 0; i < TOTAL_CELLS; i++) {
             matchData.board[i] = Cell.Empty;
         }
+
+        // Initialize time banks for both players
+        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        matchData.player1TimeRemaining = timePerPlayer;
+        matchData.player2TimeRemaining = timePerPlayer;
+        matchData.lastMoveTimestamp = block.timestamp;
 
         _addPlayerActiveMatch(player1, matchId);
         _addPlayerActiveMatch(player2, matchId);
