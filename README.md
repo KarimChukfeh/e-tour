@@ -1455,7 +1455,7 @@ pkill -f anvil || true
 
 ./start-anvil.sh
 
-mpx hardhat compile
+npx hardhat compile
 
 npx hardhat clean && npx hardhat compile
 
