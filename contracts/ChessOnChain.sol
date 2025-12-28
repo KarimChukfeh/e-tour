@@ -250,6 +250,12 @@ contract ChessOnChain is ETour {
         matchData.whiteInCheck = false;
         matchData.blackInCheck = false;
 
+        // Initialize time banks for both players
+        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        matchData.player1TimeRemaining = timePerPlayer;
+        matchData.player2TimeRemaining = timePerPlayer;
+        matchData.lastMoveTimestamp = block.timestamp;
+
         // Setup initial board position
         _setupInitialPosition(matchId);
 
@@ -467,13 +473,13 @@ contract ChessOnChain is ETour {
         matchData.halfMoveClock = 0;
         matchData.fullMoveNumber = 1;
 
-        _setupInitialPosition(matchId);
-
-        // Initialize time banks for both players
+        // Initialize time banks for both players BEFORE board setup
         uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
+
+        _setupInitialPosition(matchId);
     }
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal override {
