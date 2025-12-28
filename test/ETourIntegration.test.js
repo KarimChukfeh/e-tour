@@ -925,7 +925,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const match = await game.getMatch(tierId, instanceId, 0, 0);
 
             // Match should have timeout state initialized
-            expect(match.status).to.equal(1); // InProgress
+            expect(match.common.status).to.equal(1); // InProgress
         });
 
     });

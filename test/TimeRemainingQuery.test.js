@@ -9,7 +9,9 @@ describe("Real-Time Time Remaining Query Tests", function () {
     let owner, player1, player2;
 
     const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const FIVE_MINUTES = 5 * 60; // 300 seconds
+
+    // Dynamic timeout values (read from tier config)
+    let MATCH_TIME_PER_PLAYER;
 
     beforeEach(async function () {
         [owner, player1, player2] = await hre.ethers.getSigners();
@@ -17,6 +19,10 @@ describe("Real-Time Time Remaining Query Tests", function () {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+
+        // Read actual timeout config from tier 0
+        const tierConfig = await game.tierConfigs(0);
+        MATCH_TIME_PER_PLAYER = Number(tierConfig.timeouts.matchTimePerPlayer);
     });
 
     describe("Time Remaining Queries", function () {
@@ -34,8 +40,8 @@ describe("Real-Time Time Remaining Query Tests", function () {
             const isFirstPlayerP1 = match1.currentTurn === player1.address;
 
             // Initial state: both players have 5 minutes
-            expect(match1.player1TimeRemaining).to.equal(FIVE_MINUTES);
-            expect(match1.player2TimeRemaining).to.equal(FIVE_MINUTES);
+            expect(match1.player1TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
+            expect(match1.player2TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
 
             // Wait 30 seconds WITHOUT making a move
             await hre.ethers.provider.send("evm_increaseTime", [30]);
@@ -49,13 +55,13 @@ describe("Real-Time Time Remaining Query Tests", function () {
 
             console.log("After 30 seconds without move:");
             console.log("  Current player real-time:", currentPlayerTime.toString());
-            console.log("  Expected: ~270 seconds (300 - 30)");
+            console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 30} seconds (${MATCH_TIME_PER_PLAYER} - 30)`);
 
             // Current player should have ~270 seconds (300 - 30)
-            expect(currentPlayerTime).to.be.closeTo(FIVE_MINUTES - 30, 2);
+            expect(currentPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 30, 2);
 
             // Waiting player should still have 300
-            expect(waitingPlayerTime).to.equal(FIVE_MINUTES);
+            expect(waitingPlayerTime).to.equal(MATCH_TIME_PER_PLAYER);
         });
 
         it("Should show real-time countdown for current player's turn", async function () {
@@ -78,7 +84,7 @@ describe("Real-Time Time Remaining Query Tests", function () {
             // Check immediately after move - first player should have ~290 seconds
             const match2 = await game.getMatch(tierId, instanceId, 0, 0);
             const firstPlayerTimeAfterMove = isFirstPlayerP1 ? match2.player1TimeRemaining : match2.player2TimeRemaining;
-            expect(firstPlayerTimeAfterMove).to.be.closeTo(FIVE_MINUTES - 10, 2);
+            expect(firstPlayerTimeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER - 10, 2);
 
             // Now it's second player's turn. Wait 20 seconds
             await hre.ethers.provider.send("evm_increaseTime", [20]);
@@ -91,9 +97,9 @@ describe("Real-Time Time Remaining Query Tests", function () {
             // Second player should show ~280 seconds (300 - 20)
             console.log("\nSecond player's turn after 20 seconds:");
             console.log("  Second player real-time:", secondPlayerTimeDuringTurn.toString());
-            console.log("  Expected: ~280 seconds (300 - 20)");
+            console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 20} seconds (${MATCH_TIME_PER_PLAYER} - 20)`);
 
-            expect(secondPlayerTimeDuringTurn).to.be.closeTo(FIVE_MINUTES - 20, 2);
+            expect(secondPlayerTimeDuringTurn).to.be.closeTo(MATCH_TIME_PER_PLAYER - 20, 2);
         });
 
         it("Should allow multiple clients to query accurate time remaining simultaneously", async function () {
@@ -127,9 +133,9 @@ describe("Real-Time Time Remaining Query Tests", function () {
             // And it should reflect the elapsed time (~255 seconds = 300 - 45)
             console.log("\nMultiple client queries after 45 seconds:");
             console.log("  All clients see:", client1Time.toString(), "seconds");
-            console.log("  Expected: ~255 seconds (300 - 45)");
+            console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 45} seconds (${MATCH_TIME_PER_PLAYER} - 45)`);
 
-            expect(client1Time).to.be.closeTo(FIVE_MINUTES - 45, 2);
+            expect(client1Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 45, 2);
         });
 
         it("Should accurately calculate time remaining for both players in an ongoing match", async function () {
@@ -166,16 +172,16 @@ describe("Real-Time Time Remaining Query Tests", function () {
             console.log("\nAfter sequence of moves:");
             console.log("  Player 1 used 25s + thinking 15s = 40s total");
             console.log("  Player 1 real-time:", player1Time.toString());
-            console.log("  Expected: ~260 seconds (300 - 40)");
+            console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 40} seconds (${MATCH_TIME_PER_PLAYER} - 40)`);
 
             console.log("\n  Player 2 used 35s");
             console.log("  Player 2 real-time:", player2Time.toString());
-            console.log("  Expected: ~265 seconds (300 - 35)");
+            console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 35} seconds (${MATCH_TIME_PER_PLAYER} - 35)`);
 
             // With getCurrentTimeRemaining, player 1 should correctly show ~260
-            expect(player1Time).to.be.closeTo(FIVE_MINUTES - 40, 2);
+            expect(player1Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 40, 2);
             // Player 2 should show ~265
-            expect(player2Time).to.be.closeTo(FIVE_MINUTES - 35, 2);
+            expect(player2Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 35, 2);
         });
     });
 
@@ -210,14 +216,14 @@ describe("Real-Time Time Remaining Query Tests", function () {
             console.log("\nReal-time query solution:");
             console.log("  getCurrentTimeRemaining() returns:");
             console.log("  - Current player time:", currentPlayerTime.toString(), "seconds");
-            console.log("  - Expected: ~260 seconds (300 - 40)");
+            console.log(`  - Expected: ~${MATCH_TIME_PER_PLAYER - 40} seconds (${MATCH_TIME_PER_PLAYER} - 40)`);
             console.log("  - Waiting player time:", waitingPlayerTime.toString(), "seconds");
-            console.log("  - Expected: 300 seconds");
+            console.log(`  - Expected: ${MATCH_TIME_PER_PLAYER} seconds`);
 
             // Current player should have ~260 seconds (300 - 40)
-            expect(currentPlayerTime).to.be.closeTo(FIVE_MINUTES - 40, 2);
+            expect(currentPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 40, 2);
             // Waiting player should still have full time
-            expect(waitingPlayerTime).to.equal(FIVE_MINUTES);
+            expect(waitingPlayerTime).to.equal(MATCH_TIME_PER_PLAYER);
         });
     });
 });

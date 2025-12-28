@@ -7,8 +7,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
     const TIER_0_FEE = hre.ethers.parseEther("0.001");
     const TIER_1_FEE = hre.ethers.parseEther("0.002");
-    const MATCH_TIME = 2 * 60; // 120 seconds (2 minutes) for TicTacChain
-    const ESCALATION_WINDOW = 2 * 60; // 2 minutes for demo mode
+
+    // Dynamic timeout values (read from tier config)
+    let MATCH_TIME_PER_PLAYER;
+    let L2_DELAY;
+    let L3_DELAY;
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6] = await hre.ethers.getSigners();
@@ -16,6 +19,12 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+
+        // Read actual timeout config from tier 0
+        const tierConfig = await game.tierConfigs(0);
+        MATCH_TIME_PER_PLAYER = Number(tierConfig.timeouts.matchTimePerPlayer);
+        L2_DELAY = Number(tierConfig.timeouts.matchLevel2Delay);
+        L3_DELAY = Number(tierConfig.timeouts.matchLevel3Delay);
     });
 
     describe("Level 1: Normal Timeout Claim (Baseline)", function () {
@@ -27,13 +36,13 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            // Determine who goes first
+            // Determine who goes first using currentTurn
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.common.player1 === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
 
-            // First player's time runs out (2 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            // First player's time runs out
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout
@@ -61,10 +70,10 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Match 0: player1 vs player2
             // Match 1: player3 vs player4
             const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match0.common.player1 === player1.address ? player1 : player2;
+            const firstPlayer = match0.currentTurn === player1.address ? player1 : player2;
 
             // First player in Match 0 runs out of time
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Check that match can be marked as stalled (timeout state should exist)
@@ -112,11 +121,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Match 0: First player runs out of time
             const match0 = await game.getMatch(tierId, instanceId, 0, 0);
 
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Opponent doesn't claim, wait for escalation window
-            await hre.ethers.provider.send("evm_increaseTime", [ESCALATION_WINDOW + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [L2_DELAY + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Advanced player from Match 1 should be able to force eliminate Match 0
@@ -141,11 +150,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // First player in Match 0 runs out of time
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Wait for escalation window
-            await hre.ethers.provider.send("evm_increaseTime", [ESCALATION_WINDOW + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [L2_DELAY + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player (not in tournament) tries to force eliminate
@@ -182,7 +191,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             const advancedPlayer = match1FirstPlayer;
 
             // Match 0 player runs out of time
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Try to force eliminate immediately (before escalation window)
@@ -204,15 +213,15 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Match 0 player runs out of time
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Wait for Level 2 escalation window to pass
-            await hre.ethers.provider.send("evm_increaseTime", [ESCALATION_WINDOW + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [L2_DELAY + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Wait for Level 3 escalation window to activate
-            await hre.ethers.provider.send("evm_increaseTime", [ESCALATION_WINDOW + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [L2_DELAY + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player (player5, not in tournament) claims the slot
@@ -240,11 +249,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Player runs out of time
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Only wait for Level 2 window (not Level 3)
-            await hre.ethers.provider.send("evm_increaseTime", [ESCALATION_WINDOW + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [L2_DELAY + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player tries to claim too early
@@ -299,7 +308,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             const winnerMatch1 = match1FirstPlayer;
 
             // Match 0 stalls
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + ESCALATION_WINDOW + 2]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + L2_DELAY + 2]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Winner from Match 1 force eliminates Match 0
@@ -340,7 +349,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(match1FirstPlayer).makeMove(tierId, instanceId, 0, 1, 2);
 
             // Match 0 stalls, wait for Level 3
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + (ESCALATION_WINDOW * 2) + 3]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + (L2_DELAY * 2) + 3]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player claims Match 0
@@ -365,8 +374,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Complete match normally
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.common.player1 === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
 
             // Win the game
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
@@ -389,11 +398,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.common.player1 === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
 
             // First player times out
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout normally
