@@ -107,6 +107,25 @@ contract TicTacChain is ETour {
     mapping(bytes32 => uint16) private matchIdToCacheIndex; // Direct matchId lookup
     bytes32[MATCH_CACHE_SIZE] private cacheMatchIds; // Track which matchId is at each index
 
+    // ============ Player Activity Tracking ============
+
+    /**
+     * @dev Minimal tournament reference for player tracking
+     * Gas-optimized: 2 bytes total (tierId + instanceId)
+     */
+    struct TournamentRef {
+        uint8 tierId;
+        uint8 instanceId;
+    }
+
+    // Track tournaments where player is enrolled but not yet started
+    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
+
+    // Track tournaments where player is actively competing
+    mapping(address => TournamentRef[]) public playerActiveTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
+
     // ============ Game-Specific Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
@@ -956,5 +975,212 @@ contract TicTacChain is ETour {
             "Generated: Block ",
             Strings.toString(block.number)
         ));
+    }
+
+    // ============ Player Activity Tracking Implementation ============
+
+    /**
+     * @dev Hook override: Called when player enrolls in tournament
+     * Adds player to enrolling list for activity tracking
+     */
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
+        _addPlayerEnrollingTournament(player, tierId, instanceId);
+    }
+
+    /**
+     * @dev Hook override: Called when tournament starts (status -> InProgress)
+     * Moves ALL enrolled players from enrolling to active list atomically
+     */
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+
+        // Iterate all enrolled players (max 8 for TicTacChain) and move atomically
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            _removePlayerEnrollingTournament(player, tierId, instanceId);
+            _addPlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    /**
+     * @dev Hook override: Called when player is eliminated from tournament
+     * Removes player from active list if they have no remaining matches in this tournament
+     */
+    function _onPlayerEliminatedFromTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 /* roundNumber */
+    ) internal override {
+        // Check if player has any remaining active matches in this tournament
+        bool hasActiveMatch = _playerHasActiveMatchInTournament(player, tierId, instanceId);
+
+        if (!hasActiveMatch) {
+            _removePlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    /**
+     * @dev Hook override: Called when external player replaces stalled players (L3 escalation)
+     * Adds replacement player directly to active list (skips enrolling)
+     */
+    function _onExternalPlayerReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal override {
+        // External replacement joins mid-tournament (already InProgress)
+        // Skip enrolling list, add directly to active list
+        _addPlayerActiveTournament(player, tierId, instanceId);
+    }
+
+    /**
+     * @dev Hook override: Called when tournament completes and resets
+     * Cleans up all player tracking for this tournament
+     */
+    function _onTournamentCompleted(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory players
+    ) internal override {
+        // Clean up all players (both enrolling and active lists)
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            _removePlayerEnrollingTournament(player, tierId, instanceId);
+            _removePlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    // ============ Helper Functions ============
+
+    /**
+     * @dev Add player to enrolling tournament list
+     */
+    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return; // Already tracked
+
+        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+    }
+
+    /**
+     * @dev Remove player from enrolling tournament list using swap-and-pop
+     */
+    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return; // Not in list
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
+            playerEnrollingTournaments[player][index] = lastRef;
+            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerEnrollingTournaments[player].pop();
+        delete playerEnrollingIndex[player][tierId][instanceId];
+    }
+
+    /**
+     * @dev Add player to active tournament list
+     */
+    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerActiveIndex[player][tierId][instanceId] != 0) return; // Already tracked
+
+        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
+    }
+
+    /**
+     * @dev Remove player from active tournament list using swap-and-pop
+     */
+    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return; // Not in list
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerActiveTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
+            playerActiveTournaments[player][index] = lastRef;
+            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerActiveTournaments[player].pop();
+        delete playerActiveIndex[player][tierId][instanceId];
+    }
+
+    /**
+     * @dev Check if player has any active matches in specified tournament
+     * Iterates player's active matches to find matches belonging to this tournament
+     */
+    function _playerHasActiveMatchInTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId
+    ) private view returns (bool) {
+        bytes32[] storage activeMatches = playerActiveMatches[player];
+
+        // Check if player has any matches remaining in this tournament
+        for (uint256 i = 0; i < activeMatches.length; i++) {
+            bytes32 matchId = activeMatches[i];
+
+            // Check all possible rounds and matches in this tournament
+            TierConfig storage config = _tierConfigs[tierId];
+            for (uint8 r = 0; r < config.totalRounds; r++) {
+                Round storage round = rounds[tierId][instanceId][r];
+                for (uint8 m = 0; m < round.totalMatches; m++) {
+                    if (_getMatchId(tierId, instanceId, r, m) == matchId) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // ============ Player Activity View Functions ============
+
+    /**
+     * @dev Get all tournaments where player is enrolled but not yet started
+     * Returns array of (tierId, instanceId) pairs
+     */
+    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerEnrollingTournaments[player];
+    }
+
+    /**
+     * @dev Get all tournaments where player is actively competing
+     * Returns array of (tierId, instanceId) pairs
+     */
+    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerActiveTournaments[player];
+    }
+
+    /**
+     * @dev Get counts (gas-efficient for checking if player has any activity)
+     */
+    function getPlayerActivityCounts(address player) external view returns (
+        uint256 enrollingCount,
+        uint256 activeCount
+    ) {
+        return (
+            playerEnrollingTournaments[player].length,
+            playerActiveTournaments[player].length
+        );
+    }
+
+    /**
+     * @dev Check if player is in specific tournament (either enrolling or active)
+     */
+    function isPlayerInTournament(address player, uint8 tierId, uint8 instanceId)
+        external view returns (bool isEnrolling, bool isActive)
+    {
+        isEnrolling = playerEnrollingIndex[player][tierId][instanceId] != 0;
+        isActive = playerActiveIndex[player][tierId][instanceId] != 0;
     }
 }

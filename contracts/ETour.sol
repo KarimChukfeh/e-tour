@@ -442,6 +442,51 @@ abstract contract ETour is ReentrancyGuard {
         uint8 matchNumber
     ) internal view virtual returns (CommonMatchData memory data, bool exists);
 
+    // ============ Player Activity Tracking Hooks ============
+
+    /**
+     * @dev Hook called when player enrolls in tournament
+     * Override in game contracts to track player activity
+     */
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal virtual {}
+
+    /**
+     * @dev Hook called when tournament transitions from Enrolling to InProgress
+     * Override in game contracts to track status changes for all enrolled players
+     */
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal virtual {}
+
+    /**
+     * @dev Hook called when player is eliminated from tournament
+     * Override in game contracts to track player elimination
+     */
+    function _onPlayerEliminatedFromTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal virtual {}
+
+    /**
+     * @dev Hook called when external player replaces stalled players (L3 escalation)
+     * Override in game contracts to track mid-tournament player additions
+     */
+    function _onExternalPlayerReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal virtual {}
+
+    /**
+     * @dev Hook called when tournament completes and resets
+     * Override in game contracts to clean up player tracking
+     */
+    function _onTournamentCompleted(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory players
+    ) internal virtual {}
+
     // ============ Enrollment Functions ============
     
     function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
@@ -490,6 +535,7 @@ abstract contract ETour is ReentrancyGuard {
         tournament.prizePool += participantsShare;
 
         emit PlayerEnrolled(tierId, instanceId, msg.sender, tournament.enrolledCount);
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
 
         if (tournament.enrolledCount == config.playerCount) {
             _startTournament(tierId, instanceId);
@@ -557,6 +603,7 @@ abstract contract ETour is ReentrancyGuard {
         tournament.currentRound = 0;
 
         emit TournamentStarted(tierId, instanceId, tournament.enrolledCount);
+        _onTournamentStarted(tierId, instanceId);
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
@@ -715,6 +762,8 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -1470,6 +1519,8 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -1508,6 +1559,8 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -1518,6 +1571,7 @@ abstract contract ETour is ReentrancyGuard {
             isEnrolled[tierId][instanceId][replacementPlayer] = true;
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             tournament.enrolledCount++;
+            _onExternalPlayerReplacement(tierId, instanceId, replacementPlayer);
         }
 
         playerStats[replacementPlayer].matchesPlayed++;
@@ -1749,6 +1803,13 @@ abstract contract ETour is ReentrancyGuard {
         tournament.forceStartTimestamp = 0;
 
         address[] storage players = enrolledPlayers[tierId][instanceId];
+
+        // Copy players array before deletion for tracking cleanup
+        address[] memory playersCopy = new address[](players.length);
+        for (uint256 i = 0; i < players.length; i++) {
+            playersCopy[i] = players[i];
+        }
+
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             isEnrolled[tierId][instanceId][player] = false;
@@ -1756,6 +1817,9 @@ abstract contract ETour is ReentrancyGuard {
             // Note: playerPrizes is intentionally NOT deleted - it's permanent historical record
         }
         delete enrolledPlayers[tierId][instanceId];
+
+        // Notify tracking systems of tournament completion
+        _onTournamentCompleted(tierId, instanceId, playersCopy);
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
             Round storage round = rounds[tierId][instanceId][roundNum];
