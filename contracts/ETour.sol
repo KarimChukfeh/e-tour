@@ -228,6 +228,15 @@ abstract contract ETour is ReentrancyGuard {
     event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
     event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
     event PlayerForfeited(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, string reason);
+    event ProtocolRaffleExecuted(
+        address indexed winner,
+        address indexed caller,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 remainingReserve,
+        uint256 winnerEnrollmentCount
+    );
 
     // ============ Constructor ============
 
@@ -530,9 +539,9 @@ abstract contract ETour is ReentrancyGuard {
         require(ownerSuccess, "Owner fee transfer failed");
         emit OwnerFeePaid(owner, ownerShare);
 
-        (bool protocolSuccess, ) = payable(owner).call{value: protocolShare}("");
-        require(protocolSuccess, "Protocol fee transfer failed");
-        emit ProtocolFeePaid(owner, protocolShare);
+        // Add protocol share to accumulated pool for raffle system
+        accumulatedProtocolShare += protocolShare;
+        emit ProtocolFeePaid(address(this), protocolShare);
 
         enrolledPlayers[tierId][instanceId].push(msg.sender);
         isEnrolled[tierId][instanceId][msg.sender] = true;
@@ -597,6 +606,93 @@ abstract contract ETour is ReentrancyGuard {
 
         _updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
         _resetTournamentAfterCompletion(tierId, instanceId);
+    }
+
+    /**
+     * @dev Executes protocol raffle when accumulated fees exceed 3 ETH
+     * @notice Only callable by players enrolled in active tournaments
+     * @return winner Address of the randomly selected winner
+     * @return ownerAmount Amount sent to owner (20%)
+     * @return winnerAmount Amount sent to winner (80%)
+     */
+    function executeProtocolRaffle()
+        external
+        nonReentrant
+        returns (
+            address winner,
+            uint256 ownerAmount,
+            uint256 winnerAmount
+        )
+    {
+        // CHECK 1: Verify threshold met
+        require(
+            accumulatedProtocolShare >= 3 ether,
+            "Raffle threshold not met (need 3 ETH)"
+        );
+
+        // CHECK 2: Verify caller is enrolled in active tournament
+        require(
+            _isCallerEnrolledInActiveTournament(msg.sender),
+            "Only enrolled players can trigger raffle"
+        );
+
+        // EFFECT 1: Calculate raffle amount (keep 1 ETH reserve)
+        uint256 raffleAmount = accumulatedProtocolShare - 1 ether;
+        ownerAmount = (raffleAmount * 20) / 100;  // 20%
+        winnerAmount = (raffleAmount * 80) / 100; // 80%
+
+        // EFFECT 2: Update accumulated protocol share (keep reserve)
+        accumulatedProtocolShare = 1 ether;
+
+        // EFFECT 3: Get all enrolled players with weights
+        (
+            address[] memory players,
+            uint256[] memory weights,
+            uint256 totalWeight
+        ) = _getAllEnrolledPlayersWithWeights();
+
+        require(totalWeight > 0, "No eligible players for raffle");
+
+        // EFFECT 4: Generate randomness and select winner
+        uint256 randomness = uint256(keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            block.number,
+            msg.sender,
+            accumulatedProtocolShare
+        )));
+
+        winner = _selectWeightedWinner(players, weights, totalWeight, randomness);
+
+        // Find winner's enrollment count for event
+        uint256 winnerEnrollmentCount = 0;
+        for (uint256 i = 0; i < players.length; i++) {
+            if (players[i] == winner) {
+                winnerEnrollmentCount = weights[i];
+                break;
+            }
+        }
+
+        // EFFECT 5: Emit event
+        emit ProtocolRaffleExecuted(
+            winner,
+            msg.sender,
+            raffleAmount,
+            ownerAmount,
+            winnerAmount,
+            accumulatedProtocolShare,
+            winnerEnrollmentCount
+        );
+
+        // INTERACTION 1: Send to owner
+        (bool ownerSent, ) = payable(owner).call{value: ownerAmount}("");
+        require(ownerSent, "Failed to send owner share");
+
+        // INTERACTION 2: Send to winner
+        (bool winnerSent, ) = payable(winner).call{value: winnerAmount}("");
+        require(winnerSent, "Failed to send winner share");
+
+        return (winner, ownerAmount, winnerAmount);
     }
 
     // ============ Tournament Management ============
@@ -2145,6 +2241,202 @@ abstract contract ETour is ReentrancyGuard {
 
     function getLeaderboardCount() external view returns (uint256) {
         return _leaderboardPlayers.length;
+    }
+
+    /**
+     * @dev Returns current raffle state information
+     * @return isReady True if raffle can be executed
+     * @return currentAccumulated Current accumulated protocol share
+     * @return raffleAmount Amount that would be distributed if executed
+     * @return ownerShare 20% for owner
+     * @return winnerShare 80% for winner
+     * @return eligiblePlayerCount Number of unique eligible players
+     */
+    function getRaffleInfo()
+        external
+        view
+        returns (
+            bool isReady,
+            uint256 currentAccumulated,
+            uint256 raffleAmount,
+            uint256 ownerShare,
+            uint256 winnerShare,
+            uint256 eligiblePlayerCount
+        )
+    {
+        currentAccumulated = accumulatedProtocolShare;
+        isReady = currentAccumulated >= 3 ether;
+
+        if (isReady) {
+            raffleAmount = currentAccumulated - 1 ether;
+            ownerShare = (raffleAmount * 20) / 100;
+            winnerShare = (raffleAmount * 80) / 100;
+        }
+
+        // Count eligible players
+        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
+        eligiblePlayerCount = players.length;
+
+        return (
+            isReady,
+            currentAccumulated,
+            raffleAmount,
+            ownerShare,
+            winnerShare,
+            eligiblePlayerCount
+        );
+    }
+
+    // ============ Protocol Raffle System ============
+
+    /**
+     * @dev Checks if caller is enrolled in any active tournament
+     * @param caller Address to check
+     * @return true if caller is enrolled in at least one active tournament (Enrolling or InProgress)
+     */
+    function _isCallerEnrolledInActiveTournament(address caller)
+        internal
+        view
+        returns (bool)
+    {
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Only check Enrolling and InProgress tournaments
+                if (tournament.status == TournamentStatus.Enrolling ||
+                    tournament.status == TournamentStatus.InProgress) {
+
+                    if (isEnrolled[tierId][instanceId][caller]) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Gets all enrolled players across active tournaments with enrollment counts
+     * @return players Array of unique player addresses
+     * @return weights Array of enrollment counts per player
+     * @return totalWeight Sum of all weights
+     */
+    function _getAllEnrolledPlayersWithWeights()
+        internal
+        view
+        returns (
+            address[] memory players,
+            uint256[] memory weights,
+            uint256 totalWeight
+        )
+    {
+        // Use dynamic approach with temporary arrays (max 1000 unique players)
+        address[] memory tempPlayers = new address[](1000);
+        uint256 uniqueCount = 0;
+        totalWeight = 0;
+
+        // First pass: collect unique players and count total enrollments
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Only count Enrolling and InProgress tournaments
+                if (tournament.status == TournamentStatus.Enrolling ||
+                    tournament.status == TournamentStatus.InProgress) {
+
+                    address[] storage enrolled = enrolledPlayers[tierId][instanceId];
+
+                    for (uint256 i = 0; i < enrolled.length; i++) {
+                        address player = enrolled[i];
+                        bool found = false;
+
+                        // Check if player already in tempPlayers
+                        for (uint256 j = 0; j < uniqueCount; j++) {
+                            if (tempPlayers[j] == player) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            tempPlayers[uniqueCount] = player;
+                            uniqueCount++;
+                        }
+
+                        totalWeight++;
+                    }
+                }
+            }
+        }
+
+        // Allocate exact-size arrays
+        players = new address[](uniqueCount);
+        weights = new uint256[](uniqueCount);
+
+        // Second pass: count weights for each unique player
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            players[i] = tempPlayers[i];
+            uint256 playerWeight = 0;
+
+            for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+                TierConfig storage config = _tierConfigs[tierId];
+
+                for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                    TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                    if ((tournament.status == TournamentStatus.Enrolling ||
+                         tournament.status == TournamentStatus.InProgress) &&
+                        isEnrolled[tierId][instanceId][players[i]]) {
+                        playerWeight++;
+                    }
+                }
+            }
+
+            weights[i] = playerWeight;
+        }
+
+        return (players, weights, totalWeight);
+    }
+
+    /**
+     * @dev Selects winner using weighted random selection (cumulative probability method)
+     * @param players Array of player addresses
+     * @param weights Array of weights (enrollment counts)
+     * @param totalWeight Sum of all weights
+     * @param randomness Random seed
+     * @return winner Selected player address
+     */
+    function _selectWeightedWinner(
+        address[] memory players,
+        uint256[] memory weights,
+        uint256 totalWeight,
+        uint256 randomness
+    ) internal pure returns (address winner) {
+        require(players.length > 0, "No players available");
+        require(players.length == weights.length, "Array length mismatch");
+
+        // Generate random position in [0, totalWeight)
+        uint256 randomPosition = randomness % totalWeight;
+
+        // Find winner using cumulative probability
+        uint256 cumulativeWeight = 0;
+
+        for (uint256 i = 0; i < players.length; i++) {
+            cumulativeWeight += weights[i];
+
+            if (randomPosition < cumulativeWeight) {
+                return players[i];
+            }
+        }
+
+        // Fallback (should never reach here)
+        return players[players.length - 1];
     }
 
     /**
