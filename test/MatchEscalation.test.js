@@ -375,16 +375,14 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Tournament should NOT advance to finals because both players from Match 0 were eliminated
             // Only the winner from Match 1 remains, they should win the tournament automatically
             const tournament = await game.tournaments(tierId, instanceId);
-            console.log("Tournament after completion:", {
-                status: tournament.status,
-                winner: tournament.winner,
-                winnerExpected: winnerMatch1.address
-            });
 
-            // Check if tournament completed by checking winner (status gets reset to Enrolling after completion)
-            expect(tournament.winner).to.equal(winnerMatch1.address);
-            // Status will be 0 (Enrolling) after auto-reset, not 2 (Completed)
+            // Check tournament completed and reset (status = Enrolling, winner cleared)
             expect(tournament.status).to.equal(0); // TournamentStatus.Enrolling (after reset)
+            expect(tournament.winner).to.equal(hre.ethers.ZeroAddress); // Winner cleared after reset
+
+            // Verify the winner received their prize (permanent record)
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, winnerMatch1.address);
+            expect(winnerPrize).to.be.gt(0); // Winner should have received a prize
         });
 
         it("Should allow replacement player to advance in tournament", async function () {

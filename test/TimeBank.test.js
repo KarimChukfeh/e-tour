@@ -344,17 +344,4 @@ describe("Time Bank System (Chess Clock) Tests", function () {
         });
     });
 
-    describe("Backward Compatibility", function () {
-        it("Should reject non-existent escalation functions", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // These functions should not exist anymore
-            expect(game.forceEliminateStalledMatch).to.be.undefined;
-            expect(game.claimMatchSlotByReplacement).to.be.undefined;
-        });
-    });
 });

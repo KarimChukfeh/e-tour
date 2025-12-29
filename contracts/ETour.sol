@@ -771,6 +771,9 @@ abstract contract ETour is ReentrancyGuard {
             playerStats[winner].matchesWon++;
         }
 
+        // Clear escalation state when match completes
+        _clearEscalationState(matchId);
+
         emit MatchCompleted(matchId, winner, isDraw);
 
         if (!isDraw) {
@@ -790,6 +793,9 @@ abstract contract ETour is ReentrancyGuard {
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                // This handles the case where only one winner remains after force elimination
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
@@ -1174,6 +1180,60 @@ abstract contract ETour is ReentrancyGuard {
         return result;
     }
 
+    /**
+     * @dev After processing orphaned winners, checks if tournament should complete
+     * with a sole winner. This handles edge cases where force elimination leaves
+     * only one remaining player who gets advanced to next round alone.
+     */
+    function _checkForSoleWinnerCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal {
+        TierConfig storage config = _tierConfigs[tierId];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Only check if not already completed and not in finals
+        if (tournament.status == TournamentStatus.Completed) {
+            return;
+        }
+
+        uint8 nextRound = roundNumber + 1;
+        if (nextRound >= config.totalRounds) {
+            return;
+        }
+
+        // Check if next round has only one player across all matches
+        Round storage nextRoundData = rounds[tierId][instanceId][nextRound];
+        if (!nextRoundData.initialized) {
+            return;
+        }
+
+        address solePlayer = address(0);
+        uint8 playerCount = 0;
+
+        for (uint8 i = 0; i < nextRoundData.totalMatches; i++) {
+            bytes32 matchId = _getMatchId(tierId, instanceId, nextRound, i);
+            (address p1, address p2) = _getMatchPlayers(matchId);
+
+            if (p1 != address(0)) {
+                solePlayer = p1;
+                playerCount++;
+            }
+            if (p2 != address(0)) {
+                if (solePlayer == address(0)) {
+                    solePlayer = p2;
+                }
+                playerCount++;
+            }
+        }
+
+        // If exactly one player in next round, they win by default
+        if (playerCount == 1 && solePlayer != address(0)) {
+            _completeTournament(tierId, instanceId, solePlayer);
+        }
+    }
+
     function _consolidateScatteredPlayers(
         uint8 tierId,
         uint8 instanceId,
@@ -1337,6 +1397,18 @@ abstract contract ETour is ReentrancyGuard {
      */
     function _markMatchStalled(bytes32 matchId, uint8 tierId) internal {
         _markMatchStalled(matchId, tierId, 0);
+    }
+
+    /**
+     * @dev Clears escalation state for a match after it completes
+     * @param matchId The match identifier
+     */
+    function _clearEscalationState(bytes32 matchId) internal {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
     }
 
     /**
@@ -1531,12 +1603,17 @@ abstract contract ETour is ReentrancyGuard {
 
         emit MatchCompleted(matchId, address(0), false);
 
+        // Clear escalation state
+        _clearEscalationState(matchId);
+
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
 
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
@@ -1583,6 +1660,9 @@ abstract contract ETour is ReentrancyGuard {
 
         emit MatchCompleted(matchId, replacementPlayer, false);
 
+        // Clear escalation state
+        _clearEscalationState(matchId);
+
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber < config.totalRounds - 1) {
             _advanceWinner(tierId, instanceId, roundNumber, matchNumber, replacementPlayer);
@@ -1594,6 +1674,8 @@ abstract contract ETour is ReentrancyGuard {
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
