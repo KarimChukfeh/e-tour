@@ -177,6 +177,9 @@ abstract contract ETour is ReentrancyGuard {
     mapping(uint8 => TierConfig) internal _tierConfigs;
     mapping(uint8 => uint8[]) internal _tierPrizeDistribution; // tierId => percentages array
 
+    // Accumulated protocol share from failed prize distributions
+    uint256 public accumulatedProtocolShare;
+
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
     mapping(uint8 => mapping(uint8 => address[])) public enrolledPlayers;
@@ -218,6 +221,8 @@ abstract contract ETour is ReentrancyGuard {
     event OwnerFeePaid(address indexed owner, uint256 amount);
     event ProtocolFeePaid(address indexed recipient, uint256 amount);
     event PrizeDistributed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 rank, uint256 amount);
+    event PrizeDistributionFailed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, uint8 attemptsMade);
+    event PrizeFallbackToContract(address indexed player, uint256 amount);
     event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, address winner);
     event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed starter, uint8 playerCount);
     event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
@@ -614,13 +619,16 @@ abstract contract ETour is ReentrancyGuard {
             uint256 winnersPot = tournament.prizePool;
             playerPrizes[tierId][instanceId][soloWinner] = winnersPot;
 
-            (bool success, ) = payable(soloWinner).call{value: winnersPot}("");
-            require(success, "Prize payout failed");
+            // Attempt to send prize with fallback to owner fees if failed
+            bool sent = _sendPrizeWithFallback(soloWinner, winnersPot, tierId, instanceId);
 
             playerStats[soloWinner].tournamentsWon++;
             playerStats[soloWinner].tournamentsPlayed++;
 
-            emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
+            // Only emit success event if prize was actually sent
+            if (sent) {
+                emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
+            }
             emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, false, address(0));
 
             _updatePlayerEarnings(tierId, instanceId, soloWinner);
@@ -955,6 +963,41 @@ abstract contract ETour is ReentrancyGuard {
 
     // ============ Prize Distribution ============
 
+    /**
+     * @dev Attempts to send prize to a recipient with fallback to protocol pool if failed
+     * @param recipient Address to receive the prize
+     * @param amount Amount to send in wei
+     * @param tierId Tournament tier ID (for event logging)
+     * @param instanceId Tournament instance ID (for event logging)
+     * @return success True if prize was sent successfully, false if fell back to protocol pool
+     *
+     * If the send attempt fails, the amount is added to accumulatedProtocolShare
+     * to prevent tournament stalling while ensuring funds are not lost.
+     */
+    function _sendPrizeWithFallback(
+        address recipient,
+        uint256 amount,
+        uint8 tierId,
+        uint8 instanceId
+    ) internal returns (bool success) {
+        require(amount > 0, "Amount must be greater than 0");
+
+        // Attempt to send the prize once
+        (bool sent, ) = payable(recipient).call{value: amount}("");
+
+        if (sent) {
+            return true; // Prize sent successfully
+        }
+
+        // If send failed, add amount to accumulated protocol share
+        accumulatedProtocolShare += amount;
+
+        emit PrizeDistributionFailed(tierId, instanceId, recipient, amount, 1);
+        emit PrizeFallbackToContract(recipient, amount);
+
+        return false; // Indicate fallback occurred
+    }
+
     function _distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot) internal {
         address[] storage players = enrolledPlayers[tierId][instanceId];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
@@ -979,9 +1022,15 @@ abstract contract ETour is ReentrancyGuard {
 
                 if (prizeAmount > 0) {
                     playerPrizes[tierId][instanceId][player] = prizeAmount;
-                    (bool success, ) = payable(player).call{value: prizeAmount}("");
-                    require(success, "Prize payout failed");
-                    emit PrizeDistributed(tierId, instanceId, player, ranking, prizeAmount);
+
+                    // Attempt to send prize with fallback to owner fees if failed
+                    bool sent = _sendPrizeWithFallback(player, prizeAmount, tierId, instanceId);
+
+                    // Only emit success event if prize was actually sent
+                    // (Failed attempts already emit PrizeDistributionFailed and PrizeFallbackToOwnerFees)
+                    if (sent) {
+                        emit PrizeDistributed(tierId, instanceId, player, ranking, prizeAmount);
+                    }
                 }
             }
         }
@@ -1000,9 +1049,13 @@ abstract contract ETour is ReentrancyGuard {
             playerRanking[tierId][instanceId][player] = 0;
             playerPrizes[tierId][instanceId][player] = prizePerPlayer;
 
-            (bool success, ) = payable(player).call{value: prizePerPlayer}("");
-            require(success, "Prize payout failed");
-            emit PrizeDistributed(tierId, instanceId, player, 1, prizePerPlayer);
+            // Attempt to send prize with fallback to owner fees if failed
+            bool sent = _sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId);
+
+            // Only emit success event if prize was actually sent
+            if (sent) {
+                emit PrizeDistributed(tierId, instanceId, player, 1, prizePerPlayer);
+            }
         }
     }
 
