@@ -33,7 +33,7 @@ export default {
     hardhat: {
       chainId: 31337,
       accounts: {
-        count: 20, // Increase to support 64+ player tests
+        count: 250, // Increased to support 224-player max capacity tests
         accountsBalance: "10000000000000000000000" // 10000 ETH per account
       },
       mining: {

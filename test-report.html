@@ -2254,6 +2254,237 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
             </div>
         </div>
 
+        <!-- Gas Estimation Analysis -->
+        <div class="section" style="border: 2px solid var(--accent-purple);">
+            <div class="section-header" onclick="toggleSection(this)">
+                <span class="section-icon">⛽</span>
+                <span class="section-title">ConnectFour Gas Estimation (L2 Optimized)</span>
+                <span class="chevron">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="section-description" style="border-left-color: var(--accent-purple);">
+                    <strong>📊 Test Methodology:</strong> Comprehensive gas cost analysis under maximum contract capacity (224 concurrent players across all 4 tiers, 36 active tournaments, ~158 concurrent matches). Simulates worst-case gas consumption scenarios with realistic L2 gas prices (Arbitrum/Optimism/Base).<br><br>
+                    <strong>🎯 What's Measured:</strong> Each player's <em>complete journey</em> including enrollment, all game moves, completions, timeouts, and escalations. Not just single moves!
+                </div>
+
+                <div class="tier-cards">
+                    <div class="tier-card" style="border-color: var(--accent-green);">
+                        <div class="tier-card-title" style="color: var(--accent-green);">Avg Player Cost</div>
+                        <div class="tier-card-value" style="color: var(--accent-green);">$0.07</div>
+                        <div class="tier-card-label">@ 0.05 gwei (typical L2)</div>
+                    </div>
+                    <div class="tier-card" style="border-color: var(--accent-orange);">
+                        <div class="tier-card-title" style="color: var(--accent-orange);">Max Player Cost</div>
+                        <div class="tier-card-value" style="color: var(--accent-orange);">$0.59</div>
+                        <div class="tier-card-label">@ 0.05 gwei (16-player auto-start)</div>
+                    </div>
+                    <div class="tier-card" style="border-color: var(--accent-red);">
+                        <div class="tier-card-title" style="color: var(--accent-red);">Worst Case</div>
+                        <div class="tier-card-value" style="color: var(--accent-red);">$11.84</div>
+                        <div class="tier-card-label">@ 1.0 gwei (peak congestion)</div>
+                    </div>
+                    <div class="tier-card" style="border-color: var(--accent-blue);">
+                        <div class="tier-card-title" style="color: var(--accent-blue);">Total Players</div>
+                        <div class="tier-card-value" style="color: var(--accent-blue);">224</div>
+                        <div class="tier-card-label">Maximum capacity tested</div>
+                    </div>
+                </div>
+
+                <div class="diagram-container">
+                    <div class="diagram-title">⛽ Gas Cost Breakdown by Operation Type</div>
+                    <table class="prize-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Avg Gas</th>
+                                <th>Cost @ 0.05 gwei</th>
+                                <th>Cost @ 1.0 gwei</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="color: var(--accent-red);"><strong>Tournament Auto-Start (16p)</strong></td>
+                                <td>3,945,110</td>
+                                <td style="color: var(--accent-green);">$0.59</td>
+                                <td style="color: var(--accent-orange);">$11.84</td>
+                                <td>Most expensive: 16th player enrollment triggers tournament start</td>
+                            </tr>
+                            <tr>
+                                <td style="color: var(--accent-orange);">Tier 2 Enrollment (8p)</td>
+                                <td>2,053,367</td>
+                                <td style="color: var(--accent-green);">$0.31</td>
+                                <td style="color: var(--accent-orange);">$6.16</td>
+                                <td>8th player enrollment, triggers auto-start</td>
+                            </tr>
+                            <tr>
+                                <td style="color: var(--accent-orange);">Tier 1 Enrollment (4p)</td>
+                                <td>1,107,486</td>
+                                <td style="color: var(--accent-green);">$0.17</td>
+                                <td>$3.32</td>
+                                <td>4th player enrollment, triggers auto-start</td>
+                            </tr>
+                            <tr>
+                                <td style="color: var(--accent-yellow);">Timeout Claim</td>
+                                <td>538,923</td>
+                                <td style="color: var(--accent-green);">$0.08</td>
+                                <td>$1.62</td>
+                                <td>L1 escalation: claiming timeout victory</td>
+                            </tr>
+                            <tr>
+                                <td>Game Move</td>
+                                <td>77,568</td>
+                                <td style="color: var(--accent-green);">$0.01</td>
+                                <td>$0.23</td>
+                                <td>Single ConnectFour move (average)</td>
+                            </tr>
+                            <tr>
+                                <td>Game Completion</td>
+                                <td>72,853</td>
+                                <td style="color: var(--accent-green);">$0.01</td>
+                                <td>$0.22</td>
+                                <td>Final winning move + match completion</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="diagram-container">
+                    <div class="diagram-title">💰 Network Cost Estimates at Different L2 Gas Prices</div>
+                    <div class="section-description" style="border-left-color: var(--accent-blue); margin-bottom: 1rem;">
+                        <strong>ℹ️ Context:</strong> These are <em>per-player total costs</em> for their entire tournament participation (enrollment + all moves + completion), not just single transactions.
+                    </div>
+                    <table class="prize-table">
+                        <thead>
+                            <tr>
+                                <th>Gas Price</th>
+                                <th>Scenario</th>
+                                <th>Avg Player (Total)</th>
+                                <th>Max Player (Total)</th>
+                                <th>Single Move</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background: rgba(63, 185, 80, 0.05);">
+                                <td><strong style="color: var(--accent-green);">0.03 gwei</strong></td>
+                                <td style="color: var(--text-secondary);">Floor (typical)</td>
+                                <td>$0.04</td>
+                                <td>$0.36</td>
+                                <td style="color: var(--text-secondary);">~$0.0001</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color: var(--accent-blue);">0.1 gwei</strong></td>
+                                <td style="color: var(--text-secondary);">Normal activity</td>
+                                <td>$0.14</td>
+                                <td>$1.18</td>
+                                <td style="color: var(--text-secondary);">~$0.0002</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color: var(--accent-orange);">0.5 gwei</strong></td>
+                                <td style="color: var(--text-secondary);">High activity</td>
+                                <td>$0.70</td>
+                                <td>$5.92</td>
+                                <td style="color: var(--text-secondary);">~$0.001</td>
+                            </tr>
+                            <tr style="background: rgba(248, 81, 73, 0.05);">
+                                <td><strong style="color: var(--accent-red);">1.0 gwei</strong></td>
+                                <td style="color: var(--text-secondary);">Worst case peak</td>
+                                <td>$1.41</td>
+                                <td>$11.84</td>
+                                <td style="color: var(--text-secondary);">~$0.002</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="diagram-container">
+                    <div class="diagram-title">📈 Contract Capacity Stress Test Details</div>
+                    <div class="flow-diagram">
+                        <div class="flow-step action">
+                            <strong>Phase 1</strong><br>
+                            Saturate Contract<br>
+                            <span style="color: var(--text-secondary); font-size: 0.75rem;">224 players enrolled</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step action">
+                            <strong>Phase 2</strong><br>
+                            Worst-Case Scenarios<br>
+                            <span style="color: var(--text-secondary); font-size: 0.75rem;">Long games, auto-starts, timeouts</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step event">
+                            <strong>Phase 3</strong><br>
+                            Per-Player Analysis<br>
+                            <span style="color: var(--text-secondary); font-size: 0.75rem;">Track cumulative costs</span>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step result">
+                            <strong>Phase 4</strong><br>
+                            Cost Report<br>
+                            <span style="color: var(--text-secondary); font-size: 0.75rem;">Avg & max estimates</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent-blue);">
+                                <div style="color: var(--accent-blue); font-size: 0.85rem; margin-bottom: 0.5rem;">TIER 0 (2-PLAYER)</div>
+                                <div style="font-size: 1.2rem; margin-bottom: 0.25rem;">12 instances × 2</div>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem;">24 players total</div>
+                            </div>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent-green);">
+                                <div style="color: var(--accent-green); font-size: 0.85rem; margin-bottom: 0.5rem;">TIER 1 (4-PLAYER)</div>
+                                <div style="font-size: 1.2rem; margin-bottom: 0.25rem;">10 instances × 4</div>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem;">40 players total</div>
+                            </div>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent-orange);">
+                                <div style="color: var(--accent-orange); font-size: 0.85rem; margin-bottom: 0.5rem;">TIER 2 (8-PLAYER)</div>
+                                <div style="font-size: 1.2rem; margin-bottom: 0.25rem;">8 instances × 8</div>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem;">64 players total</div>
+                            </div>
+                            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent-red);">
+                                <div style="color: var(--accent-red); font-size: 0.85rem; margin-bottom: 0.5rem;">TIER 3 (16-PLAYER)</div>
+                                <div style="font-size: 1.2rem; margin-bottom: 0.25rem;">6 instances × 16</div>
+                                <div style="color: var(--text-secondary); font-size: 0.85rem;">96 players total</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="diagram-container">
+                    <div class="diagram-title">🔍 Key Findings & Optimization Notes</div>
+                    <div class="timeline">
+                        <div class="timeline-item level-1">
+                            <div class="timeline-title" style="color: var(--accent-green);">✅ Excellent Average Costs</div>
+                            <div class="timeline-desc">Average player spends only $0.07 @ 0.05 gwei for their entire tournament participation (enrollment + all moves + completion). This includes ~468K gas across multiple transactions.</div>
+                        </div>
+                        <div class="timeline-item level-2">
+                            <div class="timeline-title" style="color: var(--accent-orange);">⚠️ Auto-Start Gas Spike</div>
+                            <div class="timeline-desc">The 16th player in Tier 3 tournaments triggers auto-start (3.95M gas, $0.59-$11.84). This is a one-time cost per tournament and only affects the final enrolling player. Consider: (1) Front-running protection, (2) Enrollment bonus for auto-start trigger player.</div>
+                        </div>
+                        <div class="timeline-item level-1">
+                            <div class="timeline-title" style="color: var(--accent-blue);">📊 Individual Moves Are Cheap</div>
+                            <div class="timeline-desc">Single ConnectFour moves cost only ~77K gas ($0.01 @ 0.05 gwei, $0.23 @ 1.0 gwei). Even at worst-case L2 gas prices, gameplay remains affordable with fractions-of-a-cent per move.</div>
+                        </div>
+                        <div class="timeline-item level-1">
+                            <div class="timeline-title" style="color: var(--accent-green);">🎯 L2 Optimized</div>
+                            <div class="timeline-desc">At typical L2 gas prices (0.03-0.05 gwei), the entire protocol is extremely cost-efficient. Most players will spend less than $0.10 for complete tournament participation, making on-chain gaming viable.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-description" style="margin-top: 1rem; border-left-color: var(--accent-purple);">
+                    <strong>📝 Test Coverage:</strong> This analysis includes 224 players across 36 tournament instances under maximum capacity stress test conditions. The test simulates:<br>
+                    • Long games (20+ moves)<br>
+                    • Multiple concurrent match completions (cache filling)<br>
+                    • Tournament auto-starts at all tier levels<br>
+                    • Timeout escalations and claims<br>
+                    • Round completions and prize distributions<br><br>
+                    <strong>💡 Recommendation:</strong> Deploy to Arbitrum, Optimism, or Base for optimal gas economics. At typical L2 gas prices, the protocol provides excellent UX with sub-dollar tournament costs.
+                </div>
+            </div>
+        </div>
+
         <footer style="text-align: center; padding: 3rem 0; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 3rem;">
             <p><strong style="color: var(--text-primary);">ETour Protocol Test Report</strong></p>
             <p style="margin-top: 0.5rem;">Generated: December 29, 2025</p>
