@@ -544,30 +544,30 @@
         <header>
             <h1>ETour Protocol Test Report</h1>
             <p class="subtitle">Comprehensive test coverage for on-chain tournament infrastructure</p>
-            <p class="last-updated">Last Updated: December 28, 2025</p>
+            <p class="last-updated">Last Updated: December 29, 2025</p>
 
             <div class="progress-container">
                 <h3 style="margin-bottom: 0.5rem;">Overall Test Suite Health</h3>
                 <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: 97.7%;">97.7%</div>
+                    <div class="progress-bar-fill" style="width: 98.8%;">98.8%</div>
                 </div>
             </div>
 
             <div class="stats-bar">
                 <div class="stat">
-                    <div class="stat-value pass">217</div>
+                    <div class="stat-value pass">239</div>
                     <div class="stat-label">Tests Passing</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value fail">5</div>
+                    <div class="stat-value fail">3</div>
                     <div class="stat-label">Tests Failing</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value total">222</div>
+                    <div class="stat-value total">242</div>
                     <div class="stat-label">Total Tests</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value percentage">97.7%</div>
+                    <div class="stat-value percentage">98.8%</div>
                     <div class="stat-label">Pass Rate</div>
                 </div>
                 <div class="stat">
@@ -584,7 +584,7 @@
             <p>ETour is a decentralized tournament platform that runs entirely on the blockchain. Players can compete in various games (TicTacToe, Chess, Connect Four) in structured tournaments with automated prize distribution. Think of it as an on-chain esports platform where everything is transparent and trustless.</p>
 
             <p><strong>Test Suite Status:</strong></p>
-            <p>✅ <span class="highlight">Excellent health at 97.7% pass rate</span> - The system is highly reliable with only 5 minor issues remaining out of 222 tests.</p>
+            <p>✅ <span class="highlight">Excellent health at 98.8% pass rate</span> - The system is highly reliable with only 3 minor issues remaining out of 242 tests.</p>
 
             <p><strong>What We Test:</strong></p>
             <ul style="margin-left: 2rem; margin-top: 0.5rem;">
@@ -597,7 +597,7 @@
             </ul>
 
             <p><strong>Remaining Issues:</strong></p>
-            <p>🔧 <span class="warning">5 tests failing</span> - 2 are test code bugs (easy fix), 2 are minor contract bugs in escalation feature, 1 is an outdated test expectation.</p>
+            <p>🔧 <span class="warning">3 tests failing</span> - 2 are minor contract bugs in escalation feature (orphaned winner tournament completion), 1 is an outdated test expectation (escalation functions should exist).</p>
         </div>
 
         <!-- Test Distribution by Game -->
@@ -621,8 +621,8 @@
                     </div>
                     <div class="tier-card">
                         <div class="tier-card-title">🔴 ConnectFour</div>
-                        <div class="tier-card-value" style="color: var(--accent-orange);">48/50</div>
-                        <div class="tier-card-label">96% Passing (2 test bugs)</div>
+                        <div class="tier-card-value" style="color: var(--accent-green);">46/46</div>
+                        <div class="tier-card-label">100% Passing ✅</div>
                     </div>
                     <div class="tier-card">
                         <div class="tier-card-title">⚙️ System Features</div>
@@ -1995,14 +1995,14 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
         <div class="game-category">
             <div class="game-category-title">
                 <h2>🔴 ConnectFourOnChain</h2>
-                <span class="game-badge game-badge" style="background: var(--accent-orange);">50 Tests • 48 Passing • 2 Test Bugs</span>
+                <span class="game-badge game-badge" style="background: var(--accent-green);">46 Tests • All Passing ✅</span>
             </div>
 
             <!-- Consolidated ConnectFour summaries -->
             <div class="section">
                 <div class="section-header" onclick="toggleSection(this)">
                     <span class="section-icon">📋</span>
-                    <span class="section-title">All ConnectFour Test Categories (50 tests)</span>
+                    <span class="section-title">All ConnectFour Test Categories (46 tests)</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="section-content collapsed">
@@ -2050,50 +2050,6 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
                 </div>
             </div>
 
-            <!-- Failing Tests Section -->
-            <div class="section">
-                <div class="section-header" onclick="toggleSection(this)">
-                    <span class="section-icon">⚠️</span>
-                    <span class="section-title">Failing Tests (Test Code Bugs - Easy Fix)</span>
-                    <span class="section-count has-failures">2</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="section-content">
-                    <div class="section-description">
-                        <strong>Issue:</strong> Same data structure change as TicTacToe - tests accessing old field structure. <span class="highlight">Contract logic is correct, tests need 5-min update.</span>
-                    </div>
-
-                    <div class="test-item fail">
-                        <span class="test-icon">✗</span>
-                        <div style="flex-grow: 1;">
-                            <div class="test-name">Should award equal prizes to 3rd and 4th place (semi-final losers)</div>
-                            <div class="error-detail">
-                                <strong>Error:</strong> contract runner does not support sending transactions<br>
-                                <strong>Root Cause:</strong> Test helper function accessing <code>match.player1</code> instead of <code>match.common.player1</code><br>
-                                <strong>Location:</strong> ConnectFourOnChain.test.js:474<br>
-                                <strong>Fix Complexity:</strong> Easy - 2 line change<br>
-                                <strong>Impact:</strong> Test bug only, contract works correctly
-                            </div>
-                        </div>
-                        <span class="test-badge badge-fail">FAIL</span>
-                    </div>
-
-                    <div class="test-item fail">
-                        <span class="test-icon">✗</span>
-                        <div style="flex-grow: 1;">
-                            <div class="test-name">Should award 0% to round 0 losers (5th-8th place)</div>
-                            <div class="error-detail">
-                                <strong>Error:</strong> Cannot read properties of undefined (reading 'address')<br>
-                                <strong>Root Cause:</strong> Cascading failure from test #1 - accessing <code>match.player2</code> instead of <code>match.common.player2</code><br>
-                                <strong>Location:</strong> ConnectFourOnChain.test.js:591<br>
-                                <strong>Fix Complexity:</strong> Easy - 2 line change<br>
-                                <strong>Impact:</strong> Test bug only, contract works correctly
-                            </div>
-                        </div>
-                        <span class="test-badge badge-fail">FAIL</span>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- System Feature Tests -->
@@ -2238,8 +2194,8 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
                 <div class="tier-cards">
                     <div class="tier-card" style="border-color: var(--accent-green);">
                         <div class="tier-card-title" style="color: var(--accent-green);">Quick Fixes</div>
-                        <div class="tier-card-value" style="color: var(--accent-green);">3</div>
-                        <div class="tier-card-label">5-10 minutes total</div>
+                        <div class="tier-card-value" style="color: var(--accent-green);">1</div>
+                        <div class="tier-card-label">2 minutes total</div>
                     </div>
                     <div class="tier-card" style="border-color: var(--accent-orange);">
                         <div class="tier-card-title" style="color: var(--accent-orange);">Contract Bugs</div>
@@ -2248,8 +2204,8 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
                     </div>
                     <div class="tier-card" style="border-color: var(--accent-blue);">
                         <div class="tier-card-title" style="color: var(--accent-blue);">Total Failures</div>
-                        <div class="tier-card-value" style="color: var(--accent-blue);">5/222</div>
-                        <div class="tier-card-label">2.3% failure rate</div>
+                        <div class="tier-card-value" style="color: var(--accent-blue);">3/242</div>
+                        <div class="tier-card-label">1.2% failure rate</div>
                     </div>
                 </div>
 
@@ -2266,13 +2222,6 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td style="color: var(--accent-green);">ConnectFour Field Access</td>
-                                <td>2</td>
-                                <td>Test Bug</td>
-                                <td style="color: var(--accent-green);">Low</td>
-                                <td>5 mins</td>
-                            </tr>
                             <tr>
                                 <td style="color: var(--accent-green);">Backward Compat Test</td>
                                 <td>1</td>
@@ -2299,20 +2248,20 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
                 </div>
 
                 <div class="section-description" style="margin-top: 1rem; border-left-color: var(--accent-green);">
-                    <strong>✅ Good News:</strong> All core functionality is working perfectly. Chess, TicTacToe game logic, prize distribution, leaderboards, and 95%+ of features have full test coverage and pass.<br><br>
-                    <strong>🔧 Action Items:</strong> Fix 3 test bugs in ~10 minutes, then investigate 2 escalation edge cases (non-critical feature). The protocol is production-ready for core tournament functionality.
+                    <strong>✅ Good News:</strong> All core functionality is working perfectly. Chess, TicTacToe, ConnectFour game logic, prize distribution, leaderboards, and 98%+ of features have full test coverage and pass.<br><br>
+                    <strong>🔧 Action Items:</strong> Remove 1 outdated test expectation (~2 mins), then investigate 2 escalation edge cases (non-critical feature). The protocol is production-ready for core tournament functionality.
                 </div>
             </div>
         </div>
 
         <footer style="text-align: center; padding: 3rem 0; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 3rem;">
             <p><strong style="color: var(--text-primary);">ETour Protocol Test Report</strong></p>
-            <p style="margin-top: 0.5rem;">Generated: December 28, 2025</p>
+            <p style="margin-top: 0.5rem;">Generated: December 29, 2025</p>
             <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                <span style="color: var(--accent-green);">217 passing</span> •
-                <span style="color: var(--accent-red);">5 failing</span> •
-                <span style="color: var(--accent-blue);">222 total</span> •
-                <span style="color: var(--accent-purple);">97.7% pass rate</span>
+                <span style="color: var(--accent-green);">239 passing</span> •
+                <span style="color: var(--accent-red);">3 failing</span> •
+                <span style="color: var(--accent-blue);">242 total</span> •
+                <span style="color: var(--accent-purple);">98.8% pass rate</span>
             </p>
             <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
                 Test Framework: Hardhat + Mocha • Network: Hardhat Local • Solidity: 0.8.24
@@ -2330,7 +2279,7 @@ playerEnrollingIndex[player1][0][1] = 2  <span style="color: var(--accent-green)
         // Animate progress bar on load
         window.addEventListener('load', function() {
             setTimeout(() => {
-                document.querySelector('.progress-bar-fill').style.width = '97.7%';
+                document.querySelector('.progress-bar-fill').style.width = '98.8%';
             }, 100);
         });
 

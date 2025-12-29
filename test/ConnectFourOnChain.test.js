@@ -462,10 +462,15 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         async function playMatchToWin(tierId, instanceId, roundNumber, matchNumber) {
             const match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
 
-            const firstPlayer = players.find(p => p.address === match.currentTurn);
+            // Normalize addresses for comparison (player1 and player2 are in common property)
+            const currentTurn = match.currentTurn?.toLowerCase();
+            const player1 = match.common.player1?.toLowerCase();
+            const player2 = match.common.player2?.toLowerCase();
+
+            const firstPlayer = players.find(p => p.address.toLowerCase() === currentTurn);
             const secondPlayer = players.find(p =>
-                (p.address === match.player1 || p.address === match.player2) &&
-                p.address !== match.currentTurn
+                (p.address.toLowerCase() === player1 || p.address.toLowerCase() === player2) &&
+                p.address.toLowerCase() !== currentTurn
             );
 
             // Play horizontal win: first player drops in columns 0,1,2,3 at bottom row
@@ -588,8 +593,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Get all round 0 match participants before playing
             for (let matchNum = 0; matchNum < 4; matchNum++) {
                 const match = await game.getMatch(TIER_2_ID, instanceId, 0, matchNum);
-                const p1 = players.find(p => p.address === match.player1);
-                const p2 = players.find(p => p.address === match.player2);
+                const p1 = players.find(p => p.address.toLowerCase() === match.common.player1?.toLowerCase());
+                const p2 = players.find(p => p.address.toLowerCase() === match.common.player2?.toLowerCase());
                 round0LoserBalancesBefore[p1.address] = await hre.ethers.provider.getBalance(p1.address);
                 round0LoserBalancesBefore[p2.address] = await hre.ethers.provider.getBalance(p2.address);
             }

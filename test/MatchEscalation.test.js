@@ -290,6 +290,14 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
+            // Debug: Check initial round state
+            const initialRound0 = await game.rounds(tierId, instanceId, 0);
+            console.log("Round 0 after enrollment:", {
+                initialized: initialRound0.initialized,
+                totalMatches: initialRound0.totalMatches,
+                completedMatches: initialRound0.completedMatches
+            });
+
             // Match 1 completes normally
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
             const match1Player1Addr = match1.common.player1;
@@ -307,6 +315,16 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             const winnerMatch1 = match1FirstPlayer;
 
+            // Debug: Check round state after match 1 completes
+            const round0AfterMatch1 = await game.rounds(tierId, instanceId, 0);
+            console.log("Round 0 after Match 1 completes:", {
+                totalMatches: round0AfterMatch1.totalMatches,
+                completedMatches: round0AfterMatch1.completedMatches
+            });
+
+            const tournamentAfterMatch1 = await game.tournaments(tierId, instanceId);
+            console.log("Tournament status after Match 1:", tournamentAfterMatch1.status);
+
             // Match 0 stalls
             await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + L2_DELAY + 2]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -314,13 +332,59 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Winner from Match 1 force eliminates Match 0
             await game.connect(winnerMatch1).forceEliminateStalledMatch(tierId, instanceId, 0, 0);
 
+            // Debug: Check round 0 state
+            const round0 = await game.rounds(tierId, instanceId, 0);
+            console.log("Round 0 after double elimination:", {
+                totalMatches: round0.totalMatches,
+                completedMatches: round0.completedMatches
+            });
+
+            // Debug: Check match results to see what orphaned winner logic would see
+            const match0After = await game.getMatch(tierId, instanceId, 0, 0);
+            const match1After = await game.getMatch(tierId, instanceId, 0, 1);
+            console.log("Match 0 (double-eliminated):", {
+                player1: match0After.common.player1,
+                player2: match0After.common.player2,
+                winner: match0After.common.winner,
+                isDraw: match0After.common.isDraw,
+                status: match0After.common.status
+            });
+            console.log("Match 1 (normal winner):", {
+                player1: match1After.common.player1,
+                player2: match1After.common.player2,
+                winner: match1After.common.winner,
+                isDraw: match1After.common.isDraw,
+                status: match1After.common.status
+            });
+
+            // Debug: Check if round 1 (finals) was created and has players
+            const round1 = await game.rounds(tierId, instanceId, 1);
+            console.log("Round 1 (finals) state:", {
+                initialized: round1.initialized,
+                totalMatches: round1.totalMatches
+            });
+
+            if (round1.initialized && round1.totalMatches > 0) {
+                const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
+                console.log("Finals match players:", {
+                    player1: finalsMatch.common.player1,
+                    player2: finalsMatch.common.player2
+                });
+            }
+
             // Tournament should NOT advance to finals because both players from Match 0 were eliminated
             // Only the winner from Match 1 remains, they should win the tournament automatically
             const tournament = await game.tournaments(tierId, instanceId);
-            expect(tournament.status).to.equal(2); // TournamentStatus.Completed
+            console.log("Tournament after completion:", {
+                status: tournament.status,
+                winner: tournament.winner,
+                winnerExpected: winnerMatch1.address
+            });
 
-            // Winner should be the player from Match 1
+            // Check if tournament completed by checking winner (status gets reset to Enrolling after completion)
             expect(tournament.winner).to.equal(winnerMatch1.address);
+            // Status will be 0 (Enrolling) after auto-reset, not 2 (Completed)
+            expect(tournament.status).to.equal(0); // TournamentStatus.Enrolling (after reset)
         });
 
         it("Should allow replacement player to advance in tournament", async function () {

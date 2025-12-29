@@ -1100,24 +1100,26 @@ abstract contract ETour is ReentrancyGuard {
 
     function _hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (bool) {
         uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNumber);
-        
+
         for (uint8 i = 0; i < matchCount; i += 2) {
             if (i + 1 >= matchCount) break;
-            
+
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
-            
+
             (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
-            
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && d2) {
+
+            // Check if match 1 has a winner and match 2 has no winner (draw or double elimination)
+            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
                 return true;
             }
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && d1) {
+            // Check if match 2 has a winner and match 1 has no winner (draw or double elimination)
+            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -1128,20 +1130,22 @@ abstract contract ETour is ReentrancyGuard {
         }
 
         uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNumber);
-        
+
         for (uint8 i = 0; i < matchCount; i += 2) {
             if (i + 1 >= matchCount) break;
-            
+
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
-            
+
             (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
-            
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && d2) {
+
+            // Advance winner from match 1 if match 2 has no winner (draw or double elimination)
+            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
                 _advanceWinner(tierId, instanceId, roundNumber, i, w1);
             }
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && d1) {
+            // Advance winner from match 2 if match 1 has no winner (draw or double elimination)
+            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
                 _advanceWinner(tierId, instanceId, roundNumber, i + 1, w2);
             }
         }
