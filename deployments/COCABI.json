@@ -3,7 +3,7 @@
   "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2025-12-29T23:23:13.962Z",
+  "deployedAt": "2025-12-30T01:29:38.095Z",
   "abi": [
     {
       "inputs": [],
@@ -647,6 +647,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "raffleIndex",
+          "type": "uint256"
+        },
         {
           "indexed": true,
           "internalType": "address",
@@ -1521,6 +1527,19 @@
       "name": "claimTimeoutWin",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentRaffleIndex",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -2517,6 +2536,11 @@
       "name": "getRaffleInfo",
       "outputs": [
         {
+          "internalType": "uint256",
+          "name": "raffleIndex",
+          "type": "uint256"
+        },
+        {
           "internalType": "bool",
           "name": "isReady",
           "type": "bool"
@@ -2524,6 +2548,16 @@
         {
           "internalType": "uint256",
           "name": "currentAccumulated",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "threshold",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "reserve",
           "type": "uint256"
         },
         {

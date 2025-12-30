@@ -22,9 +22,15 @@ describe("Protocol Raffle System", function () {
 
             expect(info.isReady).to.be.false;
             expect(info.currentAccumulated).to.equal(0);
-            expect(info.raffleAmount).to.equal(0);
-            expect(info.ownerShare).to.equal(0);
-            expect(info.winnerShare).to.equal(0);
+
+            // Even when below threshold, should show POTENTIAL distribution at threshold
+            // TicTacChain: threshold 0.2 ETH, reserve 0.02 ETH (10%)
+            expect(info.threshold).to.equal(hre.ethers.parseEther("0.2"));
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.02"));
+            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.18")); // 0.2 - 0.02
+            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.036")); // 20% of 0.18
+            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.144")); // 80% of 0.18
+
             expect(info.eligiblePlayerCount).to.equal(0);
         });
 
@@ -50,13 +56,31 @@ describe("Protocol Raffle System", function () {
             const info = await game.getRaffleInfo();
             expect(info.eligiblePlayerCount).to.equal(2);
         });
+
+        it("Should return raffleIndex starting at 0", async function () {
+            const info = await game.getRaffleInfo();
+            expect(info.raffleIndex).to.equal(0);
+        });
+
+        it("Should return correct threshold from _getRaffleThreshold()", async function () {
+            const info = await game.getRaffleInfo();
+            // TicTacChain first raffle threshold = 0.2 ETH (index 0 + 1) * 0.2
+            expect(info.threshold).to.equal(hre.ethers.parseEther("0.2"));
+        });
+
+        it("Should return correct reserve from _getRaffleReserve()", async function () {
+            const info = await game.getRaffleInfo();
+            // TicTacChain raffle #1: threshold = 0.2 ETH, reserve = 10% = 0.02 ETH
+            const expectedReserve = hre.ethers.parseEther("0.02");
+            expect(info.reserve).to.equal(expectedReserve);
+        });
     });
 
     describe("Access Control", function () {
         it("Should reject non-enrolled players when threshold not met", async function () {
             await expect(
                 game.connect(nonEnrolled).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met (need 3 ETH)");
+            ).to.be.revertedWith("Raffle threshold not met");
         });
 
         it("Should reject non-enrolled players even when threshold met", async function () {
@@ -66,7 +90,7 @@ describe("Protocol Raffle System", function () {
 
             await expect(
                 game.connect(nonEnrolled).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met (need 3 ETH)");
+            ).to.be.revertedWith("Raffle threshold not met");
         });
 
         it("Should allow enrolled players to trigger raffle (Enrolling status)", async function () {
@@ -78,7 +102,7 @@ describe("Protocol Raffle System", function () {
             // Threshold check will fail, but enrollment check passes
             await expect(
                 game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met (need 3 ETH)");
+            ).to.be.revertedWith("Raffle threshold not met");
         });
 
         it("Should allow enrolled players to trigger raffle (InProgress status)", async function () {
@@ -95,7 +119,7 @@ describe("Protocol Raffle System", function () {
             // Threshold check will fail, but enrollment check passes
             await expect(
                 game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met (need 3 ETH)");
+            ).to.be.revertedWith("Raffle threshold not met");
         });
 
         it("Should reject players only enrolled in Completed tournaments", async function () {
@@ -130,7 +154,7 @@ describe("Protocol Raffle System", function () {
             // Since no one is enrolled yet in the new tournament cycle
             await expect(
                 game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met (need 3 ETH)");
+            ).to.be.revertedWith("Raffle threshold not met");
         });
     });
 

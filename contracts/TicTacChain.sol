@@ -1051,6 +1051,30 @@ contract TicTacChain is ETour {
         }
     }
 
+    // ============ Raffle Configuration Overrides ============
+
+    /**
+     * @dev Progressive raffle thresholds for TicTacChain
+     * Raffle 1-5: Increases by 0.2 ETH each raffle (0.2, 0.4, 0.6, 0.8, 1.0)
+     * Raffle 6+: Caps at 1.0 ETH
+     * Reserve is automatically calculated by ETour base (10% of threshold):
+     *   - Raffle 1 (0.2 ETH): 0.02 ETH reserve (10%)
+     *   - Raffle 2 (0.4 ETH): 0.04 ETH reserve (10%)
+     *   - Raffle 3 (0.6 ETH): 0.06 ETH reserve (10%)
+     *   - Raffle 4 (0.8 ETH): 0.08 ETH reserve (10%)
+     *   - Raffle 5+ (1.0 ETH): 0.1 ETH reserve (10%)
+     */
+    function _getRaffleThreshold() internal view override returns (uint256) {
+        uint256 nextRaffleIndex = currentRaffleIndex + 1;  // Next raffle to execute
+
+        if (nextRaffleIndex >= 5) {
+            return 1.0 ether;  // Cap at 1.0 ETH after raffle 5
+        }
+
+        // Progressive: 0.2, 0.4, 0.6, 0.8, 1.0
+        return nextRaffleIndex * 0.2 ether;
+    }
+
     // ============ Helper Functions ============
 
     /**

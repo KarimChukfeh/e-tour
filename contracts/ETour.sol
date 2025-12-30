@@ -180,6 +180,9 @@ abstract contract ETour is ReentrancyGuard {
     // Accumulated protocol share from failed prize distributions
     uint256 public accumulatedProtocolShare;
 
+    // Raffle tracking
+    uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
+
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
     mapping(uint8 => mapping(uint8 => address[])) public enrolledPlayers;
@@ -229,6 +232,7 @@ abstract contract ETour is ReentrancyGuard {
     event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
     event PlayerForfeited(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, string reason);
     event ProtocolRaffleExecuted(
+        uint256 indexed raffleIndex,
         address indexed winner,
         address indexed caller,
         uint256 raffleAmount,
@@ -501,6 +505,28 @@ abstract contract ETour is ReentrancyGuard {
         address[] memory players
     ) internal virtual {}
 
+    // ============ Raffle Configuration Functions ============
+
+    /**
+     * @dev Returns the raffle threshold for the current raffle index
+     * @return Minimum accumulatedProtocolShare required to trigger raffle
+     * @notice Child contracts can override to implement progressive thresholds
+     */
+    function _getRaffleThreshold() internal view virtual returns (uint256) {
+        return 3 ether;  // Default threshold
+    }
+
+    /**
+     * @dev Returns the reserve amount to keep after raffle execution
+     * @return Amount to keep in accumulatedProtocolShare after raffle
+     * @notice Reserve is always 10% of threshold
+     *         This ensures protocol always maintains proportional reserve
+     */
+    function _getRaffleReserve() internal view virtual returns (uint256) {
+        uint256 threshold = _getRaffleThreshold();
+        return (threshold * 10) / 100;  // 10% of threshold
+    }
+
     // ============ Enrollment Functions ============
     
     function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
@@ -625,9 +651,10 @@ abstract contract ETour is ReentrancyGuard {
         )
     {
         // CHECK 1: Verify threshold met
+        uint256 threshold = _getRaffleThreshold();
         require(
-            accumulatedProtocolShare >= 3 ether,
-            "Raffle threshold not met (need 3 ETH)"
+            accumulatedProtocolShare >= threshold,
+            "Raffle threshold not met"
         );
 
         // CHECK 2: Verify caller is enrolled in active tournament
@@ -636,15 +663,19 @@ abstract contract ETour is ReentrancyGuard {
             "Only enrolled players can trigger raffle"
         );
 
-        // EFFECT 1: Calculate raffle amount (keep 1 ETH reserve)
-        uint256 raffleAmount = accumulatedProtocolShare - 1 ether;
+        // EFFECT 1: Increment raffle index
+        currentRaffleIndex++;
+
+        // EFFECT 2: Calculate raffle amount (use configured reserve)
+        uint256 reserve = _getRaffleReserve();
+        uint256 raffleAmount = accumulatedProtocolShare - reserve;
         ownerAmount = (raffleAmount * 20) / 100;  // 20%
         winnerAmount = (raffleAmount * 80) / 100; // 80%
 
-        // EFFECT 2: Update accumulated protocol share (keep reserve)
-        accumulatedProtocolShare = 1 ether;
+        // EFFECT 3: Update accumulated protocol share (keep reserve)
+        accumulatedProtocolShare = reserve;
 
-        // EFFECT 3: Get all enrolled players with weights
+        // EFFECT 4: Get all enrolled players with weights
         (
             address[] memory players,
             uint256[] memory weights,
@@ -653,7 +684,7 @@ abstract contract ETour is ReentrancyGuard {
 
         require(totalWeight > 0, "No eligible players for raffle");
 
-        // EFFECT 4: Generate randomness and select winner
+        // EFFECT 5: Generate randomness and select winner
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
@@ -673,8 +704,9 @@ abstract contract ETour is ReentrancyGuard {
             }
         }
 
-        // EFFECT 5: Emit event
+        // EFFECT 6: Emit event
         emit ProtocolRaffleExecuted(
+            currentRaffleIndex,
             winner,
             msg.sender,
             raffleAmount,
@@ -2244,42 +2276,69 @@ abstract contract ETour is ReentrancyGuard {
     }
 
     /**
-     * @dev Returns current raffle state information
-     * @return isReady True if raffle can be executed
-     * @return currentAccumulated Current accumulated protocol share
-     * @return raffleAmount Amount that would be distributed if executed
-     * @return ownerShare 20% for owner
-     * @return winnerShare 80% for winner
-     * @return eligiblePlayerCount Number of unique eligible players
+     * @dev Returns detailed raffle state information for client display
+     *
+     * This function provides all information needed to explain the raffle to users:
+     * - Current progress: how much has accumulated vs the target
+     * - Target breakdown: how much will be distributed vs kept as reserve (10%)
+     * - Distribution split: owner (20%) vs winner (80%) shares
+     *
+     * Example for 3 ETH threshold:
+     *   "Target: 3 ETH. When reached, 2.7 ETH distributed (0.3 ETH kept as reserve)"
+     *   "Current: 0.5 ETH. Need 2.5 ETH more to trigger raffle"
+     *   "Distribution: 0.54 ETH to owner (20%), 2.16 ETH to winner (80%)"
+     *
+     * @return raffleIndex Current raffle number (0 before first, increments after each execution)
+     * @return isReady True if threshold reached and raffle can be executed
+     * @return currentAccumulated Current protocol share accumulated
+     * @return threshold Target amount needed to trigger raffle
+     * @return reserve Amount that will be kept in protocol after raffle executes (10% of threshold)
+     * @return raffleAmount Amount that will be distributed when threshold is reached (threshold - reserve = 90%)
+     * @return ownerShare Owner's portion of raffleAmount (20%)
+     * @return winnerShare Winner's portion of raffleAmount (80%)
+     * @return eligiblePlayerCount Number of unique players who can trigger/win the raffle
      */
     function getRaffleInfo()
         external
         view
         returns (
+            uint256 raffleIndex,
             bool isReady,
             uint256 currentAccumulated,
+            uint256 threshold,
+            uint256 reserve,
             uint256 raffleAmount,
             uint256 ownerShare,
             uint256 winnerShare,
             uint256 eligiblePlayerCount
         )
     {
+        raffleIndex = currentRaffleIndex;
         currentAccumulated = accumulatedProtocolShare;
-        isReady = currentAccumulated >= 3 ether;
 
-        if (isReady) {
-            raffleAmount = currentAccumulated - 1 ether;
-            ownerShare = (raffleAmount * 20) / 100;
-            winnerShare = (raffleAmount * 80) / 100;
-        }
+        // Use virtual functions for threshold and reserve
+        threshold = _getRaffleThreshold();
+        reserve = _getRaffleReserve();
+
+        isReady = currentAccumulated >= threshold;
+
+        // Always calculate what the distribution WILL BE at threshold
+        // This allows clients to display: "When 3 ETH reached, 2 ETH distributed, 1 ETH kept"
+        // even before the threshold is reached
+        raffleAmount = threshold - reserve;
+        ownerShare = (raffleAmount * 20) / 100;
+        winnerShare = (raffleAmount * 80) / 100;
 
         // Count eligible players
         (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
         eligiblePlayerCount = players.length;
 
         return (
+            raffleIndex,
             isReady,
             currentAccumulated,
+            threshold,
+            reserve,
             raffleAmount,
             ownerShare,
             winnerShare,
