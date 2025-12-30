@@ -243,29 +243,30 @@ describe("Chess Advanced Draw Rules", function () {
     });
 
     describe("Insufficient Material Draw", function () {
-        it("Should automatically draw with only kings remaining", async function () {
+        it.skip("Should automatically draw with only kings remaining", async function () {
             // This would require playing out a game to reach K vs K position
             // The contract checks for insufficient material after each move
-            // For now, we'll note this is implemented but skip detailed testing
-            // due to the complexity of reaching this position
+            // Skipped: Too complex to reach this position programmatically without board setup API
         });
 
-        it("Should automatically draw with king + bishop vs king", async function () {
+        it.skip("Should automatically draw with king + bishop vs king", async function () {
             // Similar to above - contract has the logic but reaching this
             // position programmatically would require extensive game simulation
+            // Skipped: Too complex without board setup capability
         });
 
-        it("Should automatically draw with king + knight vs king", async function () {
+        it.skip("Should automatically draw with king + knight vs king", async function () {
             // Same reasoning as above
+            // Skipped: Too complex without board setup capability
         });
     });
 
     describe("Stalemate Detection", function () {
-        it("Should detect stalemate when player has no legal moves but not in check", async function () {
+        it.skip("Should detect stalemate when player has no legal moves but not in check", async function () {
             // Stalemate is a complex position to set up programmatically
             // Would require playing specific moves to corner the king
             // The contract has stalemate detection logic
-            // For comprehensive testing, this would need manual board setup capability
+            // Skipped: Would need manual board setup capability for comprehensive testing
         });
     });
 });
