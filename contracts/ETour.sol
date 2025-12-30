@@ -229,6 +229,7 @@ abstract contract ETour is ReentrancyGuard {
     event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, address winner);
     event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed starter, uint8 playerCount);
     event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
+    event EnrollmentWindowReset(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 newEscalation1Start, uint256 newEscalation2Start);
     event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
     event PlayerForfeited(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, string reason);
     event ProtocolRaffleExecuted(
@@ -632,6 +633,80 @@ abstract contract ETour is ReentrancyGuard {
 
         _updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
         _resetTournamentAfterCompletion(tierId, instanceId);
+    }
+
+    /**
+     * @dev Reset enrollment window for solo enrolled player
+     * Allows the single enrolled player to extend the enrollment period
+     * if they want to wait for more players to join rather than force start
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     */
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
+        TierConfig storage config = _tierConfigs[tierId];
+        require(config.initialized, "Invalid tier");
+        require(instanceId < config.instanceCount, "Invalid instance");
+
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Must be enrolling status
+        require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
+
+        // Exactly 1 player enrolled
+        require(tournament.enrolledCount == 1, "Must have exactly 1 player enrolled");
+
+        // Caller must be that enrolled player
+        require(isEnrolled[tierId][instanceId][msg.sender], "Not enrolled");
+
+        // Enrollment window must have expired (past escalation1Start)
+        require(
+            block.timestamp >= tournament.enrollmentTimeout.escalation1Start,
+            "Enrollment window not expired"
+        );
+
+        // Recalculate escalation windows from current timestamp
+        tournament.firstEnrollmentTimestamp = block.timestamp;
+        tournament.enrollmentTimeout.escalation1Start =
+            block.timestamp + config.timeouts.enrollmentWindow;
+        tournament.enrollmentTimeout.escalation2Start =
+            tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
+        tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
+
+        emit EnrollmentWindowReset(
+            tierId,
+            instanceId,
+            msg.sender,
+            tournament.enrollmentTimeout.escalation1Start,
+            tournament.enrollmentTimeout.escalation2Start
+        );
+    }
+
+    /**
+     * @dev Check if the connected wallet can reset the enrollment window
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     * @return canReset true if caller can reset, false otherwise
+     */
+    function canResetEnrollmentWindow(
+        uint8 tierId,
+        uint8 instanceId
+    ) external view returns (bool canReset) {
+        TierConfig storage config = _tierConfigs[tierId];
+
+        if (!config.initialized) return false;
+        if (instanceId >= config.instanceCount) return false;
+
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        bool isEnrollingStatus = tournament.status == TournamentStatus.Enrolling;
+        bool isExactlyOnePlayer = tournament.enrolledCount == 1;
+        bool isPlayerEnrolled = isEnrolled[tierId][instanceId][msg.sender];
+        bool hasWindowExpired = block.timestamp >= tournament.enrollmentTimeout.escalation1Start;
+
+        return isEnrollingStatus &&
+               isExactlyOnePlayer &&
+               isPlayerEnrolled &&
+               hasWindowExpired;
     }
 
     /**
