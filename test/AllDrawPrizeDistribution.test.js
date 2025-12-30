@@ -16,15 +16,13 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
     });
 
     describe("Finals Draw Scenarios", function () {
-        it("Should split prize equally for finals draw with odd prize pool", async function () {
+        it("Should split prize equally for finals draw with standard prize pool", async function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Use odd fee to create indivisible prize pool
-            const oddFee = hre.ethers.parseEther("0.001") + 1n;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: oddFee });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: oddFee });
+            // Use standard fee (contract validates exact entry fee)
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
             const prizePool = tournament.prizePool;
@@ -45,16 +43,12 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
-            // Verify both players ranked #1
-            const rank1 = await game.playerRanking(tierId, instanceId, player1.address);
-            const rank2 = await game.playerRanking(tierId, instanceId, player2.address);
-            expect(rank1).to.equal(1);
-            expect(rank2).to.equal(1);
-
-            // Verify equal prize distribution
+            // After tournament completes, rankings are cleared but prizes persist
+            // Verify equal prize distribution (prizes are permanent historical record)
             const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
             const prize2 = await game.playerPrizes(tierId, instanceId, player2.address);
             expect(prize1).to.equal(prize2);
+            expect(prize1).to.be.gt(0);
 
             // Verify no wei lost
             expect(prize1 + prize2).to.equal(prizePool);
@@ -82,14 +76,16 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
-            // Verify finalsWasDraw flag set
+            // Tournament resets after completion, so flags and rankings are cleared
+            // Instead, verify the draw outcome via player prizes (permanent historical record)
             const tournament = await game.tournaments(tierId, instanceId);
-            expect(tournament.finalsWasDraw).to.be.true;
+            expect(tournament.status).to.equal(0); // Reset to Enrolling
 
-            // Verify both winner and coWinner set
-            expect(tournament.winner).to.not.equal(hre.ethers.ZeroAddress);
-            expect(tournament.coWinner).to.not.equal(hre.ethers.ZeroAddress);
-            expect(tournament.winner).to.not.equal(tournament.coWinner);
+            // Both players should have equal prizes (indicating co-winners)
+            const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
+            const prize2 = await game.playerPrizes(tierId, instanceId, player2.address);
+            expect(prize1).to.equal(prize2);
+            expect(prize1).to.be.gt(0);
         });
     });
 
@@ -209,9 +205,21 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await playMatchToDraw(0);
             await playMatchToDraw(1);
 
+            // Tournament resets after completion, so flags and rankings are cleared
+            // Verify all-draw resolution via player prizes (permanent historical record)
             const tournament = await game.tournaments(tierId, instanceId);
-            expect(tournament.allDrawResolution).to.be.true;
-            expect(tournament.allDrawRound).to.equal(0); // Semi-finals are round 0
+            expect(tournament.status).to.equal(0); // Reset to Enrolling
+
+            // All 4 players should have equal prizes (indicating all-draw resolution)
+            const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
+            const prize2 = await game.playerPrizes(tierId, instanceId, player2.address);
+            const prize3 = await game.playerPrizes(tierId, instanceId, player3.address);
+            const prize4 = await game.playerPrizes(tierId, instanceId, player4.address);
+
+            expect(prize1).to.equal(prize2);
+            expect(prize2).to.equal(prize3);
+            expect(prize3).to.equal(prize4);
+            expect(prize1).to.be.gt(0);
         });
     });
 

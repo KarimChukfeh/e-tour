@@ -20,17 +20,15 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Use odd wei amount to force rounding
-            const oddFee = hre.ethers.parseEther("0.001") + 1n; // 0.001 ETH + 1 wei
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: oddFee });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: oddFee });
+            // Use standard fee (contract validates exact entry fee)
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
             const prizePool = tournament.prizePool;
 
-            // Prize pool should be 90% of (oddFee * 2)
-            const expectedPrizePool = (oddFee * 2n * 90n) / 100n;
+            // Prize pool should be 90% of (TIER_0_FEE * 2)
+            const expectedPrizePool = (TIER_0_FEE * 2n * 90n) / 100n;
             expect(prizePool).to.equal(expectedPrizePool);
 
             // Play to draw
@@ -72,13 +70,11 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             const tierId = 1; // 4-player
             const instanceId = 0;
 
-            // Use amount that doesn't divide evenly by 4
-            const oddFee = hre.ethers.parseEther("0.001") + 3n; // +3 wei to make indivisible by 4
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: oddFee });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: oddFee });
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: oddFee });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: oddFee });
+            // Use standard fee (contract validates exact entry fee)
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
             const prizePool = tournament.prizePool;
@@ -140,12 +136,10 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             const tierId = 2; // 8-player
             const instanceId = 0;
 
-            // Use odd amount
-            const oddFee = hre.ethers.parseEther("0.001") + 7n;
-
+            // Use standard fee (contract validates exact entry fee)
             const players = [player1, player2, player3, player4, player5, player6, player7, player8];
             for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: oddFee });
+                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
             const tournament = await game.tournaments(tierId, instanceId);
@@ -223,17 +217,17 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // Contract should have same balance (only 10% owner fee retained)
+            // Contract should retain only protocol fee (owner fee paid out immediately)
             const contractBalanceAfter = await hre.ethers.provider.getBalance(await game.getAddress());
 
-            // Owner fee = 10% of total fees = 10% of (TIER_0_FEE * 2)
-            const ownerFee = (TIER_0_FEE * 2n * 10n) / 100n;
+            // Protocol fee = 2.5% of total fees = 2.5% of (TIER_0_FEE * 2)
+            const protocolFee = (TIER_0_FEE * 2n * 25n) / 1000n;
 
-            // Contract should have retained owner fee
-            expect(contractBalanceAfter - contractBalanceBefore).to.equal(ownerFee);
+            // Contract should have retained protocol fee in accumulatedProtocolShare
+            expect(contractBalanceAfter - contractBalanceBefore).to.equal(protocolFee);
         });
 
-        it("Should accumulate owner fees correctly across multiple tournaments", async function () {
+        it("Should accumulate protocol fees correctly across multiple tournaments", async function () {
             const tierId = 0;
 
             const contractBalanceBefore = await hre.ethers.provider.getBalance(await game.getAddress());
@@ -256,30 +250,28 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
 
             const contractBalanceAfter = await hre.ethers.provider.getBalance(await game.getAddress());
 
-            // Owner fee per tournament = 10% of (TIER_0_FEE * 2)
-            const ownerFeePerTournament = (TIER_0_FEE * 2n * 10n) / 100n;
-            const totalOwnerFees = ownerFeePerTournament * 3n;
+            // Protocol fee per tournament = 2.5% of (TIER_0_FEE * 2)
+            const protocolFeePerTournament = (TIER_0_FEE * 2n * 25n) / 1000n;
+            const totalProtocolFees = protocolFeePerTournament * 3n;
 
-            expect(contractBalanceAfter - contractBalanceBefore).to.equal(totalOwnerFees);
+            expect(contractBalanceAfter - contractBalanceBefore).to.equal(totalProtocolFees);
         });
     });
 
     describe("Prize Distribution Precision", function () {
-        it("Should handle 1 wei entry fee correctly", async function () {
+        it("Should handle standard entry fee precision correctly", async function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Minimum possible fee: 1 wei
-            const minFee = 1n;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: minFee });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: minFee });
+            // Use standard fee (contract validates exact entry fee)
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
             const prizePool = tournament.prizePool;
 
-            // Prize pool = 90% of 2 wei = 1.8 wei -> rounds to 1 wei
-            const expectedPrizePool = (minFee * 2n * 90n) / 100n;
+            // Prize pool = 90% of (TIER_0_FEE * 2)
+            const expectedPrizePool = (TIER_0_FEE * 2n * 90n) / 100n;
             expect(prizePool).to.equal(expectedPrizePool);
 
             // Complete tournament
@@ -298,21 +290,19 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             expect(winnerPrize).to.equal(prizePool);
         });
 
-        it("Should handle maximum precision entry fee (many decimal places)", async function () {
+        it("Should handle entry fee calculations with precision", async function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Fee with many decimal places: 0.123456789123456789 ETH
-            const precisionFee = hre.ethers.parseEther("0.123456789123456789");
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: precisionFee });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: precisionFee });
+            // Use standard fee (contract validates exact entry fee)
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
             const prizePool = tournament.prizePool;
 
             // Verify prize pool calculated correctly
-            const expectedPrizePool = (precisionFee * 2n * 90n) / 100n;
+            const expectedPrizePool = (TIER_0_FEE * 2n * 90n) / 100n;
             expect(prizePool).to.equal(expectedPrizePool);
 
             // Complete tournament

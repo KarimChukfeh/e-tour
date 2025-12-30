@@ -92,8 +92,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const ownerBalanceAfter = await hre.ethers.provider.getBalance(owner.address);
 
-            // Owner should receive 7.5% + 2.5% = 10% of entry fee
-            const expectedOwnerIncrease = (TIER_0_FEE * 1000n) / 10000n; // 10%
+            // Owner should receive 7.5% of entry fee (2.5% protocol fee goes to accumulatedProtocolShare)
+            const expectedOwnerIncrease = (TIER_0_FEE * 750n) / 10000n; // 7.5%
             expect(ownerBalanceAfter - ownerBalanceBefore).to.equal(expectedOwnerIncrease);
 
             // Tournament should have 90% in prize pool
@@ -1048,8 +1048,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const ownerBalAfter = await hre.ethers.provider.getBalance(owner.address);
             const tournament = await game.tournaments(tierId, instanceId);
 
-            // Owner gets 7.5% + 2.5% = 10%
-            const expectedOwnerShare = (TIER_0_FEE * 1000n) / 10000n;
+            // Owner gets 7.5% (2.5% protocol fee goes to accumulatedProtocolShare for raffle)
+            const expectedOwnerShare = (TIER_0_FEE * 750n) / 10000n; // 7.5%
             expect(ownerBalAfter - ownerBalBefore).to.equal(expectedOwnerShare);
 
             // Prize pool gets 90%

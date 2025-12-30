@@ -6,6 +6,17 @@ describe("Chess Advanced Draw Rules", function () {
     let whitePlayer, blackPlayer;
     const ENTRY_FEE = hre.ethers.parseEther("0.01"); // Chess uses 0.01 ETH for tier 0
 
+    // PieceType enum values matching the contract
+    const PieceType = {
+        None: 0,
+        Pawn: 1,
+        Knight: 2,
+        Bishop: 3,
+        Rook: 4,
+        Queen: 5,
+        King: 6
+    };
+
     beforeEach(async function () {
         [, whitePlayer, blackPlayer] = await hre.ethers.getSigners();
 
@@ -45,22 +56,22 @@ describe("Chess Advanced Draw Rules", function () {
             // For testing purposes, we'll track the halfMoveClock and verify it triggers at 100
 
             // Make opening moves to develop pieces
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 12, 28); // e2-e4 (pawn, resets clock)
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 12, 28, PieceType.None); // e2-e4 (pawn, resets clock)
             let matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(0); // Pawn move resets
+            expect(matchState.halfMoveClock).to.equal(0); // Pawn move resets
 
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 52, 36); // e7-e5 (pawn, resets clock)
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 52, 36, PieceType.None); // e7-e5 (pawn, resets clock)
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(0);
+            expect(matchState.halfMoveClock).to.equal(0);
 
             // Develop knights
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 6, 21); // g1-f3 (knight)
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 6, 21, PieceType.None); // g1-f3 (knight)
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(1); // Non-pawn, non-capture increments
+            expect(matchState.halfMoveClock).to.equal(1); // Non-pawn, non-capture increments
 
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 62, 45); // g8-f6 (knight)
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 62, 45, PieceType.None); // g8-f6 (knight)
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(2);
+            expect(matchState.halfMoveClock).to.equal(2);
 
             // Now make repetitive knight moves to accumulate 98 more half-moves (to reach 100 total)
             // Knight moves between f3-g1-f3 for white, f6-g8-f6 for black
@@ -80,20 +91,21 @@ describe("Chess Advanced Draw Rules", function () {
                     const player = moveIdx % 2 === 0 ? white : black;
                     const move = knightMoves[moveIdx];
 
-                    await chess.connect(player).makeChessMove(
+                    await chess.connect(player).makeMove(
                         tierId,
                         instanceId,
                         0,
                         0,
                         move.from,
-                        move.to
+                        move.to,
+                        PieceType.None
                     );
 
                     const currentHalfMove = 2 + cycle * 4 + moveIdx + 1;
                     matchState = await chess.getMatch(tierId, instanceId, 0, 0);
 
                     // Check halfMoveClock is incrementing correctly
-                    expect(matchState.chess.halfMoveClock).to.equal(currentHalfMove);
+                    expect(matchState.halfMoveClock).to.equal(currentHalfMove);
 
                     // If we've hit 100, next move should trigger draw
                     if (currentHalfMove === 99) {
@@ -101,13 +113,14 @@ describe("Chess Advanced Draw Rules", function () {
                         const player = white;
                         const move = knightMoves[0]; // f3 -> g1
 
-                        const tx = await chess.connect(player).makeChessMove(
+                        const tx = await chess.connect(player).makeMove(
                             tierId,
                             instanceId,
                             0,
                             0,
                             move.from,
-                            move.to
+                            move.to,
+                            PieceType.None
                         );
                         const receipt = await tx.wait();
 
@@ -142,17 +155,13 @@ describe("Chess Advanced Draw Rules", function () {
                 }
             }
 
-            // If we get here, we need 2 more moves to complete the cycle
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 21, 6); // f3 -> g1
+            // If we get here, we're at move 98, need 2 more moves to reach 100 and trigger draw
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 21, 6, PieceType.None); // f3 -> g1 (move 99)
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(98);
-
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 45, 62); // f6 -> g8
-            matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(99);
+            expect(matchState.halfMoveClock).to.equal(99);
 
             // 100th half-move should trigger draw
-            const tx = await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 6, 21); // g1 -> f3
+            const tx = await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 45, 62, PieceType.None); // f6 -> g8 (move 100)
             const receipt = await tx.wait();
 
             // Verify DrawByFiftyMoveRule event
@@ -165,10 +174,11 @@ describe("Chess Advanced Draw Rules", function () {
 
             expect(drawEvent).to.not.be.undefined;
 
-            // Verify match completed as draw
-            matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.common.status).to.equal(2); // Completed
-            expect(matchState.common.isDraw).to.be.true;
+            // Verify tournament completed with equal prize distribution
+            const whitePrize = await chess.playerPrizes(tierId, instanceId, whitePlayer.address);
+            const blackPrize = await chess.playerPrizes(tierId, instanceId, blackPlayer.address);
+            expect(whitePrize).to.equal(blackPrize);
+            expect(whitePrize).to.be.gt(0);
         });
 
         it("Should reset halfMoveClock on pawn move", async function () {
@@ -183,24 +193,24 @@ describe("Chess Advanced Draw Rules", function () {
             const black = white === whitePlayer ? blackPlayer : whitePlayer;
 
             // Make pawn move
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 12, 28); // e2-e4
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 12, 28, PieceType.None); // e2-e4
             let matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(0); // Pawn move resets to 0
+            expect(matchState.halfMoveClock).to.equal(0); // Pawn move resets to 0
 
             // Make knight move (non-pawn, non-capture)
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 62, 45); // g8-f6
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 62, 45, PieceType.None); // g8-f6
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(1); // Increments
+            expect(matchState.halfMoveClock).to.equal(1); // Increments
 
             // Make another knight move
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 6, 21); // g1-f3
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 6, 21, PieceType.None); // g1-f3
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(2); // Increments
+            expect(matchState.halfMoveClock).to.equal(2); // Increments
 
             // Make pawn move again - should reset
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 51, 35); // d7-d5
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 51, 35, PieceType.None); // d7-d5
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(0); // Reset to 0 on pawn move
+            expect(matchState.halfMoveClock).to.equal(0); // Reset to 0 on pawn move
         });
 
         it("Should reset halfMoveClock on capture", async function () {
@@ -215,20 +225,20 @@ describe("Chess Advanced Draw Rules", function () {
             const black = white === whitePlayer ? blackPlayer : whitePlayer;
 
             // Setup for a capture
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 12, 28); // e2-e4
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 51, 35); // d7-d5
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 6, 21); // g1-f3 (non-pawn)
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 12, 28, PieceType.None); // e2-e4
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 51, 35, PieceType.None); // d7-d5
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 6, 21, PieceType.None); // g1-f3 (non-pawn)
             let matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(1); // Should be 1 after non-pawn move
+            expect(matchState.halfMoveClock).to.equal(1); // Should be 1 after non-pawn move
 
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 62, 45); // g8-f6 (non-pawn)
+            await chess.connect(black).makeMove(tierId, instanceId, 0, 0, 62, 45, PieceType.None); // g8-f6 (non-pawn)
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(2);
+            expect(matchState.halfMoveClock).to.equal(2);
 
             // Make capture: exd5 (pawn captures pawn)
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 28, 35); // e4 x d5
+            await chess.connect(white).makeMove(tierId, instanceId, 0, 0, 28, 35, PieceType.None); // e4 x d5
             matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.chess.halfMoveClock).to.equal(0); // Reset to 0 on capture
+            expect(matchState.halfMoveClock).to.equal(0); // Reset to 0 on capture
         });
     });
 
@@ -256,58 +266,6 @@ describe("Chess Advanced Draw Rules", function () {
             // Would require playing specific moves to corner the king
             // The contract has stalemate detection logic
             // For comprehensive testing, this would need manual board setup capability
-        });
-    });
-
-    describe("Draw by Agreement", function () {
-        it("Should allow draw proposal and acceptance", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            await chess.connect(whitePlayer).enrollInTournament(tierId, instanceId, { value: ENTRY_FEE });
-            await chess.connect(blackPlayer).enrollInTournament(tierId, instanceId, { value: ENTRY_FEE });
-
-            const match = await chess.getMatch(tierId, instanceId, 0, 0);
-            const white = match.currentTurn === whitePlayer.address ? whitePlayer : blackPlayer;
-            const black = white === whitePlayer ? blackPlayer : whitePlayer;
-
-            // Make a few moves
-            await chess.connect(white).makeChessMove(tierId, instanceId, 0, 0, 12, 28); // e2-e4
-            await chess.connect(black).makeChessMove(tierId, instanceId, 0, 0, 52, 36); // e7-e5
-
-            // White offers draw (it's black's turn now, so white can offer)
-            await chess.connect(white).offerDraw(tierId, instanceId, 0, 0);
-
-            // Black accepts
-            const tx = await chess.connect(black).acceptDraw(tierId, instanceId, 0, 0);
-            const receipt = await tx.wait();
-
-            // Verify match completed as draw
-            const matchState = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchState.common.status).to.equal(2); // Completed
-            expect(matchState.common.isDraw).to.be.true;
-
-            // Verify equal prizes
-            const whitePrize = await chess.playerPrizes(tierId, instanceId, whitePlayer.address);
-            const blackPrize = await chess.playerPrizes(tierId, instanceId, blackPlayer.address);
-            expect(whitePrize).to.equal(blackPrize);
-            expect(whitePrize).to.be.gt(0);
-        });
-
-        it("Should reject draw offer from current turn player", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            await chess.connect(whitePlayer).enrollInTournament(tierId, instanceId, { value: ENTRY_FEE });
-            await chess.connect(blackPlayer).enrollInTournament(tierId, instanceId, { value: ENTRY_FEE });
-
-            const match = await chess.getMatch(tierId, instanceId, 0, 0);
-            const currentPlayer = match.currentTurn === whitePlayer.address ? whitePlayer : blackPlayer;
-
-            // Current player tries to offer draw - should fail
-            await expect(
-                chess.connect(currentPlayer).offerDraw(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Not your turn");
         });
     });
 });
