@@ -18,14 +18,9 @@ import "./ETour.sol";
 contract ChessOnChain is ETour {
     
     // ============ Game-Specific Constants ============
-    
-    uint8 public constant BOARD_SIZE = 64;
+
     uint8 public constant NO_SQUARE = 255;
     
-    // Timeout configuration for chess (longer than tic-tac-toe)
-    uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 2 minutes;
-    uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 1 minutes;
-    uint256 public constant DEFAULT_ESCALATION_INTERVAL = 1 minutes;
 
     // ============ Game-Specific Enums ============
 
@@ -46,7 +41,6 @@ contract ChessOnChain is ETour {
         address winner;
         Piece[64] board;
         MatchStatus status;
-        uint256 lastMoveTime;
         uint256 startTime;
         address firstPlayer;      // Always white in chess
         bool isDraw;
@@ -84,12 +78,6 @@ contract ChessOnChain is ETour {
         bool exists;
         uint16 totalMoves;
         bytes32 finalPositionHash;  // Hash of final board position
-    }
-
-    struct Move {
-        uint8 from;
-        uint8 to;
-        PieceType promotion;  // For pawn promotion (None if not promoting)
     }
 
     /**
@@ -154,7 +142,6 @@ contract ChessOnChain is ETour {
     event CheckDeclared(bytes32 indexed matchId, PieceColor kingColor);
     event CheckmateDeclared(bytes32 indexed matchId, address indexed winner, address indexed loser);
     event StalemateDeclared(bytes32 indexed matchId);
-    event DrawByRepetition(bytes32 indexed matchId);
     event DrawByFiftyMoveRule(bytes32 indexed matchId);
     event DrawByInsufficientMaterial(bytes32 indexed matchId);
     event CastlingPerformed(bytes32 indexed matchId, address indexed player, bool kingSide);
@@ -259,7 +246,6 @@ contract ChessOnChain is ETour {
         matchData.currentTurn = matchData.player1;  // White moves first
         matchData.firstPlayer = matchData.player1;
         matchData.status = MatchStatus.InProgress;
-        matchData.lastMoveTime = block.timestamp;
         matchData.startTime = block.timestamp;
         matchData.isDraw = false;
 
@@ -340,7 +326,7 @@ contract ChessOnChain is ETour {
         matchData.currentTurn = address(0);
         matchData.winner = address(0);
         matchData.status = MatchStatus.NotStarted;
-        matchData.lastMoveTime = 0;
+        matchData.lastMoveTimestamp = 0;
         matchData.startTime = 0;
         matchData.firstPlayer = address(0);
         matchData.isDraw = false;
@@ -483,7 +469,6 @@ contract ChessOnChain is ETour {
         require(matchData.player1 != matchData.player2, "Cannot match player against themselves");
 
         matchData.status = MatchStatus.InProgress;
-        matchData.lastMoveTime = block.timestamp;
         matchData.startTime = block.timestamp;
         matchData.currentTurn = matchData.player1;  // White moves first
         matchData.firstPlayer = matchData.player1;
@@ -547,7 +532,7 @@ contract ChessOnChain is ETour {
             status: matchData.status,
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
-            lastMoveTime: matchData.lastMoveTime,
+            lastMoveTime: matchData.lastMoveTimestamp,
             endTime: 0,
             tierId: tierId,
             instanceId: instanceId,
@@ -784,8 +769,6 @@ contract ChessOnChain is ETour {
         if (playerColor == PieceColor.Black) {
             matchData.fullMoveNumber++;
         }
-        
-        matchData.lastMoveTime = block.timestamp;
 
         // Update time bank for current player
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
@@ -1379,21 +1362,6 @@ contract ChessOnChain is ETour {
         _completeMatch(tierId, instanceId, roundNumber, matchNumber, winner, false);
     }
 
-    function offerDraw(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        
-        // Draw offers are handled off-chain, both players call acceptDraw to finalize
-    }
-
     function acceptDraw(
         uint8 tierId,
         uint8 instanceId,
@@ -1559,7 +1527,7 @@ contract ChessOnChain is ETour {
             matchData.status,
             matchData.isDraw,
             matchData.startTime,
-            matchData.lastMoveTime,
+            matchData.lastMoveTimestamp,
             matchData.fullMoveNumber,
             matchData.whiteInCheck,
             matchData.blackInCheck
