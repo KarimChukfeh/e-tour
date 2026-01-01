@@ -133,9 +133,10 @@ contract ConnectFourOnChain is ETour {
      * @dev Register all tournament tiers for ConnectFourOnChain
      */
     function _registerConnectFourTiers() internal {
-        // 1 minute for all escalation windows
+        // 2 minutes per player to accommodate 15-second Fischer increment
         TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 1 minutes,      // 60 seconds per player
+            matchTimePerPlayer: 2 minutes,      // 120 seconds per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 1 minutes,        // L2 starts 1 min after timeout
             matchLevel3Delay: 2 minutes,        // L3 starts 2 min after timeout (cumulative)
             enrollmentWindow: 1 minutes,        // 1 min to fill tournament
@@ -421,8 +422,10 @@ contract ConnectFourOnChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _getTimeIncrement() internal pure override returns (uint256) {
-        return 0; // No increment per move
+    function _getTimeIncrement() internal view override returns (uint256) {
+        // Note: This function is called during match, so we get config from the match's tier
+        // In practice, all tiers in ConnectFourOnChain use 15 seconds
+        return 15 seconds; // Fischer increment: 15 seconds per move
     }
 
     /**
@@ -666,28 +669,20 @@ contract ConnectFourOnChain is ETour {
         require(msg.sender == matchData.currentTurn, "Not your turn");
         require(column < COLS, "Invalid column");
 
-        // Update time bank for current player
+        // Update time bank for current player (Fischer increment)
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
 
         if (msg.sender == matchData.player1) {
-            // Deduct time used by player1
-            if (timeElapsed >= matchData.player1TimeRemaining) {
-                matchData.player1TimeRemaining = 0;
-            } else {
-                matchData.player1TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player1TimeRemaining += timeIncrement;
-            }
+            // Check if player1 has enough time, then deduct and add increment
+            require(matchData.player1TimeRemaining >= timeElapsed, "Player 1 out of time");
+            matchData.player1TimeRemaining -= timeElapsed;
+            matchData.player1TimeRemaining += timeIncrement;
         } else {
-            // Deduct time used by player2
-            if (timeElapsed >= matchData.player2TimeRemaining) {
-                matchData.player2TimeRemaining = 0;
-            } else {
-                matchData.player2TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player2TimeRemaining += timeIncrement;
-            }
+            // Check if player2 has enough time, then deduct and add increment
+            require(matchData.player2TimeRemaining >= timeElapsed, "Player 2 out of time");
+            matchData.player2TimeRemaining -= timeElapsed;
+            matchData.player2TimeRemaining += timeIncrement;
         }
 
         // Find the lowest available row in this column

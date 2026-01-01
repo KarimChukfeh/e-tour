@@ -3,7 +3,7 @@
   "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-01T17:49:34.041Z",
+  "deployedAt": "2026-01-01T21:53:30.618Z",
   "abi": [
     {
       "inputs": [],
@@ -2759,6 +2759,11 @@
             },
             {
               "internalType": "uint256",
+              "name": "timeIncrementPerMove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
               "name": "matchLevel2Delay",
               "type": "uint256"
             },
@@ -3582,6 +3587,11 @@
             {
               "internalType": "uint256",
               "name": "matchTimePerPlayer",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timeIncrementPerMove",
               "type": "uint256"
             },
             {

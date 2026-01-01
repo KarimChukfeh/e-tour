@@ -9,7 +9,7 @@ describe("Escalation Helper Functions Tests", function() {
     const TIER_ID = 1; // 4-player tier
     const INSTANCE_ID = 0;
     const TIER_FEE = hre.ethers.parseEther("0.004");
-    const MATCH_TIME = 60; // 1 minute
+    const MATCH_TIME = 120; // 2 minutes (updated for 15s Fischer increment)
     const L2_DELAY = 60; // 1 minute
     const L3_DELAY = 120; // 2 minutes
 

@@ -84,9 +84,9 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const isFirstPlayerP1 = firstPlayerAddr === player1.address;
             const firstPlayerTime = isFirstPlayerP1 ? match.player1TimeRemaining : match.player2TimeRemaining;
 
-            // Should have approximately (MATCH_TIME_PER_PLAYER - 10) seconds remaining
+            // With Fischer increment: (MATCH_TIME_PER_PLAYER - 10 elapsed + 15 increment) = MATCH_TIME_PER_PLAYER + 5
             // Allow 2 second tolerance for block timestamp variations
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - TEN_SECONDS, 2);
+            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER + 5, 2);
         });
 
         it("Should allow multiple moves with cumulative time deduction", async function () {
@@ -110,11 +110,11 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const firstPlayerTime = isFirstPlayerP1 ? match.player1TimeRemaining : match.player2TimeRemaining;
             const secondPlayerTime = isFirstPlayerP1 ? match.player2TimeRemaining : match.player1TimeRemaining;
 
-            // First player used: 10 + 20 = 30 seconds
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 30, 3);
+            // First player: -10 elapsed +15 increment, then -20 elapsed +15 increment = MATCH_TIME_PER_PLAYER
+            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER, 3);
 
-            // Second player used: 15 seconds
-            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 15, 2);
+            // Second player: -15 elapsed +15 increment = MATCH_TIME_PER_PLAYER
+            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER, 2);
         });
 
         it("Should NOT allow opponent to claim timeout before time runs out", async function () {
@@ -172,9 +172,9 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const firstPlayerTime = isFirstPlayerP1 ? match.player1TimeRemaining : match.player2TimeRemaining;
             const secondPlayerTime = isFirstPlayerP1 ? match.player2TimeRemaining : match.player1TimeRemaining;
 
-            // Verify time deductions
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 30, 2);
-            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 45, 2);
+            // Verify time with Fischer increment: first player -30 +15 = -15, second player -45 +15 = -30
+            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 15, 2);
+            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 30, 2);
         });
 
         it("Should handle time bank reaching exactly zero", async function () {
@@ -339,8 +339,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const match2 = await game.getMatch(tierId, instanceId, 0, 0);
             const timeAfterMove = isFirstPlayerP1 ? match2.player1TimeRemaining : match2.player2TimeRemaining;
 
-            // Time should be reduced by 10 seconds with no increment added
-            expect(timeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER - 10, 2);
+            // Time: -10 seconds elapsed + 15 seconds Fischer increment = +5 seconds net
+            expect(timeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER + 5, 2);
         });
     });
 

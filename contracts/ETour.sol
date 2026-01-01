@@ -57,6 +57,7 @@ abstract contract ETour is ReentrancyGuard {
      */
     struct TimeoutConfig {
         uint256 matchTimePerPlayer;           // Time each player gets for entire match (e.g., 60 = 1 minute)
+        uint256 timeIncrementPerMove;         // Fischer increment: bonus time added after each move
         uint256 matchLevel2Delay;             // Delay after player timeout before L2 (advanced players) active
         uint256 matchLevel3Delay;             // Delay after player timeout before L3 (anyone) active
         uint256 enrollmentWindow;             // Time to wait for tournament to fill before L1

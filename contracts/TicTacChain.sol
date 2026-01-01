@@ -132,6 +132,7 @@ contract TicTacChain is ETour {
 
         TimeoutConfig memory timeouts0 = TimeoutConfig({
             matchTimePerPlayer: 2 minutes,      // 2 minutes per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
             matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
             enrollmentWindow: 5 minutes,        // 5 min to fill tournament
@@ -158,6 +159,7 @@ contract TicTacChain is ETour {
 
         TimeoutConfig memory timeouts1 = TimeoutConfig({
             matchTimePerPlayer: 2 minutes,      // 2 minutes per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
             matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
             enrollmentWindow: 10 minutes,       // 10 min to fill tournament
@@ -187,6 +189,7 @@ contract TicTacChain is ETour {
 
         TimeoutConfig memory timeouts2 = TimeoutConfig({
             matchTimePerPlayer: 2 minutes,      // 2 minutes per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
             matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
             enrollmentWindow: 15 minutes,       // 15 min to fill tournament
@@ -404,8 +407,10 @@ contract TicTacChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _getTimeIncrement() internal pure override returns (uint256) {
-        return 0; // No increment per move
+    function _getTimeIncrement() internal view override returns (uint256) {
+        // Note: This function is called during match, so we get config from the match's tier
+        // In practice, all tiers in TicTacChain use 15 seconds
+        return 15 seconds; // Fischer increment: 15 seconds per move
     }
 
     /**
@@ -634,28 +639,20 @@ contract TicTacChain is ETour {
         require(cellIndex < 9, "Invalid cell index");
         require(matchData.board[cellIndex] == Cell.Empty, "Cell already occupied");
 
-        // Update time bank for current player
+        // Update time bank for current player (Fischer increment)
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
 
         if (msg.sender == matchData.player1) {
-            // Deduct time used by player1
-            if (timeElapsed >= matchData.player1TimeRemaining) {
-                matchData.player1TimeRemaining = 0;
-            } else {
-                matchData.player1TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player1TimeRemaining += timeIncrement;
-            }
+            // Check if player1 has enough time, then deduct and add increment
+            require(matchData.player1TimeRemaining >= timeElapsed, "Player 1 out of time");
+            matchData.player1TimeRemaining -= timeElapsed;
+            matchData.player1TimeRemaining += timeIncrement;
         } else {
-            // Deduct time used by player2
-            if (timeElapsed >= matchData.player2TimeRemaining) {
-                matchData.player2TimeRemaining = 0;
-            } else {
-                matchData.player2TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player2TimeRemaining += timeIncrement;
-            }
+            // Check if player2 has enough time, then deduct and add increment
+            require(matchData.player2TimeRemaining >= timeElapsed, "Player 2 out of time");
+            matchData.player2TimeRemaining -= timeElapsed;
+            matchData.player2TimeRemaining += timeIncrement;
         }
 
         matchData.board[cellIndex] = (msg.sender == matchData.player1) ? Cell.X : Cell.O;

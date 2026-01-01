@@ -81,10 +81,10 @@ describe("Real-Time Time Remaining Query Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
 
-            // Check immediately after move - first player should have ~290 seconds
+            // Check immediately after move - first player: -10 elapsed + 15 Fischer increment = +5 seconds net
             const match2 = await game.getMatch(tierId, instanceId, 0, 0);
             const firstPlayerTimeAfterMove = isFirstPlayerP1 ? match2.player1TimeRemaining : match2.player2TimeRemaining;
-            expect(firstPlayerTimeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER - 10, 2);
+            expect(firstPlayerTimeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER + 5, 2);
 
             // Now it's second player's turn. Wait 20 seconds
             await hre.ethers.provider.send("evm_increaseTime", [20]);
@@ -178,10 +178,11 @@ describe("Real-Time Time Remaining Query Tests", function () {
             console.log("  Player 2 real-time:", player2Time.toString());
             console.log(`  Expected: ~${MATCH_TIME_PER_PLAYER - 35} seconds (${MATCH_TIME_PER_PLAYER} - 35)`);
 
-            // With getCurrentTimeRemaining, player 1 should correctly show ~260
-            expect(player1Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 40, 2);
-            // Player 2 should show ~265
-            expect(player2Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 35, 2);
+            // Player 1: -25 elapsed + 15 increment (move 1), then -15 thinking = -25 total
+            // Player 2: -35 elapsed + 15 increment (move 1) = -20 total
+            // getCurrentTimeRemaining calculates real-time by deducting current elapsed time from stored value
+            expect(player1Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 25, 2); // -25 + 15 - 15
+            expect(player2Time).to.be.closeTo(MATCH_TIME_PER_PLAYER - 20, 2); // -35 + 15
         });
     });
 

@@ -168,6 +168,7 @@ contract ChessOnChain is ETour {
 
         TimeoutConfig memory timeouts0 = TimeoutConfig({
             matchTimePerPlayer: 10 minutes,      // 10 minutes per player
+            timeIncrementPerMove: 15 seconds,    // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
             matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
             enrollmentWindow: 10 minutes,       // 10 min to fill tournament
@@ -193,6 +194,7 @@ contract ChessOnChain is ETour {
 
         TimeoutConfig memory timeouts1 = TimeoutConfig({
             matchTimePerPlayer: 10 minutes,      // 10 minutes per player
+            timeIncrementPerMove: 15 seconds,    // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
             matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
             enrollmentWindow: 30 minutes,       // 30 min to fill tournament
@@ -423,8 +425,10 @@ contract ChessOnChain is ETour {
         return (matchData.player1, matchData.player2);
     }
 
-    function _getTimeIncrement() internal pure override returns (uint256) {
-        return 0; // No increment per move
+    function _getTimeIncrement() internal view override returns (uint256) {
+        // Note: This function is called during match, so we get config from the match's tier
+        // In practice, all tiers in ChessOnChain use 15 seconds
+        return 15 seconds; // Fischer increment: 15 seconds per move
     }
 
     /**
@@ -770,28 +774,20 @@ contract ChessOnChain is ETour {
             matchData.fullMoveNumber++;
         }
 
-        // Update time bank for current player
+        // Update time bank for current player (Fischer increment)
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
 
         if (msg.sender == matchData.player1) {
-            // Deduct time used by player1
-            if (timeElapsed >= matchData.player1TimeRemaining) {
-                matchData.player1TimeRemaining = 0;
-            } else {
-                matchData.player1TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player1TimeRemaining += timeIncrement;
-            }
+            // Check if player1 has enough time, then deduct and add increment
+            require(matchData.player1TimeRemaining >= timeElapsed, "Player 1 out of time");
+            matchData.player1TimeRemaining -= timeElapsed;
+            matchData.player1TimeRemaining += timeIncrement;
         } else {
-            // Deduct time used by player2
-            if (timeElapsed >= matchData.player2TimeRemaining) {
-                matchData.player2TimeRemaining = 0;
-            } else {
-                matchData.player2TimeRemaining -= timeElapsed;
-                // Add increment after move
-                matchData.player2TimeRemaining += timeIncrement;
-            }
+            // Check if player2 has enough time, then deduct and add increment
+            require(matchData.player2TimeRemaining >= timeElapsed, "Player 2 out of time");
+            matchData.player2TimeRemaining -= timeElapsed;
+            matchData.player2TimeRemaining += timeIncrement;
         }
 
         matchData.lastMoveTimestamp = block.timestamp;
