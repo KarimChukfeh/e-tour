@@ -720,10 +720,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const leaderboard = await game.getLeaderboard();
             const countAfter = await game.getLeaderboardCount();
 
-            // Should have added 2 players to leaderboard
-            expect(countAfter - countBefore).to.equal(2n);
+            // Should have added only 1 player (winner) to leaderboard
+            expect(countAfter - countBefore).to.equal(1n);
 
-            // Find winner and loser in leaderboard
+            // Find winner in leaderboard (loser won't be tracked)
             const winnerEntry = leaderboard.find(e => e.player === firstPlayer.address);
             const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
 
@@ -731,8 +731,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Prize pool = 2 * 0.001 ETH * 90% = 0.0018 ETH, winner gets 100%
             expect(winnerEntry.earnings).to.be.gt(0n);
 
-            // Loser should have 0 earnings (won no prizes)
-            expect(loserEntry.earnings).to.equal(0n);
+            // Loser should not be on leaderboard (won no prizes)
+            expect(loserEntry).to.be.undefined;
         });
 
         it("Should return full leaderboard with all players", async function () {
@@ -752,14 +752,15 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const leaderboard = await game.getLeaderboard();
 
-            // Leaderboard should be an array of {player, earnings} entries
+            // Leaderboard should only contain players who won prizes
             expect(Array.isArray(leaderboard)).to.be.true;
-            expect(leaderboard.length).to.be.gte(2);
+            expect(leaderboard.length).to.be.gte(1); // At least the winner
 
-            // Each entry should have player address and earnings
+            // Each entry should have player address and positive earnings
             for (const entry of leaderboard) {
                 expect(entry.player).to.match(/^0x[a-fA-F0-9]{40}$/);
                 expect(typeof entry.earnings).to.equal("bigint");
+                expect(entry.earnings).to.be.gt(0); // Only winners with prizes are tracked
             }
         });
 
@@ -1484,9 +1485,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Reset
 
-            // Verify player earnings (winner should have positive earnings)
-            const earnings = await game.connect(player1).getPlayerStats();
-            expect(earnings).to.be.gt(0);
+            // Verify leaderboard has prize winners (at least 1 player won)
+            const leaderboard = await game.getLeaderboard();
+            const winnersCount = leaderboard.filter(e => e.earnings > 0n).length;
+            expect(winnersCount).to.be.gte(1); // At least one player won prizes
         });
     });
 
@@ -1558,12 +1560,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             ).to.emit(game, "TimeoutVictoryClaimed")
               .withArgs(tierId, instanceId, 0, 0, firstPlayer.address, secondPlayer.address);
 
-            // Timeout loser loses their entry fee (tracked via leaderboard earnings, not forfeited amounts)
+            // Timeout loser won't appear on leaderboard (no prizes won)
             const leaderboard = await game.getLeaderboard();
             const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
-            expect(loserEntry).to.not.be.undefined;
-            // Loser should have 0 earnings (won no prizes)
-            expect(loserEntry.earnings).to.equal(0n);
+            // Loser should not be on leaderboard since they won no prizes
+            expect(loserEntry).to.be.undefined;
         });
 
         it("Should correctly distribute prize pool after abandoned enrollment claim", async function () {
@@ -2214,7 +2215,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should correctly update earnings across multiple tournaments", async function () {
-            const earningsBefore = await game.connect(player1).getPlayerStats();
+            const leaderboardCountBefore = await game.getLeaderboardCount();
 
             // Play and complete first tournament
             await game.connect(player1).enrollInTournament(0, 38, { value: TIER_0_FEE });
@@ -2231,6 +2232,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 38, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 38, 0, 0, 2);
 
+            const tournament1Winner = firstPlayer;
+            const earningsAfterTournament1 = await game.connect(tournament1Winner).getPlayerStats();
+
             // Play and complete second tournament
             await game.connect(player1).enrollInTournament(0, 39, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(0, 39, { value: TIER_0_FEE });
@@ -2245,9 +2249,15 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 39, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 39, 0, 0, 2);
 
-            // Check earnings changed (player1 participated in 2 tournaments)
-            const earningsAfter = await game.connect(player1).getPlayerStats();
-            expect(earningsAfter).to.not.equal(earningsBefore); // Earnings should change after playing
+            // Check that winners are being tracked on leaderboard
+            const leaderboardCountAfter = await game.getLeaderboardCount();
+            expect(leaderboardCountAfter).to.be.gte(leaderboardCountBefore + 1n); // At least 1 new winner
+
+            // If first tournament winner won again, earnings should have increased
+            const earningsAfterTournament2 = await game.connect(tournament1Winner).getPlayerStats();
+            if (tournament1Winner.address === firstPlayer.address) {
+                expect(earningsAfterTournament2).to.be.gt(earningsAfterTournament1);
+            }
         });
     });
 

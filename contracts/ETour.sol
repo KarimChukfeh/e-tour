@@ -2060,15 +2060,17 @@ abstract contract ETour is ReentrancyGuard {
     function _updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) internal {
         address[] storage players = enrolledPlayers[tierId][instanceId];
 
-        // Add prize winnings to players who earned
+        // Only track players who actually won prizes on the leaderboard
         for (uint8 i = 0; i < players.length; i++) {
             address player = players[i];
-            _trackOnLeaderboard(player);
-
             uint256 prize = playerPrizes[tierId][instanceId][player];
+
             if (prize > 0) {
+                // Player won a prize - track them and add earnings
+                _trackOnLeaderboard(player);
                 playerEarnings[player] += int256(prize);
             }
+            // Players with no prize are not tracked unless already on leaderboard
         }
 
         emit TournamentCached(tierId, instanceId, winner);
@@ -2080,14 +2082,8 @@ abstract contract ETour is ReentrancyGuard {
         address claimer,
         uint256 claimAmount
     ) internal {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-
-        // Track all enrolled players on leaderboard (no earnings changes for them)
-        for (uint8 i = 0; i < players.length; i++) {
-            _trackOnLeaderboard(players[i]);
-        }
-
-        // Credit the claimer with the claim amount
+        // Only track the claimer if they receive a claim amount
+        // Enrolled players who abandoned don't receive anything, so don't track them
         if (claimAmount > 0) {
             _trackOnLeaderboard(claimer);
             playerEarnings[claimer] += int256(claimAmount);
