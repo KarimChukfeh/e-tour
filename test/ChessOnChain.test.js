@@ -693,9 +693,8 @@ describe("ChessOnChain Tests", function () {
             const loser = whitePlayer;
             const winner = loser === player1 ? player2 : player1;
 
-            const winnerStats = await chess.getPlayerStats(winner.address);
-            expect(winnerStats.matchesWon).to.be.gte(1);
-            expect(winnerStats.tournamentsWon).to.be.gte(1);
+            const winnerEarnings = await chess.connect(winner).getPlayerStats();
+            expect(winnerEarnings).to.be.gt(0); // Winner should have positive earnings
         });
     });
 });

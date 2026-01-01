@@ -2262,19 +2262,8 @@ abstract contract ETour is ReentrancyGuard {
         return cachedData;
     }
 
-    function getPlayerStats(address player) external view returns (
-        uint256 tournamentsWon,
-        uint256 tournamentsPlayed,
-        uint256 matchesWon,
-        uint256 matchesPlayed
-    ) {
-        PlayerStats storage stats = playerStats[player];
-        return (
-            stats.tournamentsWon,
-            stats.tournamentsPlayed,
-            stats.matchesWon,
-            stats.matchesPlayed
-        );
+    function getPlayerStats() external view returns (int256 totalEarnings) {
+        return playerEarnings[msg.sender];
     }
 
     function getTierOverview(uint8 tierId) external view returns (

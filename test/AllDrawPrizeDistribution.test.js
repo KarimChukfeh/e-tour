@@ -388,11 +388,10 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await playMatchToDraw(0);
             await playMatchToDraw(1);
 
-            // Verify all players have matchesPlayed incremented
+            // Verify all players received earnings (all-draw means all split the prize)
             for (const player of players) {
-                const stats = await game.getPlayerStats(player.address);
-                expect(stats.matchesPlayed).to.equal(1);
-                expect(stats.tournamentsPlayed).to.equal(1);
+                const earnings = await game.connect(player).getPlayerStats();
+                expect(earnings).to.be.gt(0); // All players should have positive earnings from prize split
             }
         });
     });

@@ -3,7 +3,7 @@
   "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-01T10:53:32.851Z",
+  "deployedAt": "2026-01-01T11:21:13.433Z",
   "abi": [
     {
       "inputs": [],
@@ -2535,34 +2535,13 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "player",
-          "type": "address"
-        }
-      ],
+      "inputs": [],
       "name": "getPlayerStats",
       "outputs": [
         {
-          "internalType": "uint256",
-          "name": "tournamentsWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tournamentsPlayed",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesPlayed",
-          "type": "uint256"
+          "internalType": "int256",
+          "name": "totalEarnings",
+          "type": "int256"
         }
       ],
       "stateMutability": "view",

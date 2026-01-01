@@ -346,10 +346,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
-            const winnerStats = await game.getPlayerStats(firstPlayer.address);
-            expect(winnerStats.matchesWon).to.equal(1);
-            expect(winnerStats.matchesPlayed).to.equal(1);
-            expect(winnerStats.tournamentsWon).to.equal(1);
+            const winnerEarnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(winnerEarnings).to.be.gt(0); // Winner should have positive earnings
         });
     });
 

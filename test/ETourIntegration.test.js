@@ -282,9 +282,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            // Winner's stats should be updated
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            // Winner's earnings should be updated
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect vertical win (left column)", async function () {
@@ -300,8 +300,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect diagonal win (0, 4, 8)", async function () {
@@ -317,8 +317,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect draw when board is full with no winner", async function () {
@@ -669,11 +669,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.tournamentsWon).to.be.gte(1);
-            expect(stats.tournamentsPlayed).to.be.gte(1);
-            expect(stats.matchesWon).to.be.gte(1);
-            expect(stats.matchesPlayed).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0); // Winner should have positive earnings
         });
 
         it("Should return tier overview correctly", async function () {
@@ -1487,9 +1484,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Reset
 
-            // Verify player stats updated
-            const stats = await game.getPlayerStats(player1.address);
-            expect(stats.tournamentsPlayed).to.be.gte(1);
+            // Verify player earnings (winner should have positive earnings)
+            const earnings = await game.connect(player1).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
     });
 
@@ -2216,9 +2213,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(activeMatches.length).to.equal(2);
         });
 
-        it("Should correctly update stats across multiple tournaments", async function () {
-            const statsBefore = await game.getPlayerStats(player1.address);
-            const tournamentsPlayedBefore = statsBefore.tournamentsPlayed;
+        it("Should correctly update earnings across multiple tournaments", async function () {
+            const earningsBefore = await game.connect(player1).getPlayerStats();
 
             // Play and complete first tournament
             await game.connect(player1).enrollInTournament(0, 38, { value: TIER_0_FEE });
@@ -2249,9 +2245,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 39, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 39, 0, 0, 2);
 
-            // Check stats updated
-            const statsAfter = await game.getPlayerStats(player1.address);
-            expect(statsAfter.tournamentsPlayed).to.equal(tournamentsPlayedBefore + 2n);
+            // Check earnings changed (player1 participated in 2 tournaments)
+            const earningsAfter = await game.connect(player1).getPlayerStats();
+            expect(earningsAfter).to.not.equal(earningsBefore); // Earnings should change after playing
         });
     });
 
