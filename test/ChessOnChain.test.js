@@ -482,30 +482,23 @@ describe("ChessOnChain Tests", function () {
     });
 
     describe("Timeout Claims", function () {
-        let whitePlayer, blackPlayer;
         const tierId = 0;
-        const instanceId = 6;
         const roundNumber = 0;
         const matchNumber = 0;
         const entryFee = hre.ethers.parseEther("0.01");
 
-        beforeEach(async function () {
+        it("Should allow timeout claim after timeout period", async function () {
+            const instanceId = 6; // Unique instance ID
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
-                whitePlayer = player1;
-                blackPlayer = player2;
-            } else {
-                whitePlayer = player2;
-                blackPlayer = player1;
-            }
-        });
+            // Get match to determine whose turn it is
+            const match = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
+            const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
 
-        it("Should allow timeout claim after timeout period", async function () {
-            // Fast forward past timeout (1 minute)
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward past timeout (10 minutes)
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -514,13 +507,35 @@ describe("ChessOnChain Tests", function () {
         });
 
         it("Should reject early timeout claim", async function () {
+            const instanceId = 8; // Unique instance ID
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            // Get match to determine whose turn it is
+            const match = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
+            const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // Wait a small amount (10 seconds) - still well under the 600 second timeout
+            await hre.ethers.provider.send("evm_increaseTime", [10]);
+            await hre.ethers.provider.send("evm_mine", []);
+
             await expect(
                 chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Timeout not reached");
+            ).to.be.revertedWith("Opponent has not run out of time");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            const instanceId = 9; // Unique instance ID
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            // Get match to determine whose turn it is
+            const match = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
+            const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -678,9 +693,8 @@ describe("ChessOnChain Tests", function () {
             const loser = whitePlayer;
             const winner = loser === player1 ? player2 : player1;
 
-            const winnerStats = await chess.getPlayerStats(winner.address);
-            expect(winnerStats.matchesWon).to.be.gte(1);
-            expect(winnerStats.tournamentsWon).to.be.gte(1);
+            const winnerEarnings = await chess.connect(winner).getPlayerStats();
+            expect(winnerEarnings).to.be.gt(0); // Winner should have positive earnings
         });
     });
 });

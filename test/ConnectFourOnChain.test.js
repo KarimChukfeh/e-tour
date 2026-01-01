@@ -128,9 +128,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.status).to.equal(1); // InProgress
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.status).to.equal(1); // InProgress
+            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should initialize empty board", async function () {
@@ -149,7 +149,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.currentTurn).to.be.oneOf([match.player1, match.player2]);
+            expect(match.currentTurn).to.be.oneOf([match.common.player1, match.common.player2]);
             expect(match.firstPlayer).to.equal(match.currentTurn);
         });
     });
@@ -346,10 +346,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
-            const winnerStats = await game.getPlayerStats(firstPlayer.address);
-            expect(winnerStats.matchesWon).to.equal(1);
-            expect(winnerStats.matchesPlayed).to.equal(1);
-            expect(winnerStats.tournamentsWon).to.equal(1);
+            const winnerEarnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(winnerEarnings).to.be.gt(0); // Winner should have positive earnings
         });
     });
 
@@ -402,7 +400,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Tier 1 timeout not reached");
+            ).to.be.revertedWith("Opponent has not run out of time");
         });
     });
 
@@ -415,9 +413,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.status).to.equal(1);
+            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.status).to.equal(1);
             expect(match.moveCount).to.equal(0);
         });
 
@@ -462,10 +460,15 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         async function playMatchToWin(tierId, instanceId, roundNumber, matchNumber) {
             const match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
 
-            const firstPlayer = players.find(p => p.address === match.currentTurn);
+            // Normalize addresses for comparison (player1 and player2 are in common property)
+            const currentTurn = match.currentTurn?.toLowerCase();
+            const player1 = match.common.player1?.toLowerCase();
+            const player2 = match.common.player2?.toLowerCase();
+
+            const firstPlayer = players.find(p => p.address.toLowerCase() === currentTurn);
             const secondPlayer = players.find(p =>
-                (p.address === match.player1 || p.address === match.player2) &&
-                p.address !== match.currentTurn
+                (p.address.toLowerCase() === player1 || p.address.toLowerCase() === player2) &&
+                p.address.toLowerCase() !== currentTurn
             );
 
             // Play horizontal win: first player drops in columns 0,1,2,3 at bottom row
@@ -588,8 +591,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Get all round 0 match participants before playing
             for (let matchNum = 0; matchNum < 4; matchNum++) {
                 const match = await game.getMatch(TIER_2_ID, instanceId, 0, matchNum);
-                const p1 = players.find(p => p.address === match.player1);
-                const p2 = players.find(p => p.address === match.player2);
+                const p1 = players.find(p => p.address.toLowerCase() === match.common.player1?.toLowerCase());
+                const p2 = players.find(p => p.address.toLowerCase() === match.common.player2?.toLowerCase());
                 round0LoserBalancesBefore[p1.address] = await hre.ethers.provider.getBalance(p1.address);
                 round0LoserBalancesBefore[p2.address] = await hre.ethers.provider.getBalance(p2.address);
             }

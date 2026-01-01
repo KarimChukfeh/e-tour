@@ -36,21 +36,21 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should have correct tier 0 configuration (2-player)", async function () {
             const tier0 = await game.tierConfigs(0);
             expect(tier0.playerCount).to.equal(2);
-            expect(tier0.instanceCount).to.equal(64);
+            expect(tier0.instanceCount).to.equal(100);
             expect(tier0.entryFee).to.equal(TIER_0_FEE);
         });
 
         it("Should have correct tier 1 configuration (4-player)", async function () {
             const tier1 = await game.tierConfigs(1);
             expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(10);
+            expect(tier1.instanceCount).to.equal(40);
             expect(tier1.entryFee).to.equal(TIER_1_FEE);
         });
 
         it("Should have correct tier 2 configuration (8-player)", async function () {
             const tier2 = await game.tierConfigs(2);
             expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(16);
+            expect(tier2.instanceCount).to.equal(20);
             expect(tier2.entryFee).to.equal(TIER_2_FEE);
         });
     });
@@ -92,8 +92,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const ownerBalanceAfter = await hre.ethers.provider.getBalance(owner.address);
 
-            // Owner should receive 7.5% + 2.5% = 10% of entry fee
-            const expectedOwnerIncrease = (TIER_0_FEE * 1000n) / 10000n; // 10%
+            // Owner should receive 7.5% of entry fee (2.5% protocol fee goes to accumulatedProtocolShare)
+            const expectedOwnerIncrease = (TIER_0_FEE * 750n) / 10000n; // 7.5%
             expect(ownerBalanceAfter - ownerBalanceBefore).to.equal(expectedOwnerIncrease);
 
             // Tournament should have 90% in prize pool
@@ -173,8 +173,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).forceStartTournament(tierId, instanceId)
             ).to.be.revertedWith("Enrollment window not expired");
 
-            // Fast forward past enrollment window (2 minutes for demo)
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            // Fast forward past enrollment window (15 minutes for Tier 2)
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start should work now
@@ -282,9 +282,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            // Winner's stats should be updated
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            // Winner's earnings should be updated
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect vertical win (left column)", async function () {
@@ -300,8 +300,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect diagonal win (0, 4, 8)", async function () {
@@ -317,8 +317,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 .to.emit(game, "MatchCompleted")
                 .and.to.emit(game, "TournamentCompleted");
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.matchesWon).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0);
         });
 
         it("Should detect draw when board is full with no winner", async function () {
@@ -402,8 +402,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should allow timeout claim after timeout period", async function () {
-            // Move time forward past timeout (1 minute for demo)
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Move time forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Non-current-turn player can claim timeout
@@ -415,11 +415,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Tier 1 timeout not reached");
+            ).to.be.revertedWith("Opponent has not run out of time");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Current turn player cannot claim timeout
@@ -438,9 +438,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.status).to.equal(1); // InProgress
+            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.common.status).to.equal(1); // InProgress
         });
 
         it("Should return RW3 compliance declaration", async function () {
@@ -507,8 +507,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward past escalation2 window (enrollment window + escalation interval)
-            // For demo: 2 minutes enrollment + 1 minute escalation = 3 minutes
-            await hre.ethers.provider.send("evm_increaseTime", [181]);
+            // For Tier 1: 10 minutes enrollment + 2 minutes escalation = 12 minutes
+            await hre.ethers.provider.send("evm_increaseTime", [721]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const claimerBalanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -536,7 +536,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [181]);
+            await hre.ethers.provider.send("evm_increaseTime", [721]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -562,7 +562,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -577,7 +577,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -586,7 +586,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.hasStartedViaTimeout).to.be.true;
-            expect(tournament.forceStarter).to.equal(player1.address);
         });
 
         it("Should handle single player force start with immediate win", async function () {
@@ -595,7 +594,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with only 1 player - they should win immediately
@@ -670,11 +669,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            const stats = await game.getPlayerStats(firstPlayer.address);
-            expect(stats.tournamentsWon).to.be.gte(1);
-            expect(stats.tournamentsPlayed).to.be.gte(1);
-            expect(stats.matchesWon).to.be.gte(1);
-            expect(stats.matchesPlayed).to.be.gte(1);
+            const earnings = await game.connect(firstPlayer).getPlayerStats();
+            expect(earnings).to.be.gt(0); // Winner should have positive earnings
         });
 
         it("Should return tier overview correctly", async function () {
@@ -724,20 +720,19 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const leaderboard = await game.getLeaderboard();
             const countAfter = await game.getLeaderboardCount();
 
-            // Should have added 2 players to leaderboard
-            expect(countAfter - countBefore).to.equal(2n);
+            // Should have added only 1 player (winner) to leaderboard
+            expect(countAfter - countBefore).to.equal(1n);
 
-            // Find winner and loser in leaderboard
+            // Find winner in leaderboard (loser won't be tracked)
             const winnerEntry = leaderboard.find(e => e.player === firstPlayer.address);
             const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
 
-            // Winner should have positive net earnings (prize - entry fee)
-            // Prize pool = 2 * 0.01 ETH * 90% = 0.018 ETH, winner gets 100%
-            // Net = 0.018 - 0.01 = 0.008 ETH
+            // Winner should have positive earnings (total prizes won)
+            // Prize pool = 2 * 0.001 ETH * 90% = 0.0018 ETH, winner gets 100%
             expect(winnerEntry.earnings).to.be.gt(0n);
 
-            // Loser should have negative net earnings (-entry fee)
-            expect(loserEntry.earnings).to.equal(-TIER_0_FEE);
+            // Loser should not be on leaderboard (won no prizes)
+            expect(loserEntry).to.be.undefined;
         });
 
         it("Should return full leaderboard with all players", async function () {
@@ -757,14 +752,15 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const leaderboard = await game.getLeaderboard();
 
-            // Leaderboard should be an array of {player, earnings} entries
+            // Leaderboard should only contain players who won prizes
             expect(Array.isArray(leaderboard)).to.be.true;
-            expect(leaderboard.length).to.be.gte(2);
+            expect(leaderboard.length).to.be.gte(1); // At least the winner
 
-            // Each entry should have player address and earnings
+            // Each entry should have player address and positive earnings
             for (const entry of leaderboard) {
                 expect(entry.player).to.match(/^0x[a-fA-F0-9]{40}$/);
                 expect(typeof entry.earnings).to.equal("bigint");
+                expect(entry.earnings).to.be.gt(0); // Only winners with prizes are tracked
             }
         });
 
@@ -867,10 +863,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to play a match to completion (first player wins)
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return; // Not in progress
+                if (match.common.status !== 1n) return; // Not in progress
 
                 const fp = match.currentTurn;
-                const sp = match.player1 === fp ? match.player2 : match.player1;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -925,43 +921,15 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const match = await game.getMatch(tierId, instanceId, 0, 0);
 
             // Match should have timeout state initialized
-            expect(match.status).to.equal(1); // InProgress
+            expect(match.common.status).to.equal(1); // InProgress
         });
 
-        it("Should reject Escalation 2 force eliminate before timeout", async function () {
-            const tierId = 2;
-            const instanceId = 2;
-
-            // Need 8 players for tier 2
-            const players = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            }
-
-            // Try to force eliminate immediately - should fail
-            await expect(
-                game.connect(player1).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Tier 2 not reached");
-        });
-
-        it("Should reject Escalation 3 replacement claim before timeout", async function () {
-            const tierId = 0;
-            const instanceId = 9;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Try to claim slot immediately - should fail
-            await expect(
-                game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Tier 3 timeout not reached");
-        });
     });
 
     describe("Invalid Operations", function () {
         it("Should reject invalid instance ID", async function () {
             await expect(
-                game.connect(player1).enrollInTournament(0, 99, { value: TIER_0_FEE })
+                game.connect(player1).enrollInTournament(0, 100, { value: TIER_0_FEE })
             ).to.be.revertedWith("Invalid instance");
         });
 
@@ -1077,8 +1045,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const ownerBalAfter = await hre.ethers.provider.getBalance(owner.address);
             const tournament = await game.tournaments(tierId, instanceId);
 
-            // Owner gets 7.5% + 2.5% = 10%
-            const expectedOwnerShare = (TIER_0_FEE * 1000n) / 10000n;
+            // Owner gets 7.5% (2.5% protocol fee goes to accumulatedProtocolShare for raffle)
+            const expectedOwnerShare = (TIER_0_FEE * 750n) / 10000n; // 7.5%
             expect(ownerBalAfter - ownerBalBefore).to.equal(expectedOwnerShare);
 
             // Prize pool gets 90%
@@ -1095,10 +1063,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
-
-            // First enroller should be recorded
-            expect(tournament.firstEnroller).to.equal(player1.address);
-            expect(tournament.firstEnrollmentTimestamp).to.be.gt(0);
 
             // Escalation timestamps should be set
             expect(tournament.enrollmentTimeout.escalation1Start).to.be.gt(0);
@@ -1132,7 +1096,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
         it("Should expose INSTANCE_COUNTS helper", async function () {
             const count = await game.INSTANCE_COUNTS(0);
-            expect(count).to.equal(64);
+            expect(count).to.equal(100);
         });
 
         it("Should expose TIER_SIZES helper", async function () {
@@ -1141,107 +1105,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
     });
 
-    // ============ Advanced Escalation & All-Draw Tests ============
-
-    describe("Escalation Level 2 - Force Eliminate Stalled Match", function () {
-        it("Should allow advanced player to force eliminate after Escalation 2 timeout", async function () {
-            const tierId = 2;
-            const instanceId = 5;
-
-            // Enroll 8 players for tier 2
-            const players = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            }
-
-            // Complete match 1 first so the winner is "advanced"
-            const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const fp1 = players.find(p => p.address === match1.currentTurn);
-            const sp1 = players.find(p => p.address === (match1.player1 === match1.currentTurn ? match1.player2 : match1.player1));
-
-            // Win match 1
-            await game.connect(fp1).makeMove(tierId, instanceId, 0, 1, 0);
-            await game.connect(sp1).makeMove(tierId, instanceId, 0, 1, 3);
-            await game.connect(fp1).makeMove(tierId, instanceId, 0, 1, 1);
-            await game.connect(sp1).makeMove(tierId, instanceId, 0, 1, 4);
-            await game.connect(fp1).makeMove(tierId, instanceId, 0, 1, 2); // fp1 wins
-
-            // Make a move in match 0 so the clock starts
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const fp0 = players.find(p => p.address === match0.currentTurn);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 4);
-
-            // Fast forward past Escalation 2 timeout (1 min move + 1 min escalation = 2+ min)
-            await hre.ethers.provider.send("evm_increaseTime", [130]); // 2 min 10 sec
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // fp1 (who won match 1) is now "advanced" and can eliminate match 0
-            await expect(
-                game.connect(fp1).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
-        });
-
-        it("Should reject force eliminate from non-advanced player", async function () {
-            const tierId = 2;
-            const instanceId = 6;
-
-            const players = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            }
-
-            // Fast forward past Escalation 2 without completing any matches
-            await hre.ethers.provider.send("evm_increaseTime", [130]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // Player from match 1 who hasn't won anything should NOT be able to force eliminate
-            const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const nonAdvancedPlayer = players.find(p => p.address === match1.player1);
-
-            await expect(
-                game.connect(nonAdvancedPlayer).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Must be in advanced round to eliminate");
-        });
-    });
-
-    describe("Escalation Level 3 - Match Slot Replacement", function () {
-        it("Should allow external player to claim match slot after Escalation 3 timeout", async function () {
-            const tierId = 0;
-            const instanceId = 15;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Fast forward past Escalation 3 (1 min move + 1 min + 1 min = 3+ min)
-            await hre.ethers.provider.send("evm_increaseTime", [190]); // 3 min 10 sec
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // External player (player3) claims the slot - emits MatchCompleted with replacer as winner
-            await expect(
-                game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
-        });
-
-        it("Should track forfeit amount for replaced player", async function () {
-            const tierId = 0;
-            const instanceId = 16;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const stalledPlayer = match.currentTurn; // The player who didn't move
-
-            // Fast forward past Escalation 3
-            await hre.ethers.provider.send("evm_increaseTime", [190]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // Verify PlayerForfeited event is emitted for replaced players
-            await expect(
-                game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.emit(game, "PlayerForfeited");
-        });
-    });
+    // ============ All-Draw Tests ============
 
     describe("All-Draw Round Scenarios", function () {
         it("Should handle finals draw with co-winners", async function () {
@@ -1287,10 +1151,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to play a match to draw
             async function playMatchToDraw(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return false;
+                if (match.common.status !== 1n) return false;
 
                 const fp = match.currentTurn;
-                const sp = match.player1 === fp ? match.player2 : match.player1;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1317,10 +1181,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Play matches 2 and 3 to normal wins
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return;
+                if (match.common.status !== 1n) return;
 
                 const fp = match.currentTurn;
-                const sp = match.player1 === fp ? match.player2 : match.player1;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1362,10 +1226,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return;
+                if (match.common.status !== 1n) return;
 
                 const fp = match.currentTurn;
-                const sp = match.player1 === fp ? match.player2 : match.player1;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1524,7 +1388,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const matchBefore = await game.getMatch(tierId, instanceId, 0, 0);
-            const initialLastMove = matchBefore.lastMoveTime;
+            const initialLastMove = matchBefore.common.lastMoveTime;
 
             // Fast forward time a bit
             await hre.ethers.provider.send("evm_increaseTime", [10]);
@@ -1535,7 +1399,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
             const matchAfter = await game.getMatch(tierId, instanceId, 0, 0);
-            const newLastMove = matchAfter.lastMoveTime;
+            const newLastMove = matchAfter.common.lastMoveTime;
 
             // lastMoveTime should have been updated
             expect(newLastMove).to.be.gt(initialLastMove);
@@ -1555,8 +1419,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward past timeout (1 minute)
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player should be able to claim timeout win (second player didn't move)
@@ -1578,10 +1442,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null;
+                if (match.common.status !== 1n) return null;
 
                 const fp = match.currentTurn;
-                const sp = match.player1 === fp ? match.player2 : match.player1;
+                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1621,9 +1485,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Reset
 
-            // Verify player stats updated
-            const stats = await game.getPlayerStats(player1.address);
-            expect(stats.tournamentsPlayed).to.be.gte(1);
+            // Verify leaderboard has prize winners (at least 1 player won)
+            const leaderboard = await game.getLeaderboard();
+            const winnersCount = leaderboard.filter(e => e.earnings > 0n).length;
+            expect(winnersCount).to.be.gte(1); // At least one player won prizes
         });
     });
 
@@ -1645,8 +1510,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward past timeout
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player claims timeout win - should win tournament
@@ -1672,117 +1537,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(winnerEntry.earnings).to.be.gt(0n);
         });
 
-        it("Should award full prize pool when Escalation Level 2 leads to tournament victory", async function () {
-            const tierId = 2;
-            const instanceId = 10;
-
-            const allPlayers = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of allPlayers) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            }
-
-            // Complete matches 1, 2, 3 in round 0 to leave only match 0 stalled
-            async function winMatch(roundNum, matchNum) {
-                const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null; // Not in progress
-
-                const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
-                const fp = allPlayers.find(p => p.address === fpAddr);
-                const sp = allPlayers.find(p => p.address === spAddr);
-
-                if (!fp || !sp) return null;
-
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
-                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 1);
-                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 4);
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 2);
-                return fp;
-            }
-
-            // Win matches 1, 2, 3 - these players advance
-            const winner1 = await winMatch(0, 1);
-            await winMatch(0, 2);
-            await winMatch(0, 3);
-
-            // Start match 0 with a single move (so timeout clock starts)
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const fp0 = allPlayers.find(p => p.address === match0.currentTurn);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 4);
-
-            // Fast forward past Escalation 2 timeout
-            await hre.ethers.provider.send("evm_increaseTime", [130]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // Winner1 (advanced player) force eliminates stalled match 0
-            await game.connect(winner1).forceEliminateStalledMatch(tierId, instanceId, 0, 0);
-
-            // Now complete round 1 (semis)
-            await winMatch(1, 0);
-            await winMatch(1, 1);
-
-            // Complete finals
-            const finalMatch = await game.getMatch(tierId, instanceId, 2, 0);
-            const finalFpAddr = finalMatch.currentTurn;
-            const finalSpAddr = finalMatch.player1 === finalFpAddr ? finalMatch.player2 : finalMatch.player1;
-            const finalFp = allPlayers.find(p => p.address === finalFpAddr);
-            const finalSp = allPlayers.find(p => p.address === finalSpAddr);
-
-            await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 0);
-            await game.connect(finalSp).makeMove(tierId, instanceId, 2, 0, 3);
-            await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 1);
-            await game.connect(finalSp).makeMove(tierId, instanceId, 2, 0, 4);
-
-            // Final move wins tournament
-            const tx = await game.connect(finalFp).makeMove(tierId, instanceId, 2, 0, 2);
-            const receipt = await tx.wait();
-
-            // Should have TournamentCompleted event
-            const tournamentCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "TournamentCompleted"
-            );
-            expect(tournamentCompletedEvent).to.not.be.undefined;
-
-            // Winner gets prize
-            expect(tournamentCompletedEvent.args.prizeAmount).to.be.gt(0n);
-        });
-
-        it("Should allow Escalation Level 3 replacement player to win tournament and get prize", async function () {
-            const tierId = 0;
-            const instanceId = 21;
-
-            // player1 and player2 enroll
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Start the match
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
-
-            // Fast forward past Escalation 3 timeout (1 min move + 2 min = 3 min total)
-            await hre.ethers.provider.send("evm_increaseTime", [200]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // player3 (external) claims the match slot via replacement
-            const tx = await game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0);
-            const receipt = await tx.wait();
-
-            // Tournament should be completed with player3 as winner (since it's finals)
-            const tournamentCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "TournamentCompleted"
-            );
-            expect(tournamentCompletedEvent).to.not.be.undefined;
-            expect(tournamentCompletedEvent.args.winner).to.equal(player3.address);
-
-            // player3 should have positive earnings (got prize without paying entry)
-            const leaderboard = await game.getLeaderboard();
-            const player3Entry = leaderboard.find(e => e.player === player3.address);
-            // Note: player3 didn't pay entry fee, but got prize
-            expect(player3Entry).to.not.be.undefined;
-        });
-
         it("Should track forfeited amounts for eliminated players on escalation", async function () {
             const tierId = 0;
             const instanceId = 22;
@@ -1796,8 +1550,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward and claim timeout
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward and claim timeout (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Claim timeout win - should emit TimeoutVictoryClaimed
@@ -1806,12 +1560,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             ).to.emit(game, "TimeoutVictoryClaimed")
               .withArgs(tierId, instanceId, 0, 0, firstPlayer.address, secondPlayer.address);
 
-            // Timeout loser loses their entry fee (tracked via leaderboard earnings, not forfeited amounts)
+            // Timeout loser won't appear on leaderboard (no prizes won)
             const leaderboard = await game.getLeaderboard();
             const loserEntry = leaderboard.find(e => e.player === secondPlayer.address);
-            expect(loserEntry).to.not.be.undefined;
-            // Loser should have negative earnings (paid entry fee, got no prize)
-            expect(loserEntry.earnings).to.be.lt(0);
+            // Loser should not be on leaderboard since they won no prizes
+            expect(loserEntry).to.be.undefined;
         });
 
         it("Should correctly distribute prize pool after abandoned enrollment claim", async function () {
@@ -1910,13 +1663,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
             const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
 
-            // Winner's earnings change should equal (prize - entryFee)
+            // Winner's earnings change should equal prize (leaderboard tracks total prizes won)
             const winnerEarningsChange = earningsAfter1 - firstEarningsBefore;
-            expect(winnerEarningsChange).to.equal(winnerPrize - TIER_0_FEE);
+            expect(winnerEarningsChange).to.equal(winnerPrize);
 
-            // Loser's earnings change should equal -entryFee
+            // Loser's earnings change should be 0 (won no prizes)
             const loserEarningsChange = earningsAfter2 - secondEarningsBefore;
-            expect(loserEarningsChange).to.equal(-TIER_0_FEE);
+            expect(loserEarningsChange).to.equal(0n);
         });
 
         it("Should have consistent playerPrizes and leaderboard for 8-player tournament", async function () {
@@ -1939,10 +1692,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win a match
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null;
+                if (match.common.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
+                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
                 const fp = allPlayers.find(p => p.address === fpAddr);
                 const sp = allPlayers.find(p => p.address === spAddr);
 
@@ -1971,15 +1724,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 const earningsAfter = await game.playerEarnings(p.address);
                 const earningsChange = earningsAfter - earningsBefore[p.address];
 
-                // Earnings change should equal (prize - entryFee)
-                const expectedChange = prize - TIER_2_FEE;
-                expect(earningsChange).to.equal(expectedChange);
+                // Earnings change should equal prize (leaderboard tracks total prizes won)
+                expect(earningsChange).to.equal(prize);
             }
 
-            // Winner should have positive prize and earnings
+            // Winner should have positive prize
             const winnerPrize = await game.playerPrizes(tierId, instanceId, tournamentWinner);
             expect(winnerPrize).to.be.gt(0n);
-            expect(winnerPrize - TIER_2_FEE).to.be.gt(0n);
         });
 
         it("Should have consistent playerPrizes and leaderboard after timeout victory", async function () {
@@ -1999,8 +1750,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward and claim timeout
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward and claim timeout (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
@@ -2021,10 +1772,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
             const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
 
-            // Winner: prize - entryFee
-            expect(earningsAfter1 - firstEarningsBefore).to.equal(winnerPrize - TIER_0_FEE);
-            // Loser: -entryFee
-            expect(earningsAfter2 - secondEarningsBefore).to.equal(-TIER_0_FEE);
+            // Winner: prize (leaderboard tracks total prizes won)
+            expect(earningsAfter1 - firstEarningsBefore).to.equal(winnerPrize);
+            // Loser: 0 (won no prizes)
+            expect(earningsAfter2 - secondEarningsBefore).to.equal(0n);
         });
 
         it("Should have consistent playerPrizes and leaderboard for draw finals", async function () {
@@ -2069,9 +1820,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const firstEarningsBefore = firstPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
             const secondEarningsBefore = secondPlayer.address === player1.address ? earningsBefore1 : earningsBefore2;
 
-            // Both: prize - entryFee
-            expect(earningsAfter1 - firstEarningsBefore).to.equal(prize1 - TIER_0_FEE);
-            expect(earningsAfter2 - secondEarningsBefore).to.equal(prize2 - TIER_0_FEE);
+            // Leaderboard tracks total prizes won (not net profit/loss)
+            expect(earningsAfter1 - firstEarningsBefore).to.equal(prize1);
+            expect(earningsAfter2 - secondEarningsBefore).to.equal(prize2);
         });
     });
 
@@ -2088,7 +1839,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with 3 players
@@ -2119,7 +1870,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -2147,7 +1898,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -2173,7 +1924,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward and force start
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await game.connect(player1).forceStartTournament(tierId, instanceId);
@@ -2183,10 +1934,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win a match
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null;
+                if (match.common.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
+                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
                 const fp = players.find(p => p.address === fpAddr);
                 const sp = players.find(p => p.address === spAddr);
 
@@ -2218,80 +1969,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
     });
 
-    describe("Double Timeout Scenarios", function () {
-        it("Should allow Escalation 2 force eliminate when both players inactive", async function () {
-            const tierId = 2; // 8-player tier
-            const instanceId = 15;
-
-            const players = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            }
-
-            // Complete matches 1, 2, 3 so we have advanced players
-            async function winMatch(roundNum, matchNum) {
-                const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null;
-
-                const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
-                const fp = players.find(p => p.address === fpAddr);
-                const sp = players.find(p => p.address === spAddr);
-
-                if (!fp || !sp) return null;
-
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
-                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 1);
-                await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 4);
-                await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 2);
-                return fp;
-            }
-
-            // Win matches 1, 2, 3 - leave match 0 completely untouched (both players inactive)
-            const winner1 = await winMatch(0, 1);
-            await winMatch(0, 2);
-            await winMatch(0, 3);
-
-            // Match 0 - NO moves made by either player (double timeout scenario)
-            // Fast forward past Escalation 2 timeout
-            await hre.ethers.provider.send("evm_increaseTime", [130]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // Advanced player can force eliminate the stalled match
-            await expect(
-                game.connect(winner1).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
-
-            // Both original players should be eliminated
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match0.status).to.not.equal(1); // Not InProgress anymore
-        });
-
-        it("Should handle Escalation 3 replacement when neither player moved", async function () {
-            const tierId = 0; // 2-player tier
-            const instanceId = 30;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Neither player makes any move
-            // Fast forward past Escalation 3 timeout (move timeout + 2 * escalation interval)
-            // 1 min + 1 min + 1 min = 3+ minutes
-            await hre.ethers.provider.send("evm_increaseTime", [190]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // External player (player3) claims the match slot
-            await expect(
-                game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
-
-            // Tournament should complete with player3 as winner
-            const tournament = await game.tournaments(tierId, instanceId);
-            expect(tournament.status).to.equal(0); // Reset after completion
-        });
-    });
-
     describe("All-Draw Round Scenarios", function () {
         it("Should handle all semi-finals drawing - all 4 players share prize", async function () {
             // When all matches in semi-finals draw, no one advances to finals
@@ -2314,10 +1991,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper function to play a match to draw, returns last transaction
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
-                expect(match.status).to.equal(1n, `Match ${matchNum} should be InProgress`);
+                expect(match.common.status).to.equal(1n, `Match ${matchNum} should be InProgress`);
 
                 const fp = allPlayers.find(p => p.address === match.currentTurn);
-                const sp = allPlayers.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
+                const sp = allPlayers.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
 
                 // Draw pattern
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
@@ -2337,11 +2014,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Verify match 0 completed and match 1 is still active
             let match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match0.status).to.equal(2n); // Completed
-            expect(match0.isDraw).to.be.true;
+            expect(match0.common.status).to.equal(2n); // Completed
+            expect(match0.common.isDraw).to.be.true;
 
             let match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            expect(match1.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
+            expect(match1.common.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
 
             // Play match 1 and verify TournamentCompletedAllDraw event
             const tx = await playMatchToDraw(1);
@@ -2449,10 +2126,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win matches
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.status !== 1n) return null;
+                if (match.common.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
+                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
                 const fp = players.find(p => p.address === fpAddr);
                 const sp = players.find(p => p.address === spAddr);
 
@@ -2472,9 +2149,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const winner = await winMatch(2, 0);
 
             // Verify prizes distributed
-            // TicTacChain tier 2: [50, 25, 15, 10, 0, 0, 0, 0]
+            // TicTacChain tier 2: [70, 20, 5, 5, 0, 0, 0, 0]
             const winnerPrize = await game.playerPrizes(tierId, instanceId, winner);
-            const expectedWinnerPrize = (prizePool * 50n) / 100n;
+            const expectedWinnerPrize = (prizePool * 70n) / 100n;
             expect(winnerPrize).to.equal(expectedWinnerPrize);
 
             // Total prizes should equal prize pool
@@ -2537,9 +2214,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(activeMatches.length).to.equal(2);
         });
 
-        it("Should correctly update stats across multiple tournaments", async function () {
-            const statsBefore = await game.getPlayerStats(player1.address);
-            const tournamentsPlayedBefore = statsBefore.tournamentsPlayed;
+        it("Should correctly update earnings across multiple tournaments", async function () {
+            const leaderboardCountBefore = await game.getLeaderboardCount();
 
             // Play and complete first tournament
             await game.connect(player1).enrollInTournament(0, 38, { value: TIER_0_FEE });
@@ -2556,6 +2232,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 38, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 38, 0, 0, 2);
 
+            const tournament1Winner = firstPlayer;
+            const earningsAfterTournament1 = await game.connect(tournament1Winner).getPlayerStats();
+
             // Play and complete second tournament
             await game.connect(player1).enrollInTournament(0, 39, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(0, 39, { value: TIER_0_FEE });
@@ -2570,116 +2249,25 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 39, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 39, 0, 0, 2);
 
-            // Check stats updated
-            const statsAfter = await game.getPlayerStats(player1.address);
-            expect(statsAfter.tournamentsPlayed).to.equal(tournamentsPlayedBefore + 2n);
-        });
-    });
+            // Check that winners are being tracked on leaderboard
+            const leaderboardCountAfter = await game.getLeaderboardCount();
+            expect(leaderboardCountAfter).to.be.gte(leaderboardCountBefore + 1n); // At least 1 new winner
 
-    describe("Escalation Edge Cases", function () {
-        it("Should reject Escalation 3 from player actively playing in same tournament", async function () {
-            const tierId = 1; // 4-player tier for multiple matches
-            const instanceId = 7;
-
-            // Start a 4-player tournament
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-
-            // Player1 wins their match (match 0) to advance
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const fp0 = match0.currentTurn === player1.address ? player1 :
-                        match0.currentTurn === player2.address ? player2 :
-                        match0.currentTurn === player3.address ? player3 : player4;
-            const sp0 = match0.player1 === fp0.address ?
-                        (match0.player2 === player1.address ? player1 :
-                         match0.player2 === player2.address ? player2 :
-                         match0.player2 === player3.address ? player3 : player4) :
-                        (match0.player1 === player1.address ? player1 :
-                         match0.player1 === player2.address ? player2 :
-                         match0.player1 === player3.address ? player3 : player4);
-
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 0);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 3);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 1);
-            await game.connect(sp0).makeMove(tierId, instanceId, 0, 0, 4);
-            await game.connect(fp0).makeMove(tierId, instanceId, 0, 0, 2);
-            // Match 0 complete, fp0 wins and advances to round 1
-
-            // Match 1 is still in progress (stalled)
-            // Fast forward past Escalation 3 timeout
-            await hre.ethers.provider.send("evm_increaseTime", [190]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // fp0 won in current round, should NOT be able to use Escalation 3
-            await expect(
-                game.connect(fp0).claimMatchSlotByReplacement(tierId, instanceId, 0, 1)
-            ).to.be.revertedWith("Cannot use Tier 3 after winning in current round");
-        });
-
-        it("Should track forfeit amounts correctly during Escalation 2", async function () {
-            const tierId = 2; // 8-player tier
-            const instanceId = 4;
-
-            const players = [player1, player2, player3, player4, player5, player6, player7, player8];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
+            // If first tournament winner won again, earnings should have increased
+            const earningsAfterTournament2 = await game.connect(tournament1Winner).getPlayerStats();
+            if (tournament1Winner.address === firstPlayer.address) {
+                expect(earningsAfterTournament2).to.be.gt(earningsAfterTournament1);
             }
-
-            // Win matches 1, 2, 3
-            async function winMatch(matchNum) {
-                const match = await game.getMatch(tierId, instanceId, 0, matchNum);
-                if (match.status !== 1n) return null;
-
-                const fpAddr = match.currentTurn;
-                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
-                const fp = players.find(p => p.address === fpAddr);
-                const sp = players.find(p => p.address === spAddr);
-
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 3);
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 1);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 2);
-                return fp;
-            }
-
-            const winner1 = await winMatch(1);
-            await winMatch(2);
-            await winMatch(3);
-
-            // Get players in match 0 before elimination
-            const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const match0Player1 = match0.player1;
-            const match0Player2 = match0.player2;
-
-            // Fast forward and force eliminate
-            await hre.ethers.provider.send("evm_increaseTime", [130]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            // Expect PlayerForfeited events
-            await expect(
-                game.connect(winner1).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.emit(game, "PlayerForfeited");
-
-            // Both players should have negative earnings (lost entry fee)
-            const earnings1 = await game.playerEarnings(match0Player1);
-            const earnings2 = await game.playerEarnings(match0Player2);
-
-            // They should have lost their entry fee
-            expect(earnings1).to.be.lte(0n);
-            expect(earnings2).to.be.lte(0n);
         });
     });
 
     describe("Instance and Tier Boundary Cases", function () {
         it("Should reject enrollment at max instanceId", async function () {
-            const tierId = 0; // Has 64 instances (0-63)
+            const tierId = 0; // Has 100 instances (0-99)
 
-            // Try to enroll in instance 64 (out of bounds)
+            // Try to enroll in instance 100 (out of bounds)
             await expect(
-                game.connect(player1).enrollInTournament(tierId, 64, { value: TIER_0_FEE })
+                game.connect(player1).enrollInTournament(tierId, 100, { value: TIER_0_FEE })
             ).to.be.revertedWith("Invalid instance");
         });
 

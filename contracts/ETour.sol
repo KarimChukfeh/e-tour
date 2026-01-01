@@ -49,13 +49,19 @@ abstract contract ETour is ReentrancyGuard {
         Escalation3_ExternalPlayers
     }
 
-    enum TournamentCompletionType {
-        Regular,
-        PartialStart,
-        Abandoned
-    }
-
     // ============ Configuration Structs ============
+
+    /**
+     * @dev Timeout configuration for escalation windows
+     * All values in seconds
+     */
+    struct TimeoutConfig {
+        uint256 matchTimePerPlayer;           // Time each player gets for entire match (e.g., 60 = 1 minute)
+        uint256 matchLevel2Delay;             // Delay after player timeout before L2 (advanced players) active
+        uint256 matchLevel3Delay;             // Delay after player timeout before L3 (anyone) active
+        uint256 enrollmentWindow;             // Time to wait for tournament to fill before L1
+        uint256 enrollmentLevel2Delay;        // Delay after L1 before L2 (external claim) active
+    }
 
     /**
      * @dev Configuration for a single tournament tier
@@ -66,9 +72,7 @@ abstract contract ETour is ReentrancyGuard {
         uint8 instanceCount;        // How many concurrent instances of this tier
         uint256 entryFee;           // Entry fee in wei
         Mode mode;                  // Classic or Pro mode
-        uint256 enrollmentWindow;   // Time window for enrollment before escalation
-        uint256 matchMoveTimeout;   // Time allowed per move before timeout escalation
-        uint256 escalationInterval; // Time between escalation levels
+        TimeoutConfig timeouts;     // Timeout configuration for escalation windows
         uint8 totalRounds;          // Calculated: log2(playerCount)
         bool initialized;           // Whether this tier has been configured
     }
@@ -91,10 +95,6 @@ abstract contract ETour is ReentrancyGuard {
         uint8 allDrawRound;
         EnrollmentTimeoutState enrollmentTimeout;
         bool hasStartedViaTimeout;
-        address firstEnroller;
-        uint256 firstEnrollmentTimestamp;
-        address forceStarter;
-        uint256 forceStartTimestamp;
     }
     
     struct Round {
@@ -112,20 +112,22 @@ abstract contract ETour is ReentrancyGuard {
         uint256 matchesPlayed;
     }
 
-    struct MatchTimeoutState {
-        uint256 escalation1Start;
-        uint256 escalation2Start;
-        uint256 escalation3Start;
-        EscalationLevel activeEscalation;
-        bool timeoutActive;
-        uint256 forfeitAmount;
-    }
-
     struct EnrollmentTimeoutState {
         uint256 escalation1Start;
         uint256 escalation2Start;
         EscalationLevel activeEscalation;
         uint256 forfeitPool;
+    }
+
+    /**
+     * @dev Match-level timeout state for anti-stalling escalation
+     * Tracks when a match becomes stalled and enables progressive intervention
+     */
+    struct MatchTimeoutState {
+        uint256 escalation1Start;      // When Level 2 (advanced players) can act
+        uint256 escalation2Start;      // When Level 3 (external players) can act
+        EscalationLevel activeEscalation;
+        bool isStalled;                // Set to true when a player runs out of time
     }
 
     /**
@@ -165,6 +167,12 @@ abstract contract ETour is ReentrancyGuard {
     mapping(uint8 => TierConfig) internal _tierConfigs;
     mapping(uint8 => uint8[]) internal _tierPrizeDistribution; // tierId => percentages array
 
+    // Accumulated protocol share from failed prize distributions
+    uint256 public accumulatedProtocolShare;
+
+    // Raffle tracking
+    uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
+
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
     mapping(uint8 => mapping(uint8 => address[])) public enrolledPlayers;
@@ -183,6 +191,9 @@ abstract contract ETour is ReentrancyGuard {
     mapping(address => int256) public playerEarnings;
     address[] internal _leaderboardPlayers;
     mapping(address => bool) internal _isOnLeaderboard;
+
+    // Match-level timeout tracking for anti-stalling escalation
+    mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
 
     // ============ Events ============
     
@@ -203,11 +214,24 @@ abstract contract ETour is ReentrancyGuard {
     event OwnerFeePaid(address indexed owner, uint256 amount);
     event ProtocolFeePaid(address indexed recipient, uint256 amount);
     event PrizeDistributed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 rank, uint256 amount);
+    event PrizeDistributionFailed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, uint8 attemptsMade);
+    event PrizeFallbackToContract(address indexed player, uint256 amount);
     event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, address winner);
     event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed starter, uint8 playerCount);
     event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
+    event EnrollmentWindowReset(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 newEscalation1Start, uint256 newEscalation2Start);
     event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
     event PlayerForfeited(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, string reason);
+    event ProtocolRaffleExecuted(
+        uint256 indexed raffleIndex,
+        address indexed winner,
+        address indexed caller,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 remainingReserve,
+        uint256 winnerEnrollmentCount
+    );
 
     // ============ Constructor ============
 
@@ -224,9 +248,7 @@ abstract contract ETour is ReentrancyGuard {
      * @param instanceCount How many concurrent tournament instances
      * @param entryFee Entry fee in wei
      * @param mode Classic or Pro mode
-     * @param enrollmentWindow Time before enrollment escalation starts
-     * @param matchMoveTimeout Time per move before timeout
-     * @param escalationInterval Time between escalation levels
+     * @param timeouts Timeout configuration for escalation windows
      * @param prizeDistribution Array of percentages (must sum to 100, index 0 = 1st place)
      */
     function _registerTier(
@@ -235,9 +257,7 @@ abstract contract ETour is ReentrancyGuard {
         uint8 instanceCount,
         uint256 entryFee,
         Mode mode,
-        uint256 enrollmentWindow,
-        uint256 matchMoveTimeout,
-        uint256 escalationInterval,
+        TimeoutConfig memory timeouts,
         uint8[] memory prizeDistribution
     ) internal {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
@@ -257,9 +277,7 @@ abstract contract ETour is ReentrancyGuard {
             instanceCount: instanceCount,
             entryFee: entryFee,
             mode: mode,
-            enrollmentWindow: enrollmentWindow,
-            matchMoveTimeout: matchMoveTimeout,
-            escalationInterval: escalationInterval,
+            timeouts: timeouts,
             totalRounds: _log2(playerCount),
             initialized: true
         });
@@ -282,10 +300,26 @@ abstract contract ETour is ReentrancyGuard {
         uint8 playerCount,
         uint8 instanceCount,
         uint256 entryFee,
-        uint8 totalRounds
+        uint8 totalRounds,
+        TimeoutConfig memory timeouts
     ) {
         TierConfig storage config = _tierConfigs[tierId];
-        return (config.playerCount, config.instanceCount, config.entryFee, config.totalRounds);
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee,
+            config.totalRounds,
+            config.timeouts
+        );
+    }
+
+    /**
+     * @dev Get timeout configuration for a tier
+     * Provides all escalation timing information to clients
+     */
+    function getTimeoutConfig(uint8 tierId) external view returns (TimeoutConfig memory) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        return _tierConfigs[tierId].timeouts;
     }
 
     /**
@@ -333,17 +367,45 @@ abstract contract ETour is ReentrancyGuard {
 
     function _getMatchPlayers(bytes32 matchId) internal view virtual returns (address player1, address player2);
 
-    function _setMatchTimeoutState(bytes32 matchId, MatchTimeoutState memory state) internal virtual;
-
-    function _getMatchTimeoutState(bytes32 matchId) internal view virtual returns (MatchTimeoutState memory);
-
-    function _setMatchTimedOut(bytes32 matchId, address claimant, EscalationLevel level) internal virtual;
-
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal virtual;
 
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal virtual;
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal virtual;
+
+    /**
+     * @dev Get the time increment (in seconds) added after each move
+     * Implementing contracts should return 0 for no increment, or a value like 3 for Fischer increment
+     * @return Time increment in seconds
+     */
+    function _getTimeIncrement() internal view virtual returns (uint256);
+
+    /**
+     * @dev Check if the current player in a match has run out of time
+     * This is used by escalation logic to detect stalled matches
+     * @param matchId The match identifier
+     * @return true if current player has run out of time (timeout is claimable)
+     */
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view virtual returns (bool);
+
+    /**
+     * @dev Public getter for match time per player
+     * Exposes the time control setting to clients
+     * @param tierId The tier to get match time for
+     * @return Time in seconds that each player gets for the entire match
+     */
+    function getMatchTimePerPlayer(uint8 tierId) public view returns (uint256) {
+        return _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+    }
+
+    /**
+     * @dev Public getter for time increment per move
+     * Exposes the time increment setting to clients
+     * @return Time in seconds added after each move (0 for no increment)
+     */
+    function getTimeIncrement() public view returns (uint256) {
+        return _getTimeIncrement();
+    }
 
     /**
      * @dev Check if match is active in game-specific storage
@@ -389,6 +451,73 @@ abstract contract ETour is ReentrancyGuard {
         uint8 matchNumber
     ) internal view virtual returns (CommonMatchData memory data, bool exists);
 
+    // ============ Player Activity Tracking Hooks ============
+
+    /**
+     * @dev Hook called when player enrolls in tournament
+     * Override in game contracts to track player activity
+     */
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal virtual {}
+
+    /**
+     * @dev Hook called when tournament transitions from Enrolling to InProgress
+     * Override in game contracts to track status changes for all enrolled players
+     */
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal virtual {}
+
+    /**
+     * @dev Hook called when player is eliminated from tournament
+     * Override in game contracts to track player elimination
+     */
+    function _onPlayerEliminatedFromTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal virtual {}
+
+    /**
+     * @dev Hook called when external player replaces stalled players (L3 escalation)
+     * Override in game contracts to track mid-tournament player additions
+     */
+    function _onExternalPlayerReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal virtual {}
+
+    /**
+     * @dev Hook called when tournament completes and resets
+     * Override in game contracts to clean up player tracking
+     */
+    function _onTournamentCompleted(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory players
+    ) internal virtual {}
+
+    // ============ Raffle Configuration Functions ============
+
+    /**
+     * @dev Returns the raffle threshold for the current raffle index
+     * @return Minimum accumulatedProtocolShare required to trigger raffle
+     * @notice Child contracts can override to implement progressive thresholds
+     */
+    function _getRaffleThreshold() internal view virtual returns (uint256) {
+        return 3 ether;  // Default threshold
+    }
+
+    /**
+     * @dev Returns the reserve amount to keep after raffle execution
+     * @return Amount to keep in accumulatedProtocolShare after raffle
+     * @notice Reserve is always 10% of threshold
+     *         This ensures protocol always maintains proportional reserve
+     */
+    function _getRaffleReserve() internal view virtual returns (uint256) {
+        uint256 threshold = _getRaffleThreshold();
+        return (threshold * 10) / 100;  // 10% of threshold
+    }
+
     // ============ Enrollment Functions ============
     
     function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
@@ -404,11 +533,9 @@ abstract contract ETour is ReentrancyGuard {
             tournament.tierId = tierId;
             tournament.instanceId = instanceId;
             tournament.mode = config.mode;
-            tournament.firstEnroller = msg.sender;
-            tournament.firstEnrollmentTimestamp = block.timestamp;
 
-            tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.enrollmentWindow;
-            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.escalationInterval;
+            tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.timeouts.enrollmentWindow;
+            tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
         }
@@ -427,9 +554,9 @@ abstract contract ETour is ReentrancyGuard {
         require(ownerSuccess, "Owner fee transfer failed");
         emit OwnerFeePaid(owner, ownerShare);
 
-        (bool protocolSuccess, ) = payable(owner).call{value: protocolShare}("");
-        require(protocolSuccess, "Protocol fee transfer failed");
-        emit ProtocolFeePaid(owner, protocolShare);
+        // Add protocol share to accumulated pool for raffle system
+        accumulatedProtocolShare += protocolShare;
+        emit ProtocolFeePaid(address(this), protocolShare);
 
         enrolledPlayers[tierId][instanceId].push(msg.sender);
         isEnrolled[tierId][instanceId][msg.sender] = true;
@@ -437,6 +564,7 @@ abstract contract ETour is ReentrancyGuard {
         tournament.prizePool += participantsShare;
 
         emit PlayerEnrolled(tierId, instanceId, msg.sender, tournament.enrolledCount);
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
 
         if (tournament.enrolledCount == config.playerCount) {
             _startTournament(tierId, instanceId);
@@ -458,8 +586,6 @@ abstract contract ETour is ReentrancyGuard {
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
         tournament.hasStartedViaTimeout = true;
-        tournament.forceStarter = msg.sender;
-        tournament.forceStartTimestamp = block.timestamp;
 
         emit TournamentForceStarted(tierId, instanceId, msg.sender, tournament.enrolledCount);
         _startTournament(tierId, instanceId);
@@ -495,6 +621,172 @@ abstract contract ETour is ReentrancyGuard {
         _resetTournamentAfterCompletion(tierId, instanceId);
     }
 
+    /**
+     * @dev Reset enrollment window for solo enrolled player
+     * Allows the single enrolled player to extend the enrollment period
+     * if they want to wait for more players to join rather than force start
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     */
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
+        TierConfig storage config = _tierConfigs[tierId];
+        require(config.initialized, "Invalid tier");
+        require(instanceId < config.instanceCount, "Invalid instance");
+
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Must be enrolling status
+        require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
+
+        // Exactly 1 player enrolled
+        require(tournament.enrolledCount == 1, "Must have exactly 1 player enrolled");
+
+        // Caller must be that enrolled player
+        require(isEnrolled[tierId][instanceId][msg.sender], "Not enrolled");
+
+        // Enrollment window must have expired (past escalation1Start)
+        require(
+            block.timestamp >= tournament.enrollmentTimeout.escalation1Start,
+            "Enrollment window not expired"
+        );
+
+        // Recalculate escalation windows from current timestamp
+        tournament.enrollmentTimeout.escalation1Start =
+            block.timestamp + config.timeouts.enrollmentWindow;
+        tournament.enrollmentTimeout.escalation2Start =
+            tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
+        tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
+
+        emit EnrollmentWindowReset(
+            tierId,
+            instanceId,
+            msg.sender,
+            tournament.enrollmentTimeout.escalation1Start,
+            tournament.enrollmentTimeout.escalation2Start
+        );
+    }
+
+    /**
+     * @dev Check if the connected wallet can reset the enrollment window
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     * @return canReset true if caller can reset, false otherwise
+     */
+    function canResetEnrollmentWindow(
+        uint8 tierId,
+        uint8 instanceId
+    ) external view returns (bool canReset) {
+        TierConfig storage config = _tierConfigs[tierId];
+
+        if (!config.initialized) return false;
+        if (instanceId >= config.instanceCount) return false;
+
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        bool isEnrollingStatus = tournament.status == TournamentStatus.Enrolling;
+        bool isExactlyOnePlayer = tournament.enrolledCount == 1;
+        bool isPlayerEnrolled = isEnrolled[tierId][instanceId][msg.sender];
+        bool hasWindowExpired = block.timestamp >= tournament.enrollmentTimeout.escalation1Start;
+
+        return isEnrollingStatus &&
+               isExactlyOnePlayer &&
+               isPlayerEnrolled &&
+               hasWindowExpired;
+    }
+
+    /**
+     * @dev Executes protocol raffle when accumulated fees exceed 3 ETH
+     * @notice Only callable by players enrolled in active tournaments
+     * @return winner Address of the randomly selected winner
+     * @return ownerAmount Amount sent to owner (20%)
+     * @return winnerAmount Amount sent to winner (80%)
+     */
+    function executeProtocolRaffle()
+        external
+        nonReentrant
+        returns (
+            address winner,
+            uint256 ownerAmount,
+            uint256 winnerAmount
+        )
+    {
+        // CHECK 1: Verify threshold met
+        uint256 threshold = _getRaffleThreshold();
+        require(
+            accumulatedProtocolShare >= threshold,
+            "Raffle threshold not met"
+        );
+
+        // CHECK 2: Verify caller is enrolled in active tournament
+        require(
+            _isCallerEnrolledInActiveTournament(msg.sender),
+            "Only enrolled players can trigger raffle"
+        );
+
+        // EFFECT 1: Increment raffle index
+        currentRaffleIndex++;
+
+        // EFFECT 2: Calculate raffle amount (use configured reserve)
+        uint256 reserve = _getRaffleReserve();
+        uint256 raffleAmount = accumulatedProtocolShare - reserve;
+        ownerAmount = (raffleAmount * 20) / 100;  // 20%
+        winnerAmount = (raffleAmount * 80) / 100; // 80%
+
+        // EFFECT 3: Update accumulated protocol share (keep reserve)
+        accumulatedProtocolShare = reserve;
+
+        // EFFECT 4: Get all enrolled players with weights
+        (
+            address[] memory players,
+            uint256[] memory weights,
+            uint256 totalWeight
+        ) = _getAllEnrolledPlayersWithWeights();
+
+        require(totalWeight > 0, "No eligible players for raffle");
+
+        // EFFECT 5: Generate randomness and select winner
+        uint256 randomness = uint256(keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            block.number,
+            msg.sender,
+            accumulatedProtocolShare
+        )));
+
+        winner = _selectWeightedWinner(players, weights, totalWeight, randomness);
+
+        // Find winner's enrollment count for event
+        uint256 winnerEnrollmentCount = 0;
+        for (uint256 i = 0; i < players.length; i++) {
+            if (players[i] == winner) {
+                winnerEnrollmentCount = weights[i];
+                break;
+            }
+        }
+
+        // EFFECT 6: Emit event
+        emit ProtocolRaffleExecuted(
+            currentRaffleIndex,
+            winner,
+            msg.sender,
+            raffleAmount,
+            ownerAmount,
+            winnerAmount,
+            accumulatedProtocolShare,
+            winnerEnrollmentCount
+        );
+
+        // INTERACTION 1: Send to owner
+        (bool ownerSent, ) = payable(owner).call{value: ownerAmount}("");
+        require(ownerSent, "Failed to send owner share");
+
+        // INTERACTION 2: Send to winner
+        (bool winnerSent, ) = payable(winner).call{value: winnerAmount}("");
+        require(winnerSent, "Failed to send winner share");
+
+        return (winner, ownerAmount, winnerAmount);
+    }
+
     // ============ Tournament Management ============
 
     function _startTournament(uint8 tierId, uint8 instanceId) internal {
@@ -504,6 +796,7 @@ abstract contract ETour is ReentrancyGuard {
         tournament.currentRound = 0;
 
         emit TournamentStarted(tierId, instanceId, tournament.enrolledCount);
+        _onTournamentStarted(tierId, instanceId);
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
@@ -514,13 +807,16 @@ abstract contract ETour is ReentrancyGuard {
             uint256 winnersPot = tournament.prizePool;
             playerPrizes[tierId][instanceId][soloWinner] = winnersPot;
 
-            (bool success, ) = payable(soloWinner).call{value: winnersPot}("");
-            require(success, "Prize payout failed");
+            // Attempt to send prize with fallback to owner fees if failed
+            bool sent = _sendPrizeWithFallback(soloWinner, winnersPot, tierId, instanceId);
 
             playerStats[soloWinner].tournamentsWon++;
             playerStats[soloWinner].tournamentsPlayed++;
 
-            emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
+            // Only emit success event if prize was actually sent
+            if (sent) {
+                emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
+            }
             emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, false, address(0));
 
             _updatePlayerEarnings(tierId, instanceId, soloWinner);
@@ -662,12 +958,17 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
         if (!isDraw) {
             playerStats[winner].matchesWon++;
         }
+
+        // Clear escalation state when match completes
+        _clearEscalationState(matchId);
 
         emit MatchCompleted(matchId, winner, isDraw);
 
@@ -688,6 +989,9 @@ abstract contract ETour is ReentrancyGuard {
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                // This handles the case where only one winner remains after force elimination
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
@@ -847,6 +1151,41 @@ abstract contract ETour is ReentrancyGuard {
 
     // ============ Prize Distribution ============
 
+    /**
+     * @dev Attempts to send prize to a recipient with fallback to protocol pool if failed
+     * @param recipient Address to receive the prize
+     * @param amount Amount to send in wei
+     * @param tierId Tournament tier ID (for event logging)
+     * @param instanceId Tournament instance ID (for event logging)
+     * @return success True if prize was sent successfully, false if fell back to protocol pool
+     *
+     * If the send attempt fails, the amount is added to accumulatedProtocolShare
+     * to prevent tournament stalling while ensuring funds are not lost.
+     */
+    function _sendPrizeWithFallback(
+        address recipient,
+        uint256 amount,
+        uint8 tierId,
+        uint8 instanceId
+    ) internal returns (bool success) {
+        require(amount > 0, "Amount must be greater than 0");
+
+        // Attempt to send the prize once
+        (bool sent, ) = payable(recipient).call{value: amount}("");
+
+        if (sent) {
+            return true; // Prize sent successfully
+        }
+
+        // If send failed, add amount to accumulated protocol share
+        accumulatedProtocolShare += amount;
+
+        emit PrizeDistributionFailed(tierId, instanceId, recipient, amount, 1);
+        emit PrizeFallbackToContract(recipient, amount);
+
+        return false; // Indicate fallback occurred
+    }
+
     function _distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot) internal {
         address[] storage players = enrolledPlayers[tierId][instanceId];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
@@ -871,9 +1210,15 @@ abstract contract ETour is ReentrancyGuard {
 
                 if (prizeAmount > 0) {
                     playerPrizes[tierId][instanceId][player] = prizeAmount;
-                    (bool success, ) = payable(player).call{value: prizeAmount}("");
-                    require(success, "Prize payout failed");
-                    emit PrizeDistributed(tierId, instanceId, player, ranking, prizeAmount);
+
+                    // Attempt to send prize with fallback to owner fees if failed
+                    bool sent = _sendPrizeWithFallback(player, prizeAmount, tierId, instanceId);
+
+                    // Only emit success event if prize was actually sent
+                    // (Failed attempts already emit PrizeDistributionFailed and PrizeFallbackToOwnerFees)
+                    if (sent) {
+                        emit PrizeDistributed(tierId, instanceId, player, ranking, prizeAmount);
+                    }
                 }
             }
         }
@@ -892,9 +1237,13 @@ abstract contract ETour is ReentrancyGuard {
             playerRanking[tierId][instanceId][player] = 0;
             playerPrizes[tierId][instanceId][player] = prizePerPlayer;
 
-            (bool success, ) = payable(player).call{value: prizePerPlayer}("");
-            require(success, "Prize payout failed");
-            emit PrizeDistributed(tierId, instanceId, player, 1, prizePerPlayer);
+            // Attempt to send prize with fallback to owner fees if failed
+            bool sent = _sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId);
+
+            // Only emit success event if prize was actually sent
+            if (sent) {
+                emit PrizeDistributed(tierId, instanceId, player, 1, prizePerPlayer);
+            }
         }
     }
 
@@ -924,6 +1273,19 @@ abstract contract ETour is ReentrancyGuard {
         uint8 matchNumber
     ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(tierId, instanceId, roundNumber, matchNumber));
+    }
+
+    /**
+     * @dev Public wrapper for _getMatchId to allow external queries
+     * Useful for off-chain tools and testing
+     */
+    function getMatchId(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public pure returns (bytes32) {
+        return _getMatchId(tierId, instanceId, roundNumber, matchNumber);
     }
 
     function _addPlayerActiveMatch(address player, bytes32 matchId) internal {
@@ -985,24 +1347,26 @@ abstract contract ETour is ReentrancyGuard {
 
     function _hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (bool) {
         uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNumber);
-        
+
         for (uint8 i = 0; i < matchCount; i += 2) {
             if (i + 1 >= matchCount) break;
-            
+
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
-            
+
             (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
-            
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && d2) {
+
+            // Check if match 1 has a winner and match 2 has no winner (draw or double elimination)
+            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
                 return true;
             }
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && d1) {
+            // Check if match 2 has a winner and match 1 has no winner (draw or double elimination)
+            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -1013,20 +1377,22 @@ abstract contract ETour is ReentrancyGuard {
         }
 
         uint8 matchCount = _getMatchCountForRound(tierId, instanceId, roundNumber);
-        
+
         for (uint8 i = 0; i < matchCount; i += 2) {
             if (i + 1 >= matchCount) break;
-            
+
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
-            
+
             (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
-            
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && d2) {
+
+            // Advance winner from match 1 if match 2 has no winner (draw or double elimination)
+            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
                 _advanceWinner(tierId, instanceId, roundNumber, i, w1);
             }
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && d1) {
+            // Advance winner from match 2 if match 1 has no winner (draw or double elimination)
+            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
                 _advanceWinner(tierId, instanceId, roundNumber, i + 1, w2);
             }
         }
@@ -1053,6 +1419,60 @@ abstract contract ETour is ReentrancyGuard {
             result[i] = tempPlayers[i];
         }
         return result;
+    }
+
+    /**
+     * @dev After processing orphaned winners, checks if tournament should complete
+     * with a sole winner. This handles edge cases where force elimination leaves
+     * only one remaining player who gets advanced to next round alone.
+     */
+    function _checkForSoleWinnerCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal {
+        TierConfig storage config = _tierConfigs[tierId];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Only check if not already completed and not in finals
+        if (tournament.status == TournamentStatus.Completed) {
+            return;
+        }
+
+        uint8 nextRound = roundNumber + 1;
+        if (nextRound >= config.totalRounds) {
+            return;
+        }
+
+        // Check if next round has only one player across all matches
+        Round storage nextRoundData = rounds[tierId][instanceId][nextRound];
+        if (!nextRoundData.initialized) {
+            return;
+        }
+
+        address solePlayer = address(0);
+        uint8 playerCount = 0;
+
+        for (uint8 i = 0; i < nextRoundData.totalMatches; i++) {
+            bytes32 matchId = _getMatchId(tierId, instanceId, nextRound, i);
+            (address p1, address p2) = _getMatchPlayers(matchId);
+
+            if (p1 != address(0)) {
+                solePlayer = p1;
+                playerCount++;
+            }
+            if (p2 != address(0)) {
+                if (solePlayer == address(0)) {
+                    solePlayer = p2;
+                }
+                playerCount++;
+            }
+        }
+
+        // If exactly one player in next round, they win by default
+        if (playerCount == 1 && solePlayer != address(0)) {
+            _completeTournament(tierId, instanceId, solePlayer);
+        }
     }
 
     function _consolidateScatteredPlayers(
@@ -1190,6 +1610,159 @@ abstract contract ETour is ReentrancyGuard {
     // ============ Escalation Level 2 & 3 (Tournament-Level Timeout) ============
 
     /**
+     * @dev Internal function to mark a match as stalled when timeout is claimable
+     * Sets escalation timers to enable progressive intervention
+     * Called by game contracts when a player runs out of time
+     * @param matchId The match identifier
+     * @param tierId The tier ID (for config)
+     * @param timeoutOccurredAt When the timeout actually happened (0 = use current time)
+     */
+    function _markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) internal {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        if (!timeout.isStalled) {
+            timeout.isStalled = true;
+            TierConfig storage config = _tierConfigs[tierId];
+
+            // If timeoutOccurredAt is 0, use current time
+            uint256 baseTime = timeoutOccurredAt == 0 ? block.timestamp : timeoutOccurredAt;
+
+            // Use tier-specific timeout configuration
+            timeout.escalation1Start = baseTime + config.timeouts.matchLevel2Delay;
+            timeout.escalation2Start = baseTime + config.timeouts.matchLevel3Delay;
+            timeout.activeEscalation = EscalationLevel.None;
+        }
+    }
+
+    /**
+     * @dev Convenience overload that uses current time as timeout timestamp
+     */
+    function _markMatchStalled(bytes32 matchId, uint8 tierId) internal {
+        _markMatchStalled(matchId, tierId, 0);
+    }
+
+    /**
+     * @dev Clears escalation state for a match after it completes
+     * @param matchId The match identifier
+     */
+    function _clearEscalationState(bytes32 matchId) internal {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+    }
+
+    /**
+     * @dev Check if a match should be marked as stalled and mark it if needed
+     * A match is stalled if it's in progress and a player's time has run out
+     * Returns true if match is stalled (was already or just marked)
+     */
+    function _checkAndMarkStalled(
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal returns (bool) {
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If already marked as stalled, return true
+        if (timeout.isStalled) {
+            return true;
+        }
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match common data to check status
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has run out of time (using game-specific time bank logic)
+        if (_hasCurrentPlayerTimedOut(matchId)) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            // Calculate when the timeout occurred for accurate escalation timing
+            // Timeout occurs at: lastMoveTime + currentPlayer's timeRemaining
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+
+            // Mark as stalled with escalation timers starting from timeout occurrence
+            _markMatchStalled(matchId, tierId, timeoutOccurredAt);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Level 2 Escalation: Advanced player forces elimination of stalled match
+     * Callable by any player who has advanced past this round
+     * Both stalled players are eliminated, match completes with no winner
+     */
+    function forceEliminateStalledMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check and mark match as stalled if it qualifies
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
+
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // Require match is stalled and Level 2 is active
+        require(timeout.isStalled, "Match not stalled");
+        require(block.timestamp >= timeout.escalation1Start, "Level 2 not active yet");
+
+        // Require caller is an advanced player
+        require(_isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
+                "Not an advanced player");
+
+        // Mark escalation level and double eliminate both players
+        timeout.activeEscalation = EscalationLevel.Escalation2_AdvancedPlayers;
+        _completeMatchDoubleElimination(tierId, instanceId, roundNumber, matchNumber);
+    }
+
+    /**
+     * @dev Level 3 Escalation: External player replaces stalled players
+     * Callable by non-advanced players and external players
+     * NOT callable by advanced players (prevents tournament position paradox)
+     * Replacement player wins the match and advances in tournament
+     */
+    function claimMatchSlotByReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check and mark match as stalled if it qualifies
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
+
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // Require match is stalled and Level 3 window is active
+        require(timeout.isStalled, "Match not stalled");
+        require(block.timestamp >= timeout.escalation2Start, "Level 3 not active yet");
+
+        // Prevent advanced players from claiming (they should use L2 instead)
+        // This prevents paradoxical tournament states where a player is in multiple rounds
+        require(!_isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
+                "Advanced players cannot claim L3");
+
+        // Mark escalation level and complete match with replacement winner
+        timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
+        _completeMatchByReplacement(tierId, instanceId, roundNumber, matchNumber, msg.sender);
+    }
+
+    /**
      * @dev Check if a player has advanced in the tournament
      * Used for Escalation Level 2 - allows advanced players to force eliminate stalled matches
      *
@@ -1244,90 +1817,6 @@ abstract contract ETour is ReentrancyGuard {
     }
 
     /**
-     * @dev Escalation Level 2: Advanced players can force eliminate stalled matches
-     * Both players in the stalled match forfeit their entry fees
-     */
-    function forceEliminateStalledMatch(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
-
-        require(status == MatchStatus.InProgress, "Match not active");
-        require(block.timestamp >= timeoutState.escalation2Start, "Tier 2 not reached");
-        require(
-            _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender),
-            "Must be in advanced round to eliminate"
-        );
-
-        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation2_AdvancedPlayers);
-
-        (address player1, address player2) = _getMatchPlayers(matchId);
-        uint256 entryFee = _tierConfigs[tierId].entryFee;
-
-        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 2: Eliminated by advanced player");
-        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 2: Eliminated by advanced player");
-
-        _completeMatchDoubleElimination(tierId, instanceId, roundNumber, matchNumber);
-    }
-
-    /**
-     * @dev Escalation Level 3: External players can claim a match slot by replacement
-     * Both original players forfeit, claimant advances as winner
-     */
-    function claimMatchSlotByReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        MatchTimeoutState memory timeoutState = _getMatchTimeoutState(matchId);
-
-        require(status == MatchStatus.InProgress, "Match not active");
-        require(block.timestamp >= timeoutState.escalation3Start, "Tier 3 timeout not reached");
-
-        // Prevent enrolled players from using Tier 3 if they're actively playing or won current round
-        if (isEnrolled[tierId][instanceId][msg.sender]) {
-            uint8 currentRound = tournaments[tierId][instanceId].currentRound;
-
-            for (uint8 r = 0; r <= currentRound; r++) {
-                for (uint8 m = 0; m < rounds[tierId][instanceId][r].totalMatches; m++) {
-                    bytes32 checkMatchId = _getMatchId(tierId, instanceId, r, m);
-                    (address checkWinner, , MatchStatus checkStatus) = _getMatchResult(checkMatchId);
-                    (address checkP1, address checkP2) = _getMatchPlayers(checkMatchId);
-
-                    if (checkStatus == MatchStatus.InProgress &&
-                        (checkP1 == msg.sender || checkP2 == msg.sender)) {
-                        revert("Cannot use Tier 3 while actively playing in this tournament");
-                    }
-
-                    if (r == currentRound &&
-                        checkStatus == MatchStatus.Completed &&
-                        checkWinner == msg.sender) {
-                        revert("Cannot use Tier 3 after winning in current round");
-                    }
-                }
-            }
-        }
-
-        _setMatchTimedOut(matchId, msg.sender, EscalationLevel.Escalation3_ExternalPlayers);
-
-        (address player1, address player2) = _getMatchPlayers(matchId);
-        uint256 entryFee = _tierConfigs[tierId].entryFee;
-
-        emit PlayerForfeited(tierId, instanceId, player1, entryFee, "Tier 3: Replaced by external player");
-        emit PlayerForfeited(tierId, instanceId, player2, entryFee, "Tier 3: Replaced by external player");
-
-        _completeMatchByReplacement(tierId, instanceId, roundNumber, matchNumber, msg.sender);
-    }
-
-    /**
      * @dev Complete a match by double elimination (both players eliminated, no winner)
      */
     function _completeMatchDoubleElimination(
@@ -1347,11 +1836,16 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
 
         emit MatchCompleted(matchId, address(0), false);
+
+        // Clear escalation state
+        _clearEscalationState(matchId);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
@@ -1359,6 +1853,8 @@ abstract contract ETour is ReentrancyGuard {
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
@@ -1385,6 +1881,8 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
+        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -1395,12 +1893,16 @@ abstract contract ETour is ReentrancyGuard {
             isEnrolled[tierId][instanceId][replacementPlayer] = true;
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             tournament.enrolledCount++;
+            _onExternalPlayerReplacement(tierId, instanceId, replacementPlayer);
         }
 
         playerStats[replacementPlayer].matchesPlayed++;
         playerStats[replacementPlayer].matchesWon++;
 
         emit MatchCompleted(matchId, replacementPlayer, false);
+
+        // Clear escalation state
+        _clearEscalationState(matchId);
 
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber < config.totalRounds - 1) {
@@ -1413,9 +1915,144 @@ abstract contract ETour is ReentrancyGuard {
         if (round.completedMatches == round.totalMatches) {
             if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 _processOrphanedWinners(tierId, instanceId, roundNumber);
+                // After processing orphaned winners, check if tournament can complete
+                _checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
             _completeRound(tierId, instanceId, roundNumber);
         }
+    }
+
+    // ============ Escalation Availability Helpers (Public View) ============
+
+    /**
+     * @dev Check if Level 1 escalation (opponent timeout claim) is available
+     * @return available True if opponent can claim timeout victory
+     */
+    function isMatchEscL1Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        return _hasCurrentPlayerTimedOut(matchId);
+    }
+
+    /**
+     * @dev Check if Level 2 escalation (advanced player force eliminate) is available
+     * @return available True if L2 time window is active
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation (external player replacement) is available
+     * @return available True if L3 time window is active
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
+    }
+
+    /**
+     * @notice Check if a specific address is an advanced player in the tournament
+     * @dev Returns true if the player has won a match and advanced past the specified round
+     * @param player The address to check
+     * @param tierId The tier ID
+     * @param instanceId The instance ID
+     * @param roundNumber The round number being queried
+     * @return isAdvanced True if the player has advanced past the given round
+     */
+    function isPlayerInAdvancedRound(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) external view returns (bool isAdvanced) {
+        return _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, player);
     }
 
     // ============ Caching Functions ============
@@ -1423,15 +2060,17 @@ abstract contract ETour is ReentrancyGuard {
     function _updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) internal {
         address[] storage players = enrolledPlayers[tierId][instanceId];
 
-        // Add prize winnings to players who earned
+        // Only track players who actually won prizes on the leaderboard
         for (uint8 i = 0; i < players.length; i++) {
             address player = players[i];
-            _trackOnLeaderboard(player);
-
             uint256 prize = playerPrizes[tierId][instanceId][player];
+
             if (prize > 0) {
+                // Player won a prize - track them and add earnings
+                _trackOnLeaderboard(player);
                 playerEarnings[player] += int256(prize);
             }
+            // Players with no prize are not tracked unless already on leaderboard
         }
 
         emit TournamentCached(tierId, instanceId, winner);
@@ -1443,14 +2082,8 @@ abstract contract ETour is ReentrancyGuard {
         address claimer,
         uint256 claimAmount
     ) internal {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-
-        // Track all enrolled players on leaderboard (no earnings changes for them)
-        for (uint8 i = 0; i < players.length; i++) {
-            _trackOnLeaderboard(players[i]);
-        }
-
-        // Credit the claimer with the claim amount
+        // Only track the claimer if they receive a claim amount
+        // Enrolled players who abandoned don't receive anything, so don't track them
         if (claimAmount > 0) {
             _trackOnLeaderboard(claimer);
             playerEarnings[claimer] += int256(claimAmount);
@@ -1487,12 +2120,14 @@ abstract contract ETour is ReentrancyGuard {
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
         tournament.enrollmentTimeout.forfeitPool = 0;
 
-        tournament.firstEnroller = address(0);
-        tournament.firstEnrollmentTimestamp = 0;
-        tournament.forceStarter = address(0);
-        tournament.forceStartTimestamp = 0;
-
         address[] storage players = enrolledPlayers[tierId][instanceId];
+
+        // Copy players array before deletion for tracking cleanup
+        address[] memory playersCopy = new address[](players.length);
+        for (uint256 i = 0; i < players.length; i++) {
+            playersCopy[i] = players[i];
+        }
+
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             isEnrolled[tierId][instanceId][player] = false;
@@ -1500,6 +2135,9 @@ abstract contract ETour is ReentrancyGuard {
             // Note: playerPrizes is intentionally NOT deleted - it's permanent historical record
         }
         delete enrolledPlayers[tierId][instanceId];
+
+        // Notify tracking systems of tournament completion
+        _onTournamentCompleted(tierId, instanceId, playersCopy);
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
             Round storage round = rounds[tierId][instanceId][roundNum];
@@ -1620,19 +2258,8 @@ abstract contract ETour is ReentrancyGuard {
         return cachedData;
     }
 
-    function getPlayerStats(address player) external view returns (
-        uint256 tournamentsWon,
-        uint256 tournamentsPlayed,
-        uint256 matchesWon,
-        uint256 matchesPlayed
-    ) {
-        PlayerStats storage stats = playerStats[player];
-        return (
-            stats.tournamentsWon,
-            stats.tournamentsPlayed,
-            stats.matchesWon,
-            stats.matchesPlayed
-        );
+    function getPlayerStats() external view returns (int256 totalEarnings) {
+        return playerEarnings[msg.sender];
     }
 
     function getTierOverview(uint8 tierId) external view returns (
@@ -1686,6 +2313,229 @@ abstract contract ETour is ReentrancyGuard {
 
     function getLeaderboardCount() external view returns (uint256) {
         return _leaderboardPlayers.length;
+    }
+
+    /**
+     * @dev Returns detailed raffle state information for client display
+     *
+     * This function provides all information needed to explain the raffle to users:
+     * - Current progress: how much has accumulated vs the target
+     * - Target breakdown: how much will be distributed vs kept as reserve (10%)
+     * - Distribution split: owner (20%) vs winner (80%) shares
+     *
+     * Example for 3 ETH threshold:
+     *   "Target: 3 ETH. When reached, 2.7 ETH distributed (0.3 ETH kept as reserve)"
+     *   "Current: 0.5 ETH. Need 2.5 ETH more to trigger raffle"
+     *   "Distribution: 0.54 ETH to owner (20%), 2.16 ETH to winner (80%)"
+     *
+     * @return raffleIndex Current raffle number (0 before first, increments after each execution)
+     * @return isReady True if threshold reached and raffle can be executed
+     * @return currentAccumulated Current protocol share accumulated
+     * @return threshold Target amount needed to trigger raffle
+     * @return reserve Amount that will be kept in protocol after raffle executes (10% of threshold)
+     * @return raffleAmount Amount that will be distributed when threshold is reached (threshold - reserve = 90%)
+     * @return ownerShare Owner's portion of raffleAmount (20%)
+     * @return winnerShare Winner's portion of raffleAmount (80%)
+     * @return eligiblePlayerCount Number of unique players who can trigger/win the raffle
+     */
+    function getRaffleInfo()
+        external
+        view
+        returns (
+            uint256 raffleIndex,
+            bool isReady,
+            uint256 currentAccumulated,
+            uint256 threshold,
+            uint256 reserve,
+            uint256 raffleAmount,
+            uint256 ownerShare,
+            uint256 winnerShare,
+            uint256 eligiblePlayerCount
+        )
+    {
+        raffleIndex = currentRaffleIndex;
+        currentAccumulated = accumulatedProtocolShare;
+
+        // Use virtual functions for threshold and reserve
+        threshold = _getRaffleThreshold();
+        reserve = _getRaffleReserve();
+
+        isReady = currentAccumulated >= threshold;
+
+        // Always calculate what the distribution WILL BE at threshold
+        // This allows clients to display: "When 3 ETH reached, 2 ETH distributed, 1 ETH kept"
+        // even before the threshold is reached
+        raffleAmount = threshold - reserve;
+        ownerShare = (raffleAmount * 20) / 100;
+        winnerShare = (raffleAmount * 80) / 100;
+
+        // Count eligible players
+        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
+        eligiblePlayerCount = players.length;
+
+        return (
+            raffleIndex,
+            isReady,
+            currentAccumulated,
+            threshold,
+            reserve,
+            raffleAmount,
+            ownerShare,
+            winnerShare,
+            eligiblePlayerCount
+        );
+    }
+
+    // ============ Protocol Raffle System ============
+
+    /**
+     * @dev Checks if caller is enrolled in any active tournament
+     * @param caller Address to check
+     * @return true if caller is enrolled in at least one active tournament (Enrolling or InProgress)
+     */
+    function _isCallerEnrolledInActiveTournament(address caller)
+        internal
+        view
+        returns (bool)
+    {
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Only check Enrolling and InProgress tournaments
+                if (tournament.status == TournamentStatus.Enrolling ||
+                    tournament.status == TournamentStatus.InProgress) {
+
+                    if (isEnrolled[tierId][instanceId][caller]) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev Gets all enrolled players across active tournaments with enrollment counts
+     * @return players Array of unique player addresses
+     * @return weights Array of enrollment counts per player
+     * @return totalWeight Sum of all weights
+     */
+    function _getAllEnrolledPlayersWithWeights()
+        internal
+        view
+        returns (
+            address[] memory players,
+            uint256[] memory weights,
+            uint256 totalWeight
+        )
+    {
+        // Use dynamic approach with temporary arrays (max 1000 unique players)
+        address[] memory tempPlayers = new address[](1000);
+        uint256 uniqueCount = 0;
+        totalWeight = 0;
+
+        // First pass: collect unique players and count total enrollments
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Only count Enrolling and InProgress tournaments
+                if (tournament.status == TournamentStatus.Enrolling ||
+                    tournament.status == TournamentStatus.InProgress) {
+
+                    address[] storage enrolled = enrolledPlayers[tierId][instanceId];
+
+                    for (uint256 i = 0; i < enrolled.length; i++) {
+                        address player = enrolled[i];
+                        bool found = false;
+
+                        // Check if player already in tempPlayers
+                        for (uint256 j = 0; j < uniqueCount; j++) {
+                            if (tempPlayers[j] == player) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            tempPlayers[uniqueCount] = player;
+                            uniqueCount++;
+                        }
+
+                        totalWeight++;
+                    }
+                }
+            }
+        }
+
+        // Allocate exact-size arrays
+        players = new address[](uniqueCount);
+        weights = new uint256[](uniqueCount);
+
+        // Second pass: count weights for each unique player
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            players[i] = tempPlayers[i];
+            uint256 playerWeight = 0;
+
+            for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+                TierConfig storage config = _tierConfigs[tierId];
+
+                for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                    TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                    if ((tournament.status == TournamentStatus.Enrolling ||
+                         tournament.status == TournamentStatus.InProgress) &&
+                        isEnrolled[tierId][instanceId][players[i]]) {
+                        playerWeight++;
+                    }
+                }
+            }
+
+            weights[i] = playerWeight;
+        }
+
+        return (players, weights, totalWeight);
+    }
+
+    /**
+     * @dev Selects winner using weighted random selection (cumulative probability method)
+     * @param players Array of player addresses
+     * @param weights Array of weights (enrollment counts)
+     * @param totalWeight Sum of all weights
+     * @param randomness Random seed
+     * @return winner Selected player address
+     */
+    function _selectWeightedWinner(
+        address[] memory players,
+        uint256[] memory weights,
+        uint256 totalWeight,
+        uint256 randomness
+    ) internal pure returns (address winner) {
+        require(players.length > 0, "No players available");
+        require(players.length == weights.length, "Array length mismatch");
+
+        // Generate random position in [0, totalWeight)
+        uint256 randomPosition = randomness % totalWeight;
+
+        // Find winner using cumulative probability
+        uint256 cumulativeWeight = 0;
+
+        for (uint256 i = 0; i < players.length; i++) {
+            cumulativeWeight += weights[i];
+
+            if (randomPosition < cumulativeWeight) {
+                return players[i];
+            }
+        }
+
+        // Fallback (should never reach here)
+        return players[players.length - 1];
     }
 
     /**

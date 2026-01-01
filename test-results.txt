@@ -1,0 +1,25 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+An unexpected error occurred:
+
+TypeError: Cannot find module '/Users/karim/Documents/workspace/zero-trust/e-tour/test/reporter/scientific-reporter.cjs'
+Require stack:
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/mocha/lib/mocha.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/mocha/index.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/builtin-tasks/test.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/internal/core/tasks/builtin-tasks.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/internal/core/config/config-loading.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/internal/cli/cli.js
+- /Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/internal/cli/bootstrap.js
+    at createInvalidReporterError (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/mocha/lib/errors.js:207:13)
+    at Mocha.reporter (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/mocha/lib/mocha.js:348:17)
+    at new Mocha (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/mocha/lib/mocha.js:195:6)
+    at SimpleTaskDefinition.action (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/builtin-tasks/test.ts:109:21)
+    at Environment._runTaskDefinition (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/internal/core/runtime-environment.ts:351:14)
+    at Environment._runTaskDefinition (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/internal/core/runtime-environment.ts:351:14)
+    at Environment.run (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/internal/core/runtime-environment.ts:184:14)
+    at SimpleTaskDefinition.action (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/builtin-tasks/test.ts:196:28)
+    at Environment._runTaskDefinition (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/internal/core/runtime-environment.ts:351:14)
+    at Environment.run (/Users/karim/Documents/workspace/zero-trust/e-tour/node_modules/hardhat/src/internal/core/runtime-environment.ts:184:14) {
+  code: 'ERR_MOCHA_INVALID_REPORTER',
+  reporter: '/Users/karim/Documents/workspace/zero-trust/e-tour/test/reporter/scientific-reporter.cjs'
+}
