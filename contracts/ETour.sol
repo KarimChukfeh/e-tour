@@ -49,12 +49,6 @@ abstract contract ETour is ReentrancyGuard {
         Escalation3_ExternalPlayers
     }
 
-    enum TournamentCompletionType {
-        Regular,
-        PartialStart,
-        Abandoned
-    }
-
     // ============ Configuration Structs ============
 
     /**
@@ -101,10 +95,6 @@ abstract contract ETour is ReentrancyGuard {
         uint8 allDrawRound;
         EnrollmentTimeoutState enrollmentTimeout;
         bool hasStartedViaTimeout;
-        address firstEnroller;
-        uint256 firstEnrollmentTimestamp;
-        address forceStarter;
-        uint256 forceStartTimestamp;
     }
     
     struct Round {
@@ -543,8 +533,6 @@ abstract contract ETour is ReentrancyGuard {
             tournament.tierId = tierId;
             tournament.instanceId = instanceId;
             tournament.mode = config.mode;
-            tournament.firstEnroller = msg.sender;
-            tournament.firstEnrollmentTimestamp = block.timestamp;
 
             tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.timeouts.enrollmentWindow;
             tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
@@ -598,8 +586,6 @@ abstract contract ETour is ReentrancyGuard {
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
         tournament.hasStartedViaTimeout = true;
-        tournament.forceStarter = msg.sender;
-        tournament.forceStartTimestamp = block.timestamp;
 
         emit TournamentForceStarted(tierId, instanceId, msg.sender, tournament.enrolledCount);
         _startTournament(tierId, instanceId);
@@ -665,7 +651,6 @@ abstract contract ETour is ReentrancyGuard {
         );
 
         // Recalculate escalation windows from current timestamp
-        tournament.firstEnrollmentTimestamp = block.timestamp;
         tournament.enrollmentTimeout.escalation1Start =
             block.timestamp + config.timeouts.enrollmentWindow;
         tournament.enrollmentTimeout.escalation2Start =
@@ -2138,11 +2123,6 @@ abstract contract ETour is ReentrancyGuard {
         tournament.enrollmentTimeout.escalation2Start = 0;
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
         tournament.enrollmentTimeout.forfeitPool = 0;
-
-        tournament.firstEnroller = address(0);
-        tournament.firstEnrollmentTimestamp = 0;
-        tournament.forceStarter = address(0);
-        tournament.forceStartTimestamp = 0;
 
         address[] storage players = enrolledPlayers[tierId][instanceId];
 

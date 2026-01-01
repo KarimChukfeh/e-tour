@@ -586,7 +586,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.hasStartedViaTimeout).to.be.true;
-            expect(tournament.forceStarter).to.equal(player1.address);
         });
 
         it("Should handle single player force start with immediate win", async function () {
@@ -1066,10 +1065,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             const tournament = await game.tournaments(tierId, instanceId);
-
-            // First enroller should be recorded
-            expect(tournament.firstEnroller).to.equal(player1.address);
-            expect(tournament.firstEnrollmentTimestamp).to.be.gt(0);
 
             // Escalation timestamps should be set
             expect(tournament.enrollmentTimeout.escalation1Start).to.be.gt(0);
