@@ -27,11 +27,6 @@ contract ConnectFourOnChain is ETour {
     
     uint8 public constant NO_COLUMN = 255;
 
-    // Timeout configuration
-    uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 2 minutes;
-    uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 1 minutes;
-    uint256 public constant DEFAULT_ESCALATION_INTERVAL = 1 minutes;
-
     // ============ Game-Specific Enums ============
 
     enum Cell { Empty, Red, Yellow }
