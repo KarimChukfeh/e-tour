@@ -640,18 +640,25 @@ contract TicTacChain is ETour {
         require(matchData.board[cellIndex] == Cell.Empty, "Cell already occupied");
 
         // Update time bank for current player (Fischer increment)
+        // Note: Players can make moves even if out of time - opponent must claim timeout victory
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
 
         if (msg.sender == matchData.player1) {
-            // Check if player1 has enough time, then deduct and add increment
-            require(matchData.player1TimeRemaining >= timeElapsed, "Player 1 out of time");
-            matchData.player1TimeRemaining -= timeElapsed;
+            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
+            if (matchData.player1TimeRemaining >= timeElapsed) {
+                matchData.player1TimeRemaining -= timeElapsed;
+            } else {
+                matchData.player1TimeRemaining = 0;
+            }
             matchData.player1TimeRemaining += timeIncrement;
         } else {
-            // Check if player2 has enough time, then deduct and add increment
-            require(matchData.player2TimeRemaining >= timeElapsed, "Player 2 out of time");
-            matchData.player2TimeRemaining -= timeElapsed;
+            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
+            if (matchData.player2TimeRemaining >= timeElapsed) {
+                matchData.player2TimeRemaining -= timeElapsed;
+            } else {
+                matchData.player2TimeRemaining = 0;
+            }
             matchData.player2TimeRemaining += timeIncrement;
         }
 
