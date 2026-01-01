@@ -18,16 +18,6 @@ import "./ETour.sol";
 contract TicTacChain is ETour {
     
     // ============ Game-Specific Constants ============
-    
-    uint8 public constant NO_CELL = 255;
-
-    // Timeout configuration (can be adjusted per deployment)
-    uint256 public constant DEMO_ENROLLMENT_WINDOW = 2 minutes;
-    uint256 public constant DEFAULT_ENROLLMENT_WINDOW = 30 minutes;
-    uint256 public constant DEMO_MATCH_MOVE_TIMEOUT = 1 minutes;
-    uint256 public constant DEFAULT_MATCH_MOVE_TIMEOUT = 1 minutes;
-    uint256 public constant DEMO_ESCALATION_INTERVAL = 1 minutes;
-    uint256 public constant DEFAULT_ESCALATION_INTERVAL = 1 minutes;
 
     // ============ Game-Specific Enums ============
 
@@ -46,12 +36,6 @@ contract TicTacChain is ETour {
         uint256 startTime;
         address firstPlayer;
         bool isDraw;
-        // Legacy block mechanic fields (kept for ABI compatibility, but unused in classic mode)
-        uint8 lastMovedCell;
-        address blockedPlayer;
-        uint8 blockedCell;
-        bool player1UsedBlock;
-        bool player2UsedBlock;
         // Time Bank Fields (chess clock style)
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
@@ -72,8 +56,6 @@ contract TicTacChain is ETour {
         uint8 matchNumber;
         bool isDraw;
         bool exists;
-        bool player1UsedBlock;
-        bool player2UsedBlock;
     }
 
     /**
@@ -84,11 +66,6 @@ contract TicTacChain is ETour {
         Cell[9] board;                    // 3x3 board
         address currentTurn;
         address firstPlayer;
-        uint8 lastMovedCell;
-        address blockedPlayer;            // Legacy field
-        uint8 blockedCell;                // Legacy field
-        bool player1UsedBlock;            // Legacy field
-        bool player2UsedBlock;            // Legacy field
         uint256 player1TimeRemaining;     // Time bank for player1 (seconds)
         uint256 player2TimeRemaining;     // Time bank for player2 (seconds)
         uint256 lastMoveTimestamp;        // Timestamp of last move
@@ -129,7 +106,6 @@ contract TicTacChain is ETour {
     // ============ Game-Specific Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
-    event MoveBlocked(bytes32 indexed matchId, address indexed blocker, uint8 blockedCell, address blockedPlayer);
     event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
 
     // ============ Constructor ============
@@ -276,11 +252,6 @@ contract TicTacChain is ETour {
                         matchData.startTime = 0;
                         matchData.firstPlayer = address(0);
                         matchData.isDraw = false;
-                        matchData.lastMovedCell = NO_CELL;
-                        matchData.blockedPlayer = address(0);
-                        matchData.blockedCell = NO_CELL;
-                        matchData.player1UsedBlock = false;
-                        matchData.player2UsedBlock = false;
                         matchData.player1TimeRemaining = 0;
                         matchData.player2TimeRemaining = 0;
                         matchData.lastMoveTimestamp = 0;
@@ -329,12 +300,6 @@ contract TicTacChain is ETour {
         matchData.startTime = block.timestamp;
         matchData.isDraw = false;
 
-        matchData.lastMovedCell = NO_CELL;
-        matchData.blockedPlayer = address(0);
-        matchData.blockedCell = NO_CELL;
-        matchData.player1UsedBlock = false;
-        matchData.player2UsedBlock = false;
-
         // Random starting player
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
@@ -374,11 +339,6 @@ contract TicTacChain is ETour {
         matchData.startTime = 0;
         matchData.firstPlayer = address(0);
         matchData.isDraw = false;
-        matchData.lastMovedCell = NO_CELL;
-        matchData.blockedPlayer = address(0);
-        matchData.blockedCell = NO_CELL;
-        matchData.player1UsedBlock = false;
-        matchData.player2UsedBlock = false;
 
         for (uint8 i = 0; i < 9; i++) {
             matchData.board[i] = Cell.Empty;
@@ -426,9 +386,7 @@ contract TicTacChain is ETour {
             roundNumber: roundNumber,
             matchNumber: matchNumber,
             isDraw: matchData.isDraw,
-            exists: true,
-            player1UsedBlock: matchData.player1UsedBlock,
-            player2UsedBlock: matchData.player2UsedBlock
+            exists: true
         });
 
         cacheKeys[cacheIndex] = matchKey;
@@ -494,12 +452,6 @@ contract TicTacChain is ETour {
         matchData.status = MatchStatus.InProgress;
         matchData.lastMoveTime = block.timestamp;
         matchData.startTime = block.timestamp;
-
-        matchData.lastMovedCell = NO_CELL;
-        matchData.blockedPlayer = address(0);
-        matchData.blockedCell = NO_CELL;
-        matchData.player1UsedBlock = false;
-        matchData.player2UsedBlock = false;
 
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
@@ -682,17 +634,6 @@ contract TicTacChain is ETour {
         require(cellIndex < 9, "Invalid cell index");
         require(matchData.board[cellIndex] == Cell.Empty, "Cell already occupied");
 
-        // Legacy block check (kept for ABI compatibility)
-        require(
-            matchData.blockedPlayer != msg.sender || matchData.blockedCell != cellIndex,
-            "Cell is blocked for you this turn"
-        );
-
-        if (matchData.blockedPlayer == msg.sender) {
-            matchData.blockedPlayer = address(0);
-            matchData.blockedCell = NO_CELL;
-        }
-
         // Update time bank for current player
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
@@ -720,7 +661,6 @@ contract TicTacChain is ETour {
         matchData.board[cellIndex] = (msg.sender == matchData.player1) ? Cell.X : Cell.O;
         matchData.lastMoveTime = block.timestamp;
         matchData.lastMoveTimestamp = block.timestamp;
-        matchData.lastMovedCell = cellIndex;
 
         emit MoveMade(matchId, msg.sender, cellIndex);
 
@@ -805,20 +745,6 @@ contract TicTacChain is ETour {
         return true;
     }
 
-    function _hasWinningMove(Cell[9] memory board, Cell playerCell) internal pure returns (bool) {
-        for (uint8 i = 0; i < 9; i++) {
-            if (board[i] == Cell.Empty) {
-                board[i] = playerCell;
-                if (_checkWin(board)) {
-                    board[i] = Cell.Empty;
-                    return true;
-                }
-                board[i] = Cell.Empty;
-            }
-        }
-        return false;
-    }
-
     // ============ View Functions ============
 
     /**
@@ -849,11 +775,6 @@ contract TicTacChain is ETour {
             fullData.board = cached.board;
             fullData.firstPlayer = cached.firstPlayer;
             fullData.currentTurn = address(0);  // N/A for completed matches
-            fullData.lastMovedCell = 0;
-            fullData.blockedPlayer = address(0);
-            fullData.blockedCell = 0;
-            fullData.player1UsedBlock = false;
-            fullData.player2UsedBlock = false;
             fullData.player1TimeRemaining = 0;  // N/A for completed matches
             fullData.player2TimeRemaining = 0;
             fullData.lastMoveTimestamp = 0;
@@ -863,11 +784,6 @@ contract TicTacChain is ETour {
             fullData.board = matchData.board;
             fullData.currentTurn = matchData.currentTurn;
             fullData.firstPlayer = matchData.firstPlayer;
-            fullData.lastMovedCell = matchData.lastMovedCell;
-            fullData.blockedPlayer = matchData.blockedPlayer;
-            fullData.blockedCell = matchData.blockedCell;
-            fullData.player1UsedBlock = matchData.player1UsedBlock;
-            fullData.player2UsedBlock = matchData.player2UsedBlock;
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
             fullData.lastMoveTimestamp = matchData.lastMoveTimestamp;
