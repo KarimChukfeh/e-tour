@@ -25,8 +25,8 @@ describe("Enrollment Window Reset", function () {
             // Verify initially cannot reset (window not expired)
             expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.false;
 
-            // Fast forward past escalation1Start (60 seconds) but before escalation2Start (120 seconds)
-            await time.increase(61);
+            // Fast forward past escalation1Start (300 seconds) but before escalation2Start (420 seconds)
+            await time.increase(301);
 
             // Verify can reset now
             expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.true;
@@ -98,7 +98,7 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Fast forward
-            await time.increase(61);
+            await time.increase(301);
 
             // player2 tries to reset (not enrolled)
             await expect(
@@ -128,8 +128,8 @@ describe("Enrollment Window Reset", function () {
             // Enroll player
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
-            // Fast forward past escalation2Start (120 seconds + 1)
-            await time.increase(121);
+            // Fast forward past escalation2Start (420 seconds + 1)
+            await time.increase(421);
 
             // Reset should still work (player can keep waiting for others to join)
             await expect(
@@ -150,7 +150,7 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Fast forward and reset
-            await time.increase(61);
+            await time.increase(301);
             await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Second player should be able to enroll
@@ -172,19 +172,19 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // First reset
-            await time.increase(61);
+            await time.increase(301);
             await expect(
                 game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
             ).to.emit(game, "EnrollmentWindowReset");
 
             // Second reset
-            await time.increase(61);
+            await time.increase(301);
             await expect(
                 game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
             ).to.emit(game, "EnrollmentWindowReset");
 
             // Third reset
-            await time.increase(61);
+            await time.increase(301);
             const tx = await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
             await expect(tx).to.emit(game, "EnrollmentWindowReset");
         });
@@ -202,7 +202,7 @@ describe("Enrollment Window Reset", function () {
             expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.false;
 
             // After escalation1 - should be true
-            await time.increase(61);
+            await time.increase(301);
             expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.true;
 
             // Even after escalation2 - should still be true
@@ -223,7 +223,7 @@ describe("Enrollment Window Reset", function () {
             const forfeitPoolBefore = tournamentBefore.enrollmentTimeout.forfeitPool;
 
             // Reset
-            await time.increase(61);
+            await time.increase(301);
             await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Verify forfeit pool unchanged
@@ -240,7 +240,7 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Fast forward and reset
-            await time.increase(61);
+            await time.increase(301);
             const tx = await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Get receipt and find event
@@ -274,7 +274,7 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Fast forward and force start
-            await time.increase(61);
+            await time.increase(301);
             await game.connect(player1).forceStartTournament(TIER_0, instanceId);
 
             // Try to reset (should fail - tournament no longer enrolling, and enrolledCount is now 0 after walkover)

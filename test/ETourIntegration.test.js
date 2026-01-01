@@ -36,21 +36,21 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should have correct tier 0 configuration (2-player)", async function () {
             const tier0 = await game.tierConfigs(0);
             expect(tier0.playerCount).to.equal(2);
-            expect(tier0.instanceCount).to.equal(64);
+            expect(tier0.instanceCount).to.equal(100);
             expect(tier0.entryFee).to.equal(TIER_0_FEE);
         });
 
         it("Should have correct tier 1 configuration (4-player)", async function () {
             const tier1 = await game.tierConfigs(1);
             expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(10);
+            expect(tier1.instanceCount).to.equal(40);
             expect(tier1.entryFee).to.equal(TIER_1_FEE);
         });
 
         it("Should have correct tier 2 configuration (8-player)", async function () {
             const tier2 = await game.tierConfigs(2);
             expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(16);
+            expect(tier2.instanceCount).to.equal(20);
             expect(tier2.entryFee).to.equal(TIER_2_FEE);
         });
     });
@@ -173,8 +173,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).forceStartTournament(tierId, instanceId)
             ).to.be.revertedWith("Enrollment window not expired");
 
-            // Fast forward past enrollment window (2 minutes for demo)
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            // Fast forward past enrollment window (15 minutes for Tier 2)
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start should work now
@@ -402,8 +402,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should allow timeout claim after timeout period", async function () {
-            // Move time forward past time bank (5 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Move time forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Non-current-turn player can claim timeout
@@ -419,7 +419,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         });
 
         it("Should reject timeout claim on your own turn", async function () {
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Current turn player cannot claim timeout
@@ -507,8 +507,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward past escalation2 window (enrollment window + escalation interval)
-            // For demo: 2 minutes enrollment + 1 minute escalation = 3 minutes
-            await hre.ethers.provider.send("evm_increaseTime", [181]);
+            // For Tier 1: 10 minutes enrollment + 2 minutes escalation = 12 minutes
+            await hre.ethers.provider.send("evm_increaseTime", [721]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const claimerBalanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -536,7 +536,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [181]);
+            await hre.ethers.provider.send("evm_increaseTime", [721]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -562,7 +562,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -577,7 +577,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -594,7 +594,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with only 1 player - they should win immediately
@@ -931,7 +931,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
     describe("Invalid Operations", function () {
         it("Should reject invalid instance ID", async function () {
             await expect(
-                game.connect(player1).enrollInTournament(0, 99, { value: TIER_0_FEE })
+                game.connect(player1).enrollInTournament(0, 100, { value: TIER_0_FEE })
             ).to.be.revertedWith("Invalid instance");
         });
 
@@ -1098,7 +1098,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
         it("Should expose INSTANCE_COUNTS helper", async function () {
             const count = await game.INSTANCE_COUNTS(0);
-            expect(count).to.equal(64);
+            expect(count).to.equal(100);
         });
 
         it("Should expose TIER_SIZES helper", async function () {
@@ -1421,8 +1421,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward past time bank (5 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player should be able to claim timeout win (second player didn't move)
@@ -1511,8 +1511,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward past time bank (5 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past time bank (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player claims timeout win - should win tournament
@@ -1551,8 +1551,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward and claim timeout (5 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward and claim timeout (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Claim timeout win - should emit TimeoutVictoryClaimed
@@ -1752,8 +1752,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // First player makes a move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Fast forward and claim timeout (5 minutes + 1 second)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward and claim timeout (2 minutes + 1 second)
+            await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
@@ -1841,7 +1841,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with 3 players
@@ -1872,7 +1872,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -1900,7 +1900,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
 
             // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -1926,7 +1926,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward and force start
-            await hre.ethers.provider.send("evm_increaseTime", [121]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await game.connect(player1).forceStartTournament(tierId, instanceId);
@@ -2151,9 +2151,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const winner = await winMatch(2, 0);
 
             // Verify prizes distributed
-            // TicTacChain tier 2: [50, 25, 15, 10, 0, 0, 0, 0]
+            // TicTacChain tier 2: [70, 20, 5, 5, 0, 0, 0, 0]
             const winnerPrize = await game.playerPrizes(tierId, instanceId, winner);
-            const expectedWinnerPrize = (prizePool * 50n) / 100n;
+            const expectedWinnerPrize = (prizePool * 70n) / 100n;
             expect(winnerPrize).to.equal(expectedWinnerPrize);
 
             // Total prizes should equal prize pool
@@ -2257,11 +2257,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     describe("Instance and Tier Boundary Cases", function () {
         it("Should reject enrollment at max instanceId", async function () {
-            const tierId = 0; // Has 64 instances (0-63)
+            const tierId = 0; // Has 100 instances (0-99)
 
-            // Try to enroll in instance 64 (out of bounds)
+            // Try to enroll in instance 100 (out of bounds)
             await expect(
-                game.connect(player1).enrollInTournament(tierId, 64, { value: TIER_0_FEE })
+                game.connect(player1).enrollInTournament(tierId, 100, { value: TIER_0_FEE })
             ).to.be.revertedWith("Invalid instance");
         });
 

@@ -497,8 +497,8 @@ describe("ChessOnChain Tests", function () {
             const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
             const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
 
-            // Fast forward past timeout (1 minute)
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            // Fast forward past timeout (10 minutes)
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -516,7 +516,7 @@ describe("ChessOnChain Tests", function () {
             const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
             const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
 
-            // Wait a small amount (10 seconds) - still well under the 60 second timeout
+            // Wait a small amount (10 seconds) - still well under the 600 second timeout
             await hre.ethers.provider.send("evm_increaseTime", [10]);
             await hre.ethers.provider.send("evm_mine", []);
 
@@ -535,7 +535,7 @@ describe("ChessOnChain Tests", function () {
             const whitePlayer = match.currentTurn === player1.address ? player1 : player2;
             const blackPlayer = match.currentTurn === player1.address ? player2 : player1;
 
-            await hre.ethers.provider.send("evm_increaseTime", [61]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(

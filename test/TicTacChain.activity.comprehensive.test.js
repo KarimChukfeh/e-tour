@@ -156,7 +156,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await ticTacChain.connect(match3FirstPlayer).makeMove(TIER_2, INSTANCE_0, 0, 3, 0);
 
     // Now both players let it timeout and stall
-    await time.increase(180); // 3 minutes - enough for L2 escalation
+    await time.increase(241); // 4 minutes + 1 second - enough for L2 escalation (matchTimePerPlayer 2min + matchLevel2Delay 2min)
 
     // Advanced player (winner of Match 2) triggers double elimination (L2)
     await ticTacChain.connect(firstMover).forceEliminateStalledMatch(TIER_2, INSTANCE_0, 0, 3);
@@ -185,7 +185,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       await ticTacChain.connect(semifinalPlayer).makeMove(TIER_2, INSTANCE_0, 1, 0, 0);
 
       // Wait for L3 escalation window
-      await time.increase(240); // 4 minutes - enough for L3
+      await time.increase(361); // 6 minutes + 1 second - enough for L3 (matchTimePerPlayer 2min + matchLevel3Delay 4min)
 
       // External2 replaces both stalled players
       await ticTacChain.connect(external2).claimMatchSlotByReplacement(TIER_2, INSTANCE_0, 1, 0);

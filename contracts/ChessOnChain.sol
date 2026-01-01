@@ -174,44 +174,51 @@ contract ChessOnChain is ETour {
      * Simplified configuration with only 2-player and 4-player tiers
      */
     function _registerChessOnChainTiers() internal {
-        // 1 minute for all escalation windows
-        TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 1 minutes,      // 60 seconds per player
-            matchLevel2Delay: 1 minutes,        // L2 starts 1 min after timeout
-            matchLevel3Delay: 2 minutes,        // L3 starts 2 min after timeout (cumulative)
-            enrollmentWindow: 1 minutes,        // 1 min to fill tournament
-            enrollmentLevel2Delay: 1 minutes    // L2 starts 1 min after L1
-        });
-
         // ============ Tier 0: 2-Player ============
         uint8[] memory tier0Prizes = new uint8[](2);
         tier0Prizes[0] = 100;  // Winner takes all
         tier0Prizes[1] = 0;
 
+        TimeoutConfig memory timeouts0 = TimeoutConfig({
+            matchTimePerPlayer: 10 minutes,      // 10 minutes per player
+            matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
+            matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
+            enrollmentWindow: 10 minutes,       // 10 min to fill tournament
+            enrollmentLevel2Delay: 5 minutes    // L2 starts 5 min after enrollment window
+        });
+
         _registerTier(
             0,                              // tierId
             2,                              // playerCount
-            10,                             // instanceCount
+            100,                            // instanceCount
             0.01 ether,                     // entryFee
             Mode.Classic,
-            timeouts,
+            timeouts0,
             tier0Prizes
         );
 
         // ============ Tier 1: 4-Player ============
         uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 75;   // 1st: 75%
-        tier1Prizes[1] = 25;   // 2nd: 25%
+        tier1Prizes[0] = 80;   // 1st: 80%
+        tier1Prizes[1] = 20;   // 2nd: 20%
         tier1Prizes[2] = 0;    // 3rd: 0%
         tier1Prizes[3] = 0;    // 4th: 0%
+
+        TimeoutConfig memory timeouts1 = TimeoutConfig({
+            matchTimePerPlayer: 10 minutes,      // 10 minutes per player
+            matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
+            matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
+            enrollmentWindow: 30 minutes,       // 30 min to fill tournament
+            enrollmentLevel2Delay: 5 minutes    // L2 starts 5 min after enrollment window
+        });
 
         _registerTier(
             1,                              // tierId
             4,                              // playerCount
-            5,                              // instanceCount
+            50,                             // instanceCount
             0.02 ether,                     // entryFee
             Mode.Pro,
-            timeouts,
+            timeouts1,
             tier1Prizes
         );
     }
