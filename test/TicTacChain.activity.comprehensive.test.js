@@ -266,4 +266,100 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     expect(enrollingSum).to.equal(0);
     expect(activeSum).to.equal(0);
   });
+
+  it("should keep players in active tournaments after winning semifinal while waiting for other semifinal", async function () {
+    // This test verifies the fix for the bug where players were incorrectly removed from
+    // the active tournaments list after winning their semifinal, before the finals started
+
+    // 4-player tournament (2 semifinals + 1 final)
+    const TIER_1 = 1;
+    const INSTANCE_0 = 0;
+    const ENTRY_FEE_TIER_1 = hre.ethers.parseEther("0.002");
+
+    // Enroll 4 players
+    await ticTacChain.connect(p1).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
+    await ticTacChain.connect(p2).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
+    await ticTacChain.connect(p3).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
+    await ticTacChain.connect(p4).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
+
+    // Verify all 4 players are in active tournaments
+    let p1Active = await ticTacChain.getPlayerActiveTournaments(p1.address);
+    let p2Active = await ticTacChain.getPlayerActiveTournaments(p2.address);
+    let p3Active = await ticTacChain.getPlayerActiveTournaments(p3.address);
+    let p4Active = await ticTacChain.getPlayerActiveTournaments(p4.address);
+
+    expect(p1Active.length).to.equal(1);
+    expect(p2Active.length).to.equal(1);
+    expect(p3Active.length).to.equal(1);
+    expect(p4Active.length).to.equal(1);
+
+    // Complete FIRST semifinal (Round 0, Match 0)
+    await playMatch(TIER_1, INSTANCE_0, 0, 0, 1); // Player 1 wins
+
+    const match0Data = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 0);
+    const sf0Winner = match0Data.common.winner;
+    const sf0Loser = match0Data.common.player1 === sf0Winner ? match0Data.common.player2 : match0Data.common.player1;
+
+    console.log(`\nSemifinal 0 Complete:`);
+    console.log(`  Winner: ${sf0Winner}`);
+    console.log(`  Loser: ${sf0Loser}`);
+
+    // CRITICAL TEST: Winner should STILL be in active tournaments
+    // (waiting for other semifinal to complete before finals starts)
+    const winnerActiveList = await ticTacChain.getPlayerActiveTournaments(sf0Winner);
+    console.log(`  Winner's active tournaments: ${winnerActiveList.length}`);
+
+    expect(winnerActiveList.length).to.equal(1,
+      "Winner should remain in active tournaments list while waiting for finals");
+    expect(winnerActiveList[0].tierId).to.equal(TIER_1);
+    expect(winnerActiveList[0].instanceId).to.equal(INSTANCE_0);
+
+    // Loser should be removed (they're eliminated)
+    const loserActiveList = await ticTacChain.getPlayerActiveTournaments(sf0Loser);
+    expect(loserActiveList.length).to.equal(0, "Loser should be removed from active tournaments");
+
+    // Other semifinal players should still be active
+    const match1Data = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 1);
+    const sf1Player1 = match1Data.common.player1;
+    const sf1Player2 = match1Data.common.player2;
+
+    const sf1P1Active = await ticTacChain.getPlayerActiveTournaments(sf1Player1);
+    const sf1P2Active = await ticTacChain.getPlayerActiveTournaments(sf1Player2);
+
+    expect(sf1P1Active.length).to.equal(1, "SF1 Player 1 should still be active");
+    expect(sf1P2Active.length).to.equal(1, "SF1 Player 2 should still be active");
+
+    // Complete SECOND semifinal
+    await playMatch(TIER_1, INSTANCE_0, 0, 1, 1); // First player wins
+
+    const match1CompleteData = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 1);
+    const sf1Winner = match1CompleteData.common.winner;
+    const sf1Loser = match1CompleteData.common.player1 === sf1Winner ?
+      match1CompleteData.common.player2 : match1CompleteData.common.player1;
+
+    console.log(`\nSemifinal 1 Complete:`);
+    console.log(`  Winner: ${sf1Winner}`);
+    console.log(`  Loser: ${sf1Loser}`);
+
+    // Now both finalists should be in active tournaments (finals has started)
+    const sf0WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf0Winner);
+    const sf1WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf1Winner);
+
+    expect(sf0WinnerActive.length).to.equal(1, "SF0 winner should be in finals");
+    expect(sf1WinnerActive.length).to.equal(1, "SF1 winner should be in finals");
+
+    // SF1 loser should be removed
+    const sf1LoserActive = await ticTacChain.getPlayerActiveTournaments(sf1Loser);
+    expect(sf1LoserActive.length).to.equal(0, "SF1 loser should be eliminated");
+
+    // Complete finals
+    await playMatch(TIER_1, INSTANCE_0, 1, 0, 1);
+
+    // After tournament completes, all players should be removed
+    const finalSf0WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf0Winner);
+    const finalSf1WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf1Winner);
+
+    expect(finalSf0WinnerActive.length).to.equal(0, "Champion should be removed after tournament");
+    expect(finalSf1WinnerActive.length).to.equal(0, "Finalist should be removed after tournament");
+  });
 });

@@ -958,8 +958,16 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
-        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
-        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
+
+        // For draws, both players are eliminated - check both immediately
+        // For wins, only check loser for elimination (winner stays until next match completes)
+        if (isDraw) {
+            _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+            _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
+        } else {
+            address loser = (player1 == winner) ? player2 : player1;
+            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
+        }
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -977,6 +985,8 @@ abstract contract ETour is ReentrancyGuard {
             if (roundNumber < config.totalRounds - 1) {
                 _advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
             }
+            // Note: Winner elimination check happens when their next match completes (or tournament ends)
+            // This keeps winners in the active tournament list even while waiting for next round to start
         }
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
