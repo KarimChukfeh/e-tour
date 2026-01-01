@@ -36,13 +36,13 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Tier 0: 2-player
             const tier0 = await game.tierConfigs(0);
             expect(tier0.playerCount).to.equal(2);
-            expect(tier0.instanceCount).to.equal(12);
+            expect(tier0.instanceCount).to.equal(100);
             expect(tier0.entryFee).to.equal(TIER_0_FEE);
 
             // Tier 1: 4-player
             const tier1 = await game.tierConfigs(1);
             expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(10);
+            expect(tier1.instanceCount).to.equal(50);
             expect(tier1.entryFee).to.equal(TIER_1_FEE);
         });
 
@@ -388,8 +388,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         });
 
         it("Should allow timeout claim after timeout period", async function () {
-            // Move time forward past timeout
-            await hre.ethers.provider.send("evm_increaseTime", [121]); // 2 min + 1 sec
+            // Move time forward past timeout (5 minutes + 1 sec)
+            await hre.ethers.provider.send("evm_increaseTime", [301]); // 5 min + 1 sec
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -441,10 +441,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
     describe("Round-Based Prize Distribution (8-Player Tournament)", function () {
         // Tier 2: 8-player tournament
-        // Prize distribution: 1st=60%, 2nd=20%, 3rd=10%, 4th=10%, 5th-8th=0%
-        // Key principle: Players eliminated in the same round receive equal prizes
-        // - Semi-final losers (3rd & 4th) each get 10%
-        // - Round 0 losers (5th-8th) each get 0%
+        // Prize distribution: 1st=80%, 2nd=20%, 3rd-8th=0%
+        // Winner-takes-most approach: Only top 2 places receive prizes
 
         const TIER_2_ID = 2;
         const TIER_2_FEE = hre.ethers.parseEther("0.008");
@@ -487,7 +485,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should have correct tier 2 configuration (8-player)", async function () {
             const tier2 = await game.tierConfigs(TIER_2_ID);
             expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(8);
+            expect(tier2.instanceCount).to.equal(30);
             expect(tier2.entryFee).to.equal(TIER_2_FEE);
         });
 
@@ -508,7 +506,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(round0.totalMatches).to.equal(4);
         });
 
-        it("Should award equal prizes to 3rd and 4th place (semi-final losers)", async function () {
+        it("Should award 0% to semi-final losers (3rd and 4th place)", async function () {
             const instanceId = 1;
 
             // Enroll all 8 players
@@ -516,12 +514,12 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
                 await game.connect(players[i]).enrollInTournament(TIER_2_ID, instanceId, { value: TIER_2_FEE });
             }
 
-            // Get initial prize pool (90% of total entry fees)
+            // Get initial prize pool and balances
             const tournament = await game.tournaments(TIER_2_ID, instanceId);
             const prizePool = tournament.prizePool;
 
-            // Expected prizes based on distribution: 3rd and 4th each get 10%
-            const expectedThirdFourthPrize = (prizePool * 10n) / 100n;
+            // Track semi-final losers and their balances before tournament
+            const semifinalLoserBalancesBefore = {};
 
             // ===== ROUND 0: 4 matches =====
             for (let matchNum = 0; matchNum < 4; matchNum++) {
@@ -533,6 +531,15 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(round0.completedMatches).to.equal(4);
 
             // ===== ROUND 1 (Semi-finals): 2 matches =====
+            // Get balances before semi-finals complete
+            const sf0Match = await game.getMatch(TIER_2_ID, instanceId, 1, 0);
+            const sf1Match = await game.getMatch(TIER_2_ID, instanceId, 1, 1);
+
+            semifinalLoserBalancesBefore[sf0Match.common.player1] = await hre.ethers.provider.getBalance(sf0Match.common.player1);
+            semifinalLoserBalancesBefore[sf0Match.common.player2] = await hre.ethers.provider.getBalance(sf0Match.common.player2);
+            semifinalLoserBalancesBefore[sf1Match.common.player1] = await hre.ethers.provider.getBalance(sf1Match.common.player1);
+            semifinalLoserBalancesBefore[sf1Match.common.player2] = await hre.ethers.provider.getBalance(sf1Match.common.player2);
+
             // Track semi-final losers
             const sf0Result = await playMatchToWin(TIER_2_ID, instanceId, 1, 0);
             const sf1Result = await playMatchToWin(TIER_2_ID, instanceId, 1, 1);
@@ -549,31 +556,17 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const finalTournament = await game.tournaments(TIER_2_ID, instanceId);
             expect(finalTournament.status).to.equal(0); // Enrolling (reset)
 
-            // ===== VERIFY PRIZE DISTRIBUTION VIA EVENTS =====
-            // Query all PrizeDistributed events for this tournament
-            const filter = game.filters.PrizeDistributed(TIER_2_ID, instanceId);
-            const events = await game.queryFilter(filter);
+            // ===== VERIFY NO PRIZES FOR SEMI-FINAL LOSERS =====
+            // Semi-final losers should receive 0% prize
+            const semifinalLosers = [sf0Result.loser, sf1Result.loser];
 
-            // In ETour, players eliminated in the same round get the SAME rank
-            // Semi-final losers both get rank 3 (not 3 and 4 separately)
-            // This is the core design: no 3rd place playoff needed
-            const semifinalLoserAddresses = [sf0Result.loser.address, sf1Result.loser.address];
+            for (const loser of semifinalLosers) {
+                const balanceAfter = await hre.ethers.provider.getBalance(loser.address);
+                const balanceBefore = semifinalLoserBalancesBefore[loser.address];
 
-            // Find all prize events for rank 3 (semi-final losers)
-            const rank3Events = events.filter(e => e.args.rank === 3n);
-            expect(rank3Events.length).to.equal(2); // Both semi-final losers get rank 3
-
-            // Verify both semi-final losers received prizes
-            const rank3Recipients = rank3Events.map(e => e.args.player);
-            expect(rank3Recipients).to.include(semifinalLoserAddresses[0]);
-            expect(rank3Recipients).to.include(semifinalLoserAddresses[1]);
-
-            // KEY ASSERTION: Both received exactly the same prize amount
-            // Prize is calculated as combined percentage for players at same rank
-            // For rank 3 with 2 players: combines prize slots 3 and 4 (10% + 10% = 20%)
-            // Then splits equally: 20% / 2 = 10% each
-            expect(rank3Events[0].args.amount).to.equal(rank3Events[1].args.amount);
-            expect(rank3Events[0].args.amount).to.equal(expectedThirdFourthPrize);
+                // Balance should be lower (lost entry fee + gas), no prize payout
+                expect(balanceAfter).to.be.lte(balanceBefore);
+            }
         });
 
         it("Should award 0% to round 0 losers (5th-8th place)", async function () {
@@ -626,10 +619,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
     describe("Round-Based Prize Distribution (16-Player Tournament)", function () {
         // Tier 3: 16-player tournament
-        // Prize distribution: 1st=55%, 2nd=15%, 3rd=10%, 4th=10%, 5th=5%, 6th=5%, 7th-16th=0%
-        // Key principle: Players eliminated in the same round receive equal prizes
-        // - Semi-final losers (3rd & 4th) each get 10%
-        // - Quarter-final losers: top 2 (5th & 6th) each get 5%, bottom 2 (7th & 8th) get 0%
+        // Prize distribution: 1st=75%, 2nd=25%, 3rd-16th=0%
+        // Winner-takes-most approach: Only top 2 places receive prizes
 
         const TIER_3_ID = 3;
         const TIER_3_FEE = hre.ethers.parseEther("0.01");
@@ -637,31 +628,21 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should have correct tier 3 configuration (16-player)", async function () {
             const tier3 = await game.tierConfigs(TIER_3_ID);
             expect(tier3.playerCount).to.equal(16);
-            expect(tier3.instanceCount).to.equal(6);
+            expect(tier3.instanceCount).to.equal(20);
             expect(tier3.entryFee).to.equal(TIER_3_FEE);
         });
 
         it("Should have correct prize distribution percentages for 16-player tier", async function () {
             // Verify the prize distribution array values
-            // This confirms the contract is configured with equal prizes for same-round eliminations
+            // Winner-takes-most: Only top 2 places get prizes
             const prizeDistribution = await game.getTierPrizeDistribution(TIER_3_ID);
 
-            // 1st place: 55%
-            expect(prizeDistribution[0]).to.equal(55);
-            // 2nd place: 15%
-            expect(prizeDistribution[1]).to.equal(15);
-            // 3rd place: 10% (semi-final loser)
-            expect(prizeDistribution[2]).to.equal(10);
-            // 4th place: 10% (semi-final loser) - EQUAL TO 3RD
-            expect(prizeDistribution[3]).to.equal(10);
-            expect(prizeDistribution[2]).to.equal(prizeDistribution[3]);
-            // 5th place: 5% (quarter-final loser, top performer)
-            expect(prizeDistribution[4]).to.equal(5);
-            // 6th place: 5% (quarter-final loser) - EQUAL TO 5TH
-            expect(prizeDistribution[5]).to.equal(5);
-            expect(prizeDistribution[4]).to.equal(prizeDistribution[5]);
-            // 7th-16th: 0%
-            for (let i = 6; i < 16; i++) {
+            // 1st place: 75%
+            expect(prizeDistribution[0]).to.equal(75);
+            // 2nd place: 25%
+            expect(prizeDistribution[1]).to.equal(25);
+            // 3rd-16th: 0%
+            for (let i = 2; i < 16; i++) {
                 expect(prizeDistribution[i]).to.equal(0);
             }
         });

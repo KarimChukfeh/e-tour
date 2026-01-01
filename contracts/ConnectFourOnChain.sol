@@ -133,28 +133,29 @@ contract ConnectFourOnChain is ETour {
      * @dev Register all tournament tiers for ConnectFourOnChain
      */
     function _registerConnectFourTiers() internal {
-        // 2 minutes per player to accommodate 15-second Fischer increment
-        TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 2 minutes,      // 120 seconds per player
-            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 1 minutes,        // L2 starts 1 min after timeout
-            matchLevel3Delay: 2 minutes,        // L3 starts 2 min after timeout (cumulative)
-            enrollmentWindow: 1 minutes,        // 1 min to fill tournament
-            enrollmentLevel2Delay: 1 minutes    // L2 starts 1 min after L1
-        });
-
         // ============ Tier 0: 2-Player (Entry Level) ============
         uint8[] memory tier0Prizes = new uint8[](2);
         tier0Prizes[0] = 100;  // 1st place: 100%
         tier0Prizes[1] = 0;    // 2nd place: 0%
 
+        // 5 minutes per player with 15-second Fischer increment
+        TimeoutConfig memory timeouts0 = TimeoutConfig({
+            matchTimePerPlayer: 5 minutes,      // 300 seconds per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
+            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
+            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (2 min after L2)
+            enrollmentWindow: 5 minutes,        // 5 min to fill tournament
+            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
+        });
+
+
         _registerTier(
             0,                              // tierId
             2,                              // playerCount
-            12,                             // instanceCount
+            100,                             // instanceCount
             0.002 ether,                    // entryFee
             Mode.Classic,                   // mode
-            timeouts,                       // timeout configuration
+            timeouts0,                       // timeout configuration
             tier0Prizes                     // prizeDistribution
         );
 
@@ -165,57 +166,84 @@ contract ConnectFourOnChain is ETour {
         tier1Prizes[2] = 0;    // 3rd place: 0%
         tier1Prizes[3] = 0;    // 4th place: 0%
 
+        TimeoutConfig memory timeouts1 = TimeoutConfig({
+            matchTimePerPlayer: 5 minutes,      // 300 seconds per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
+            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
+            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (2 min after L2)
+            enrollmentWindow: 10 minutes,       // 10 min to fill tournament
+            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
+        });
+
         _registerTier(
             1,                              // tierId
             4,                              // playerCount
-            10,                             // instanceCount
+            50,                             // instanceCount
             0.004 ether,                    // entryFee
             Mode.Classic,
-            timeouts,
+            timeouts1,
             tier1Prizes
         );
 
         // ============ Tier 2: 8-Player ============
         uint8[] memory tier2Prizes = new uint8[](8);
-        tier2Prizes[0] = 60;   // 1st
+        tier2Prizes[0] = 80;   // 1st
         tier2Prizes[1] = 20;   // 2nd
-        tier2Prizes[2] = 10;   // 3rd
-        tier2Prizes[3] = 10;   // 4th
+        tier2Prizes[2] = 0;   // 3rd
+        tier2Prizes[3] = 0;   // 4th
         tier2Prizes[4] = 0;    // 5th-8th
         tier2Prizes[5] = 0;
         tier2Prizes[6] = 0;
         tier2Prizes[7] = 0;
 
+        TimeoutConfig memory timeouts2 = TimeoutConfig({
+            matchTimePerPlayer: 5 minutes,      // 300 seconds per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
+            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
+            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (2 min after L2)
+            enrollmentWindow: 15 minutes,       // 15 min to fill tournament
+            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
+        });
+
         _registerTier(
             2,                              // tierId
             8,                              // playerCount
-            8,                              // instanceCount
+            30,                              // instanceCount
             0.008 ether,                    // entryFee
             Mode.Classic,
-            timeouts,
+            timeouts2,
             tier2Prizes
         );
 
         // ============ Tier 3: 16-Player ============
         uint8[] memory tier3Prizes = new uint8[](16);
-        tier3Prizes[0] = 55;   // 1st
-        tier3Prizes[1] = 15;   // 2nd
-        tier3Prizes[2] = 10;   // 3rd
-        tier3Prizes[3] = 10;   // 4th
-        tier3Prizes[4] = 5;    // 5th
-        tier3Prizes[5] = 5;    // 6th
+        tier3Prizes[0] = 75;   // 1st
+        tier3Prizes[1] = 25;   // 2nd
+        tier3Prizes[2] = 0;   // 3rd
+        tier3Prizes[3] = 0;   // 4th
+        tier3Prizes[4] = 0;    // 5th
+        tier3Prizes[5] = 0;    // 6th
         // 7th-16th: 0%
         for (uint8 i = 6; i < 16; i++) {
             tier3Prizes[i] = 0;
         }
 
+        TimeoutConfig memory timeouts3 = TimeoutConfig({
+            matchTimePerPlayer: 5 minutes,      // 300 seconds per player
+            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
+            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
+            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (2 min after L2)
+            enrollmentWindow: 20 minutes,       // 20 min to fill tournament
+            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
+        });
+
         _registerTier(
             3,                              // tierId
             16,                             // playerCount
-            6,                              // instanceCount
+            20,                              // instanceCount
             0.01 ether,                     // entryFee
             Mode.Classic,
-            timeouts,
+            timeouts3,
             tier3Prizes
         );
     }

@@ -9,9 +9,11 @@ describe("Escalation Helper Functions Tests", function() {
     const TIER_ID = 1; // 4-player tier
     const INSTANCE_ID = 0;
     const TIER_FEE = hre.ethers.parseEther("0.004");
-    const MATCH_TIME = 120; // 2 minutes (updated for 15s Fischer increment)
-    const L2_DELAY = 60; // 1 minute
-    const L3_DELAY = 120; // 2 minutes
+
+    // Timeout values - will be read from contract
+    let MATCH_TIME;
+    let L2_DELAY;
+    let L3_DELAY;
 
     // Helper to complete a match
     async function completeMatch(tierId, instanceId, roundNumber, matchNumber) {
@@ -38,6 +40,12 @@ describe("Escalation Helper Functions Tests", function() {
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy();
         await game.waitForDeployment();
+
+        // Read actual timeout configuration from contract
+        const tierConfig = await game.tierConfigs(TIER_ID);
+        MATCH_TIME = Number(tierConfig.timeouts.matchTimePerPlayer);
+        L2_DELAY = Number(tierConfig.timeouts.matchLevel2Delay);
+        L3_DELAY = Number(tierConfig.timeouts.matchLevel3Delay);
     });
 
     describe("isMatchEscL1Available() - Opponent Timeout Claim", function() {
