@@ -300,9 +300,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // After reset, match should be cached (still retrievable for history)
+            // After reset, finals match is preserved in live storage (still retrievable for history)
             const match1Cached = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match1Cached.common.isCached).to.be.true;
+            expect(match1Cached.common.isCached).to.be.false; // Finals preserved, not cached
             expect(match1Cached.common.status).to.equal(2); // Completed
 
             // Second tournament should create new match

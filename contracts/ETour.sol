@@ -958,8 +958,16 @@ abstract contract ETour is ReentrancyGuard {
 
         _removePlayerActiveMatch(player1, matchId);
         _removePlayerActiveMatch(player2, matchId);
-        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
-        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
+
+        // For draws, both players are eliminated - check both immediately
+        // For wins, only check loser for elimination (winner stays until next match completes)
+        if (isDraw) {
+            _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
+            _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
+        } else {
+            address loser = (player1 == winner) ? player2 : player1;
+            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
+        }
 
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
@@ -977,6 +985,8 @@ abstract contract ETour is ReentrancyGuard {
             if (roundNumber < config.totalRounds - 1) {
                 _advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
             }
+            // Note: Winner elimination check happens when their next match completes (or tournament ends)
+            // This keeps winners in the active tournament list even while waiting for next round to start
         }
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -2099,9 +2109,64 @@ abstract contract ETour is ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Cache old finals match before new finals replaces it (instance-specific eviction)
+     * @param tierId Tournament tier
+     * @param instanceId Tournament instance
+     * @param currentFinalsMatchId The new finals matchId that's being preserved
+     */
+    function _cacheOldFinalsIfExists(
+        uint8 tierId,
+        uint8 instanceId,
+        bytes32 currentFinalsMatchId
+    ) internal {
+        // Get the old finals data from live storage
+        (address p1, address p2) = _getMatchPlayers(currentFinalsMatchId);
+
+        // Check if match has been played (both players exist)
+        if (p1 == address(0) || p2 == address(0)) {
+            return;  // No old finals to cache
+        }
+
+        // Check match status - only cache if completed
+        (, , MatchStatus status) = _getMatchResult(currentFinalsMatchId);
+        if (status != MatchStatus.Completed) {
+            return;  // Match not completed, don't cache
+        }
+
+        // Old finals exists and is completed - cache it before it gets cleared
+        TierConfig storage config = _tierConfigs[tierId];
+        uint8 finalRound = config.totalRounds - 1;
+
+        _addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+
+        // Now reset the old finals match to make room for new one
+        _resetMatchGame(currentFinalsMatchId);
+    }
+
     function _resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) internal virtual {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
+
+        // Calculate finals matchId (last round, match 0)
+        uint8 finalRound = config.totalRounds - 1;
+        bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
+
+        // Check if there's old finals from a previous tournament that needs caching
+        // The finals is from a previous tournament if its winner doesn't match current tournament winner
+        (address finalsWinner, , MatchStatus finalsStatus) = _getMatchResult(finalsMatchId);
+
+        if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
+            // Check if finals winner matches the current tournament winner
+            address currentWinner = tournament.winner;
+
+            // If winners don't match, this finals is from a previous tournament
+            if (finalsWinner != currentWinner) {
+                // Cache the old finals before clearing it
+                _addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+                _resetMatchGame(finalsMatchId);
+            }
+        }
 
         tournament.status = TournamentStatus.Enrolling;
         tournament.currentRound = 0;
@@ -2155,6 +2220,11 @@ abstract contract ETour is ReentrancyGuard {
 
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
+
+                // Skip resetting finals match - keep it in live storage
+                if (matchId == finalsMatchId) {
+                    continue;
+                }
 
                 // Clear drawParticipants for both match players
                 (address p1, address p2) = _getMatchPlayers(matchId);
@@ -2240,13 +2310,28 @@ abstract contract ETour is ReentrancyGuard {
             return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         }
 
-        // Check if this round has been initialized in current tournament
-        // If round is initialized, match storage exists (even if cleared) and we should NOT fallback to cache
+        // Check if round is initialized first
         Round storage round = rounds[tierId][instanceId][roundNumber];
+
         if (round.initialized) {
-            // Round is initialized, so match belongs to current tournament
-            // Return cleared storage instead of cached data from previous tournament
+            // Round is initialized - this is part of current tournament
+            // Return active match data (even if empty/cleared)
             return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        }
+
+        // Round not initialized - check if this is a preserved finals from previous tournament
+        TierConfig storage config = _tierConfigs[tierId];
+        uint8 finalRound = config.totalRounds - 1;
+
+        if (roundNumber == finalRound && matchNumber == 0) {
+            // This is a finals match - check if it's preserved in live storage
+            (address p1, address p2) = _getMatchPlayers(matchId);
+
+            if (p1 != address(0) && p2 != address(0)) {
+                // Finals data exists and round not initialized - must be from previous tournament
+                // Return the preserved finals data
+                return _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+            }
         }
 
         // Round not initialized - fallback to cache for historical data lookup
