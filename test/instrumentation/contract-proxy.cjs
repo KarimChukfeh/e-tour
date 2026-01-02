@@ -34,41 +34,47 @@ function createInstrumentedContract(contract, contractName) {
           }
 
           try {
-            // Capture state BEFORE transaction
-            const stateBefore = await captureContractState(target, contractName);
+            // Execute the original function
+            const result = await original.apply(target, args);
 
-            // Execute the original transaction
-            const txResponse = await original.apply(target, args);
+            // Check if this is a transaction response (has wait method)
+            if (result && typeof result.wait === 'function') {
+              // This is a transaction - capture state
+              const stateBefore = await captureContractState(target, contractName);
 
-            // Wait for transaction to be mined
-            const receipt = await txResponse.wait();
+              // Wait for transaction to be mined
+              const receipt = await result.wait();
 
-            // Capture state AFTER transaction
-            const stateAfter = await captureContractState(target, contractName);
+              // Capture state AFTER transaction
+              const stateAfter = await captureContractState(target, contractName);
 
-            // Parse events from receipt
-            const events = parseEvents(receipt, target);
+              // Parse events from receipt
+              const events = parseEvents(receipt, target);
 
-            // Calculate state diff
-            const stateDiff = calculateStateDiff(stateBefore, stateAfter);
+              // Calculate state diff
+              const stateDiff = calculateStateDiff(stateBefore, stateAfter);
 
-            // Record timeline entry
-            stateTracker.recordTimelineEntry({
-              timestamp: Date.now(),
-              blockNumber: receipt.blockNumber,
-              action: prop,
-              caller: args[0]?.address || await getTransactionSender(receipt),
-              parameters: formatParameters(args),
-              gasUsed: receipt.gasUsed.toString(),
-              gasPrice: receipt.gasPrice ? hre.ethers.formatUnits(receipt.gasPrice, "gwei") : '0.05',
-              txHash: receipt.hash,
-              stateBefore,
-              stateAfter,
-              stateDiff,
-              events
-            });
+              // Record timeline entry
+              stateTracker.recordTimelineEntry({
+                timestamp: Date.now(),
+                blockNumber: receipt.blockNumber,
+                action: prop,
+                caller: args[0]?.address || await getTransactionSender(receipt),
+                parameters: formatParameters(args),
+                gasUsed: receipt.gasUsed.toString(),
+                gasPrice: receipt.gasPrice ? hre.ethers.formatUnits(receipt.gasPrice, "gwei") : '0.05',
+                txHash: receipt.hash,
+                stateBefore,
+                stateAfter,
+                stateDiff,
+                events
+              });
 
-            return txResponse;
+              return result;
+            } else {
+              // This is a view function - just return the result
+              return result;
+            }
           } catch (error) {
             // Record error in timeline
             if (global.stateTracker && global.stateTracker.isTracking()) {
@@ -98,21 +104,27 @@ function isStateMutatingMethod(methodName) {
     'interface', 'connect', 'attach', 'deployed', 'deploymentTransaction',
     'getAddress', 'getDeployedCode', 'waitForDeployment', 'queryFilter',
     'filters', 'off', 'on', 'once', 'removeAllListeners', 'removeListener',
-    'target', 'runner', 'provider', 'fallback'
+    'target', 'runner', 'provider', 'fallback', 'then', 'catch'
   ];
 
   if (skipMethods.includes(methodName)) {
     return false;
   }
 
-  // Also skip methods starting with underscore or get
-  if (methodName.startsWith('_') || methodName.startsWith('get')) {
+  // Skip methods starting with underscore, get, or is
+  if (methodName.startsWith('_') || methodName.startsWith('get') || methodName.startsWith('is')) {
     return false;
   }
 
   // Skip pure view methods - these are common view-only patterns
-  const viewPatterns = ['view', 'total', 'balance', 'owner', 'name', 'symbol'];
+  const viewPatterns = ['view', 'total', 'balance', 'owner', 'name', 'symbol', 'count', 'info', 'status', 'state', 'check', 'has', 'can'];
   if (viewPatterns.some(pattern => methodName.toLowerCase().includes(pattern))) {
+    return false;
+  }
+
+  // Common view function prefixes
+  const viewPrefixes = ['get', 'is', 'has', 'can', 'check', 'query', 'find', 'search', 'list', 'show'];
+  if (viewPrefixes.some(prefix => methodName.toLowerCase().startsWith(prefix))) {
     return false;
   }
 

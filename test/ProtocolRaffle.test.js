@@ -24,12 +24,12 @@ describe("Protocol Raffle System", function () {
             expect(info.currentAccumulated).to.equal(0);
 
             // Even when below threshold, should show POTENTIAL distribution at threshold
-            // TicTacChain: threshold 0.2 ETH, reserve 0.02 ETH (10%)
-            expect(info.threshold).to.equal(hre.ethers.parseEther("0.2"));
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.02"));
-            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.18")); // 0.2 - 0.02
-            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.036")); // 20% of 0.18
-            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.144")); // 80% of 0.18
+            // TicTacChain: threshold 0.1 ETH, reserve 0.01 ETH (10%)
+            expect(info.threshold).to.equal(hre.ethers.parseEther("0.1"));
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.01"));
+            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.09")); // 0.1 - 0.01
+            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.018")); // 20% of 0.09
+            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.072")); // 80% of 0.09
 
             expect(info.eligiblePlayerCount).to.equal(0);
         });
@@ -64,14 +64,14 @@ describe("Protocol Raffle System", function () {
 
         it("Should return correct threshold from _getRaffleThreshold()", async function () {
             const info = await game.getRaffleInfo();
-            // TicTacChain first raffle threshold = 0.2 ETH (index 0 + 1) * 0.2
-            expect(info.threshold).to.equal(hre.ethers.parseEther("0.2"));
+            // TicTacChain first raffle threshold = 0.1 ETH (from thresholds array)
+            expect(info.threshold).to.equal(hre.ethers.parseEther("0.1"));
         });
 
         it("Should return correct reserve from _getRaffleReserve()", async function () {
             const info = await game.getRaffleInfo();
-            // TicTacChain raffle #1: threshold = 0.2 ETH, reserve = 10% = 0.02 ETH
-            const expectedReserve = hre.ethers.parseEther("0.02");
+            // TicTacChain raffle #1: threshold = 0.1 ETH, reserve = 10% = 0.01 ETH
+            const expectedReserve = hre.ethers.parseEther("0.01");
             expect(info.reserve).to.equal(expectedReserve);
         });
     });
