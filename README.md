@@ -1459,10 +1459,9 @@ npx hardhat compile
 
 npx hardhat clean && npx hardhat compile
 
-npx hardhat run scripts/deploy-tictacchain.js --network localhost
-
-npx hardhat run scripts/deploy-chessonchain.js --network localhost
-
-npx hardhat run scripts/deploy-connectfour.js --network localhost
+npx hardhat run scripts/deploy-modules.js --network localhost
+npx hardhat run scripts/deploy-tictacchain-modular.js --network localhost
+npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
+npx hardhat run scripts/deploy-connectfour-modular.js --network localhost
 
 ngrok http 8545

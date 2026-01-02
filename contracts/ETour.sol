@@ -2877,25 +2877,4 @@ abstract contract ETour is ReentrancyGuard {
     /**
      * @dev Returns RW3 compliance declaration
      */
-    function declareRW3() public view virtual returns (string memory) {
-        return string(abi.encodePacked(
-            "=== RW3 COMPLIANCE DECLARATION ===\n\n",
-            "PROJECT: ETour Protocol\n",
-            "VERSION: 2.0 (Configuration-Driven)\n",
-            "NETWORK: Arbitrum One\n",
-            "VERIFIED: Block deployed\n\n",
-            "RULE 1 - REAL UTILITY:\n",
-            "Game-agnostic tournament infrastructure. Any competitive game can implement ETour with custom tier structures.\n\n",
-            "RULE 2 - FULLY ON-CHAIN:\n",
-            "All tournament logic, bracket management, and prize distribution executed via smart contract.\n\n",
-            "RULE 3 - SELF-SUSTAINING:\n",
-            "Protocol fee structure covers operational costs. Contract functions autonomously.\n\n",
-            "RULE 4 - FAIR DISTRIBUTION:\n",
-            "No pre-mine, no insider allocations. All ETH in prize pools comes from player entry fees.\n\n",
-            "RULE 5 - NO ALTCOINS:\n",
-            "Uses only ETH for entry fees and prizes.\n\n",
-            "Generated: Block ",
-            Strings.toString(block.number)
-        ));
-    }
 }

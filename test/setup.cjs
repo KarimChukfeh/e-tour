@@ -26,12 +26,51 @@ console.log('StateTracker methods:', Object.getOwnPropertyNames(Object.getProtot
 const originalGetContractFactory = hre.ethers.getContractFactory;
 
 hre.ethers.getContractFactory = async function(contractName, ...args) {
+  // Special handling for modular contracts to deploy modules first
+  const isTicTacChain = contractName === 'TicTacChain';
+  const isChessOnChain = contractName === 'ChessOnChain';
+  const isConnectFour = contractName === 'ConnectFourOnChain';
+  const needsModules = isTicTacChain || isChessOnChain || isConnectFour;
+
   // Get the original factory
   const factory = await originalGetContractFactory.call(this, contractName, ...args);
 
   // Wrap the deploy method to instrument contracts
   const originalDeploy = factory.deploy;
   factory.deploy = async function(...deployArgs) {
+    // Special handling for modular contracts - deploy modules first
+    if (needsModules && deployArgs.length === 0) {
+      // Deploy all 5 required modules
+      const ETour_Core = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Core.sol:ETour_Core');
+      const moduleCore = await ETour_Core.deploy();
+      await moduleCore.waitForDeployment();
+
+      const ETour_Matches = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Matches.sol:ETour_Matches');
+      const moduleMatches = await ETour_Matches.deploy();
+      await moduleMatches.waitForDeployment();
+
+      const ETour_Prizes = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Prizes.sol:ETour_Prizes');
+      const modulePrizes = await ETour_Prizes.deploy();
+      await modulePrizes.waitForDeployment();
+
+      const ETour_Raffle = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Raffle.sol:ETour_Raffle');
+      const moduleRaffle = await ETour_Raffle.deploy();
+      await moduleRaffle.waitForDeployment();
+
+      const ETour_Escalation = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Escalation.sol:ETour_Escalation');
+      const moduleEscalation = await ETour_Escalation.deploy();
+      await moduleEscalation.waitForDeployment();
+
+      // Deploy TicTacChain_Refactored with module addresses
+      deployArgs = [
+        await moduleCore.getAddress(),
+        await moduleMatches.getAddress(),
+        await modulePrizes.getAddress(),
+        await moduleRaffle.getAddress(),
+        await moduleEscalation.getAddress()
+      ];
+    }
+
     // Deploy the contract normally
     const contract = await originalDeploy.apply(this, deployArgs);
 
