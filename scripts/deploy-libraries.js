@@ -1,16 +1,16 @@
-// scripts/deploy-chessonchain.js
-// Deployment script for ChessOnChain with library dependencies
+// scripts/deploy-libraries.js
+// Deploy shared ETour libraries ONCE for all game contracts
 
 import hre from "hardhat";
 import fs from "fs";
 import path from "path";
 
 async function main() {
-    console.log("🚀 Starting ChessOnChain Deployment...\n");
+    console.log("🚀 Starting Library Deployment...\n");
 
     // Get the deployer account
     const [deployer] = await hre.ethers.getSigners();
-    console.log("Deploying contracts with account:", deployer.address);
+    console.log("Deploying libraries with account:", deployer.address);
     console.log("Account balance:", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH");
     console.log("Network:", hre.network.name);
     console.log("");
@@ -19,9 +19,8 @@ async function main() {
     const timestamp = new Date().toISOString();
     const chainId = (await hre.ethers.provider.getNetwork()).chainId.toString();
 
-    // ===== DEPLOY LIBRARIES =====
     console.log("=" .repeat(60));
-    console.log("Phase 1: Deploying Required Libraries");
+    console.log("Deploying Shared ETour Libraries");
     console.log("=" .repeat(60));
     console.log("");
 
@@ -60,26 +59,6 @@ async function main() {
     console.log("  ✓ ChessRules:", libraries.ChessRules);
     console.log("");
 
-    // ===== DEPLOY CHESSONCHAIN =====
-    console.log("=" .repeat(60));
-    console.log("Phase 2: Deploying ChessOnChain");
-    console.log("=" .repeat(60));
-    console.log("");
-
-    const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain", {
-        libraries: {
-            ETourLib_Core: libraries.ETourLib_Core,
-            ETourLib_Matches: libraries.ETourLib_Matches,
-            ETourLib_Prizes: libraries.ETourLib_Prizes,
-            ChessRules: libraries.ChessRules
-        }
-    });
-    const chessOnChain = await ChessOnChain.deploy();
-    await chessOnChain.waitForDeployment();
-    const chessOnChainAddress = await chessOnChain.getAddress();
-    console.log("✅ ChessOnChain deployed to:", chessOnChainAddress);
-    console.log("");
-
     // Get current block number
     const blockNumber = await hre.ethers.provider.getBlockNumber();
 
@@ -89,71 +68,39 @@ async function main() {
         fs.mkdirSync(deploymentsDir, { recursive: true });
     }
 
-    // Save network deployment info
-    console.log("=" .repeat(60));
-    console.log("Saving Deployment Artifacts...");
-    console.log("=" .repeat(60));
-
-    const networkDeployment = {
+    // Save library deployment info
+    const libraryDeployment = {
         network: hre.network.name,
         chainId: chainId,
         deployer: deployer.address,
         timestamp: timestamp,
         blockNumber: blockNumber,
-        libraries: libraries,
-        contracts: {
-            ChessOnChain: chessOnChainAddress
-        }
+        libraries: libraries
     };
 
-    const networkFile = path.join(deploymentsDir, `${hre.network.name}-chess.json`);
-    fs.writeFileSync(networkFile, JSON.stringify(networkDeployment, null, 2));
-    console.log("✅ Network deployment info saved:", networkFile);
-
-    // Save full ABI as COCABI.json
-    const chessOnChainArtifact = await hre.artifacts.readArtifact("ChessOnChain");
-    const fullABI = {
-        contractName: "ChessOnChain",
-        address: chessOnChainAddress,
-        network: hre.network.name,
-        chainId: chainId,
-        deployedAt: timestamp,
-        abi: chessOnChainArtifact.abi
-    };
-
-    const abiFile = path.join(deploymentsDir, "COCABI.json");
-    fs.writeFileSync(abiFile, JSON.stringify(fullABI, null, 2));
-    console.log("✅ Full ABI compiled and saved:", abiFile);
-    console.log("");
+    const libraryFile = path.join(deploymentsDir, `${hre.network.name}-libraries.json`);
+    fs.writeFileSync(libraryFile, JSON.stringify(libraryDeployment, null, 2));
 
     // Final summary
     console.log("=" .repeat(60));
-    console.log("🎉 DEPLOYMENT SUCCESSFUL! 🎉");
+    console.log("✅ LIBRARY DEPLOYMENT SUCCESSFUL!");
     console.log("=" .repeat(60));
     console.log("");
-    console.log("📋 Deployment Summary:");
-    console.log("  Network:", hre.network.name);
-    console.log("  Chain ID:", chainId);
-    console.log("  Block:", blockNumber);
-    console.log("");
-    console.log("📚 Library Addresses:");
+    console.log("📚 Library Addresses (shared by all games):");
     console.log("  ETourLib_Core:    ", libraries.ETourLib_Core);
     console.log("  ETourLib_Matches: ", libraries.ETourLib_Matches);
     console.log("  ETourLib_Prizes:  ", libraries.ETourLib_Prizes);
     console.log("  ChessRules:       ", libraries.ChessRules);
     console.log("");
-    console.log("📍 Contract Address:");
-    console.log("  ChessOnChain:", chessOnChainAddress);
+    console.log("📁 Deployment Info Saved:");
+    console.log("  -", libraryFile);
     console.log("");
-    console.log("📁 Deployment Artifacts:");
-    console.log("  -", networkFile);
-    console.log("  -", abiFile);
-    console.log("");
-    console.log("🔗 Frontend Integration:");
-    console.log("  The client only needs the game contract address:");
-    console.log(`  const CHESSONCHAIN_ADDRESS = "${chessOnChainAddress}";`);
-    console.log("  Import ABI from:", abiFile);
-    console.log("  (Libraries are linked internally, transparent to the client)");
+    console.log("📝 Next Steps:");
+    console.log("  These libraries will be reused by all game contracts.");
+    console.log("  Now deploy game contracts:");
+    console.log("    npx hardhat run scripts/deploy-tictacchain.js --network", hre.network.name);
+    console.log("    npx hardhat run scripts/deploy-chessonchain.js --network", hre.network.name);
+    console.log("    npx hardhat run scripts/deploy-connectfour.js --network", hre.network.name);
     console.log("");
 }
 
@@ -161,6 +108,6 @@ async function main() {
 main()
     .then(() => process.exit(0))
     .catch((error) => {
-        console.error("❌ Deployment failed:", error);
+        console.error("❌ Library deployment failed:", error);
         process.exit(1);
     });

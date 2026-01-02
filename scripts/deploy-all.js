@@ -1,5 +1,5 @@
 // scripts/deploy-all.js
-// Master deployment script for all game contracts
+// Master deployment script for all libraries and game contracts
 
 import hre from "hardhat";
 import fs from "fs";
@@ -24,16 +24,73 @@ async function main() {
     const timestamp = new Date().toISOString();
     const chainId = (await hre.ethers.provider.getNetwork()).chainId.toString();
     const contracts = {};
+    const libraries = {};
 
-    // ===== Deploy TicTacChain =====
+    // ===== DEPLOY LIBRARIES =====
     console.log("=".repeat(60));
+    console.log("PHASE 1: Deploying Libraries");
+    console.log("=".repeat(60));
+    console.log("");
+
+    // Deploy ETourLib_Core (no dependencies)
+    console.log("1/4 Deploying ETourLib_Core...");
+    const ETourLib_Core = await hre.ethers.getContractFactory("ETourLib_Core");
+    const coreLib = await ETourLib_Core.deploy();
+    await coreLib.waitForDeployment();
+    libraries.ETourLib_Core = await coreLib.getAddress();
+    console.log("  ✓ ETourLib_Core deployed to:", libraries.ETourLib_Core);
+    console.log("");
+
+    // Deploy ETourLib_Matches (depends on ETourLib_Core)
+    console.log("2/4 Deploying ETourLib_Matches...");
+    const ETourLib_Matches = await hre.ethers.getContractFactory("ETourLib_Matches", {
+        libraries: {
+            ETourLib_Core: libraries.ETourLib_Core
+        }
+    });
+    const matchesLib = await ETourLib_Matches.deploy();
+    await matchesLib.waitForDeployment();
+    libraries.ETourLib_Matches = await matchesLib.getAddress();
+    console.log("  ✓ ETourLib_Matches deployed to:", libraries.ETourLib_Matches);
+    console.log("");
+
+    // Deploy ETourLib_Prizes (no dependencies)
+    console.log("3/4 Deploying ETourLib_Prizes...");
+    const ETourLib_Prizes = await hre.ethers.getContractFactory("ETourLib_Prizes");
+    const prizesLib = await ETourLib_Prizes.deploy();
+    await prizesLib.waitForDeployment();
+    libraries.ETourLib_Prizes = await prizesLib.getAddress();
+    console.log("  ✓ ETourLib_Prizes deployed to:", libraries.ETourLib_Prizes);
+    console.log("");
+
+    // Deploy ChessRules (no dependencies)
+    console.log("4/4 Deploying ChessRules...");
+    const ChessRules = await hre.ethers.getContractFactory("ChessRules");
+    const chessRules = await ChessRules.deploy();
+    await chessRules.waitForDeployment();
+    libraries.ChessRules = await chessRules.getAddress();
+    console.log("  ✓ ChessRules deployed to:", libraries.ChessRules);
+    console.log("");
+
+    // ===== DEPLOY GAME CONTRACTS =====
+    console.log("=".repeat(60));
+    console.log("PHASE 2: Deploying Game Contracts");
+    console.log("=".repeat(60));
+    console.log("");
+
+    // Deploy TicTacChain
     console.log("1/3 Deploying TicTacChain...");
-    console.log("=".repeat(60));
-    const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
+    const TicTacChain = await hre.ethers.getContractFactory("TicTacChain", {
+        libraries: {
+            ETourLib_Core: libraries.ETourLib_Core,
+            ETourLib_Matches: libraries.ETourLib_Matches,
+            ETourLib_Prizes: libraries.ETourLib_Prizes
+        }
+    });
     const ticTacChain = await TicTacChain.deploy();
     await ticTacChain.waitForDeployment();
     contracts.TicTacChain = await ticTacChain.getAddress();
-    console.log("TicTacChain deployed to:", contracts.TicTacChain);
+    console.log("  ✓ TicTacChain deployed to:", contracts.TicTacChain);
     console.log("");
 
     // Save TicTacChain ABI
@@ -50,15 +107,20 @@ async function main() {
         }, null, 2)
     );
 
-    // ===== Deploy ChessOnChain =====
-    console.log("=".repeat(60));
+    // Deploy ChessOnChain
     console.log("2/3 Deploying ChessOnChain...");
-    console.log("=".repeat(60));
-    const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain");
+    const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain", {
+        libraries: {
+            ETourLib_Core: libraries.ETourLib_Core,
+            ETourLib_Matches: libraries.ETourLib_Matches,
+            ETourLib_Prizes: libraries.ETourLib_Prizes,
+            ChessRules: libraries.ChessRules
+        }
+    });
     const chessOnChain = await ChessOnChain.deploy();
     await chessOnChain.waitForDeployment();
     contracts.ChessOnChain = await chessOnChain.getAddress();
-    console.log("ChessOnChain deployed to:", contracts.ChessOnChain);
+    console.log("  ✓ ChessOnChain deployed to:", contracts.ChessOnChain);
     console.log("");
 
     // Save ChessOnChain ABI
@@ -75,15 +137,19 @@ async function main() {
         }, null, 2)
     );
 
-    // ===== Deploy ConnectFourOnChain =====
-    console.log("=".repeat(60));
+    // Deploy ConnectFourOnChain
     console.log("3/3 Deploying ConnectFourOnChain...");
-    console.log("=".repeat(60));
-    const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
+    const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain", {
+        libraries: {
+            ETourLib_Core: libraries.ETourLib_Core,
+            ETourLib_Matches: libraries.ETourLib_Matches,
+            ETourLib_Prizes: libraries.ETourLib_Prizes
+        }
+    });
     const connectFourOnChain = await ConnectFourOnChain.deploy();
     await connectFourOnChain.waitForDeployment();
     contracts.ConnectFourOnChain = await connectFourOnChain.getAddress();
-    console.log("ConnectFourOnChain deployed to:", contracts.ConnectFourOnChain);
+    console.log("  ✓ ConnectFourOnChain deployed to:", contracts.ConnectFourOnChain);
     console.log("");
 
     // Save ConnectFourOnChain ABI
@@ -110,6 +176,7 @@ async function main() {
         deployer: deployer.address,
         timestamp: timestamp,
         blockNumber: blockNumber,
+        libraries: libraries,
         contracts: contracts
     };
 
@@ -126,6 +193,12 @@ async function main() {
     console.log("  Chain ID:", chainId);
     console.log("  Block:", blockNumber);
     console.log("");
+    console.log("Library Addresses:");
+    console.log("  ETourLib_Core:    ", libraries.ETourLib_Core);
+    console.log("  ETourLib_Matches: ", libraries.ETourLib_Matches);
+    console.log("  ETourLib_Prizes:  ", libraries.ETourLib_Prizes);
+    console.log("  ChessRules:       ", libraries.ChessRules);
+    console.log("");
     console.log("Contract Addresses:");
     console.log("  TicTacChain:       ", contracts.TicTacChain);
     console.log("  ChessOnChain:      ", contracts.ChessOnChain);
@@ -140,11 +213,6 @@ async function main() {
     console.log("Next Steps:");
     console.log("  1. Run 'npm run sync:abis' to copy ABIs to frontend");
     console.log("  2. Update frontend .env with contract addresses");
-    console.log("");
-    console.log("Verification Commands:");
-    console.log(`  npx hardhat verify --network ${hre.network.name} ${contracts.TicTacChain}`);
-    console.log(`  npx hardhat verify --network ${hre.network.name} ${contracts.ChessOnChain}`);
-    console.log(`  npx hardhat verify --network ${hre.network.name} ${contracts.ConnectFourOnChain}`);
     console.log("");
 }
 

@@ -15,7 +15,7 @@ export default {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200  // Increased for better stack optimization
+        runs: 1  // Optimize for minimal bytecode size (was 200)
       },
       viaIR: true  // Use IR-based code generator to avoid stack too deep errors
       // Note: evmVersion "cancun" requires Solidity 0.8.24+

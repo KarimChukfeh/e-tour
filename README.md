@@ -1449,20 +1449,32 @@ At scale, operational revenue provides significant runway for development, audit
 
 
 
------- 
+------
 
+# DEPLOYMENT SEQUENCE (Updated for Library Architecture)
+
+# 1. Kill any existing Anvil instance
 pkill -f anvil || true
 
+# 2. Start fresh Anvil local node
 ./start-anvil.sh
 
-npx hardhat compile
-
+# 3. Clean and compile all contracts (including libraries)
 npx hardhat clean && npx hardhat compile
 
-npx hardhat run scripts/deploy-tictacchain.js --network localhost
+# 4. Deploy all libraries and game contracts with proper linking
+npx hardhat run scripts/deploy-all.js --network localhost
 
-npx hardhat run scripts/deploy-chessonchain.js --network localhost
-
-npx hardhat run scripts/deploy-connectfour.js --network localhost
-
+# 5. (Optional) Expose local Anvil to internet via ngrok
 ngrok http 8545
+
+# Note: The deploy-all.js script now:
+# - Deploys libraries first: ETourLib_Core, ETourLib_Matches, ETourLib_Prizes, ChessRules
+# - Then deploys game contracts with library linking: TicTacChain, ChessOnChain, ConnectFourOnChain
+# - Saves all addresses to deployments/localhost.json
+# - Saves ABIs to deployments/*.json
+
+
+------
+
+

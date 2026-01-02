@@ -12,7 +12,34 @@ describe("TicTacChain Player Activity Tracking", function () {
   beforeEach(async function () {
     [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
 
-    const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
+    // Deploy ETourLib_Core first (no dependencies)
+    const ETourLib_Core = await hre.ethers.getContractFactory("ETourLib_Core");
+    const coreLib = await ETourLib_Core.deploy();
+    await coreLib.waitForDeployment();
+    const coreLibAddress = await coreLib.getAddress();
+
+    // Deploy ETourLib_Matches (depends on ETourLib_Core)
+    const ETourLib_Matches = await hre.ethers.getContractFactory("ETourLib_Matches", {
+      libraries: {
+        ETourLib_Core: coreLibAddress,
+      },
+    });
+    const matchesLib = await ETourLib_Matches.deploy();
+    await matchesLib.waitForDeployment();
+
+    // Deploy ETourLib_Prizes (only uses types from ETourLib_Core, no linking needed)
+    const ETourLib_Prizes = await hre.ethers.getContractFactory("ETourLib_Prizes");
+    const prizesLib = await ETourLib_Prizes.deploy();
+    await prizesLib.waitForDeployment();
+
+    // Deploy TicTacChain with all linked libraries
+    const TicTacChain = await hre.ethers.getContractFactory("TicTacChain", {
+      libraries: {
+        ETourLib_Core: coreLibAddress,
+        ETourLib_Matches: await matchesLib.getAddress(),
+        ETourLib_Prizes: await prizesLib.getAddress(),
+      },
+    });
     ticTacChain = await TicTacChain.deploy();
     await ticTacChain.waitForDeployment();
   });

@@ -626,40 +626,40 @@ contract ChessOnChain is ReentrancyGuard {
 
         // Clear the board first
         for (uint8 i = 0; i < 64; i++) {
-            matchData.board[i] = ChessRules.Piece(ChessRules.PieceType.None, ChessRules.PieceColor.None);
+            matchData.board[i] = ChessRules.Piece(PieceType.None, PieceColor.None);
         }
 
         // White pieces (ranks 1-2, squares 0-15)
         // Rank 1 (squares 0-7): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
-        matchData.board[0] = ChessRules.Piece(ChessRules.PieceType.Rook, ChessRules.PieceColor.White);
-        matchData.board[1] = ChessRules.Piece(ChessRules.PieceType.Knight, ChessRules.PieceColor.White);
-        matchData.board[2] = ChessRules.Piece(ChessRules.PieceType.Bishop, ChessRules.PieceColor.White);
-        matchData.board[3] = ChessRules.Piece(ChessRules.PieceType.Queen, ChessRules.PieceColor.White);
-        matchData.board[4] = ChessRules.Piece(ChessRules.PieceType.King, ChessRules.PieceColor.White);
-        matchData.board[5] = ChessRules.Piece(ChessRules.PieceType.Bishop, ChessRules.PieceColor.White);
-        matchData.board[6] = ChessRules.Piece(ChessRules.PieceType.Knight, ChessRules.PieceColor.White);
-        matchData.board[7] = ChessRules.Piece(ChessRules.PieceType.Rook, ChessRules.PieceColor.White);
+        matchData.board[0] = ChessRules.Piece(PieceType.Rook, PieceColor.White);
+        matchData.board[1] = ChessRules.Piece(PieceType.Knight, PieceColor.White);
+        matchData.board[2] = ChessRules.Piece(PieceType.Bishop, PieceColor.White);
+        matchData.board[3] = ChessRules.Piece(PieceType.Queen, PieceColor.White);
+        matchData.board[4] = ChessRules.Piece(PieceType.King, PieceColor.White);
+        matchData.board[5] = ChessRules.Piece(PieceType.Bishop, PieceColor.White);
+        matchData.board[6] = ChessRules.Piece(PieceType.Knight, PieceColor.White);
+        matchData.board[7] = ChessRules.Piece(PieceType.Rook, PieceColor.White);
 
         // Rank 2 (squares 8-15): White Pawns
         for (uint8 i = 8; i < 16; i++) {
-            matchData.board[i] = ChessRules.Piece(ChessRules.PieceType.Pawn, ChessRules.PieceColor.White);
+            matchData.board[i] = ChessRules.Piece(PieceType.Pawn, PieceColor.White);
         }
 
         // Black pieces (ranks 7-8, squares 48-63)
         // Rank 7 (squares 48-55): Black Pawns
         for (uint8 i = 48; i < 56; i++) {
-            matchData.board[i] = ChessRules.Piece(ChessRules.PieceType.Pawn, ChessRules.PieceColor.Black);
+            matchData.board[i] = ChessRules.Piece(PieceType.Pawn, PieceColor.Black);
         }
 
         // Rank 8 (squares 56-63): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
-        matchData.board[56] = ChessRules.Piece(ChessRules.PieceType.Rook, ChessRules.PieceColor.Black);
-        matchData.board[57] = ChessRules.Piece(ChessRules.PieceType.Knight, ChessRules.PieceColor.Black);
-        matchData.board[58] = ChessRules.Piece(ChessRules.PieceType.Bishop, ChessRules.PieceColor.Black);
-        matchData.board[59] = ChessRules.Piece(ChessRules.PieceType.Queen, ChessRules.PieceColor.Black);
-        matchData.board[60] = ChessRules.Piece(ChessRules.PieceType.King, ChessRules.PieceColor.Black);
-        matchData.board[61] = ChessRules.Piece(ChessRules.PieceType.Bishop, ChessRules.PieceColor.Black);
-        matchData.board[62] = ChessRules.Piece(ChessRules.PieceType.Knight, ChessRules.PieceColor.Black);
-        matchData.board[63] = ChessRules.Piece(ChessRules.PieceType.Rook, ChessRules.PieceColor.Black);
+        matchData.board[56] = ChessRules.Piece(PieceType.Rook, PieceColor.Black);
+        matchData.board[57] = ChessRules.Piece(PieceType.Knight, PieceColor.Black);
+        matchData.board[58] = ChessRules.Piece(PieceType.Bishop, PieceColor.Black);
+        matchData.board[59] = ChessRules.Piece(PieceType.Queen, PieceColor.Black);
+        matchData.board[60] = ChessRules.Piece(PieceType.King, PieceColor.Black);
+        matchData.board[61] = ChessRules.Piece(PieceType.Bishop, PieceColor.Black);
+        matchData.board[62] = ChessRules.Piece(PieceType.Knight, PieceColor.Black);
+        matchData.board[63] = ChessRules.Piece(PieceType.Rook, PieceColor.Black);
     }
 
     function _resetMatchGame(bytes32 matchId) internal {
@@ -688,7 +688,7 @@ contract ChessOnChain is ReentrancyGuard {
         matchData.blackInCheck = false;
 
         for (uint8 i = 0; i < 64; i++) {
-            matchData.board[i] = ChessRules.Piece(ChessRules.PieceType.None, ChessRules.PieceColor.None);
+            matchData.board[i] = ChessRules.Piece(PieceType.None, PieceColor.None);
         }
 
         delete moveHistory[matchId];
@@ -1001,7 +1001,7 @@ contract ChessOnChain is ReentrancyGuard {
      * @param matchNumber Match number
      * @param from Source square (0-63)
      * @param to Destination square (0-63)
-     * @param promotion Piece type for pawn promotion (ChessRules.PieceType.None if not promoting)
+     * @param promotion Piece type for pawn promotion (PieceType.None if not promoting)
      */
     function makeMove(
         uint8 tierId,
@@ -1021,7 +1021,7 @@ contract ChessOnChain is ReentrancyGuard {
         require(from < 64 && to < 64, "Invalid square");
         require(from != to, "Must move to different square");
 
-        ChessRules.PieceColor playerColor = (msg.sender == matchData.player1) ? ChessRules.PieceColor.White : ChessRules.PieceColor.Black;
+        ChessRules.PieceColorplayerColor = (msg.sender == matchData.player1) ? ChessRules.PieceColor.White : PieceColor.Black;
         
         require(matchData.board[from].color == playerColor, "Not your piece");
         require(_isValidMove(matchId, from, to, promotion), "Invalid move");
@@ -1076,7 +1076,7 @@ contract ChessOnChain is ReentrancyGuard {
         // En passant capture
         if (isPawnMove && to == matchData.enPassantSquare) {
             uint8 capturedPawnSquare = (playerColor == ChessRules.PieceColor.White) ? to - 8 : to + 8;
-            matchData.board[capturedPawnSquare] = ChessRules.Piece(ChessRules.PieceType.None, ChessRules.PieceColor.None);
+            matchData.board[capturedPawnSquare] = ChessRules.Piece(PieceType.None, PieceColor.None);
             isCapture = true;
             emit EnPassantCapture(matchId, msg.sender, capturedPawnSquare);
         }
@@ -1092,7 +1092,7 @@ contract ChessOnChain is ReentrancyGuard {
         
         // Execute the move
         matchData.board[to] = movingPiece;
-        matchData.board[from] = ChessRules.Piece(ChessRules.PieceType.None, ChessRules.PieceColor.None);
+        matchData.board[from] = ChessRules.Piece(PieceType.None, PieceColor.None);
         
         // Pawn promotion
         if (isPawnMove) {
@@ -1157,7 +1157,7 @@ contract ChessOnChain is ReentrancyGuard {
         }
 
         // Check for game end conditions
-        ChessRules.PieceColor opponentColor = (playerColor == ChessRules.PieceColor.White) ? ChessRules.PieceColor.Black : ChessRules.PieceColor.White;
+        ChessRules.PieceColor opponentColor = (playerColor == ChessRules.PieceColor.White) ? ChessRules.PieceColor.Black : PieceColor.White;
         
         bool opponentInCheck = _isKingInCheck(matchId, opponentColor);
         bool opponentHasLegalMoves = _hasLegalMoves(matchId, opponentColor);
@@ -1227,7 +1227,7 @@ contract ChessOnChain is ReentrancyGuard {
         
         // Move the rook
         matchData.board[rookTo] = matchData.board[rookFrom];
-        matchData.board[rookFrom] = ChessRules.Piece(ChessRules.PieceType.None, ChessRules.PieceColor.None);
+        matchData.board[rookFrom] = ChessRules.Piece(PieceType.None, PieceColor.None);
         
         emit CastlingPerformed(matchId, msg.sender, kingSide);
     }
@@ -1275,27 +1275,333 @@ contract ChessOnChain is ReentrancyGuard {
 
     function _findKing(bytes32 matchId, ChessRules.PieceColor color) internal view returns (uint8) {
         ChessMatch storage matchData = chessMatches[matchId];
+        
+        // Forward move
+        if (fileDiff == 0) {
+            if (rankDiff == direction) {
+                return matchData.board[to].pieceType == ChessRules.PieceType.None;
+            }
+            if (rankDiff == 2 * direction && from / 8 == startRank) {
+                uint8 intermediateSquare = uint8(int8(from) + 8 * direction);
+                return matchData.board[to].pieceType == ChessRules.PieceType.None && 
+                       matchData.board[intermediateSquare].pieceType == ChessRules.PieceType.None;
+            }
+        }
+        
+        // Diagonal capture
+        if ((fileDiff == 1 || fileDiff == -1) && rankDiff == direction) {
+            // Normal capture
+            if (matchData.board[to].pieceType != ChessRules.PieceType.None && matchData.board[to].color != color) {
+                return true;
+            }
+            // En passant
+            if (to == matchData.enPassantSquare) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    function _isValidKnightMove(int8 fileDiff, int8 rankDiff) internal pure returns (bool) {
+        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+        return (absFile == 2 && absRank == 1) || (absFile == 1 && absRank == 2);
+    }
+
+    function _isValidBishopMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
+        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+        
+        if (absFile != absRank) return false;
+        
+        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
+    }
+
+    function _isValidRookMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
+        if (fileDiff != 0 && rankDiff != 0) return false;
+        
+        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
+    }
+
+    function _isValidQueenMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
+        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+        
+        // Queen moves like rook or bishop
+        bool isDiagonal = (absFile == absRank);
+        bool isStraight = (fileDiff == 0 || rankDiff == 0);
+        
+        if (!isDiagonal && !isStraight) return false;
+        
+        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
+    }
+
+    function _isValidKingMove(bytes32 matchId, uint8 from, uint8 to, ChessRules.PieceColorcolor, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
+        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+        
+        // Normal king move
+        if (absFile <= 1 && absRank <= 1) {
+            return true;
+        }
+        
+        // Castling
+        if (absRank == 0 && absFile == 2) {
+            return _canCastle(matchId, color, fileDiff > 0);
+        }
+        
+        return false;
+    }
+
+    function _canCastle(bytes32 matchId, ChessRules.PieceColorcolor, bool kingSide) internal view returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        
+        // Check if king or relevant rook has moved
+        if (color == ChessRules.PieceColor.White) {
+            if (matchData.whiteKingMoved) return false;
+            if (kingSide && matchData.whiteRookHMoved) return false;
+            if (!kingSide && matchData.whiteRookAMoved) return false;
+            if (matchData.whiteInCheck) return false;
+        } else {
+            if (matchData.blackKingMoved) return false;
+            if (kingSide && matchData.blackRookHMoved) return false;
+            if (!kingSide && matchData.blackRookAMoved) return false;
+            if (matchData.blackInCheck) return false;
+        }
+        
+        // Check if path is clear and not under attack
+        uint8 kingSquare = (color == ChessRules.PieceColor.White) ? 4 : 60;
+        
+        if (kingSide) {
+            // Check squares between king and rook are empty
+            if (matchData.board[kingSquare + 1].pieceType != ChessRules.PieceType.None) return false;
+            if (matchData.board[kingSquare + 2].pieceType != ChessRules.PieceType.None) return false;
+            
+            // Check king doesn't pass through check
+            if (_isSquareAttacked(matchId, kingSquare + 1, color)) return false;
+            if (_isSquareAttacked(matchId, kingSquare + 2, color)) return false;
+        } else {
+            // Check squares between king and rook are empty
+            if (matchData.board[kingSquare - 1].pieceType != ChessRules.PieceType.None) return false;
+            if (matchData.board[kingSquare - 2].pieceType != ChessRules.PieceType.None) return false;
+            if (matchData.board[kingSquare - 3].pieceType != ChessRules.PieceType.None) return false;
+            
+            // Check king doesn't pass through check
+            if (_isSquareAttacked(matchId, kingSquare - 1, color)) return false;
+            if (_isSquareAttacked(matchId, kingSquare - 2, color)) return false;
+        }
+        
+        return true;
+    }
+
+    function _isPathClear(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        
+        int8 fileStep = fileDiff == 0 ? int8(0) : (fileDiff > 0 ? int8(1) : int8(-1));
+        int8 rankStep = rankDiff == 0 ? int8(0) : (rankDiff > 0 ? int8(1) : int8(-1));
+        
+        int8 currentFile = int8(from % 8) + fileStep;
+        int8 currentRank = int8(from / 8) + rankStep;
+        int8 targetFile = int8(to % 8);
+        int8 targetRank = int8(to / 8);
+        
+        while (currentFile != targetFile || currentRank != targetRank) {
+            uint8 currentSquare = uint8(currentRank * 8 + currentFile);
+            if (matchData.board[currentSquare].pieceType != ChessRules.PieceType.None) {
+                return false;
+            }
+            currentFile += fileStep;
+            currentRank += rankStep;
+        }
+        
+        return true;
+    }
+
+    // ============ Check Detection ============
+
+    function _isKingInCheck(bytes32 matchId, ChessRules.PieceColorkingColor) internal view returns (bool) {
+        uint8 kingSquare = _findKing(matchId, kingColor);
+        return _isSquareAttacked(matchId, kingSquare, kingColor);
+    }
+
+    function _findKing(bytes32 matchId, ChessRules.PieceColorcolor) internal view returns (uint8) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        
         for (uint8 i = 0; i < 64; i++) {
             if (matchData.board[i].pieceType == ChessRules.PieceType.King && matchData.board[i].color == color) {
                 return i;
             }
         }
+        
         revert("King not found");
     }
 
-    function _hasLegalMoves(bytes32 matchId, ChessRules.PieceColor color) internal view returns (bool) {
+    function _isSquareAttacked(bytes32 matchId, uint8 square, ChessRules.PieceColordefendingColor) internal view returns (bool) {
         ChessMatch storage matchData = chessMatches[matchId];
-        return ChessRules.hasLegalMoves(
-            matchData.board,
-            color,
-            matchData.whiteKingMoved,
-            matchData.blackKingMoved,
-            matchData.whiteRookAMoved,
-            matchData.whiteRookHMoved,
-            matchData.blackRookAMoved,
-            matchData.blackRookHMoved,
-            matchData.enPassantSquare
-        );
+        ChessRules.PieceColor attackingColor = (defendingColor == ChessRules.PieceColor.White) ? ChessRules.PieceColor.Black : PieceColor.White;
+        
+        // Check for attacks from each enemy piece
+        for (uint8 i = 0; i < 64; i++) {
+            ChessRules.Piece memory piece = matchData.board[i];
+            if (piece.color == attackingColor) {
+                if (_canPieceAttackSquare(matchId, i, square, piece)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    function _canPieceAttackSquare(bytes32 matchId, uint8 from, uint8 to, ChessRules.Piece memory piece) internal view returns (bool) {
+        int8 fromFile = int8(from % 8);
+        int8 fromRank = int8(from / 8);
+        int8 toFile = int8(to % 8);
+        int8 toRank = int8(to / 8);
+        int8 fileDiff = toFile - fromFile;
+        int8 rankDiff = toRank - fromRank;
+        
+        if (piece.pieceType == ChessRules.PieceType.Pawn) {
+            int8 direction = (piece.color == ChessRules.PieceColor.White) ? int8(1) : int8(-1);
+            return (fileDiff == 1 || fileDiff == -1) && rankDiff == direction;
+        } else if (piece.pieceType == ChessRules.PieceType.Knight) {
+            return _isValidKnightMove(fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.Bishop) {
+            return _isValidBishopMove(matchId, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.Rook) {
+            return _isValidRookMove(matchId, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.Queen) {
+            return _isValidQueenMove(matchId, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.King) {
+            int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+            int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+            return absFile <= 1 && absRank <= 1;
+        }
+        
+        return false;
+    }
+
+    function _wouldLeaveKingInCheck(bytes32 matchId, uint8 from, uint8 to, ChessRules.PieceColorcolor) internal view returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        
+        // Create a temporary copy of board state in memory
+        Piece[64] memory tempBoard;
+        for (uint8 i = 0; i < 64; i++) {
+            tempBoard[i] = matchData.board[i];
+        }
+        
+        // Make the move on temp board
+        tempBoard[to] = tempBoard[from];
+        tempBoard[from] = ChessRules.Piece(PieceType.None, PieceColor.None);
+        
+        // Handle en passant capture
+        if (tempBoard[to].pieceType == ChessRules.PieceType.Pawn && to == matchData.enPassantSquare) {
+            uint8 capturedPawnSquare = (color == ChessRules.PieceColor.White) ? to - 8 : to + 8;
+            tempBoard[capturedPawnSquare] = ChessRules.Piece(PieceType.None, PieceColor.None);
+        }
+        
+        // Find king position
+        uint8 kingSquare = NO_SQUARE;
+        for (uint8 i = 0; i < 64; i++) {
+            if (tempBoard[i].pieceType == ChessRules.PieceType.King && tempBoard[i].color == color) {
+                kingSquare = i;
+                break;
+            }
+        }
+        
+        // Check if king is attacked
+        return _isSquareAttackedOnBoard(tempBoard, kingSquare, color);
+    }
+
+    function _isSquareAttackedOnBoard(Piece[64] memory board, uint8 square, ChessRules.PieceColordefendingColor) internal pure returns (bool) {
+        ChessRules.PieceColor attackingColor = (defendingColor == ChessRules.PieceColor.White) ? ChessRules.PieceColor.Black : PieceColor.White;
+        
+        for (uint8 i = 0; i < 64; i++) {
+            ChessRules.Piece memory piece = board[i];
+            if (piece.color == attackingColor) {
+                if (_canPieceAttackSquareOnBoard(board, i, square, piece)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    function _canPieceAttackSquareOnBoard(Piece[64] memory board, uint8 from, uint8 to, ChessRules.Piece memory piece) internal pure returns (bool) {
+        int8 fromFile = int8(from % 8);
+        int8 fromRank = int8(from / 8);
+        int8 toFile = int8(to % 8);
+        int8 toRank = int8(to / 8);
+        int8 fileDiff = toFile - fromFile;
+        int8 rankDiff = toRank - fromRank;
+        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
+        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
+        
+        if (piece.pieceType == ChessRules.PieceType.Pawn) {
+            int8 direction = (piece.color == ChessRules.PieceColor.White) ? int8(1) : int8(-1);
+            return (fileDiff == 1 || fileDiff == -1) && rankDiff == direction;
+        } else if (piece.pieceType == ChessRules.PieceType.Knight) {
+            return (absFile == 2 && absRank == 1) || (absFile == 1 && absRank == 2);
+        } else if (piece.pieceType == ChessRules.PieceType.Bishop) {
+            if (absFile != absRank) return false;
+            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.Rook) {
+            if (fileDiff != 0 && rankDiff != 0) return false;
+            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.Queen) {
+            bool isDiagonal = (absFile == absRank);
+            bool isStraight = (fileDiff == 0 || rankDiff == 0);
+            if (!isDiagonal && !isStraight) return false;
+            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
+        } else if (piece.pieceType == ChessRules.PieceType.King) {
+            return absFile <= 1 && absRank <= 1;
+        }
+        
+        return false;
+    }
+
+    function _isPathClearOnBoard(Piece[64] memory board, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal pure returns (bool) {
+        int8 fileStep = fileDiff == 0 ? int8(0) : (fileDiff > 0 ? int8(1) : int8(-1));
+        int8 rankStep = rankDiff == 0 ? int8(0) : (rankDiff > 0 ? int8(1) : int8(-1));
+        
+        int8 currentFile = int8(from % 8) + fileStep;
+        int8 currentRank = int8(from / 8) + rankStep;
+        int8 targetFile = int8(to % 8);
+        int8 targetRank = int8(to / 8);
+        
+        while (currentFile != targetFile || currentRank != targetRank) {
+            uint8 currentSquare = uint8(currentRank * 8 + currentFile);
+            if (board[currentSquare].pieceType != ChessRules.PieceType.None) {
+                return false;
+            }
+            currentFile += fileStep;
+            currentRank += rankStep;
+        }
+        
+        return true;
+    }
+
+    // ============ Legal Move Generation ============
+
+    function _hasLegalMoves(bytes32 matchId, ChessRules.PieceColorcolor) internal view returns (bool) {
+        ChessMatch storage matchData = chessMatches[matchId];
+        
+        for (uint8 from = 0; from < 64; from++) {
+            ChessRules.Piece memory piece = matchData.board[from];
+            if (piece.color == color) {
+                for (uint8 to = 0; to < 64; to++) {
+                    if (from != to && _isPieceMovementValid(matchId, from, to, piece)) {
+                        if (!_wouldLeaveKingInCheck(matchId, from, to, color)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 
     // ============ Draw Detection ============
@@ -1375,7 +1681,7 @@ contract ChessOnChain is ReentrancyGuard {
             // Chess cache has minimal data (no board, no history)
             // Initialize empty board (default values)
             for (uint8 i = 0; i < 64; i++) {
-                fullData.board[i] = ChessRules.Piece({pieceType: ChessRules.PieceType.None, color: ChessRules.PieceColor.None});
+                fullData.board[i] = ChessRules.Piece({pieceType: ChessRules.PieceType.None, color: PieceColor.None});
             }
             fullData.currentTurn = address(0);
             fullData.firstPlayer = common.player1;  // Assume player1 was first
@@ -1511,7 +1817,7 @@ contract ChessOnChain is ReentrancyGuard {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (ChessRules.Piece[64] memory) {
+    ) external view returns (Piece[64] memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         return chessMatches[matchId].board;
     }

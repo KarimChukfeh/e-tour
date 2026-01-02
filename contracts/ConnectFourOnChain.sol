@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETour.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./libraries/ETourLib_Core.sol";
+import "./libraries/ETourLib_Matches.sol";
+import "./libraries/ETourLib_Prizes.sol";
 
 /**
  * @title ConnectFourOnChain
  * @dev Classic Connect Four game implementing ETour tournament protocol
  * Strategic column-drop game where players compete to connect 4 pieces in a row.
- * 
+ *
  * This contract demonstrates ETour implementation with:
  * 1. Custom tier configurations for various tournament sizes
  * 2. Full game logic for Connect Four mechanics
  * 3. Gravity-based piece dropping (pieces fall to lowest available position)
  * 4. Win detection for horizontal, vertical, and diagonal connections
- * 
+ *
  * Part of the RW3 (Reclaim Web3) movement.
  */
-contract ConnectFourOnChain is ETour {
+contract ConnectFourOnChain is ReentrancyGuard {
+
+    address public immutable owner;
+    ETourLib_Core.ETourStorage internal _etourStorage;
     
     // ============ Game-Specific Constants ============
     
@@ -39,7 +45,7 @@ contract ConnectFourOnChain is ETour {
         address currentTurn;
         address winner;
         Cell[TOTAL_CELLS] board;  // 6 rows x 7 cols = 42 cells (row-major order)
-        MatchStatus status;
+        ETourLib_Core.MatchStatus status;
         uint256 lastMoveTime;
         uint256 startTime;
         address firstPlayer;
@@ -73,7 +79,7 @@ contract ConnectFourOnChain is ETour {
      * @dev Extended match data for ConnectFour including common fields and game-specific state
      */
     struct ConnectFourMatchData {
-        ETour.CommonMatchData common;     // Embedded common data
+        ETourLib_Core.CommonMatchData common;     // Embedded common data
         Cell[TOTAL_CELLS] board;          // 6x7 board (42 cells)
         address currentTurn;
         address firstPlayer;
@@ -89,7 +95,7 @@ contract ConnectFourOnChain is ETour {
     mapping(bytes32 => Match) public matches;
 
     // Match cache
-    uint16 public constant MATCH_CACHE_SIZE = 1000;
+    uint16 public constant MATCH_CACHE_SIZE = 200;
     CachedMatchData[MATCH_CACHE_SIZE] public matchCache;
     uint16 public nextCacheIndex;
     mapping(bytes32 => uint16) public cacheKeyToIndex;
@@ -118,15 +124,45 @@ contract ConnectFourOnChain is ETour {
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 column, uint8 row);
     event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
+    event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, uint8 matchNumber, address claimer, address loser);
+    event AllDrawRoundDetected(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, uint8 remainingPlayers);
+
+    // ============ ETour Events ============
+
+    event TierRegistered(uint8 indexed tierId, uint8 playerCount, uint8 instanceCount, uint256 entryFee);
+    event TournamentInitialized(uint8 indexed tierId, uint8 indexed instanceId);
+    event PlayerEnrolled(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 enrolledCount);
+    event TournamentStarted(uint8 indexed tierId, uint8 indexed instanceId, uint8 playerCount);
+    event RoundInitialized(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, uint8 matchCount);
+    event MatchStarted(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, uint8 matchNumber, address player1, address player2);
+    event MatchCompleted(bytes32 indexed matchId, address indexed winner, bool isDraw);
+    event RoundCompleted(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber);
+    event PlayerEliminated(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, address player);
+    event PlayerAutoAdvancedWalkover(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, address player);
+    event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address indexed winner, uint256 prize, bool raffleTriggered, address raffleWinner);
+    event PrizeDistributed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 rank, uint256 amount);
+    event OwnerFeePaid(address indexed owner, uint256 amount);
+    event ProtocolFeePaid(address indexed protocol, uint256 amount);
+    event UnclaimedPrizeReclaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount);
+    event PrizeClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount);
+    event PrizeClaimFailed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount);
+    event ProtocolRaffleTriggered(uint8 indexed tierId, uint8 indexed instanceId, uint256 poolAmount, address indexed winner, uint256 prizeAmount);
+    event RaffleThresholdsRegistered(uint8 indexed tierId);
+    event EnrollmentPoolAbandoned(uint8 indexed tierId, uint8 indexed instanceId, uint256 poolAmount, uint256 reclaimTime);
+    event AbandonedPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimer, uint256 amount);
+    event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed initiator, uint8 enrolledCount);
+    event MatchTimeoutDetected(bytes32 indexed matchId, address indexed currentPlayer, uint256 timeoutAt);
+    event MatchEscalationLevel2(bytes32 indexed matchId, address indexed advancedPlayer, uint256 escalationTime);
+    event PlayerReplacedByExternal(uint8 indexed tierId, uint8 indexed instanceId, uint8 indexed roundNumber, uint8 matchNumber, address oldPlayer, address newPlayer);
+    event ExternalPlayerForfeit(bytes32 indexed matchId, address indexed externalPlayer, address indexed opponent);
+    event MatchEscalationLevel3(bytes32 indexed matchId, address indexed stalledPlayer, uint256 escalationTime);
+    event TournamentReset(uint8 indexed tierId, uint8 indexed instanceId, uint8 oldEnrolledCount);
 
     // ============ Constructor ============
 
-    constructor() ETour() {
-        // Register ConnectFourOnChain's tournament tiers
+    constructor() {
+        owner = msg.sender;
         _registerConnectFourTiers();
-        
-        // Pre-allocate all tournament instances, rounds, and matches
-        _preallocateAllStructs();
     }
 
     /**
@@ -139,7 +175,7 @@ contract ConnectFourOnChain is ETour {
         tier0Prizes[1] = 0;    // 2nd place: 0%
 
         // 5 minutes per player with 15-second Fischer increment
-        TimeoutConfig memory timeouts0 = TimeoutConfig({
+        ETourLib_Core.TimeoutConfig memory timeouts0 = ETourLib_Core.TimeoutConfig({
             matchTimePerPlayer: 5 minutes,      // 300 seconds per player
             timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
@@ -149,15 +185,17 @@ contract ConnectFourOnChain is ETour {
         });
 
 
-        _registerTier(
+        ETourLib_Core.registerTier(
+            _etourStorage,
             0,                              // tierId
             2,                              // playerCount
             100,                             // instanceCount
             0.002 ether,                    // entryFee
-            Mode.Classic,                   // mode
+            ETourLib_Core.Mode.Classic,     // mode
             timeouts0,                       // timeout configuration
             tier0Prizes                     // prizeDistribution
         );
+        emit TierRegistered(0, 2, 100, 0.002 ether);
 
         // ============ Tier 1: 4-Player ============
         uint8[] memory tier1Prizes = new uint8[](4);
@@ -166,7 +204,7 @@ contract ConnectFourOnChain is ETour {
         tier1Prizes[2] = 0;    // 3rd place: 0%
         tier1Prizes[3] = 0;    // 4th place: 0%
 
-        TimeoutConfig memory timeouts1 = TimeoutConfig({
+        ETourLib_Core.TimeoutConfig memory timeouts1 = ETourLib_Core.TimeoutConfig({
             matchTimePerPlayer: 5 minutes,      // 300 seconds per player
             timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
@@ -175,15 +213,17 @@ contract ConnectFourOnChain is ETour {
             enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
         });
 
-        _registerTier(
+        ETourLib_Core.registerTier(
+            _etourStorage,
             1,                              // tierId
             4,                              // playerCount
             50,                             // instanceCount
             0.004 ether,                    // entryFee
-            Mode.Classic,
+            ETourLib_Core.Mode.Classic,
             timeouts1,
             tier1Prizes
         );
+        emit TierRegistered(1, 4, 50, 0.004 ether);
 
         // ============ Tier 2: 8-Player ============
         uint8[] memory tier2Prizes = new uint8[](8);
@@ -196,7 +236,7 @@ contract ConnectFourOnChain is ETour {
         tier2Prizes[6] = 0;
         tier2Prizes[7] = 0;
 
-        TimeoutConfig memory timeouts2 = TimeoutConfig({
+        ETourLib_Core.TimeoutConfig memory timeouts2 = ETourLib_Core.TimeoutConfig({
             matchTimePerPlayer: 5 minutes,      // 300 seconds per player
             timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
@@ -205,15 +245,17 @@ contract ConnectFourOnChain is ETour {
             enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
         });
 
-        _registerTier(
+        ETourLib_Core.registerTier(
+            _etourStorage,
             2,                              // tierId
             8,                              // playerCount
             30,                              // instanceCount
             0.008 ether,                    // entryFee
-            Mode.Classic,
+            ETourLib_Core.Mode.Classic,
             timeouts2,
             tier2Prizes
         );
+        emit TierRegistered(2, 8, 30, 0.008 ether);
 
         // ============ Tier 3: 16-Player ============
         uint8[] memory tier3Prizes = new uint8[](16);
@@ -228,7 +270,7 @@ contract ConnectFourOnChain is ETour {
             tier3Prizes[i] = 0;
         }
 
-        TimeoutConfig memory timeouts3 = TimeoutConfig({
+        ETourLib_Core.TimeoutConfig memory timeouts3 = ETourLib_Core.TimeoutConfig({
             matchTimePerPlayer: 5 minutes,      // 300 seconds per player
             timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
             matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
@@ -237,15 +279,17 @@ contract ConnectFourOnChain is ETour {
             enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
         });
 
-        _registerTier(
+        ETourLib_Core.registerTier(
+            _etourStorage,
             3,                              // tierId
             16,                             // playerCount
             20,                              // instanceCount
             0.01 ether,                     // entryFee
-            Mode.Classic,
+            ETourLib_Core.Mode.Classic,
             timeouts3,
             tier3Prizes
         );
+        emit TierRegistered(3, 16, 20, 0.01 ether);
 
         // ============ Configure Raffle Thresholds ============
         // Progressive thresholds: 0.2, 0.4, 0.6, 0.8, 1.0 ETH for first 5 raffles
@@ -257,71 +301,301 @@ contract ConnectFourOnChain is ETour {
         thresholds[3] = 0.8 ether;
         thresholds[4] = 1.0 ether;
 
-        _registerRaffleThresholds(thresholds, 1.0 ether);
+        ETourLib_Core.registerRaffleThresholds(_etourStorage, thresholds, 1.0 ether);
+        emit RaffleThresholdsRegistered(0);  // tierId not specific to raffle
     }
 
-    // ============ Pre-allocation ============
+    // ============ Enrollment Functions ============
 
-    function _preallocateAllStructs() internal {
-        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
-            TierConfig storage config = _tierConfigs[tierId];
-            uint8 playerCount = config.playerCount;
-            uint8 instanceCount = config.instanceCount;
-            uint8 totalRounds = config.totalRounds;
+    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
+        (bool shouldEmitInit, bool shouldStart, uint256 ownerShare,
+         uint256 protocolShare, uint256 participantsShare) =
+            ETourLib_Core.enrollInTournamentLogic(
+                _etourStorage, tierId, instanceId, msg.sender, msg.value
+            );
 
-            for (uint8 instanceId = 0; instanceId < instanceCount; instanceId++) {
-                TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                tournament.tierId = tierId;
-                tournament.instanceId = instanceId;
-                tournament.status = TournamentStatus.Enrolling;
-                tournament.mode = config.mode;
-                tournament.currentRound = 0;
-                tournament.enrolledCount = 0;
-                tournament.prizePool = 0;
-                tournament.startTime = 0;
-                tournament.winner = address(0);
-                tournament.coWinner = address(0);
-                tournament.finalsWasDraw = false;
-                tournament.allDrawResolution = false;
-                tournament.allDrawRound = NO_ROUND;
+        if (shouldEmitInit) {
+            emit TournamentInitialized(tierId, instanceId);
+        }
 
-                for (uint8 roundNum = 0; roundNum < totalRounds; roundNum++) {
-                    uint8 matchCount = _getMatchCountForRoundInternal(playerCount, roundNum);
+        // Send owner share
+        (bool success, ) = payable(owner).call{value: ownerShare}("");
+        require(success, "Owner fee transfer failed");
+        emit OwnerFeePaid(owner, ownerShare);
+        emit ProtocolFeePaid(address(this), protocolShare);
 
-                    Round storage round = rounds[tierId][instanceId][roundNum];
-                    round.totalMatches = matchCount;
-                    round.completedMatches = 0;
-                    round.initialized = false;
-                    round.drawCount = 0;
-                    round.allMatchesDrew = false;
+        emit PlayerEnrolled(tierId, instanceId, msg.sender,
+            _etourStorage.tournaments[tierId][instanceId].enrolledCount);
 
-                    for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
-                        bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
-                        Match storage matchData = matches[matchId];
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
 
-                        matchData.player1 = address(0);
-                        matchData.player2 = address(0);
-                        matchData.currentTurn = address(0);
-                        matchData.winner = address(0);
-                        matchData.status = MatchStatus.NotStarted;
-                        matchData.lastMoveTime = 0;
-                        matchData.startTime = 0;
-                        matchData.firstPlayer = address(0);
-                        matchData.isDraw = false;
-                        matchData.moveCount = 0;
-                        matchData.lastColumn = NO_COLUMN;
-                        matchData.player1TimeRemaining = 0;
-                        matchData.player2TimeRemaining = 0;
-                        matchData.lastMoveTimestamp = 0;
-
-                        for (uint8 i = 0; i < TOTAL_CELLS; i++) {
-                            matchData.board[i] = Cell.Empty;
-                        }
-                    }
-                }
-            }
+        if (shouldStart) {
+            _startTournament(tierId, instanceId);
         }
     }
+
+    function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
+        ETourLib_Core.forceStartTournamentLogic(_etourStorage, tierId, instanceId, msg.sender);
+        _startTournament(tierId, instanceId);
+    }
+
+    // ============ View Functions ============
+
+    function getTournament(uint8 tierId, uint8 instanceId)
+        external view returns (ETourLib_Core.TournamentInstance memory) {
+        return ETourLib_Core.getTournament(_etourStorage, tierId, instanceId);
+    }
+
+    function getTournamentInfo(uint8 tierId, uint8 instanceId)
+        external view returns (
+            ETourLib_Core.TournamentStatus status,
+            uint8 enrolledCount,
+            uint8 currentRound,
+            address winner,
+            uint256 prizePool
+        ) {
+        ETourLib_Core.TournamentInstance storage tournament = _etourStorage.tournaments[tierId][instanceId];
+        return (
+            tournament.status,
+            tournament.enrolledCount,
+            tournament.currentRound,
+            tournament.winner,
+            tournament.prizePool
+        );
+    }
+
+    function getPlayerStats(address player)
+        external view returns (ETourLib_Core.PlayerStats memory) {
+        return ETourLib_Core.getPlayerStats(_etourStorage, player);
+    }
+
+    function getLeaderboard(uint256 startIndex, uint256 count)
+        external view returns (ETourLib_Core.LeaderboardEntry[] memory) {
+        return ETourLib_Prizes.getLeaderboard(_etourStorage);
+    }
+
+    function tierConfigs(uint8 tierId)
+        external view returns (ETourLib_Core.TierConfig memory) {
+        return ETourLib_Core.getTierConfig(_etourStorage, tierId);
+    }
+
+    function getTimeoutConfig(uint8 tierId)
+        external view returns (ETourLib_Core.TimeoutConfig memory) {
+        return _etourStorage.tierConfigs[tierId].timeouts;
+    }
+
+    function getAllTierIds() external view returns (uint8[] memory) {
+        return ETourLib_Core.getAllTierIds(_etourStorage);
+    }
+
+    function isEnrolled(uint8 tierId, uint8 instanceId, address player)
+        external view returns (bool) {
+        return _etourStorage.isEnrolled[tierId][instanceId][player];
+    }
+
+    function getEnrolledPlayers(uint8 tierId, uint8 instanceId)
+        external view returns (address[] memory) {
+        return ETourLib_Core.getEnrolledPlayers(_etourStorage, tierId, instanceId);
+    }
+
+    function getRound(uint8 tierId, uint8 instanceId, uint8 roundNumber)
+        external view returns (ETourLib_Core.Round memory) {
+        return _etourStorage.rounds[tierId][instanceId][roundNumber];
+    }
+
+    // ============ Tournament Management (Internal) ============
+
+    function _startTournament(uint8 tierId, uint8 instanceId) internal {
+        (bool isSolo, address soloWinner, uint256 prize) =
+            ETourLib_Matches.startTournamentLogic(_etourStorage, tierId, instanceId);
+
+        emit TournamentStarted(tierId, instanceId,
+            _etourStorage.tournaments[tierId][instanceId].enrolledCount);
+        _onTournamentStarted(tierId, instanceId);
+
+        if (isSolo) {
+            // Handle solo winner
+            bool sent = _sendPrize(soloWinner, prize);
+            if (sent) {
+                emit PrizeDistributed(tierId, instanceId, soloWinner, 1, prize);
+            }
+            emit TournamentCompleted(tierId, instanceId, soloWinner, prize, false, address(0));
+            ETourLib_Prizes.updatePlayerEarnings(_etourStorage, tierId, instanceId, soloWinner);
+            _resetTournament(tierId, instanceId);
+            return;
+        }
+
+        _initializeRound(tierId, instanceId, 0);
+    }
+
+    function _initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
+        (uint8 matchCount, bool hasWalkover, address walkoverPlayer, address[] memory playerPairs) =
+            ETourLib_Matches.initializeRoundLogic(_etourStorage, tierId, instanceId, roundNumber);
+
+        emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
+
+        if (hasWalkover) {
+            emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
+        }
+
+        // Create matches
+        for (uint8 i = 0; i < matchCount; i++) {
+            address p1 = playerPairs[i * 2];
+            address p2 = playerPairs[i * 2 + 1];
+            _createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
+        }
+    }
+
+    function _resetTournament(uint8 tierId, uint8 instanceId) internal {
+        // Copy players to memory before reset clears the storage
+        address[] storage playersStorage = _etourStorage.enrolledPlayers[tierId][instanceId];
+        address[] memory players = new address[](playersStorage.length);
+        for (uint256 i = 0; i < playersStorage.length; i++) {
+            players[i] = playersStorage[i];
+        }
+
+        ETourLib_Matches.resetTournamentLogic(_etourStorage, tierId, instanceId);
+        _onTournamentCompleted(tierId, instanceId, players);
+    }
+
+    function _sendPrize(address recipient, uint256 amount) internal returns (bool) {
+        if (amount == 0) return true;
+        (bool success, ) = payable(recipient).call{value: amount}("");
+        return success;
+    }
+
+    // ============ Helper Functions ============
+
+    function _getMatchId(uint8 tierId, uint8 instanceId, uint8 roundNum, uint8 matchNum)
+        internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tierId, instanceId, roundNum, matchNum));
+    }
+
+    function _addPlayerActiveMatch(address player, bytes32 matchId) internal {
+        // Track active match for player (game-specific implementation)
+    }
+
+    function _removePlayerActiveMatch(address player, bytes32 matchId) internal {
+        // Remove active match from player tracking (game-specific implementation)
+    }
+
+    function _markMatchStalled(bytes32 matchId, uint8 tierId) internal {
+        // Mark match as stalled (placeholder for now)
+    }
+
+    function _getMatchCommon(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) internal view returns (ETourLib_Core.CommonMatchData memory) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        address loser = address(0);
+        if (matchData.winner != address(0) && !matchData.isDraw) {
+            loser = (matchData.winner == matchData.player1) ? matchData.player2 : matchData.player1;
+        }
+
+        return ETourLib_Core.CommonMatchData({
+            player1: matchData.player1,
+            player2: matchData.player2,
+            winner: matchData.winner,
+            loser: loser,
+            status: matchData.status,
+            isDraw: matchData.isDraw,
+            startTime: matchData.startTime,
+            lastMoveTime: matchData.lastMoveTime,
+            endTime: 0,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: false
+        });
+    }
+
+    function _completeMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw
+    ) internal {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        ETourLib_Matches.MatchCompletionResult memory result =
+            ETourLib_Matches.completeMatchLogic(
+                _etourStorage,
+                tierId,
+                instanceId,
+                roundNumber,
+                matchNumber,
+                winner,
+                isDraw,
+                matchData.player1,
+                matchData.player2
+            );
+
+        emit MatchCompleted(matchId, winner, isDraw);
+
+        // Notify about loser elimination if there is one
+        if (result.loser != address(0)) {
+            _onPlayerEliminatedFromTournament(result.loser, tierId, instanceId, roundNumber);
+        }
+
+        _resetMatchGame(matchId);
+        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
+
+        if (result.roundCompleted) {
+            _completeRound(tierId, instanceId, roundNumber);
+        }
+    }
+
+    function _completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
+        ETourLib_Matches.RoundCompletionResult memory result =
+            ETourLib_Matches.completeRoundLogic(_etourStorage, tierId, instanceId, roundNumber);
+
+        emit RoundCompleted(tierId, instanceId, roundNumber);
+
+        if (result.shouldDistributePrizes) {
+            _distributePrizes(tierId, instanceId);
+        } else if (result.shouldAdvanceToNextRound) {
+            _initializeRound(tierId, instanceId, roundNumber + 1);
+        }
+    }
+
+    function _distributePrizes(uint8 tierId, uint8 instanceId) internal {
+        ETourLib_Prizes.PrizeDistributionPlan memory plan =
+            ETourLib_Prizes.calculatePrizeDistribution(_etourStorage, tierId, instanceId);
+
+        ETourLib_Core.TournamentInstance storage tournament = _etourStorage.tournaments[tierId][instanceId];
+
+        for (uint256 i = 0; i < plan.recipients.length; i++) {
+            if (plan.amounts[i] > 0) {
+                bool sent = _sendPrize(plan.recipients[i], plan.amounts[i]);
+                if (sent) {
+                    emit PrizeDistributed(tierId, instanceId, plan.recipients[i], uint8(i + 1), plan.amounts[i]);
+                }
+                ETourLib_Prizes.updatePlayerEarnings(_etourStorage, tierId, instanceId, plan.recipients[i]);
+            }
+        }
+
+        emit TournamentCompleted(
+            tierId,
+            instanceId,
+            tournament.winner,
+            plan.amounts.length > 0 ? plan.amounts[0] : 0,
+            tournament.finalsWasDraw,
+            tournament.coWinner
+        );
+
+        _resetTournament(tierId, instanceId);
+    }
+
+    // ============ Internal Helper Functions ============
 
     function _getMatchCountForRoundInternal(uint8 playerCount, uint8 roundNumber) internal pure returns (uint8) {
         if (roundNumber == 0) {
@@ -344,7 +618,7 @@ contract ConnectFourOnChain is ETour {
         uint8 matchNumber,
         address player1,
         address player2
-    ) internal override {
+    ) internal {
         require(player1 != player2, "Cannot match player against themselves");
         require(player1 != address(0) && player2 != address(0), "Invalid player address");
 
@@ -365,7 +639,7 @@ contract ConnectFourOnChain is ETour {
         matchData.currentTurn = (randomness % 2 == 0) ? player1 : player2;
         matchData.firstPlayer = matchData.currentTurn;
 
-        matchData.status = MatchStatus.InProgress;
+        matchData.status = ETourLib_Core.MatchStatus.InProgress;
         matchData.startTime = block.timestamp;
         matchData.lastMoveTime = block.timestamp;
         matchData.winner = address(0);
@@ -379,7 +653,7 @@ contract ConnectFourOnChain is ETour {
         }
 
         // Initialize time banks for both players
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        uint256 timePerPlayer = _etourStorage.tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
@@ -390,14 +664,14 @@ contract ConnectFourOnChain is ETour {
         emit MatchStarted(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
 
-    function _resetMatchGame(bytes32 matchId) internal override {
+    function _resetMatchGame(bytes32 matchId) internal {
         Match storage matchData = matches[matchId];
 
         matchData.player1 = address(0);
         matchData.player2 = address(0);
         matchData.currentTurn = address(0);
         matchData.winner = address(0);
-        matchData.status = MatchStatus.NotStarted;
+        matchData.status = ETourLib_Core.MatchStatus.NotStarted;
         matchData.lastMoveTime = 0;
         matchData.startTime = 0;
         matchData.firstPlayer = address(0);
@@ -410,7 +684,7 @@ contract ConnectFourOnChain is ETour {
         }
     }
 
-    function _getMatchResult(bytes32 matchId) internal view override returns (address winner, bool isDraw, MatchStatus status) {
+    function _getMatchResult(bytes32 matchId) internal view returns (address winner, bool isDraw, ETourLib_Core.MatchStatus status) {
         Match storage matchData = matches[matchId];
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
@@ -420,7 +694,7 @@ contract ConnectFourOnChain is ETour {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) internal override {
+    ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
@@ -457,12 +731,12 @@ contract ConnectFourOnChain is ETour {
         emit MatchCached(matchKey, cacheIndex, matchData.player1, matchData.player2);
     }
 
-    function _getMatchPlayers(bytes32 matchId) internal view override returns (address player1, address player2) {
+    function _getMatchPlayers(bytes32 matchId) internal view returns (address player1, address player2) {
         Match storage matchData = matches[matchId];
         return (matchData.player1, matchData.player2);
     }
 
-    function _getTimeIncrement() internal view override returns (uint256) {
+    function _getTimeIncrement() internal view returns (uint256) {
         // Note: This function is called during match, so we get config from the match's tier
         // In practice, all tiers in ConnectFourOnChain use 15 seconds
         return 15 seconds; // Fischer increment: 15 seconds per move
@@ -472,11 +746,11 @@ contract ConnectFourOnChain is ETour {
      * @dev Check if the current player has run out of time
      * Used by escalation system to detect stalled matches
      */
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view override returns (bool) {
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view returns (bool) {
         Match storage matchData = matches[matchId];
 
         // If match is not in progress, return false
-        if (matchData.status != MatchStatus.InProgress) {
+        if (matchData.status != ETourLib_Core.MatchStatus.InProgress) {
             return false;
         }
 
@@ -495,7 +769,7 @@ contract ConnectFourOnChain is ETour {
         return timeElapsed >= currentPlayerTimeRemaining;
     }
 
-    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal override {
+    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal {
         Match storage matchData = matches[matchId];
         if (slot == 0) {
             matchData.player1 = player;
@@ -504,12 +778,12 @@ contract ConnectFourOnChain is ETour {
         }
     }
 
-    function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal override {
+    function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal {
         Match storage matchData = matches[matchId];
 
         require(matchData.player1 != matchData.player2, "Cannot match player against themselves");
 
-        matchData.status = MatchStatus.InProgress;
+        matchData.status = ETourLib_Core.MatchStatus.InProgress;
         matchData.lastMoveTime = block.timestamp;
         matchData.startTime = block.timestamp;
         matchData.moveCount = 0;
@@ -531,24 +805,24 @@ contract ConnectFourOnChain is ETour {
         }
 
         // Initialize time banks for both players
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        uint256 timePerPlayer = _etourStorage.tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player1TimeRemaining = timePerPlayer;
         matchData.player2TimeRemaining = timePerPlayer;
         matchData.lastMoveTimestamp = block.timestamp;
     }
 
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal override {
+    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal {
         Match storage matchData = matches[matchId];
-        matchData.status = MatchStatus.Completed;
+        matchData.status = ETourLib_Core.MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
     }
 
-    function _isMatchActive(bytes32 matchId) internal view override returns (bool) {
+    function _isMatchActive(bytes32 matchId) internal view returns (bool) {
         Match storage matchData = matches[matchId];
         // Active if player1 assigned and not completed
         return matchData.player1 != address(0) &&
-               matchData.status != MatchStatus.Completed;
+               matchData.status != ETourLib_Core.MatchStatus.Completed;
     }
 
     function _getActiveMatchData(
@@ -557,7 +831,7 @@ contract ConnectFourOnChain is ETour {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) internal view override returns (ETour.CommonMatchData memory) {
+    ) internal view returns (ETourLib_Core.CommonMatchData memory) {
         Match storage matchData = matches[matchId];
 
         // Derive loser
@@ -568,7 +842,7 @@ contract ConnectFourOnChain is ETour {
                 : matchData.player1;
         }
 
-        return ETour.CommonMatchData({
+        return ETourLib_Core.CommonMatchData({
             player1: matchData.player1,
             player2: matchData.player2,
             winner: matchData.winner,
@@ -592,7 +866,7 @@ contract ConnectFourOnChain is ETour {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) internal view override returns (ETour.CommonMatchData memory data, bool exists) {
+    ) internal view returns (ETourLib_Core.CommonMatchData memory data, bool exists) {
         // Get player addresses from matchId
         (address player1, address player2) = _getMatchPlayers(matchId);
 
@@ -629,12 +903,12 @@ contract ConnectFourOnChain is ETour {
         }
 
         // Populate CommonMatchData
-        data = ETour.CommonMatchData({
+        data = ETourLib_Core.CommonMatchData({
             player1: cached.player1,
             player2: cached.player2,
             winner: cached.winner,
             loser: loser,
-            status: MatchStatus.Completed,
+            status: ETourLib_Core.MatchStatus.Completed,
             isDraw: cached.isDraw,
             startTime: cached.startTime,
             lastMoveTime: cached.endTime,
@@ -660,7 +934,7 @@ contract ConnectFourOnChain is ETour {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
+        require(matchData.status == ETourLib_Core.MatchStatus.InProgress, "Match not active");
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
         require(msg.sender != matchData.currentTurn, "Cannot claim timeout on your own turn");
 
@@ -686,7 +960,7 @@ contract ConnectFourOnChain is ETour {
 
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
-        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+        _completeMatch(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
     }
 
     // ============ Player Actions ============
@@ -705,7 +979,7 @@ contract ConnectFourOnChain is ETour {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        require(matchData.status == MatchStatus.InProgress, "Match not in progress");
+        require(matchData.status == ETourLib_Core.MatchStatus.InProgress, "Match not in progress");
         require(msg.sender == matchData.currentTurn, "Not your turn");
         require(column < COLS, "Invalid column");
 
@@ -759,13 +1033,13 @@ contract ConnectFourOnChain is ETour {
 
         // Check for win
         if (_checkWin(matchData.board, piece, targetRow, column)) {
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+            _completeMatch(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
             return;
         }
 
         // Check for draw (board full)
         if (matchData.moveCount == TOTAL_CELLS) {
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+            _completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
             return;
         }
 
@@ -773,77 +1047,6 @@ contract ConnectFourOnChain is ETour {
         matchData.currentTurn = (matchData.currentTurn == matchData.player1) 
             ? matchData.player2 
             : matchData.player1;
-    }
-
-    function _completeMatchInternal(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw
-    ) internal {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
-        matchData.isDraw = isDraw;
-
-        // Add to match cache
-        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
-
-        // Update player stats
-        playerStats[matchData.player1].matchesPlayed++;
-        playerStats[matchData.player2].matchesPlayed++;
-
-        if (!isDraw) {
-            playerStats[winner].matchesWon++;
-            _assignRankingOnElimination(tierId, instanceId, roundNumber,
-                (winner == matchData.player1) ? matchData.player2 : matchData.player1);
-        } else {
-            // Both players are marked as eliminated with same round
-            _assignRankingOnElimination(tierId, instanceId, roundNumber, matchData.player1);
-            _assignRankingOnElimination(tierId, instanceId, roundNumber, matchData.player2);
-        }
-
-        // Remove from active matches
-        _removePlayerActiveMatch(matchData.player1, matchId);
-        _removePlayerActiveMatch(matchData.player2, matchId);
-
-        emit MatchCompleted(matchId, winner, isDraw);
-
-        // Handle tournament progression
-        TierConfig storage config = _tierConfigs[tierId];
-        if (!isDraw && roundNumber < config.totalRounds - 1) {
-            _advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
-        }
-
-        Round storage round = rounds[tierId][instanceId][roundNumber];
-        if (isDraw) {
-            round.drawCount++;
-        }
-        round.completedMatches++;
-
-        // Check if round is complete
-        if (round.completedMatches == round.totalMatches) {
-            // Check for all-draw scenario
-            if (round.drawCount == round.totalMatches && round.totalMatches > 1) {
-                round.allMatchesDrew = true;
-                _handleAllDrawRound(tierId, instanceId, roundNumber);
-            } else {
-                if (_hasOrphanedWinners(tierId, instanceId, roundNumber)) {
-                    _processOrphanedWinners(tierId, instanceId, roundNumber);
-                }
-                _completeRound(tierId, instanceId, roundNumber);
-            }
-        }
-    }
-
-    function _handleAllDrawRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
-        address[] memory remainingPlayers = _getRemainingPlayers(tierId, instanceId, roundNumber);
-        emit AllDrawRoundDetected(tierId, instanceId, roundNumber, uint8(remainingPlayers.length));
-        _completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
     }
 
     // ============ Game Logic ============
@@ -938,7 +1141,7 @@ contract ConnectFourOnChain is ETour {
         uint8 matchNumber
     ) public view returns (ConnectFourMatchData memory) {
         // Call base to get common data with cache fallback
-        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+        ETourLib_Core.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
 
         ConnectFourMatchData memory fullData;
         fullData.common = common;
@@ -990,8 +1193,8 @@ contract ConnectFourOnChain is ETour {
         Match storage matchData = matches[matchId];
 
         // For completed or not started matches, return stored values
-        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
-        if (common.status != ETour.MatchStatus.InProgress) {
+        ETourLib_Core.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
+        if (common.status != ETourLib_Core.MatchStatus.InProgress) {
             return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
         }
 
@@ -1085,37 +1288,12 @@ contract ConnectFourOnChain is ETour {
         return matchData.board[topCellIndex] == Cell.Empty;
     }
 
-    /**
-     * @dev Override RW3 declaration for ConnectFourOnChain specifics
-     */
-    function declareRW3() public view override returns (string memory) {
-        return string(abi.encodePacked(
-            "=== RW3 COMPLIANCE DECLARATION ===\n\n",
-            "PROJECT: ConnectFourOnChain (ETour Implementation)\n",
-            "VERSION: 1.0 (Configuration-Driven)\n",
-            "NETWORK: Arbitrum One\n",
-            "VERIFIED: Block deployed\n\n",
-            "RULE 1 - REAL UTILITY:\n",
-            "Classic Connect Four tournament gaming with ETH stakes. Strategic column-drop competition.\n\n",
-            "RULE 2 - FULLY ON-CHAIN:\n",
-            "All game logic, gravity mechanics, tournament brackets, and prize distribution executed via smart contract.\n\n",
-            "RULE 3 - SELF-SUSTAINING:\n",
-            "Protocol fee structure covers operational costs. Contract functions autonomously without admin intervention.\n\n",
-            "RULE 4 - FAIR DISTRIBUTION:\n",
-            "No pre-mine, no insider allocations. All ETH in prize pools comes from player entry fees.\n\n",
-            "RULE 5 - NO ALTCOINS:\n",
-            "Uses only ETH for entry fees and prizes. No governance tokens, no protocol tokens.\n\n",
-            "Generated: Block ",
-            Strings.toString(block.number)
-        ));
-    }
-
     // ============ Player Activity Tracking Implementation ============
 
     /**
      * @dev Hook called when player enrolls in tournament
      */
-    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal {
         _addPlayerEnrollingTournament(player, tierId, instanceId);
     }
 
@@ -1123,8 +1301,8 @@ contract ConnectFourOnChain is ETour {
      * @dev Hook called when tournament starts
      * Atomically moves ALL enrolled players from enrolling → active
      */
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal {
+        address[] storage players = _etourStorage.enrolledPlayers[tierId][instanceId];
 
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
@@ -1142,7 +1320,7 @@ contract ConnectFourOnChain is ETour {
         uint8 tierId,
         uint8 instanceId,
         uint8 /* roundNumber */
-    ) internal override {
+    ) internal {
         // Check if player has any remaining active matches in this tournament
         bool hasActiveMatch = _playerHasActiveMatchInTournament(player, tierId, instanceId);
 
@@ -1159,7 +1337,7 @@ contract ConnectFourOnChain is ETour {
         uint8 tierId,
         uint8 instanceId,
         address player
-    ) internal override {
+    ) internal {
         _addPlayerActiveTournament(player, tierId, instanceId);
     }
 
@@ -1171,7 +1349,7 @@ contract ConnectFourOnChain is ETour {
         uint8 tierId,
         uint8 instanceId,
         address[] memory players
-    ) internal override {
+    ) internal {
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             _removePlayerEnrollingTournament(player, tierId, instanceId);
@@ -1234,11 +1412,11 @@ contract ConnectFourOnChain is ETour {
         uint8 tierId,
         uint8 instanceId
     ) private view returns (bool) {
-        bytes32[] storage matches = playerActiveMatches[player];
+        bytes32[] storage matches = _etourStorage.playerActiveMatches[player];
 
-        TierConfig storage config = _tierConfigs[tierId];
+        ETourLib_Core.TierConfig storage config = _etourStorage.tierConfigs[tierId];
         for (uint8 r = 0; r < config.totalRounds; r++) {
-            Round storage round = rounds[tierId][instanceId][r];
+            ETourLib_Core.Round storage round = _etourStorage.rounds[tierId][instanceId][r];
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
 
@@ -1298,7 +1476,7 @@ contract ConnectFourOnChain is ETour {
      * @return gameVersion Version string
      * @return gameDescription Short description
      */
-    function getGameMetadata() external pure override returns (
+    function getGameMetadata() external pure returns (
         string memory gameName,
         string memory gameVersion,
         string memory gameDescription

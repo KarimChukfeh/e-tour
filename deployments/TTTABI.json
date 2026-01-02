@@ -1,9 +1,9 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-02T02:16:39.555Z",
+  "deployedAt": "2026-01-02T13:09:38.139Z",
   "abi": [
     {
       "inputs": [],
@@ -14,6 +14,31 @@
       "inputs": [],
       "name": "ReentrancyGuardReentrantCall",
       "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "AbandonedPoolClaimed",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -75,6 +100,37 @@
         }
       ],
       "name": "EnrollmentPoolClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "EnrollmentRefunded",
       "type": "event"
     },
     {
@@ -899,7 +955,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -963,7 +1019,7 @@
           "type": "uint8"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -976,7 +1032,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -989,7 +1045,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -1002,7 +1058,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -1073,7 +1129,7 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "canReset",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -1177,46 +1233,7 @@
           "type": "string"
         }
       ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "drawParticipants",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -1235,58 +1252,6 @@
       "name": "enrollInTournament",
       "outputs": [],
       "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "enrolledPlayers",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "executeProtocolRaffle",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "ownerAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "winnerAmount",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1732,11 +1697,47 @@
             },
             {
               "internalType": "int256",
-              "name": "earnings",
+              "name": "netEarnings",
               "type": "int256"
             }
           ],
-          "internalType": "struct ETour.LeaderboardEntry[]",
+          "internalType": "struct ETourLib_Core.LeaderboardEntry[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "startIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "name": "getLeaderboard",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "internalType": "int256",
+              "name": "netEarnings",
+              "type": "int256"
+            }
+          ],
+          "internalType": "struct ETourLib_Core.LeaderboardEntry[]",
           "name": "",
           "type": "tuple[]"
         }
@@ -1807,7 +1808,7 @@
                   "type": "address"
                 },
                 {
-                  "internalType": "enum ETour.MatchStatus",
+                  "internalType": "enum ETourLib_Core.MatchStatus",
                   "name": "status",
                   "type": "uint8"
                 },
@@ -1857,7 +1858,7 @@
                   "type": "bool"
                 }
               ],
-              "internalType": "struct ETour.CommonMatchData",
+              "internalType": "struct ETourLib_Core.CommonMatchData",
               "name": "common",
               "type": "tuple"
             },
@@ -1906,40 +1907,6 @@
           "internalType": "uint8",
           "name": "tierId",
           "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "getMatchId",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "pure",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
         }
       ],
       "name": "getMatchTimePerPlayer",
@@ -1948,25 +1915,6 @@
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "player",
-          "type": "address"
-        }
-      ],
-      "name": "getPlayerActiveMatches",
-      "outputs": [
-        {
-          "internalType": "bytes32[]",
-          "name": "",
-          "type": "bytes32[]"
         }
       ],
       "stateMutability": "view",
@@ -2059,12 +2007,53 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        }
+      ],
+      "name": "getPlayerStats",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "tournamentsWon",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "tournamentsPlayed",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "matchesWon",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "matchesPlayed",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ETourLib_Core.PlayerStats",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "getPlayerStats",
       "outputs": [
         {
           "internalType": "int256",
-          "name": "totalEarnings",
+          "name": "",
           "type": "int256"
         }
       ],
@@ -2088,7 +2077,7 @@
       "outputs": [
         {
           "internalType": "uint8",
-          "name": "percentage",
+          "name": "",
           "type": "uint8"
         }
       ],
@@ -2303,6 +2292,62 @@
           "type": "uint8"
         }
       ],
+      "name": "getRound",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "totalMatches",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "completedMatches",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "initialized",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "drawCount",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "allMatchesDrew",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ETourLib_Core.Round",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        }
+      ],
       "name": "getRoundInfo",
       "outputs": [
         {
@@ -2447,7 +2492,7 @@
       "name": "getTierOverview",
       "outputs": [
         {
-          "internalType": "enum ETour.TournamentStatus[]",
+          "internalType": "enum ETourLib_Core.TournamentStatus[]",
           "name": "statuses",
           "type": "uint8[]"
         },
@@ -2477,7 +2522,7 @@
       "outputs": [
         {
           "internalType": "uint8[]",
-          "name": "percentages",
+          "name": "",
           "type": "uint8[]"
         }
       ],
@@ -2538,7 +2583,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -2584,7 +2629,7 @@
               "type": "uint256"
             }
           ],
-          "internalType": "struct ETour.TimeoutConfig",
+          "internalType": "struct ETourLib_Core.TimeoutConfig",
           "name": "",
           "type": "tuple"
         }
@@ -2618,37 +2663,111 @@
           "type": "uint8"
         }
       ],
-      "name": "getTournamentInfo",
+      "name": "getTournament",
       "outputs": [
         {
-          "internalType": "enum ETour.TournamentStatus",
-          "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour.Mode",
-          "name": "mode",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "currentRound",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "enrolledCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "prizePool",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "tierId",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "instanceId",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum ETourLib_Core.TournamentStatus",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum ETourLib_Core.Mode",
+              "name": "mode",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "currentRound",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "enrolledCount",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "prizePool",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "winner",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "coWinner",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "finalsWasDraw",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "allDrawResolution",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "allDrawRound",
+              "type": "uint8"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "escalation1Start",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "escalation2Start",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "enum ETourLib_Core.EscalationLevel",
+                  "name": "activeEscalation",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "forfeitPool",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct ETourLib_Core.EnrollmentTimeoutState",
+              "name": "enrollmentTimeout",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasStartedViaTimeout",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ETourLib_Core.TournamentInstance",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -2658,17 +2777,61 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTournamentInfo",
+      "outputs": [
+        {
+          "internalType": "enum ETourLib_Core.TournamentStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "enrolledCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "currentRound",
           "type": "uint8"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "prizePool",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "player",
           "type": "address"
         }
       ],
@@ -2734,7 +2897,7 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "available",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -2768,7 +2931,7 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "available",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -2802,7 +2965,7 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "available",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -2836,7 +2999,7 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "isAdvanced",
+          "name": "",
           "type": "bool"
         }
       ],
@@ -2992,40 +3155,6 @@
           "type": "bytes32"
         }
       ],
-      "name": "matchTimeouts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "escalation1Start",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "escalation2Start",
-          "type": "uint256"
-        },
-        {
-          "internalType": "enum ETour.EscalationLevel",
-          "name": "activeEscalation",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "isStalled",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
       "name": "matches",
       "outputs": [
         {
@@ -3049,7 +3178,7 @@
           "type": "address"
         },
         {
-          "internalType": "enum ETour.MatchStatus",
+          "internalType": "enum ETourLib_Core.MatchStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -3177,25 +3306,6 @@
           "internalType": "address",
           "name": "",
           "type": "address"
-        }
-      ],
-      "name": "playerEarnings",
-      "outputs": [
-        {
-          "internalType": "int256",
-          "name": "",
-          "type": "int256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
         },
         {
           "internalType": "uint256",
@@ -3214,122 +3324,6 @@
           "internalType": "uint8",
           "name": "instanceId",
           "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "playerMatchIndex",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerPrizes",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerRanking",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerStats",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "tournamentsWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tournamentsPlayed",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesPlayed",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -3357,46 +3351,53 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "roundNumber",
           "type": "uint8"
         }
       ],
       "name": "rounds",
       "outputs": [
         {
-          "internalType": "uint8",
-          "name": "totalMatches",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "completedMatches",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "initialized",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint8",
-          "name": "drawCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "allMatchesDrew",
-          "type": "bool"
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "totalMatches",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "completedMatches",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "initialized",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "drawCount",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bool",
+              "name": "allMatchesDrew",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ETourLib_Core.Round",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -3413,60 +3414,77 @@
       "name": "tierConfigs",
       "outputs": [
         {
-          "internalType": "uint8",
-          "name": "playerCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "entryFee",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "totalRounds",
-          "type": "uint8"
-        },
-        {
           "components": [
             {
-              "internalType": "uint256",
-              "name": "matchTimePerPlayer",
-              "type": "uint256"
+              "internalType": "uint8",
+              "name": "playerCount",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "instanceCount",
+              "type": "uint8"
             },
             {
               "internalType": "uint256",
-              "name": "timeIncrementPerMove",
+              "name": "entryFee",
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "matchLevel2Delay",
-              "type": "uint256"
+              "internalType": "enum ETourLib_Core.Mode",
+              "name": "mode",
+              "type": "uint8"
             },
             {
-              "internalType": "uint256",
-              "name": "matchLevel3Delay",
-              "type": "uint256"
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "matchTimePerPlayer",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "timeIncrementPerMove",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "matchLevel2Delay",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "matchLevel3Delay",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "enrollmentWindow",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "enrollmentLevel2Delay",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct ETourLib_Core.TimeoutConfig",
+              "name": "timeouts",
+              "type": "tuple"
             },
             {
-              "internalType": "uint256",
-              "name": "enrollmentWindow",
-              "type": "uint256"
+              "internalType": "uint8",
+              "name": "totalRounds",
+              "type": "uint8"
             },
             {
-              "internalType": "uint256",
-              "name": "enrollmentLevel2Delay",
-              "type": "uint256"
+              "internalType": "bool",
+              "name": "initialized",
+              "type": "bool"
             }
           ],
-          "internalType": "struct ETour.TimeoutConfig",
-          "name": "timeouts",
+          "internalType": "struct ETourLib_Core.TierConfig",
+          "name": "",
           "type": "tuple"
         }
       ],
@@ -3490,19 +3508,6 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "name": "tournaments",
-      "outputs": [
-        {
-          "internalType": "uint8",
           "name": "tierId",
           "type": "uint8"
         },
@@ -3510,93 +3515,113 @@
           "internalType": "uint8",
           "name": "instanceId",
           "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour.TournamentStatus",
-          "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour.Mode",
-          "name": "mode",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "currentRound",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "enrolledCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "prizePool",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "startTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "coWinner",
-          "type": "address"
-        },
-        {
-          "internalType": "bool",
-          "name": "finalsWasDraw",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "allDrawResolution",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint8",
-          "name": "allDrawRound",
-          "type": "uint8"
-        },
+        }
+      ],
+      "name": "tournaments",
+      "outputs": [
         {
           "components": [
             {
-              "internalType": "uint256",
-              "name": "escalation1Start",
-              "type": "uint256"
+              "internalType": "uint8",
+              "name": "tierId",
+              "type": "uint8"
             },
             {
-              "internalType": "uint256",
-              "name": "escalation2Start",
-              "type": "uint256"
+              "internalType": "uint8",
+              "name": "instanceId",
+              "type": "uint8"
             },
             {
-              "internalType": "enum ETour.EscalationLevel",
-              "name": "activeEscalation",
+              "internalType": "enum ETourLib_Core.TournamentStatus",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum ETourLib_Core.Mode",
+              "name": "mode",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "currentRound",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "enrolledCount",
               "type": "uint8"
             },
             {
               "internalType": "uint256",
-              "name": "forfeitPool",
+              "name": "prizePool",
               "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "winner",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "coWinner",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "finalsWasDraw",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "allDrawResolution",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "allDrawRound",
+              "type": "uint8"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "escalation1Start",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "escalation2Start",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "enum ETourLib_Core.EscalationLevel",
+                  "name": "activeEscalation",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "forfeitPool",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct ETourLib_Core.EnrollmentTimeoutState",
+              "name": "enrollmentTimeout",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasStartedViaTimeout",
+              "type": "bool"
             }
           ],
-          "internalType": "struct ETour.EnrollmentTimeoutState",
-          "name": "enrollmentTimeout",
+          "internalType": "struct ETourLib_Core.TournamentInstance",
+          "name": "",
           "type": "tuple"
-        },
-        {
-          "internalType": "bool",
-          "name": "hasStartedViaTimeout",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",

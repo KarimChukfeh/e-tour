@@ -19,6 +19,57 @@ global.stateTracker = new StateTracker();
 console.log('StateTracker initialized:', typeof global.stateTracker);
 console.log('StateTracker methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(global.stateTracker)));
 
+// Global library addresses storage
+global.deployedLibraries = null;
+
+/**
+ * Deploy shared libraries once before any tests
+ * These libraries are used by all game contracts
+ */
+async function deployLibraries() {
+  if (global.deployedLibraries) {
+    return global.deployedLibraries;
+  }
+
+  console.log('📚 Deploying shared ETour libraries for tests...');
+
+  const libraries = {};
+
+  // Deploy ETourLib_Core (no dependencies)
+  const ETourLib_Core = await hre.ethers.getContractFactory("ETourLib_Core");
+  const coreLib = await ETourLib_Core.deploy();
+  await coreLib.waitForDeployment();
+  libraries.ETourLib_Core = await coreLib.getAddress();
+
+  // Deploy ETourLib_Matches (depends on ETourLib_Core)
+  const ETourLib_Matches = await hre.ethers.getContractFactory("ETourLib_Matches", {
+    libraries: { ETourLib_Core: libraries.ETourLib_Core }
+  });
+  const matchesLib = await ETourLib_Matches.deploy();
+  await matchesLib.waitForDeployment();
+  libraries.ETourLib_Matches = await matchesLib.getAddress();
+
+  // Deploy ETourLib_Prizes (no dependencies)
+  const ETourLib_Prizes = await hre.ethers.getContractFactory("ETourLib_Prizes");
+  const prizesLib = await ETourLib_Prizes.deploy();
+  await prizesLib.waitForDeployment();
+  libraries.ETourLib_Prizes = await prizesLib.getAddress();
+
+  // Deploy ChessRules (no dependencies)
+  const ChessRules = await hre.ethers.getContractFactory("ChessRules");
+  const chessRules = await ChessRules.deploy();
+  await chessRules.waitForDeployment();
+  libraries.ChessRules = await chessRules.getAddress();
+
+  console.log('  ✓ ETourLib_Core:', libraries.ETourLib_Core);
+  console.log('  ✓ ETourLib_Matches:', libraries.ETourLib_Matches);
+  console.log('  ✓ ETourLib_Prizes:', libraries.ETourLib_Prizes);
+  console.log('  ✓ ChessRules:', libraries.ChessRules);
+
+  global.deployedLibraries = libraries;
+  return libraries;
+}
+
 /**
  * Intercept contract factory creation
  * This is the magic that makes zero-modification instrumentation work
@@ -26,6 +77,35 @@ console.log('StateTracker methods:', Object.getOwnPropertyNames(Object.getProtot
 const originalGetContractFactory = hre.ethers.getContractFactory;
 
 hre.ethers.getContractFactory = async function(contractName, ...args) {
+  // Auto-inject library addresses for game contracts
+  const gameContracts = ['TicTacChain', 'ChessOnChain', 'ConnectFourOnChain'];
+
+  if (gameContracts.includes(contractName)) {
+    // Ensure libraries are deployed
+    const libraries = await deployLibraries();
+
+    // If no options object was passed, create one with libraries
+    if (args.length === 0 || typeof args[0] !== 'object' || args[0]._isSigner) {
+      // Either no args, or first arg is a signer
+      const signer = args[0]?._isSigner ? args[0] : undefined;
+      const options = {
+        libraries: {
+          ETourLib_Core: libraries.ETourLib_Core,
+          ETourLib_Matches: libraries.ETourLib_Matches,
+          ETourLib_Prizes: libraries.ETourLib_Prizes
+        }
+      };
+
+      // If ChessOnChain, also add ChessRules
+      if (contractName === 'ChessOnChain') {
+        options.libraries.ChessRules = libraries.ChessRules;
+      }
+
+      // Call original with proper args
+      args = signer ? [signer, options] : [options];
+    }
+  }
+
   // Get the original factory
   const factory = await originalGetContractFactory.call(this, contractName, ...args);
 
