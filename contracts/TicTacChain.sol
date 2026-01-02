@@ -800,6 +800,14 @@ contract TicTacChain is ETour_Storage {
         playerActiveMatches[player2].pop();
         delete playerMatchIndex[player2][matchId];
 
+        // Check if players should be removed from active tournament list
+        if (!_playerHasActiveMatchInTournament(player1, tierId, instanceId)) {
+            _removePlayerActiveTournament(player1, tierId, instanceId);
+        }
+        if (!_playerHasActiveMatchInTournament(player2, tierId, instanceId)) {
+            _removePlayerActiveTournament(player2, tierId, instanceId);
+        }
+
         // Update player stats - DIRECT storage access
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;

@@ -4,7 +4,7 @@
 import hre from "hardhat";
 import fs from "fs";
 import path from "path";
-import { deployModules } from "./deploy-modules.js";
+import { getOrDeployModules } from "./deploy-modules.js";
 
 async function main() {
     console.log("🚀 Starting Complete Modular ETour Deployment...\n");
@@ -16,8 +16,8 @@ async function main() {
     console.log("Network:", hre.network.name);
     console.log("");
 
-    // Deploy all modules once (shared across all games)
-    const modules = await deployModules();
+    // Get or deploy all modules once (shared across all games)
+    const modules = await getOrDeployModules();
 
     // Deploy TicTacChain
     console.log("=" .repeat(60));

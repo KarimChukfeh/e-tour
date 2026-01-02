@@ -4,7 +4,7 @@
 import hre from "hardhat";
 import fs from "fs";
 import path from "path";
-import { deployModules } from "./deploy-modules.js";
+import { getOrDeployModules } from "./deploy-modules.js";
 
 async function main() {
     console.log("🚀 Starting Modular TicTacChain Deployment...\n");
@@ -16,8 +16,8 @@ async function main() {
     console.log("Network:", hre.network.name);
     console.log("");
 
-    // Deploy all modules first
-    const modules = await deployModules();
+    // Get or deploy modules (reuses existing if available)
+    const modules = await getOrDeployModules();
 
     // Deploy TicTacChain with module addresses
     console.log("=" .repeat(60));

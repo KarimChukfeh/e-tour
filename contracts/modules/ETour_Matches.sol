@@ -321,7 +321,8 @@ contract ETour_Matches is ETour_Storage {
      */
     function completeTournament(uint8 tierId, uint8 instanceId, address winner) public {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        tournament.status = TournamentStatus.Completed;
+        // NOTE: Status will be set to Enrolling at the end after reset
+        // tournament.status = TournamentStatus.Completed;
 
         if (tournament.winner == address(0)) {
             tournament.winner = winner;
@@ -375,7 +376,8 @@ contract ETour_Matches is ETour_Storage {
         address[] memory remainingPlayers
     ) public {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        tournament.status = TournamentStatus.Completed;
+        // NOTE: Status will be set to Enrolling at the end after reset
+        // tournament.status = TournamentStatus.Completed;
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);

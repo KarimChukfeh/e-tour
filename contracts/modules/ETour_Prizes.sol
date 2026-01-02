@@ -251,28 +251,30 @@ contract ETour_Prizes is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
 
+        // CRITICAL: Reset status FIRST before any other operations
+        tournament.status = TournamentStatus.Enrolling;
+
         // Calculate finals matchId (last round, match 0)
         uint8 finalRound = config.totalRounds - 1;
         bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
 
         // Check if there's old finals from a previous tournament that needs caching
         // The finals is from a previous tournament if its winner doesn't match current tournament winner
-        // TEMPORARILY DISABLED: External calls from delegatecall context cause issues
-        // (address finalsWinner, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
+        (address finalsWinner, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
 
-        // if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
-        //     // Check if finals winner matches the current tournament winner
-        //     address currentWinner = tournament.winner;
+        if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
+            // Check if finals winner matches the current tournament winner
+            address currentWinner = tournament.winner;
 
-        //     // If winners don't match, this finals is from a previous tournament
-        //     if (finalsWinner != currentWinner) {
-        //         // Cache the old finals before clearing it
-        //         this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
-        //         this._resetMatchGame(finalsMatchId);
-        //     }
-        // }
+            // If winners don't match, this finals is from a previous tournament
+            if (finalsWinner != currentWinner) {
+                // Cache the old finals before clearing it
+                this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+                this._resetMatchGame(finalsMatchId);
+            }
+        }
 
-        tournament.status = TournamentStatus.Enrolling;
+        // Continue with other resets
         tournament.currentRound = 0;
         tournament.enrolledCount = 0;
         tournament.prizePool = 0;
@@ -340,16 +342,15 @@ contract ETour_Prizes is ETour_Storage {
                 }
 
                 // Clear drawParticipants for both match players
-                // TEMPORARILY DISABLED: External calls from delegatecall context cause issues
-                // (address p1, address p2) = this._getMatchPlayers(matchId);
-                // if (p1 != address(0)) {
-                //     delete drawParticipants[tierId][instanceId][roundNum][matchNum][p1];
-                // }
-                // if (p2 != address(0)) {
-                //     delete drawParticipants[tierId][instanceId][roundNum][matchNum][p2];
-                // }
+                (address p1, address p2) = this._getMatchPlayers(matchId);
+                if (p1 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p1];
+                }
+                if (p2 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p2];
+                }
 
-                // this._resetMatchGame(matchId);
+                this._resetMatchGame(matchId);
             }
         }
 

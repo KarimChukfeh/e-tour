@@ -2,6 +2,78 @@
 // Helper script to deploy ETour modules
 
 import hre from "hardhat";
+import fs from "fs";
+import path from "path";
+
+const MODULES_DEPLOYMENT_FILE = "./deployments/modules-shared.json";
+
+/**
+ * Load existing module addresses from deployment file
+ * @returns {Object|null} Module addresses or null if not found
+ */
+export function loadExistingModules() {
+    if (fs.existsSync(MODULES_DEPLOYMENT_FILE)) {
+        const data = JSON.parse(fs.readFileSync(MODULES_DEPLOYMENT_FILE, "utf8"));
+        // Verify it's for the current network
+        if (data.network === hre.network.name) {
+            console.log("📦 Found existing module deployment for network:", hre.network.name);
+            return data.modules;
+        }
+    }
+    return null;
+}
+
+/**
+ * Save module addresses to deployment file
+ * @param {Object} modules Module addresses
+ */
+export function saveModuleAddresses(modules) {
+    const deploymentsDir = "./deployments";
+    if (!fs.existsSync(deploymentsDir)) {
+        fs.mkdirSync(deploymentsDir, { recursive: true });
+    }
+
+    const deploymentData = {
+        network: hre.network.name,
+        chainId: null, // Will be set by caller if available
+        timestamp: new Date().toISOString(),
+        modules: modules
+    };
+
+    fs.writeFileSync(MODULES_DEPLOYMENT_FILE, JSON.stringify(deploymentData, null, 2));
+    console.log("💾 Module addresses saved to:", MODULES_DEPLOYMENT_FILE);
+}
+
+/**
+ * Get or deploy ETour modules
+ * Checks if modules are already deployed for this network and reuses them
+ * @param {boolean} forceDeploy Force new deployment even if modules exist
+ * @returns {Promise<Object>} Object containing all module addresses
+ */
+export async function getOrDeployModules(forceDeploy = false) {
+    // Try to load existing modules first
+    if (!forceDeploy) {
+        const existing = loadExistingModules();
+        if (existing) {
+            console.log("✅ Reusing existing module deployment");
+            console.log("  ETour_Core:       ", existing.core);
+            console.log("  ETour_Matches:    ", existing.matches);
+            console.log("  ETour_Prizes:     ", existing.prizes);
+            console.log("  ETour_Raffle:     ", existing.raffle);
+            console.log("  ETour_Escalation: ", existing.escalation);
+            console.log("");
+            return existing;
+        }
+    }
+
+    // Deploy new modules
+    const modules = await deployModules();
+
+    // Save for future use
+    saveModuleAddresses(modules);
+
+    return modules;
+}
 
 /**
  * Deploy all ETour modules and return their addresses
@@ -67,7 +139,9 @@ export async function deployModules() {
 
 // Allow running standalone
 if (import.meta.url === `file://${process.argv[1]}`) {
-    deployModules()
+    const forceDeploy = process.argv.includes("--force");
+
+    getOrDeployModules(forceDeploy)
         .then((addresses) => {
             console.log("=" .repeat(60));
             console.log("Module Addresses:");
@@ -77,6 +151,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             console.log("ETour_Prizes:     ", addresses.prizes);
             console.log("ETour_Raffle:     ", addresses.raffle);
             console.log("ETour_Escalation: ", addresses.escalation);
+            console.log("");
+            if (forceDeploy) {
+                console.log("⚠️  Forced new deployment (--force flag used)");
+            } else {
+                console.log("💡 To force new deployment, run: node scripts/deploy-modules.js --force");
+            }
             console.log("");
             process.exit(0);
         })
