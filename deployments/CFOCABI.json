@@ -3,7 +3,7 @@
   "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-01T23:52:54.677Z",
+  "deployedAt": "2026-01-02T00:46:41.658Z",
   "abi": [
     {
       "inputs": [],
@@ -1492,6 +1492,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getAllTierIds",
+      "outputs": [
+        {
+          "internalType": "uint8[]",
+          "name": "",
+          "type": "uint8[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -1739,6 +1752,57 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getFeeDistribution",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "prizePoolPercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ownerFeePercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "protocolFeePercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "basisPoints",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getGameMetadata",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "gameName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "gameVersion",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "gameDescription",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -2129,6 +2193,34 @@
     },
     {
       "inputs": [],
+      "name": "getRaffleConfiguration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "threshold",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "reserve",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ownerSharePercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "winnerSharePercentage",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "getRaffleInfo",
       "outputs": [
         {
@@ -2174,6 +2266,29 @@
         {
           "internalType": "uint256",
           "name": "eligiblePlayerCount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getRaffleThresholds",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "thresholds",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "finalThreshold",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currentThreshold",
           "type": "uint256"
         }
       ],
@@ -2318,6 +2433,118 @@
           "type": "uint8"
         }
       ],
+      "name": "getTierCapacity",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTierConfiguration",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "playerCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "entryFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "matchTimePerPlayer",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timeIncrementPerMove",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "matchLevel2Delay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "matchLevel3Delay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "enrollmentWindow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "enrollmentLevel2Delay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8[]",
+          "name": "prizeDistribution",
+          "type": "uint8[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTierInfo",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "playerCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "entryFee",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        }
+      ],
       "name": "getTierOverview",
       "outputs": [
         {
@@ -2353,6 +2580,50 @@
           "internalType": "uint8[]",
           "name": "percentages",
           "type": "uint8[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTierTimeouts",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "matchTimePerPlayer",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timeIncrementPerMove",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "matchLevel2Delay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "matchLevel3Delay",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "enrollmentWindow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "enrollmentLevel2Delay",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -2417,6 +2688,19 @@
           "internalType": "struct ETour.TimeoutConfig",
           "name": "",
           "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTotalCapacity",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "totalPlayers",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",

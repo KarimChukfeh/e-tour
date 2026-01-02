@@ -173,6 +173,8 @@ abstract contract ETour is ReentrancyGuard {
 
     // Raffle tracking
     uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
+    uint256[] private raffleThresholds;  // Configured thresholds for initial raffles
+    uint256 private raffleThresholdFinal;  // Threshold to use after initial raffles exhausted
 
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
@@ -292,6 +294,29 @@ abstract contract ETour is ReentrancyGuard {
         }
 
         emit TierRegistered(tierId, playerCount, instanceCount, entryFee);
+    }
+
+    /**
+     * @dev Register raffle threshold configuration
+     * @param thresholds Array of threshold values for initial raffles (e.g., [0.2, 0.4, 0.6, 0.8, 1.0])
+     * @param finalThreshold Threshold to use after initial thresholds are exhausted
+     * @notice Should be called once in constructor to configure raffle progression
+     *         Example for TicTacToe: thresholds = [0.2, 0.4, 0.6, 0.8, 1.0 ether], finalThreshold = 1.0 ether
+     *         This means raffles 0-4 use the array values, raffle 5+ use 1.0 ether
+     */
+    function _registerRaffleThresholds(
+        uint256[] memory thresholds,
+        uint256 finalThreshold
+    ) internal {
+        require(raffleThresholds.length == 0, "Raffle thresholds already registered");
+        require(finalThreshold > 0, "Final threshold must be greater than 0");
+
+        for (uint256 i = 0; i < thresholds.length; i++) {
+            require(thresholds[i] > 0, "Threshold must be greater than 0");
+            raffleThresholds.push(thresholds[i]);
+        }
+
+        raffleThresholdFinal = finalThreshold;
     }
 
     /**
@@ -502,10 +527,23 @@ abstract contract ETour is ReentrancyGuard {
     /**
      * @dev Returns the raffle threshold for the current raffle index
      * @return Minimum accumulatedProtocolShare required to trigger raffle
-     * @notice Child contracts can override to implement progressive thresholds
+     * @notice Uses configured thresholds from raffleThresholds array for initial raffles,
+     *         then switches to raffleThresholdFinal for subsequent raffles
+     *         If no thresholds configured, defaults to 3 ether
      */
     function _getRaffleThreshold() internal view virtual returns (uint256) {
-        return 3 ether;  // Default threshold
+        // If no raffle thresholds configured, use default
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+
+        // If currentRaffleIndex is within the configured array, use that value
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+
+        // Otherwise, use the final threshold
+        return raffleThresholdFinal;
     }
 
     /**
@@ -2470,6 +2508,218 @@ abstract contract ETour is ReentrancyGuard {
             winnerShare,
             eligiblePlayerCount
         );
+    }
+
+    // ============ Configuration Getter Functions ============
+
+    /**
+     * @dev Get all tier IDs that have been registered
+     * @return Array of tier IDs (0 to tierCount-1)
+     */
+    function getAllTierIds() external view returns (uint8[] memory) {
+        uint8[] memory tierIds = new uint8[](tierCount);
+        for (uint8 i = 0; i < tierCount; i++) {
+            tierIds[i] = i;
+        }
+        return tierIds;
+    }
+
+    /**
+     * @dev Get basic tier information
+     * @param tierId The tier ID to query
+     * @return playerCount Number of players in this tier's tournaments
+     * @return instanceCount Number of concurrent tournament instances
+     * @return entryFee Entry fee in wei
+     */
+    function getTierInfo(uint8 tierId) external view returns (
+        uint8 playerCount,
+        uint8 instanceCount,
+        uint256 entryFee
+    ) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        TierConfig storage config = _tierConfigs[tierId];
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee
+        );
+    }
+
+    /**
+     * @dev Get timeout configuration for a tier
+     * @param tierId The tier ID to query
+     * @return matchTimePerPlayer Time each player gets for entire match (seconds)
+     * @return timeIncrementPerMove Fischer increment bonus per move (seconds)
+     * @return matchLevel2Delay Delay after timeout before L2 escalation (seconds)
+     * @return matchLevel3Delay Delay after timeout before L3 escalation (seconds)
+     * @return enrollmentWindow Time to wait before force-start allowed (seconds)
+     * @return enrollmentLevel2Delay Delay before L2 enrollment escalation (seconds)
+     */
+    function getTierTimeouts(uint8 tierId) external view returns (
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove,
+        uint256 matchLevel2Delay,
+        uint256 matchLevel3Delay,
+        uint256 enrollmentWindow,
+        uint256 enrollmentLevel2Delay
+    ) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        TimeoutConfig storage timeouts = _tierConfigs[tierId].timeouts;
+        return (
+            timeouts.matchTimePerPlayer,
+            timeouts.timeIncrementPerMove,
+            timeouts.matchLevel2Delay,
+            timeouts.matchLevel3Delay,
+            timeouts.enrollmentWindow,
+            timeouts.enrollmentLevel2Delay
+        );
+    }
+
+    /**
+     * @dev Get complete tier configuration in one call
+     * @param tierId The tier ID to query
+     * @return playerCount Number of players in tournament
+     * @return instanceCount Number of concurrent instances
+     * @return entryFee Entry fee in wei
+     * @return matchTimePerPlayer Time per player (seconds)
+     * @return timeIncrementPerMove Fischer increment (seconds)
+     * @return matchLevel2Delay L2 escalation delay (seconds)
+     * @return matchLevel3Delay L3 escalation delay (seconds)
+     * @return enrollmentWindow Enrollment timeout window (seconds)
+     * @return enrollmentLevel2Delay Enrollment L2 delay (seconds)
+     * @return prizeDistribution Prize percentages array
+     */
+    function getTierConfiguration(uint8 tierId) external view returns (
+        uint8 playerCount,
+        uint8 instanceCount,
+        uint256 entryFee,
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove,
+        uint256 matchLevel2Delay,
+        uint256 matchLevel3Delay,
+        uint256 enrollmentWindow,
+        uint256 enrollmentLevel2Delay,
+        uint8[] memory prizeDistribution
+    ) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        TierConfig storage config = _tierConfigs[tierId];
+        TimeoutConfig storage timeouts = config.timeouts;
+
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee,
+            timeouts.matchTimePerPlayer,
+            timeouts.timeIncrementPerMove,
+            timeouts.matchLevel2Delay,
+            timeouts.matchLevel3Delay,
+            timeouts.enrollmentWindow,
+            timeouts.enrollmentLevel2Delay,
+            _tierPrizeDistribution[tierId]
+        );
+    }
+
+    /**
+     * @dev Get total capacity across all tiers
+     * @return totalPlayers Maximum number of concurrent players across all tiers
+     */
+    function getTotalCapacity() external view returns (uint256 totalPlayers) {
+        for (uint8 i = 0; i < tierCount; i++) {
+            if (_tierConfigs[i].initialized) {
+                TierConfig storage config = _tierConfigs[i];
+                totalPlayers += uint256(config.playerCount) * uint256(config.instanceCount);
+            }
+        }
+        return totalPlayers;
+    }
+
+    /**
+     * @dev Get maximum concurrent players for a specific tier
+     * @param tierId The tier ID to query
+     * @return capacity Maximum concurrent players (playerCount * instanceCount)
+     */
+    function getTierCapacity(uint8 tierId) external view returns (uint256) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        TierConfig storage config = _tierConfigs[tierId];
+        return uint256(config.playerCount) * uint256(config.instanceCount);
+    }
+
+    /**
+     * @dev Get protocol fee distribution percentages
+     * @return prizePoolPercentage Percentage to prize pool (9000 = 90%)
+     * @return ownerFeePercentage Percentage to owner (750 = 7.5%)
+     * @return protocolFeePercentage Percentage to protocol (250 = 2.5%)
+     * @return basisPoints Total basis points (10000 = 100%)
+     */
+    function getFeeDistribution() external pure returns (
+        uint256 prizePoolPercentage,
+        uint256 ownerFeePercentage,
+        uint256 protocolFeePercentage,
+        uint256 basisPoints
+    ) {
+        return (
+            PARTICIPANTS_SHARE_BPS,
+            OWNER_SHARE_BPS,
+            PROTOCOL_SHARE_BPS,
+            BASIS_POINTS
+        );
+    }
+
+    /**
+     * @dev Get raffle configuration for current raffle
+     * @return threshold Amount needed to trigger current raffle (e.g., 3 ether)
+     * @return reserve Amount kept as reserve after raffle (10% of threshold)
+     * @return ownerSharePercentage Owner's share of distributed amount (20%)
+     * @return winnerSharePercentage Winner's share of distributed amount (80%)
+     */
+    function getRaffleConfiguration() external view returns (
+        uint256 threshold,
+        uint256 reserve,
+        uint256 ownerSharePercentage,
+        uint256 winnerSharePercentage
+    ) {
+        threshold = _getRaffleThreshold();
+        reserve = _getRaffleReserve();
+        return (
+            threshold,
+            reserve,
+            20,  // 20% to owner
+            80   // 80% to winner
+        );
+    }
+
+    /**
+     * @dev Get complete raffle threshold configuration
+     * @return thresholds Array of configured thresholds for initial raffles
+     * @return finalThreshold Threshold used after initial thresholds exhausted
+     * @return currentThreshold Current raffle threshold (based on currentRaffleIndex)
+     * @notice Returns the raffle threshold progression configured at deployment
+     *         Example: thresholds=[0.2, 0.4, 0.6, 0.8, 1.0], finalThreshold=1.0
+     *         means raffles 0-4 use array values, raffle 5+ use 1.0 ether
+     */
+    function getRaffleThresholds() external view returns (
+        uint256[] memory thresholds,
+        uint256 finalThreshold,
+        uint256 currentThreshold
+    ) {
+        thresholds = raffleThresholds;
+        finalThreshold = raffleThresholdFinal;
+        currentThreshold = _getRaffleThreshold();
+        return (thresholds, finalThreshold, currentThreshold);
+    }
+
+    /**
+     * @dev Get game metadata - to be overridden by implementing contracts
+     * @return gameName Name of the game
+     * @return gameVersion Version string
+     * @return gameDescription Short description
+     */
+    function getGameMetadata() external view virtual returns (
+        string memory gameName,
+        string memory gameVersion,
+        string memory gameDescription
+    ) {
+        return ("ETour Base", "1.0.0", "Universal tournament protocol");
     }
 
     // ============ Protocol Raffle System ============

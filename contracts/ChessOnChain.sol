@@ -210,6 +210,18 @@ contract ChessOnChain is ETour {
             timeouts1,
             tier1Prizes
         );
+
+        // ============ Configure Raffle Thresholds ============
+        // Progressive thresholds: 0.2, 0.4, 0.6, 0.8, 1.0 ETH for first 5 raffles
+        // Then 1.0 ETH for all subsequent raffles
+        uint256[] memory thresholds = new uint256[](5);
+        thresholds[0] = 0.2 ether;
+        thresholds[1] = 0.4 ether;
+        thresholds[2] = 0.6 ether;
+        thresholds[3] = 0.8 ether;
+        thresholds[4] = 1.0 ether;
+
+        _registerRaffleThresholds(thresholds, 1.0 ether);
     }
 
     // ============ ETour Abstract Implementation ============
@@ -1811,5 +1823,23 @@ contract ChessOnChain is ETour {
     {
         isEnrolling = playerEnrollingIndex[player][tierId][instanceId] != 0;
         isActive = playerActiveIndex[player][tierId][instanceId] != 0;
+    }
+
+    /**
+     * @dev Override to provide Chess-specific game metadata
+     * @return gameName Name of the game
+     * @return gameVersion Version string
+     * @return gameDescription Short description
+     */
+    function getGameMetadata() external pure override returns (
+        string memory gameName,
+        string memory gameVersion,
+        string memory gameDescription
+    ) {
+        return (
+            "ChessOnChain",
+            "1.0.0",
+            "Full chess implementation with tournaments, special moves, and draw conditions"
+        );
     }
 }
