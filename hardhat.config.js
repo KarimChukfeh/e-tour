@@ -114,7 +114,7 @@ export default {
   },
   mocha: {
     // Global test setup file (injects logger) - must be CommonJS
-    require: ['./test/setup.cjs'],
+    require: [join(__dirname, 'test', 'setup.cjs')],
     // Configure timeout (40 seconds default)
     timeout: 40000,
     // Use custom reporter if SCIENTIFIC_REPORT env var is set

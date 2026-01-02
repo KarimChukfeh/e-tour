@@ -1,0 +1,13 @@
+{
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "pending": 0,
+    "skipped": 0,
+    "totalDuration": 0,
+    "totalGas": "0",
+    "totalTransactions": 0
+  },
+  "tests": []
+}
