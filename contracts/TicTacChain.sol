@@ -210,11 +210,11 @@ contract TicTacChain is ETour {
         // Progressive thresholds: 0.2, 0.4, 0.6, 0.8, 1.0 ETH for first 5 raffles
         // Then 1.0 ETH for all subsequent raffles
         uint256[] memory thresholds = new uint256[](5);
-        thresholds[0] = 0.2 ether;
-        thresholds[1] = 0.4 ether;
-        thresholds[2] = 0.6 ether;
-        thresholds[3] = 0.8 ether;
-        thresholds[4] = 1.0 ether;
+        thresholds[0] = 0.1 ether;
+        thresholds[1] = 0.2 ether;
+        thresholds[2] = 0.3 ether;
+        thresholds[3] = 0.3 ether;
+        thresholds[4] = 0.5 ether;
 
         _registerRaffleThresholds(thresholds, 1.0 ether);
     }
