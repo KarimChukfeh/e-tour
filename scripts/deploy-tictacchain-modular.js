@@ -29,7 +29,8 @@ async function main() {
         modules.matches,
         modules.prizes,
         modules.raffle,
-        modules.escalation
+        modules.escalation,
+        modules.gameCache
     );
     await ticTacChain.waitForDeployment();
     const ticTacChainAddress = await ticTacChain.getAddress();

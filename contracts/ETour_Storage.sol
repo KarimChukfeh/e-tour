@@ -26,6 +26,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     address public immutable MODULE_PRIZES;
     address public immutable MODULE_RAFFLE;
     address public immutable MODULE_ESCALATION;
+    address public immutable MODULE_GAME_CACHE;
 
     // ============ Constants & Immutables ============
 
@@ -202,6 +203,43 @@ abstract contract ETour_Storage is ReentrancyGuard {
     // Match-level timeout tracking for anti-stalling escalation
     mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
 
+    // ============ Game Cache Module Storage ============
+
+    /**
+     * @dev Shared cache size constant for all games
+     */
+    uint16 public constant MATCH_CACHE_SIZE = 1000;
+
+    /**
+     * @dev Generic cached match data for completed matches
+     * Stores board state as bytes to support any game type
+     */
+    struct CachedMatch {
+        address player1;
+        address player2;
+        address firstPlayer;
+        address winner;
+        uint256 startTime;
+        uint256 endTime;
+        uint8 tierId;
+        uint8 instanceId;
+        uint8 roundNumber;
+        uint8 matchNumber;
+        bool isDraw;
+        bool exists;
+        bytes boardData;  // Generic board storage (game-specific encoding)
+    }
+
+    // Circular cache with overflow handling
+    CachedMatch[1000] public sharedMatchCache;
+    uint16 public sharedNextCacheIndex;
+
+    // Lookup indexes for fast retrieval
+    mapping(bytes32 => uint16) public sharedCacheKeyToIndex;      // player pair hash => cache index
+    bytes32[1000] public sharedCacheKeys;                          // cache index => player pair hash
+    mapping(bytes32 => uint16) public sharedMatchIdToCacheIndex;  // matchId => cache index
+    bytes32[1000] public sharedCacheMatchIds;                      // cache index => matchId
+
     // ============ Events ============
 
     event TierRegistered(uint8 indexed tierId, uint8 playerCount, uint8 instanceCount, uint256 entryFee);
@@ -213,6 +251,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     event MatchStarted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     event PlayersConsolidated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, address player1, address player2);
     event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw);
+    event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
     event RoundCompleted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber);
     event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, bool finalsWasDraw, address coWinner);
     event AllDrawRoundDetected(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 remainingPlayers);
@@ -247,7 +286,8 @@ abstract contract ETour_Storage is ReentrancyGuard {
         address _moduleMatchesAddress,
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
-        address _moduleEscalationAddress
+        address _moduleEscalationAddress,
+        address _moduleGameCacheAddress
     ) {
         owner = msg.sender;
         MODULE_CORE = _moduleCoreAddress;
@@ -255,6 +295,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         MODULE_PRIZES = _modulePrizesAddress;
         MODULE_RAFFLE = _moduleRaffleAddress;
         MODULE_ESCALATION = _moduleEscalationAddress;
+        MODULE_GAME_CACHE = _moduleGameCacheAddress;
     }
 
     // ============ Helper Functions (Shared across modules) ============
@@ -392,7 +433,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view virtual returns (CommonMatchData memory data, bool exists);
+    ) public virtual returns (CommonMatchData memory data, bool exists);
 
     // ============ Hooks (Optional overrides by Game Contracts) ============
 

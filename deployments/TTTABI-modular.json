@@ -1,15 +1,16 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-02T22:13:40.177Z",
+  "deployedAt": "2026-01-03T04:51:55.636Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
     "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "gameCache": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "abi": [
     {
@@ -37,6 +38,11 @@
         {
           "internalType": "address",
           "name": "_moduleEscalationAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleGameCacheAddress",
           "type": "address"
         }
       ],
@@ -1014,6 +1020,19 @@
     },
     {
       "inputs": [],
+      "name": "MODULE_GAME_CACHE",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "MODULE_MATCHES",
       "outputs": [
         {
@@ -1435,7 +1454,7 @@
           "type": "bool"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2015,11 +2034,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum TicTacChain.Cell[9]",
-              "name": "board",
-              "type": "uint8[9]"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -2048,14 +2062,19 @@
               "internalType": "bool",
               "name": "exists",
               "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "boardData",
+              "type": "bytes"
             }
           ],
-          "internalType": "struct TicTacChain.CachedMatchData[]",
-          "name": "cachedMatches",
+          "internalType": "struct ETour_Storage.CachedMatch[]",
+          "name": "",
           "type": "tuple[]"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2119,11 +2138,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum TicTacChain.Cell[9]",
-              "name": "board",
-              "type": "uint8[9]"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -2152,14 +2166,19 @@
               "internalType": "bool",
               "name": "exists",
               "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "boardData",
+              "type": "bytes"
             }
           ],
-          "internalType": "struct TicTacChain.CachedMatchData",
+          "internalType": "struct ETour_Storage.CachedMatch",
           "name": "",
           "type": "tuple"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2205,11 +2224,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum TicTacChain.Cell[9]",
-              "name": "board",
-              "type": "uint8[9]"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -2238,14 +2252,19 @@
               "internalType": "bool",
               "name": "exists",
               "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "boardData",
+              "type": "bytes"
             }
           ],
-          "internalType": "struct TicTacChain.CachedMatchData",
+          "internalType": "struct ETour_Storage.CachedMatch",
           "name": "",
           "type": "tuple"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2540,7 +2559,7 @@
           "type": "tuple"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2890,11 +2909,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum TicTacChain.Cell[9]",
-              "name": "board",
-              "type": "uint8[9]"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -2923,14 +2937,19 @@
               "internalType": "bool",
               "name": "exists",
               "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "boardData",
+              "type": "bytes"
             }
           ],
-          "internalType": "struct TicTacChain.CachedMatchData[]",
-          "name": "recentMatches",
+          "internalType": "struct ETour_Storage.CachedMatch[]",
+          "name": "",
           "type": "tuple[]"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -3184,7 +3203,7 @@
           "type": "bool"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -3877,6 +3896,174 @@
           "internalType": "bool",
           "name": "allMatchesDrew",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "sharedCacheKeyToIndex",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "sharedCacheKeys",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "sharedCacheMatchIds",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "sharedMatchCache",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "player1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "player2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "firstPlayer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "endTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bool",
+          "name": "isDraw",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "exists",
+          "type": "bool"
+        },
+        {
+          "internalType": "bytes",
+          "name": "boardData",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "sharedMatchIdToCacheIndex",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sharedNextCacheIndex",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
         }
       ],
       "stateMutability": "view",

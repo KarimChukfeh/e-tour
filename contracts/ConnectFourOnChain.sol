@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "./ETour_Storage.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title ConnectFourOnChain
@@ -94,12 +93,12 @@ contract ConnectFourOnChain is ETour_Storage {
 
     mapping(bytes32 => Match) public matches;
 
-    // Match cache
-    uint16 public constant MATCH_CACHE_SIZE = 1000;
-    CachedMatchData[MATCH_CACHE_SIZE] public matchCache;
+    // Match cache (DEPRECATED - now using shared cache in ETour_Storage via GameCacheModule)
+    // MATCH_CACHE_SIZE now defined in ETour_Storage
+    CachedMatchData[1000] public matchCache;  // Kept for storage compatibility
     uint16 public nextCacheIndex;
     mapping(bytes32 => uint16) public cacheKeyToIndex;
-    bytes32[MATCH_CACHE_SIZE] private cacheKeys;
+    bytes32[1000] private cacheKeys;
 
     // ============ Player Activity Tracking ============
 
@@ -123,7 +122,7 @@ contract ConnectFourOnChain is ETour_Storage {
     // ============ Game-Specific Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 column, uint8 row);
-    event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
+    // MatchCached event now defined in ETour_Storage
 
     // ============ Constructor ============
 
@@ -132,13 +131,15 @@ contract ConnectFourOnChain is ETour_Storage {
         address _moduleMatchesAddress,
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
-        address _moduleEscalationAddress
+        address _moduleEscalationAddress,
+        address _moduleGameCacheAddress
     ) ETour_Storage(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
         _moduleRaffleAddress,
-        _moduleEscalationAddress
+        _moduleEscalationAddress,
+        _moduleGameCacheAddress
     ) {
         // Register ConnectFourOnChain's tournament tiers
         _registerConnectFourTiers();
@@ -243,42 +244,6 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success2, "Tier 2 registration failed");
-
-        // ============ Tier 3: 16-Player ============
-        uint8[] memory tier3Prizes = new uint8[](16);
-        tier3Prizes[0] = 75;   // 1st
-        tier3Prizes[1] = 25;   // 2nd
-        tier3Prizes[2] = 0;   // 3rd
-        tier3Prizes[3] = 0;   // 4th
-        tier3Prizes[4] = 0;    // 5th
-        tier3Prizes[5] = 0;    // 6th
-        // 7th-16th: 0%
-        for (uint8 i = 6; i < 16; i++) {
-            tier3Prizes[i] = 0;
-        }
-
-        TimeoutConfig memory timeouts3 = TimeoutConfig({
-            matchTimePerPlayer: 5 minutes,      // 300 seconds per player
-            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
-            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (2 min after L2)
-            enrollmentWindow: 20 minutes,       // 20 min to fill tournament
-            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after L1
-        });
-
-        (bool success3, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                3,                    // tierId
-                16,                   // playerCount
-                20,                   // instanceCount
-                0.01 ether,           // entryFee
-                Mode.Classic,
-                timeouts3,
-                tier3Prizes
-            )
-        );
-        require(success3, "Tier 3 registration failed");
 
         // ============ Configure Raffle Thresholds ============
         // Progressive thresholds: 0.2, 0.4, 0.6, 0.8, 1.0 ETH for first 5 raffles
@@ -642,37 +607,28 @@ contract ConnectFourOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        bytes32 matchKey = keccak256(abi.encodePacked(matchData.player1, matchData.player2));
-        uint16 cacheIndex = nextCacheIndex;
+        // Encode ConnectFour-specific data (board + moveCount)
+        bytes memory boardData = abi.encode(matchData.board, matchData.moveCount);
 
-        bytes32 oldKey = cacheKeys[cacheIndex];
-        if (oldKey != bytes32(0)) {
-            delete cacheKeyToIndex[oldKey];
-        }
-
-        matchCache[cacheIndex] = CachedMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            firstPlayer: matchData.firstPlayer,
-            winner: matchData.winner,
-            startTime: matchData.startTime,
-            endTime: block.timestamp,
-            board: matchData.board,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isDraw: matchData.isDraw,
-            exists: true,
-            moveCount: matchData.moveCount
-        });
-
-        cacheKeys[cacheIndex] = matchKey;
-        cacheKeyToIndex[matchKey] = cacheIndex;
-
-        nextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
-
-        emit MatchCached(matchKey, cacheIndex, matchData.player1, matchData.player2);
+        // Delegate to GameCacheModule
+        (bool success, ) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature(
+                "addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
+                matchId,
+                tierId,
+                instanceId,
+                roundNumber,
+                matchNumber,
+                matchData.player1,
+                matchData.player2,
+                matchData.firstPlayer,
+                matchData.winner,
+                matchData.startTime,
+                matchData.isDraw,
+                boardData
+            )
+        );
+        require(success, "Cache add failed");
     }
 
     function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
@@ -810,57 +766,56 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view override returns (CommonMatchData memory data, bool exists) {
-        // Get player addresses from matchId
-        (address player1, address player2) = _getMatchPlayers(matchId);
+    ) public override returns (CommonMatchData memory data, bool exists) {
+        // Use staticcall to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature(
+                "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
+                matchId, tierId, instanceId, roundNumber, matchNumber
+            )
+        );
 
-        // Check if players exist
-        if (player1 == address(0) && player2 == address(0)) {
+        if (!success) {
             return (data, false);
         }
 
-        // Compute cache key
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = cacheKeyToIndex[matchKey];
+        (
+            address player1,
+            address player2,
+            address firstPlayer,
+            address winner,
+            uint256 startTime,
+            uint256 endTime,
+            bool isDraw,
+            bool cachedExists,
+            bytes memory boardData
+        ) = abi.decode(result, (address, address, address, address, uint256, uint256, bool, bool, bytes));
 
-        // Verify cache entry exists
-        if (!matchCache[index].exists || cacheKeys[index] != matchKey) {
-            return (data, false);
-        }
-
-        CachedMatchData storage cached = matchCache[index];
-
-        // CRITICAL: Verify context matches (players may have played multiple times)
-        if (cached.tierId != tierId ||
-            cached.instanceId != instanceId ||
-            cached.roundNumber != roundNumber ||
-            cached.matchNumber != matchNumber) {
+        if (!cachedExists) {
             return (data, false);
         }
 
         // Derive loser
         address loser = address(0);
-        if (!cached.isDraw && cached.winner != address(0)) {
-            loser = (cached.winner == cached.player1)
-                ? cached.player2
-                : cached.player1;
+        if (!isDraw && winner != address(0)) {
+            loser = (winner == player1) ? player2 : player1;
         }
 
         // Populate CommonMatchData
         data = CommonMatchData({
-            player1: cached.player1,
-            player2: cached.player2,
-            winner: cached.winner,
+            player1: player1,
+            player2: player2,
+            winner: winner,
             loser: loser,
             status: MatchStatus.Completed,
-            isDraw: cached.isDraw,
-            startTime: cached.startTime,
-            lastMoveTime: cached.endTime,
-            endTime: cached.endTime,
-            tierId: cached.tierId,
-            instanceId: cached.instanceId,
-            roundNumber: cached.roundNumber,
-            matchNumber: cached.matchNumber,
+            isDraw: isDraw,
+            startTime: startTime,
+            lastMoveTime: endTime,
+            endTime: endTime,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
             isCached: true
         });
 
@@ -1316,7 +1271,7 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view returns (ConnectFourMatchData memory) {
+    ) public returns (ConnectFourMatchData memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         ConnectFourMatchData memory fullData;
@@ -1404,54 +1359,49 @@ contract ConnectFourOnChain is ETour_Storage {
         return (player1Time, player2Time);
     }
 
-    function getCachedMatch(address player1, address player2) external view returns (CachedMatchData memory) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = cacheKeyToIndex[matchKey];
-        require(matchCache[index].exists && cacheKeys[index] == matchKey, "Match not in cache");
-        return matchCache[index];
+    function getCachedMatch(address player1, address player2) external returns (CachedMatch memory) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getCachedMatch(address,address)", player1, player2)
+        );
+        require(success, "Cache retrieval failed");
+        return abi.decode(result, (CachedMatch));
     }
 
-    function getCachedMatchByIndex(uint16 index) external view returns (CachedMatchData memory) {
-        require(index < MATCH_CACHE_SIZE, "Index out of bounds");
-        require(matchCache[index].exists, "No match at this index");
-        return matchCache[index];
+    function getCachedMatchByIndex(uint16 index) external returns (CachedMatch memory) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getCachedMatchByIndex(uint16)", index)
+        );
+        require(success, "Cache retrieval failed");
+        return abi.decode(result, (CachedMatch));
     }
 
-    function getAllCachedMatches() external view returns (CachedMatchData[] memory cachedMatches) {
-        cachedMatches = new CachedMatchData[](MATCH_CACHE_SIZE);
-        for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
-            cachedMatches[i] = matchCache[i];
-        }
-        return cachedMatches;
+    function getAllCachedMatches() external returns (CachedMatch[] memory) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getAllCachedMatches()")
+        );
+        require(success, "Cache retrieval failed");
+        return abi.decode(result, (CachedMatch[]));
     }
 
-    function getRecentCachedMatches(uint16 count) external view returns (CachedMatchData[] memory recentMatches) {
-        if (count > MATCH_CACHE_SIZE) {
-            count = MATCH_CACHE_SIZE;
-        }
-
-        recentMatches = new CachedMatchData[](count);
-        uint16 currentIndex = nextCacheIndex;
-
-        for (uint16 i = 0; i < count; i++) {
-            if (currentIndex == 0) {
-                currentIndex = MATCH_CACHE_SIZE - 1;
-            } else {
-                currentIndex--;
-            }
-
-            if (matchCache[currentIndex].exists) {
-                recentMatches[i] = matchCache[currentIndex];
-            }
-        }
-
-        return recentMatches;
+    function getRecentCachedMatches(uint16 count) external returns (CachedMatch[] memory) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getRecentCachedMatches(uint16)", count)
+        );
+        require(success, "Cache retrieval failed");
+        return abi.decode(result, (CachedMatch[]));
     }
 
-    function isMatchCached(address player1, address player2) external view returns (bool) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = cacheKeyToIndex[matchKey];
-        return matchCache[index].exists && cacheKeys[index] == matchKey;
+    function isMatchCached(address player1, address player2) external returns (bool) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("isMatchCached(address,address)", player1, player2)
+        );
+        require(success, "Cache check failed");
+        return abi.decode(result, (bool));
     }
 
     /**

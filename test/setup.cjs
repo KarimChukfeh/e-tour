@@ -40,7 +40,7 @@ hre.ethers.getContractFactory = async function(contractName, ...args) {
   factory.deploy = async function(...deployArgs) {
     // Special handling for modular contracts - deploy modules first
     if (needsModules && deployArgs.length === 0) {
-      // Deploy all 5 required modules
+      // Deploy all 6 required modules
       const ETour_Core = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ETour_Core.sol:ETour_Core');
       const moduleCore = await ETour_Core.deploy();
       await moduleCore.waitForDeployment();
@@ -61,14 +61,33 @@ hre.ethers.getContractFactory = async function(contractName, ...args) {
       const moduleEscalation = await ETour_Escalation.deploy();
       await moduleEscalation.waitForDeployment();
 
-      // Deploy TicTacChain_Refactored with module addresses
+      const GameCacheModule = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/GameCacheModule.sol:GameCacheModule');
+      const moduleGameCache = await GameCacheModule.deploy();
+      await moduleGameCache.waitForDeployment();
+
+      // Deploy ChessOnChain_Rules module if this is ChessOnChain
+      let chessRulesAddress = null;
+      if (contractName === 'ChessOnChain') {
+        const ChessOnChain_Rules = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ChessOnChain_Rules.sol:ChessOnChain_Rules');
+        const chessRules = await ChessOnChain_Rules.deploy();
+        await chessRules.waitForDeployment();
+        chessRulesAddress = await chessRules.getAddress();
+      }
+
+      // Build constructor arguments
       deployArgs = [
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleRaffle.getAddress(),
-        await moduleEscalation.getAddress()
+        await moduleEscalation.getAddress(),
+        await moduleGameCache.getAddress()
       ];
+
+      // Add ChessRules address for ChessOnChain
+      if (chessRulesAddress) {
+        deployArgs.push(chessRulesAddress);
+      }
     }
 
     // Deploy the contract normally

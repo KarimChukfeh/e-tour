@@ -28,7 +28,7 @@ import "../interfaces/IETourGame.sol";
 contract ETour_Matches is ETour_Storage {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Empty implementations for module deployment) ============
     // During delegatecall, TicTacChain_Refactored's implementations are used instead
@@ -48,7 +48,7 @@ contract ETour_Matches is ETour_Storage {
         status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0, endTime: 0,
         tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
     }); }
-    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) {
+    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public override returns (CommonMatchData memory, bool) {
         return (CommonMatchData({
             player1: address(0), player2: address(0), winner: address(0), loser: address(0),
             status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0, endTime: 0,

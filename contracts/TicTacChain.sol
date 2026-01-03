@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "./ETour_Storage.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title TicTacChain
@@ -81,14 +80,14 @@ contract TicTacChain is ETour_Storage {
 
     mapping(bytes32 => Match) public matches;
 
-    // Match cache
-    uint16 public constant MATCH_CACHE_SIZE = 1000;
-    CachedMatchData[MATCH_CACHE_SIZE] public matchCache;
+    // Match cache (DEPRECATED - now using shared cache in ETour_Storage via GameCacheModule)
+    // MATCH_CACHE_SIZE now defined in ETour_Storage
+    CachedMatchData[1000] public matchCache;  // Kept for storage compatibility
     uint16 public nextCacheIndex;
     mapping(bytes32 => uint16) public cacheKeyToIndex;
-    bytes32[MATCH_CACHE_SIZE] private cacheKeys;
+    bytes32[1000] private cacheKeys;
     mapping(bytes32 => uint16) private matchIdToCacheIndex; // Direct matchId lookup
-    bytes32[MATCH_CACHE_SIZE] private cacheMatchIds; // Track which matchId is at each index
+    bytes32[1000] private cacheMatchIds; // Track which matchId is at each index
 
     // ============ Player Activity Tracking ============
 
@@ -112,7 +111,7 @@ contract TicTacChain is ETour_Storage {
     // ============ Game-Specific Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
-    event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
+    // MatchCached event now defined in ETour_Storage
 
     // ============ Constructor ============
 
@@ -121,13 +120,15 @@ contract TicTacChain is ETour_Storage {
         address _moduleMatchesAddress,
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
-        address _moduleEscalationAddress
+        address _moduleEscalationAddress,
+        address _moduleGameCacheAddress
     ) ETour_Storage(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
         _moduleRaffleAddress,
-        _moduleEscalationAddress
+        _moduleEscalationAddress,
+        _moduleGameCacheAddress
     ) {
         // Register TicTacChain's tournament tiers via delegatecall to Core module
         _registerTicTacChainTiers();
@@ -342,7 +343,7 @@ contract TicTacChain is ETour_Storage {
                 "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
                 0,                    // tierId
                 2,                    // playerCount
-                100,                  // instanceCount
+                50,                  // instanceCount
                 0.001 ether,          // entryFee
                 Mode.Classic,         // mode
                 timeouts0,            // timeout configuration
@@ -591,44 +592,28 @@ contract TicTacChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        bytes32 matchKey = keccak256(abi.encodePacked(matchData.player1, matchData.player2));
-        uint16 cacheIndex = nextCacheIndex;
+        // Encode board state for generic storage
+        bytes memory boardData = abi.encode(matchData.board);
 
-        // Clean up old mappings for the entry being overwritten
-        bytes32 oldKey = cacheKeys[cacheIndex];
-        if (oldKey != bytes32(0)) {
-            delete cacheKeyToIndex[oldKey];
-        }
-
-        bytes32 oldMatchId = cacheMatchIds[cacheIndex];
-        if (oldMatchId != bytes32(0)) {
-            delete matchIdToCacheIndex[oldMatchId]; // CRITICAL: Clean up old matchId mapping
-        }
-
-        matchCache[cacheIndex] = CachedMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            firstPlayer: matchData.firstPlayer,
-            winner: matchData.winner,
-            startTime: matchData.startTime,
-            endTime: block.timestamp,
-            board: matchData.board,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isDraw: matchData.isDraw,
-            exists: true
-        });
-
-        cacheKeys[cacheIndex] = matchKey;
-        cacheKeyToIndex[matchKey] = cacheIndex;
-        matchIdToCacheIndex[matchId] = cacheIndex;
-        cacheMatchIds[cacheIndex] = matchId; // Track which matchId is at this index
-
-        nextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
-
-        emit MatchCached(matchKey, cacheIndex, matchData.player1, matchData.player2);
+        // Delegate to GameCacheModule
+        (bool success, ) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature(
+                "addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
+                matchId,
+                tierId,
+                instanceId,
+                roundNumber,
+                matchNumber,
+                matchData.player1,
+                matchData.player2,
+                matchData.firstPlayer,
+                matchData.winner,
+                matchData.startTime,
+                matchData.isDraw,
+                boardData
+            )
+        );
+        require(success, "Cache add failed");
     }
 
     function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
@@ -987,91 +972,65 @@ contract TicTacChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view override returns (CommonMatchData memory data, bool exists) {
-        // Try direct matchId lookup first (works even after match reset)
-        uint16 index = matchIdToCacheIndex[matchId];
+    ) public override returns (CommonMatchData memory data, bool exists) {
+        // Delegate to GameCacheModule
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature(
+                "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
+                matchId,
+                tierId,
+                instanceId,
+                roundNumber,
+                matchNumber
+            )
+        );
 
-        // Verify cache entry exists and context matches
-        if (matchCache[index].exists &&
-            matchCache[index].tierId == tierId &&
-            matchCache[index].instanceId == instanceId &&
-            matchCache[index].roundNumber == roundNumber &&
-            matchCache[index].matchNumber == matchNumber) {
-
-            CachedMatchData storage cached = matchCache[index];
-
-            // Derive loser
-            address loser = address(0);
-            if (!cached.isDraw && cached.winner != address(0)) {
-                loser = (cached.winner == cached.player1)
-                    ? cached.player2
-                    : cached.player1;
-            }
-
-            // Populate CommonMatchData
-            data = CommonMatchData({
-                player1: cached.player1,
-                player2: cached.player2,
-                winner: cached.winner,
-                loser: loser,
-                status: MatchStatus.Completed,
-                isDraw: cached.isDraw,
-                startTime: cached.startTime,
-                lastMoveTime: cached.endTime,
-                endTime: cached.endTime,
-                tierId: cached.tierId,
-                instanceId: cached.instanceId,
-                roundNumber: cached.roundNumber,
-                matchNumber: cached.matchNumber,
-                isCached: true
-            });
-
-            return (data, true);
+        if (!success) {
+            return (data, false);
         }
 
-        // Fallback: Try player-based lookup (for backwards compatibility)
-        (address player1, address player2) = _getMatchPlayers(matchId);
-        if (player1 != address(0) || player2 != address(0)) {
-            bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-            uint16 altIndex = cacheKeyToIndex[matchKey];
+        // Decode result
+        (
+            address player1,
+            address player2,
+            address firstPlayer,
+            address winner,
+            uint256 startTime,
+            uint256 endTime,
+            bool isDraw,
+            bool cacheExists,
+            bytes memory boardData
+        ) = abi.decode(result, (address, address, address, address, uint256, uint256, bool, bool, bytes));
 
-            if (matchCache[altIndex].exists &&
-                cacheKeys[altIndex] == matchKey &&
-                matchCache[altIndex].tierId == tierId &&
-                matchCache[altIndex].instanceId == instanceId &&
-                matchCache[altIndex].roundNumber == roundNumber &&
-                matchCache[altIndex].matchNumber == matchNumber) {
-
-                CachedMatchData storage cached = matchCache[altIndex];
-                address loser = address(0);
-                if (!cached.isDraw && cached.winner != address(0)) {
-                    loser = (cached.winner == cached.player1)
-                        ? cached.player2
-                        : cached.player1;
-                }
-
-                data = CommonMatchData({
-                    player1: cached.player1,
-                    player2: cached.player2,
-                    winner: cached.winner,
-                    loser: loser,
-                    status: MatchStatus.Completed,
-                    isDraw: cached.isDraw,
-                    startTime: cached.startTime,
-                    lastMoveTime: cached.endTime,
-                    endTime: cached.endTime,
-                    tierId: cached.tierId,
-                    instanceId: cached.instanceId,
-                    roundNumber: cached.roundNumber,
-                    matchNumber: cached.matchNumber,
-                    isCached: true
-                });
-
-                return (data, true);
-            }
+        if (!cacheExists) {
+            return (data, false);
         }
 
-        return (data, false);
+        // Derive loser
+        address loser = address(0);
+        if (!isDraw && winner != address(0)) {
+            loser = (winner == player1) ? player2 : player1;
+        }
+
+        // Populate CommonMatchData
+        data = CommonMatchData({
+            player1: player1,
+            player2: player2,
+            winner: winner,
+            loser: loser,
+            status: MatchStatus.Completed,
+            isDraw: isDraw,
+            startTime: startTime,
+            lastMoveTime: endTime,
+            endTime: endTime,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: true
+        });
+
+        return (data, true);
     }
 
     // ============ Gameplay Functions ============
@@ -1229,7 +1188,7 @@ contract TicTacChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view returns (TicTacToeMatchData memory) {
+    ) public returns (TicTacToeMatchData memory) {
         // Get common data via helper
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
@@ -1315,54 +1274,44 @@ contract TicTacChain is ETour_Storage {
         return (player1Time, player2Time);
     }
 
-    function getCachedMatch(address player1, address player2) external view returns (CachedMatchData memory) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = cacheKeyToIndex[matchKey];
-        require(matchCache[index].exists && cacheKeys[index] == matchKey, "Match not in cache");
-        return matchCache[index];
+    function getCachedMatch(address player1, address player2) external returns (CachedMatch memory) {
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getCachedMatch(address,address)", player1, player2)
+        );
+        require(success, "Cache lookup failed");
+        return abi.decode(result, (CachedMatch));
     }
 
-    function getCachedMatchByIndex(uint16 index) external view returns (CachedMatchData memory) {
-        require(index < MATCH_CACHE_SIZE, "Index out of bounds");
-        require(matchCache[index].exists, "No match at this index");
-        return matchCache[index];
+    function getCachedMatchByIndex(uint16 index) external returns (CachedMatch memory) {
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getCachedMatchByIndex(uint16)", index)
+        );
+        require(success, "Cache lookup failed");
+        return abi.decode(result, (CachedMatch));
     }
 
-    function getAllCachedMatches() external view returns (CachedMatchData[] memory cachedMatches) {
-        cachedMatches = new CachedMatchData[](MATCH_CACHE_SIZE);
-        for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
-            cachedMatches[i] = matchCache[i];
-        }
-        return cachedMatches;
+    function getAllCachedMatches() external returns (CachedMatch[] memory) {
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getAllCachedMatches()")
+        );
+        require(success, "Cache lookup failed");
+        return abi.decode(result, (CachedMatch[]));
     }
 
-    function getRecentCachedMatches(uint16 count) external view returns (CachedMatchData[] memory recentMatches) {
-        if (count > MATCH_CACHE_SIZE) {
-            count = MATCH_CACHE_SIZE;
-        }
-
-        recentMatches = new CachedMatchData[](count);
-        uint16 currentIndex = nextCacheIndex;
-
-        for (uint16 i = 0; i < count; i++) {
-            if (currentIndex == 0) {
-                currentIndex = MATCH_CACHE_SIZE - 1;
-            } else {
-                currentIndex--;
-            }
-
-            if (matchCache[currentIndex].exists) {
-                recentMatches[i] = matchCache[currentIndex];
-            }
-        }
-
-        return recentMatches;
+    function getRecentCachedMatches(uint16 count) external returns (CachedMatch[] memory) {
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("getRecentCachedMatches(uint16)", count)
+        );
+        require(success, "Cache lookup failed");
+        return abi.decode(result, (CachedMatch[]));
     }
 
-    function isMatchCached(address player1, address player2) external view returns (bool) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = cacheKeyToIndex[matchKey];
-        return matchCache[index].exists && cacheKeys[index] == matchKey;
+    function isMatchCached(address player1, address player2) external returns (bool) {
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+            abi.encodeWithSignature("isMatchCached(address,address)", player1, player2)
+        );
+        require(success, "Cache lookup failed");
+        return abi.decode(result, (bool));
     }
 
     // ============ Player Activity Tracking Implementation ============

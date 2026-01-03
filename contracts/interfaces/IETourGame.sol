@@ -154,5 +154,5 @@ interface IETourGame {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (ETour_Storage.CommonMatchData memory data, bool exists);
+    ) external returns (ETour_Storage.CommonMatchData memory data, bool exists);
 }

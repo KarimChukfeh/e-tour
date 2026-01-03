@@ -30,7 +30,7 @@ contract ETour_Core is ETour_Storage {
     // Constructor - modules need to set module addresses even though they're stateless
     // This is a bit of a hack - modules inherit ETour_Storage for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
     function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
@@ -45,7 +45,7 @@ contract ETour_Core is ETour_Storage {
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
-    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) { revert("Module: Use IETourGame"); }
+    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public override returns (CommonMatchData memory, bool) { revert("Module: Use IETourGame"); }
 
     // ============ Tier Configuration ============
 
@@ -440,5 +440,83 @@ contract ETour_Core is ETour_Storage {
             timeouts.enrollmentWindow,
             timeouts.enrollmentLevel2Delay
         );
+    }
+
+    // ============ Additional Getters (Extracted from Game Contracts) ============
+
+    /**
+     * @dev Generate unique match identifier
+     */
+    function getMatchId(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public pure returns (bytes32) {
+        return _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+    }
+
+    /**
+     * @dev Get full tier configuration struct
+     */
+    function tierConfigs(uint8 tierId) external view returns (TierConfig memory) {
+        require(tierId < tierCount, "Invalid tier ID");
+        return _tierConfigs[tierId];
+    }
+
+    /**
+     * @dev Get tier entry fee
+     */
+    function ENTRY_FEES(uint8 tierId) external view returns (uint256) {
+        return _tierConfigs[tierId].entryFee;
+    }
+
+    /**
+     * @dev Get tier instance count
+     */
+    function INSTANCE_COUNTS(uint8 tierId) external view returns (uint8) {
+        return _tierConfigs[tierId].instanceCount;
+    }
+
+    /**
+     * @dev Get tier player count
+     */
+    function TIER_SIZES(uint8 tierId) external view returns (uint8) {
+        return _tierConfigs[tierId].playerCount;
+    }
+
+    /**
+     * @dev Get comprehensive tournament information
+     */
+    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
+        TournamentStatus status,
+        Mode mode,
+        uint8 currentRound,
+        uint8 enrolledCount,
+        uint256 prizePool,
+        address winner
+    ) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        return (
+            tournament.status,
+            tournament.mode,
+            tournament.currentRound,
+            tournament.enrolledCount,
+            tournament.prizePool,
+            tournament.winner
+        );
+    }
+
+    /**
+     * @dev Get total player capacity across all tiers
+     */
+    function getTotalCapacity() external view returns (uint256 totalPlayers) {
+        for (uint8 i = 0; i < tierCount; i++) {
+            if (_tierConfigs[i].initialized) {
+                TierConfig storage config = _tierConfigs[i];
+                totalPlayers += uint256(config.playerCount) * uint256(config.instanceCount);
+            }
+        }
+        return totalPlayers;
     }
 }
