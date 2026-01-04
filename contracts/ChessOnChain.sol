@@ -222,21 +222,21 @@ contract ChessOnChain is ETour_Storage {
         require(successRaffle, "Raffle reg fail");
     }
 
- /**
-     * @dev One-time initialization of all tournament instances
-     *
-     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
-     * Can only be called once by anyone (typically by deployer immediately after deployment).
-     *
-     * Gas cost estimate:
-     * - Tier 0: 100 instances × ~20k gas = ~2M gas
-     * - Tier 1: 50 instances × ~20k gas = ~1M gas
-     * - Total: ~3M gas (~0.003 ETH at 1 gwei)
-     *
-     * After this is called:
-     * - All instances are in Enrolling state
-     * - First enrollers pay normal gas (no lazy init overhead)
-     * - Function cannot be called again
+    /**
+        * @dev One-time initialization of all tournament instances
+        *
+        * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
+        * Can only be called once by anyone (typically by deployer immediately after deployment).
+        *
+        * Gas cost estimate:
+        * - Tier 0: 100 instances × ~20k gas = ~2M gas
+        * - Tier 1: 50 instances × ~20k gas = ~1M gas
+        * - Total: ~3M gas (~0.003 ETH at 1 gwei)
+        *
+        * After this is called:
+        * - All instances are in Enrolling state
+        * - First enrollers pay normal gas (no lazy init overhead)
+        * - Function cannot be called again
      */
     function initializeAllInstances() external {
         require(!allInstancesInitialized, "Already initialized");
