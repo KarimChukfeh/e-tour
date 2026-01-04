@@ -113,12 +113,10 @@ contract ChessOnChain is ETour_Storage {
     event CheckDeclared(bytes32 indexed matchId, PieceColor kingColor);
     event CheckmateDeclared(bytes32 indexed matchId, address indexed winner, address indexed loser);
     event StalemateDeclared(bytes32 indexed matchId);
-    event DrawByFiftyMoveRule(bytes32 indexed matchId);
     event DrawByInsufficientMaterial(bytes32 indexed matchId);
     event CastlingPerformed(bytes32 indexed matchId, address indexed player, bool kingSide);
     event EnPassantCapture(bytes32 indexed matchId, address indexed player, uint8 capturedSquare);
     event PawnPromoted(bytes32 indexed matchId, address indexed player, uint8 square, PieceType newPiece);
-    event Resignation(bytes32 indexed matchId, address indexed resigningPlayer, address indexed winner);
     event AllInstancesInitialized(address indexed caller, uint8 tierCount);
 
     address public immutable MODULE_CHESS_RULES;
@@ -1051,13 +1049,6 @@ contract ChessOnChain is ETour_Storage {
         } else if (!opponentHasLegalMoves) {
             // Stalemate - draw
             emit StalemateDeclared(matchId);
-            completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
-            return;
-        }
-
-        // Check for 50-move rule
-        if (matchData.halfMoveClock >= 100) {  // 50 moves = 100 half-moves
-            emit DrawByFiftyMoveRule(matchId);
             completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
             return;
         }

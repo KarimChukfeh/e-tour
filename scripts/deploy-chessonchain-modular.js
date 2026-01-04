@@ -6,6 +6,17 @@ import fs from "fs";
 import path from "path";
 import { getOrDeployModules } from "./deploy-modules.js";
 
+/**
+ * Calculate deployed bytecode size for a contract
+ */
+function getContractSize(artifact) {
+    const bytecode = artifact.deployedBytecode || artifact.bytecode;
+    const bytecodeWithout0x = bytecode.replace('0x', '');
+    const sizeInBytes = bytecodeWithout0x.length / 2; // 2 hex chars = 1 byte
+    const sizeInKB = (sizeInBytes / 1024).toFixed(1);
+    return { bytes: sizeInBytes, kb: sizeInKB };
+}
+
 async function main() {
     console.log("🚀 Starting Modular ChessOnChain Deployment...\n");
 
@@ -103,6 +114,11 @@ async function main() {
     console.log("=" .repeat(60));
 
     const chessOnChainArtifact = await hre.artifacts.readArtifact("ChessOnChain");
+    const chessRulesModuleArtifact = await hre.artifacts.readArtifact("ChessRulesModule");
+
+    // Calculate contract sizes
+    const chessOnChainSize = getContractSize(chessOnChainArtifact);
+    const chessRulesModuleSize = getContractSize(chessRulesModuleArtifact);
 
     const fullABI = {
         contractName: "ChessOnChain",
@@ -210,9 +226,9 @@ async function main() {
     console.log("");
     console.log("🚀 ChessOnChain is live!");
     console.log("  ✅ ETour Modular Protocol - Reusable tournament infrastructure");
-    console.log("  ✅ ChessRulesModule - Stateless chess validation logic (11.3 KB)");
-    console.log("  ✅ ChessOnChain - Optimized chess tournament game (20.1 KB)");
-    console.log("  📋 6 tiers, up to 128 players per tournament!");
+    console.log(`  ✅ ChessRulesModule - Stateless chess validation logic (${chessRulesModuleSize.kb} KB)`);
+    console.log(`  ✅ ChessOnChain - Optimized chess tournament game (${chessOnChainSize.kb} KB)`);
+    console.log("  📋 2 tiers (2-player and 4-player tournaments)");
     console.log("");
 }
 
