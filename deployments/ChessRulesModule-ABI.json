@@ -1,9 +1,9 @@
 {
   "contractName": "ChessRulesModule",
-  "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+  "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-04T18:47:54.483Z",
+  "deployedAt": "2026-01-04T19:29:17.305Z",
   "abi": [
     {
       "inputs": [],
@@ -1617,11 +1617,6 @@
         },
         {
           "internalType": "uint16",
-          "name": "halfMoveClock",
-          "type": "uint16"
-        },
-        {
-          "internalType": "uint16",
           "name": "fullMoveNumber",
           "type": "uint16"
         },
@@ -2244,6 +2239,19 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "matchId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "setupInitialPosition",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
