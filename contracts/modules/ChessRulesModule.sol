@@ -47,7 +47,6 @@ contract ChessRulesModule is ETour_Storage {
         bool blackRookAMoved;
         bool blackRookHMoved;
         uint8 enPassantSquare;    // Square where en passant capture is possible (NO_SQUARE if none)
-        uint16 halfMoveClock;     // For 50-move rule
         uint16 fullMoveNumber;
         bool whiteInCheck;
         bool blackInCheck;
@@ -559,6 +558,52 @@ contract ChessRulesModule is ETour_Storage {
         return false;
     }
 
+    // ============ Board Setup ============
+
+    /**
+     * @dev Setup initial chess board position
+     */
+    function setupInitialPosition(bytes32 matchId) public {
+        ChessMatch storage matchData = chessMatches[matchId];
+
+        // Clear the board first
+        for (uint8 i = 0; i < 64; i++) {
+            matchData.board[i] = Piece(PieceType.None, PieceColor.None);
+        }
+
+        // White pieces (ranks 1-2, squares 0-15)
+        // Rank 1 (squares 0-7): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
+        matchData.board[0] = Piece(PieceType.Rook, PieceColor.White);
+        matchData.board[1] = Piece(PieceType.Knight, PieceColor.White);
+        matchData.board[2] = Piece(PieceType.Bishop, PieceColor.White);
+        matchData.board[3] = Piece(PieceType.Queen, PieceColor.White);
+        matchData.board[4] = Piece(PieceType.King, PieceColor.White);
+        matchData.board[5] = Piece(PieceType.Bishop, PieceColor.White);
+        matchData.board[6] = Piece(PieceType.Knight, PieceColor.White);
+        matchData.board[7] = Piece(PieceType.Rook, PieceColor.White);
+
+        // Rank 2 (squares 8-15): White Pawns
+        for (uint8 i = 8; i < 16; i++) {
+            matchData.board[i] = Piece(PieceType.Pawn, PieceColor.White);
+        }
+
+        // Black pieces (ranks 7-8, squares 48-63)
+        // Rank 7 (squares 48-55): Black Pawns
+        for (uint8 i = 48; i < 56; i++) {
+            matchData.board[i] = Piece(PieceType.Pawn, PieceColor.Black);
+        }
+
+        // Rank 8 (squares 56-63): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
+        matchData.board[56] = Piece(PieceType.Rook, PieceColor.Black);
+        matchData.board[57] = Piece(PieceType.Knight, PieceColor.Black);
+        matchData.board[58] = Piece(PieceType.Bishop, PieceColor.Black);
+        matchData.board[59] = Piece(PieceType.Queen, PieceColor.Black);
+        matchData.board[60] = Piece(PieceType.King, PieceColor.Black);
+        matchData.board[61] = Piece(PieceType.Bishop, PieceColor.Black);
+        matchData.board[62] = Piece(PieceType.Knight, PieceColor.Black);
+        matchData.board[63] = Piece(PieceType.Rook, PieceColor.Black);
+    }
+
     // ============ Move Execution ============
 
     /**
@@ -646,13 +691,6 @@ contract ChessRulesModule is ETour_Storage {
                 require(promotion != PieceType.None && promotion != PieceType.Pawn && promotion != PieceType.King, "Promo");
                 matchData.board[to] = Piece(promotion, playerColor);
             }
-        }
-
-        // Update halfmove clock for 50-move rule
-        if (isCapture || isPawnMove) {
-            matchData.halfMoveClock = 0;
-        } else {
-            matchData.halfMoveClock++;
         }
 
         // Update full move number
