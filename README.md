@@ -1465,3 +1465,24 @@ npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
 npx hardhat run scripts/deploy-connectfour-modular.js --network localhost
 
 ngrok http 8545
+
+
+-----
+
+
+ Manual Replication Guide
+
+Step 1: Nuke Anvil
+pkill -9 anvil
+./start-anvil.sh
+
+Step 2: Clean Everything
+rm -rf artifacts/
+rm -rf cache/
+rm -f deployments/*.json
+
+Step 3: Fresh Compilation
+npx hardhat compile
+
+Step 4: Deploy Modules + ChessOnChain
+npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost

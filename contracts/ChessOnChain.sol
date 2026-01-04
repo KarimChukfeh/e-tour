@@ -1267,10 +1267,6 @@ contract ChessOnChain is ETour_Storage {
         return chessMatches[_getMatchId(t, i, r, m)].board;
     }
 
-    function getMoveHistory(uint8 t, uint8 i, uint8 r, uint8 m) external view returns (bytes memory) {
-        return moveHistory[_getMatchId(t, i, r, m)];
-    }
-
     /**
      * @dev Hook called when player enrolls in tournament
      */
@@ -1425,19 +1421,6 @@ contract ChessOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Get counts (gas-efficient for checking if player has any activity)
-     */
-    function getPlayerActivityCounts(address player) external view returns (
-        uint256 enrollingCount,
-        uint256 activeCount
-    ) {
-        return (
-            playerEnrollingTournaments[player].length,
-            playerActiveTournaments[player].length
-        );
-    }
-
-    /**
      * @dev Check if player is in specific tournament (either enrolling or active)
      */
     function isPlayerInTournament(address player, uint8 tierId, uint8 instanceId)
@@ -1463,5 +1446,314 @@ contract ChessOnChain is ETour_Storage {
             "1.0.0",
             "Full chess implementation with tournaments, special moves, and draw conditions"
         );
+    }
+
+    // ============ Module Delegate Functions ============
+
+    /**
+     * @dev LeaderboardEntry struct for decoding
+     */
+    struct LeaderboardEntry {
+        address player;
+        int256 earnings;
+    }
+
+    /**
+     * @dev Get player's active matches
+     */
+    function getPlayerActiveMatches(address player) external view returns (bytes32[] memory) {
+        return playerActiveMatches[player];
+    }
+
+    /**
+     * @dev Get enrolled players for a tournament instance
+     */
+    function getEnrolledPlayers(uint8 tierId, uint8 instanceId) external view returns (address[] memory) {
+        return enrolledPlayers[tierId][instanceId];
+    }
+
+    /**
+     * @dev Get round information
+     */
+    function getRoundInfo(uint8 tierId, uint8 instanceId, uint8 roundNumber) external view returns (
+        uint8 totalMatches,
+        uint8 completedMatches,
+        bool initialized
+    ) {
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        return (round.totalMatches, round.completedMatches, round.initialized);
+    }
+
+    /**
+     * @dev Get player's total earnings
+     */
+    function getPlayerStats() external view returns (int256 totalEarnings) {
+        return playerEarnings[msg.sender];
+    }
+
+    /**
+     * @dev Get overview of all instances in a tier
+     */
+    function getTierOverview(uint8 tierId) external view returns (
+        TournamentStatus[] memory statuses,
+        uint8[] memory enrolledCounts,
+        uint256[] memory prizePools
+    ) {
+        TierConfig storage config = _tierConfigs[tierId];
+        uint8 instanceCount = config.instanceCount;
+        statuses = new TournamentStatus[](instanceCount);
+        enrolledCounts = new uint8[](instanceCount);
+        prizePools = new uint256[](instanceCount);
+
+        for (uint8 i = 0; i < instanceCount; i++) {
+            TournamentInstance storage tournament = tournaments[tierId][i];
+            statuses[i] = tournament.status;
+            enrolledCounts[i] = tournament.enrolledCount;
+            prizePools[i] = tournament.prizePool;
+        }
+
+        return (statuses, enrolledCounts, prizePools);
+    }
+
+    /**
+     * @dev Get tournament information
+     */
+    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
+        TournamentStatus status,
+        Mode mode,
+        uint8 currentRound,
+        uint8 enrolledCount,
+        uint256 prizePool,
+        address winner
+    ) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        return (
+            tournament.status,
+            tournament.mode,
+            tournament.currentRound,
+            tournament.enrolledCount,
+            tournament.prizePool,
+            tournament.winner
+        );
+    }
+
+    /**
+     * @dev Get current raffle threshold based on raffle index
+     */
+    function _getRaffleThreshold() internal view returns (uint256) {
+        // If no raffle thresholds configured, use default
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+
+        // If currentRaffleIndex is within the configured array, use that value
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+
+        // Otherwise use the final threshold for all subsequent raffles
+        return raffleThresholdFinal;
+    }
+
+    /**
+     * @dev Get raffle configuration
+     */
+    function getRaffleConfiguration() external view returns (
+        uint256 threshold,
+        uint256 reserve,
+        uint256 ownerSharePercentage,
+        uint256 winnerSharePercentage
+    ) {
+        threshold = _getRaffleThreshold();
+        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
+            abi.encodeWithSignature("getRaffleReserve()")
+        );
+        require(success, "Get raffle reserve failed");
+        reserve = abi.decode(data, (uint256));
+        return (
+            threshold,
+            reserve,
+            20,  // 20% to owner
+            80   // 80% to winner
+        );
+    }
+
+    /**
+     * @dev Get tier information
+     */
+    function getTierInfo(uint8 tierId) external view returns (
+        uint8 playerCount,
+        uint8 instanceCount,
+        uint256 entryFee
+    ) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        TierConfig storage config = _tierConfigs[tierId];
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee
+        );
+    }
+
+    /**
+     * @dev Get tier prize distribution
+     */
+    function getTierPrizeDistribution(uint8 tierId) external view returns (uint8[] memory percentages) {
+        require(_tierConfigs[tierId].initialized, "Invalid tier");
+        return _tierPrizeDistribution[tierId];
+    }
+
+    /**
+     * @dev Get raffle thresholds configuration
+     */
+    function getRaffleThresholds() external view returns (
+        uint256[] memory thresholds,
+        uint256 finalThreshold,
+        uint256 currentThreshold
+    ) {
+        thresholds = raffleThresholds;
+        finalThreshold = raffleThresholdFinal;
+        currentThreshold = _getRaffleThreshold();
+        return (thresholds, finalThreshold, currentThreshold);
+    }
+
+    /**
+     * @dev Check if enrollment window can be reset
+     */
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
+        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+            abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "Check reset failed");
+        return abi.decode(data, (bool));
+    }
+
+    /**
+     * @dev Get all tier IDs - delegates to Core module
+     */
+    function getAllTierIds() external view returns (uint8[] memory) {
+        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+            abi.encodeWithSignature("getAllTierIds()")
+        );
+        require(success, "Get all tier IDs failed");
+        return abi.decode(data, (uint8[]));
+    }
+
+    /**
+     * @dev Get raffle info - delegates to Raffle module
+     */
+    function getRaffleInfo() external view returns (
+        uint256 raffleIndex,
+        bool isReady,
+        uint256 currentAccumulated,
+        uint256 threshold,
+        uint256 reserve,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 eligiblePlayerCount
+    ) {
+        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
+            abi.encodeWithSignature("getRaffleInfo()")
+        );
+        require(success, "Get raffle info failed");
+        return abi.decode(data, (uint256, bool, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
+    }
+
+    /**
+     * @dev Get leaderboard - delegates to Prizes module
+     */
+    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
+        (bool success, bytes memory data) = MODULE_PRIZES.staticcall(
+            abi.encodeWithSignature("getLeaderboard()")
+        );
+        require(success, "Get leaderboard failed");
+        return abi.decode(data, (LeaderboardEntry[]));
+    }
+
+    /**
+     * @dev Check if Level 2 escalation (advanced player force eliminate) is available
+     * @return available True if L2 time window is active
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation (external player replacement) is available
+     * @return available True if L3 time window is active
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Check if match is active
+        if (!_isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!_hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
     }
 }

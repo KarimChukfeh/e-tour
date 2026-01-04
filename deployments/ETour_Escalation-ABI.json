@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Escalation",
-  "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+  "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-04T15:34:18.328Z",
+  "deployedAt": "2026-01-04T16:50:24.493Z",
   "abi": [
     {
       "inputs": [],
