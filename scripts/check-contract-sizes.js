@@ -27,7 +27,8 @@ const MODULES = [
     'contracts/modules/ETour_Matches.sol:ETour_Matches',
     'contracts/modules/ETour_Prizes.sol:ETour_Prizes',
     'contracts/modules/ETour_Raffle.sol:ETour_Raffle',
-    'contracts/modules/ETour_Escalation.sol:ETour_Escalation'
+    'contracts/modules/ETour_Escalation.sol:ETour_Escalation',
+    'contracts/modules/ChessRulesModule.sol:ChessRulesModule'
 ];
 
 function getContractSize(contractName) {

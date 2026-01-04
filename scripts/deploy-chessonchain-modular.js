@@ -119,6 +119,44 @@ async function main() {
     console.log("✅ Full ABI compiled and saved:", abiFile);
     console.log("");
 
+    // Compile and save module ABIs
+    console.log("=" .repeat(60));
+    console.log("Compiling Module ABIs...");
+    console.log("=" .repeat(60));
+
+    const moduleConfigs = [
+        { name: "ETour_Core", address: modules.core },
+        { name: "ETour_Matches", address: modules.matches },
+        { name: "ETour_Prizes", address: modules.prizes },
+        { name: "ETour_Raffle", address: modules.raffle },
+        { name: "ETour_Escalation", address: modules.escalation },
+        { name: "GameCacheModule", address: modules.gameCache },
+        { name: "ChessRulesModule", address: chessRulesModuleAddress }
+    ];
+
+    const moduleABIs = [];
+    for (const module of moduleConfigs) {
+        try {
+            const artifact = await hre.artifacts.readArtifact(module.name);
+            const moduleABI = {
+                contractName: module.name,
+                address: module.address,
+                network: hre.network.name,
+                chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
+                deployedAt: timestamp,
+                abi: artifact.abi
+            };
+
+            const moduleAbiFile = path.join(deploymentsDir, `${module.name}-ABI.json`);
+            fs.writeFileSync(moduleAbiFile, JSON.stringify(moduleABI, null, 2));
+            console.log(`✅ ${module.name} ABI saved:`, moduleAbiFile);
+            moduleABIs.push(moduleAbiFile);
+        } catch (error) {
+            console.log(`⚠️  Could not compile ABI for ${module.name}:`, error.message);
+        }
+    }
+    console.log("");
+
     // Verification instructions
     console.log("=" .repeat(60));
     console.log("Contract Verification");
@@ -163,6 +201,7 @@ async function main() {
     console.log("📁 Deployment Artifacts:");
     console.log("  -", networkFile);
     console.log("  -", abiFile);
+    moduleABIs.forEach(file => console.log("  -", file));
     console.log("");
     console.log("🔗 Frontend Integration:");
     console.log("  Update your client app with:");

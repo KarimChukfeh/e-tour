@@ -29,34 +29,56 @@ contract ChessRulesModule is ETour_Storage {
     }
 
     struct ChessMatch {
-        address player1;              // White
-        address player2;              // Black
+        address player1;          // White
+        address player2;          // Black
         address currentTurn;
-        address firstPlayer;
         address winner;
         Piece[64] board;
-        bool whiteInCheck;
-        bool blackInCheck;
-        uint8 enPassantSquare;
-        uint8 halfMoveClock;
-        uint16 fullMoveNumber;
-        bool whiteKingMoved;
-        bool blackKingMoved;
-        bool whiteRookAMoved;
-        bool whiteRookHMoved;
-        bool blackRookAMoved;
-        bool blackRookHMoved;
         MatchStatus status;
         uint256 startTime;
-        uint256 lastMoveTime;
+        address firstPlayer;      // Always white in chess
         bool isDraw;
+
+        // Chess-specific state
+        bool whiteKingMoved;
+        bool blackKingMoved;
+        bool whiteRookAMoved;     // Queenside rook
+        bool whiteRookHMoved;     // Kingside rook
+        bool blackRookAMoved;
+        bool blackRookHMoved;
+        uint8 enPassantSquare;    // Square where en passant capture is possible (NO_SQUARE if none)
+        uint16 halfMoveClock;     // For 50-move rule
+        uint16 fullMoveNumber;
+        bool whiteInCheck;
+        bool blackInCheck;
+
+        // Time Bank Fields (chess clock style)
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
         uint256 lastMoveTimestamp;
     }
 
-    // Storage for chess matches (from ChessOnChain)
+    // ============ Storage Layout Alignment ============
+    // CRITICAL: These storage variables MUST match ChessOnChain's layout exactly
+    // for delegatecall to access the correct storage slots
+
+    uint8 constant NO_SQUARE = 255;
+
+    // Storage for chess matches - accessed via delegatecall from ChessOnChain
     mapping(bytes32 => ChessMatch) public chessMatches;
+
+    // Additional ChessOnChain storage (not accessed by this module, but needed for slot alignment)
+    mapping(bytes32 => bytes) public moveHistory;
+
+    // Player tracking storage (for slot alignment - not accessed by this module)
+    struct TournamentRef {
+        uint8 tierId;
+        uint8 instanceId;
+    }
+    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
+    mapping(address => TournamentRef[]) public playerActiveTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
 
     // Constructor
     constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
@@ -87,7 +109,7 @@ contract ChessRulesModule is ETour_Storage {
      * @param promotion Piece type for pawn promotion (None if not promoting)
      * @return bool True if move is valid
      */
-    function isValidMove(bytes32 matchId, uint8 from, uint8 to, PieceType promotion) external view returns (bool) {
+    function isValidMove(bytes32 matchId, uint8 from, uint8 to, PieceType promotion) public view returns (bool) {
         ChessMatch storage matchData = chessMatches[matchId];
         Piece memory piece = matchData.board[from];
 
@@ -153,7 +175,7 @@ contract ChessRulesModule is ETour_Storage {
             // Double move from starting position
             uint8 startRank = (color == PieceColor.White) ? 1 : 6;
             if (from / 8 == startRank && rankDiff == direction * 2) {
-                uint8 middleSquare = from + uint8(direction * 8);
+                uint8 middleSquare = (color == PieceColor.White) ? from + 8 : from - 8;
                 if (matchData.board[middleSquare].pieceType == PieceType.None &&
                     matchData.board[to].pieceType == PieceType.None) {
                     return true;
@@ -308,10 +330,11 @@ contract ChessRulesModule is ETour_Storage {
 
     // ============ Check/Checkmate Detection ============
 
-    function isKingInCheck(bytes32 matchId, PieceColor kingColor) external view returns (bool) {
-        uint8 kingPos = _findKing(matchId, kingColor);
+    function isKingInCheck(bytes32 matchId, uint8 kingColor) public view returns (bool) {
+        PieceColor color = PieceColor(kingColor);
+        uint8 kingPos = _findKing(matchId, color);
         if (kingPos == 255) return false; // King not found (shouldn't happen)
-        return _isSquareAttacked(matchId, kingPos, kingColor);
+        return _isSquareAttacked(matchId, kingPos, color);
     }
 
     function _findKing(bytes32 matchId, PieceColor color) internal view returns (uint8) {
@@ -458,19 +481,23 @@ contract ChessRulesModule is ETour_Storage {
         return true;
     }
 
-    function hasLegalMoves(bytes32 matchId, PieceColor color) external view returns (bool) {
+    function hasLegalMoves(bytes32 matchId, uint8 color) public view returns (bool) {
+        PieceColor pieceColor = PieceColor(color);
         ChessMatch storage matchData = chessMatches[matchId];
 
         for (uint8 from = 0; from < 64; from++) {
             Piece memory piece = matchData.board[from];
-            if (piece.color != color) continue;
+            if (piece.color != pieceColor) continue;
 
             for (uint8 to = 0; to < 64; to++) {
                 if (from == to) continue;
 
+                // Check if destination has own piece
+                if (matchData.board[to].color == pieceColor) continue;
+
                 // Quick check if this could be a valid move
                 if (_isPieceMovementValid(matchId, from, to, piece)) {
-                    if (!_wouldLeaveKingInCheck(matchId, from, to, color)) {
+                    if (!_wouldLeaveKingInCheck(matchId, from, to, pieceColor)) {
                         return true;
                     }
                 }
@@ -479,7 +506,7 @@ contract ChessRulesModule is ETour_Storage {
         return false;
     }
 
-    function isInsufficientMaterial(bytes32 matchId) external view returns (bool) {
+    function isInsufficientMaterial(bytes32 matchId) public view returns (bool) {
         ChessMatch storage matchData = chessMatches[matchId];
 
         uint8 whitePieceCount = 0;

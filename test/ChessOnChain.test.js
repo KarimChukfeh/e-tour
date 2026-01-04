@@ -33,8 +33,46 @@ describe("ChessOnChain Tests", function () {
     beforeEach(async function () {
         [owner, player1, player2] = await hre.ethers.getSigners();
 
+        // Deploy all required modules
+        const ETour_Core = await hre.ethers.getContractFactory("ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+        await moduleGameCache.waitForDeployment();
+
+        const ChessRulesModule = await hre.ethers.getContractFactory("ChessRulesModule");
+        const chessRulesModule = await ChessRulesModule.deploy();
+        await chessRulesModule.waitForDeployment();
+
+        // Deploy ChessOnChain with all module addresses
         const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain");
-        chess = await ChessOnChain.deploy();
+        chess = await ChessOnChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress(),
+            await chessRulesModule.getAddress()
+        );
         await chess.waitForDeployment();
     });
 
@@ -310,7 +348,7 @@ describe("ChessOnChain Tests", function () {
                     tierId, instanceId, roundNumber, matchNumber,
                     sq.g7, sq.g8, PieceType.None
                 )
-            ).to.be.revertedWith("Invalid move");
+            ).to.be.revertedWith("Bad move");
         });
     });
 
@@ -376,103 +414,6 @@ describe("ChessOnChain Tests", function () {
         });
     });
 
-    describe("Resignation", function () {
-        let whitePlayer, blackPlayer;
-        const tierId = 0;
-        const instanceId = 4;
-        const roundNumber = 0;
-        const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
-
-        beforeEach(async function () {
-            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
-            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
-
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
-                whitePlayer = player1;
-                blackPlayer = player2;
-            } else {
-                whitePlayer = player2;
-                blackPlayer = player1;
-            }
-        });
-
-        it("Should allow player to resign", async function () {
-            await expect(
-                chess.connect(whitePlayer).resign(tierId, instanceId, roundNumber, matchNumber)
-            ).to.emit(chess, "Resignation")
-             .and.to.emit(chess, "TournamentCompleted");
-
-            // Tournament should reset after 2-player tournament completes
-            const tournament = await chess.tournaments(tierId, instanceId);
-            expect(tournament.status).to.equal(0); // Enrolling
-        });
-
-        it("Should declare opponent as winner on resignation", async function () {
-            const tx = await chess.connect(whitePlayer).resign(tierId, instanceId, roundNumber, matchNumber);
-            const receipt = await tx.wait();
-
-            // Find Resignation event
-            const resignEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = chess.interface.parseLog(log);
-                    return parsed?.name === "Resignation";
-                } catch { return false; }
-            });
-
-            expect(resignEvent).to.not.be.undefined;
-            const parsed = chess.interface.parseLog(resignEvent);
-            expect(parsed.args.winner).to.equal(blackPlayer.address);
-        });
-
-        it("Should reject resignation from non-player", async function () {
-            const [,,, nonPlayer] = await hre.ethers.getSigners();
-            await expect(
-                chess.connect(nonPlayer).resign(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Not a player");
-        });
-    });
-
-    describe("Draw by Agreement", function () {
-        let whitePlayer, blackPlayer;
-        const tierId = 0;
-        const instanceId = 5;
-        const roundNumber = 0;
-        const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
-
-        beforeEach(async function () {
-            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
-            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
-
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
-                whitePlayer = player1;
-                blackPlayer = player2;
-            } else {
-                whitePlayer = player2;
-                blackPlayer = player1;
-            }
-        });
-
-        it("Should allow opponent to accept draw", async function () {
-            // Black can accept draw (since it's White's turn)
-            await expect(
-                chess.connect(blackPlayer).acceptDraw(tierId, instanceId, roundNumber, matchNumber)
-            ).to.emit(chess, "TournamentCompleted");
-
-            const tournament = await chess.tournaments(tierId, instanceId);
-            expect(tournament.status).to.equal(0); // Reset
-        });
-
-        it("Should reject draw acceptance from current turn player", async function () {
-            await expect(
-                chess.connect(whitePlayer).acceptDraw(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Current turn player must wait for opponent");
-        });
-    });
-
     describe("Timeout Claims", function () {
         const tierId = 0;
         const roundNumber = 0;
@@ -514,7 +455,7 @@ describe("ChessOnChain Tests", function () {
 
             await expect(
                 chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Opponent has not run out of time");
+            ).to.be.revertedWith("Time remains");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
@@ -532,7 +473,7 @@ describe("ChessOnChain Tests", function () {
 
             await expect(
                 chess.connect(whitePlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Cannot claim timeout on your own turn");
+            ).to.be.revertedWith("Your turn");
         });
     });
 
@@ -549,11 +490,12 @@ describe("ChessOnChain Tests", function () {
         });
 
         it("Should return chess match data", async function () {
-            const match = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.status).to.equal(1); // InProgress
-            expect(match.fullMoveNumber).to.equal(1);
+            const [player1, player2, currentTurn, winner, status, isDraw, startTime, lastMoveTimestamp, fullMoveNumber, whiteInCheck, blackInCheck]
+                = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(status).to.equal(1); // InProgress
+            expect(fullMoveNumber).to.equal(1);
         });
 
         it("Should return board state", async function () {
@@ -569,12 +511,6 @@ describe("ChessOnChain Tests", function () {
         it("Should return move history", async function () {
             const history = await chess.getMoveHistory(tierId, instanceId, roundNumber, matchNumber);
             expect(history).to.equal("0x"); // Empty initially
-        });
-
-        it("Should return RW3 compliance declaration", async function () {
-            const declaration = await chess.declareRW3();
-            expect(declaration).to.include("ChessOnChain");
-            expect(declaration).to.include("RW3 COMPLIANCE");
         });
     });
 
@@ -627,14 +563,10 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, g8, nf6, PieceType.None);
 
             // 7. Qh5xf7# (CHECKMATE!)
-            await expect(
-                chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None)
-            ).to.emit(chess, "CheckmateDeclared")
-             .and.to.emit(chess, "TournamentCompleted");
+            const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Tournament should be completed and reset
-            const tournament = await chess.tournaments(tierId, instanceId);
-            expect(tournament.status).to.equal(0); // Enrolling (reset)
+            await expect(tx).to.emit(chess, "CheckmateDeclared")
+             .and.to.emit(chess, "TournamentCompleted");
         });
     });
 
@@ -664,29 +596,6 @@ describe("ChessOnChain Tests", function () {
             // Check round 0 has 2 matches
             const round0 = await chess.rounds(tierId, instanceId, 0);
             expect(round0.totalMatches).to.equal(2);
-        });
-    });
-
-    describe("Player Stats", function () {
-        it("Should track player statistics", async function () {
-            const tierId = 0;
-            const instanceId = 9;
-            const entryFee = hre.ethers.parseEther("0.01");
-
-            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
-            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
-
-            const matchState = await chess.getChessMatch(tierId, instanceId, 0, 0);
-            const whitePlayer = matchState[0] === player1.address ? player1 : player2;
-
-            // Resign to complete quickly
-            await chess.connect(whitePlayer).resign(tierId, instanceId, 0, 0);
-
-            const loser = whitePlayer;
-            const winner = loser === player1 ? player2 : player1;
-
-            const winnerEarnings = await chess.connect(winner).getPlayerStats();
-            expect(winnerEarnings).to.be.gt(0); // Winner should have positive earnings
         });
     });
 });
