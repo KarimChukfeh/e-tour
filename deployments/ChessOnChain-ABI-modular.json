@@ -1,9 +1,9 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+  "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-04T17:35:08.660Z",
+  "deployedAt": "2026-01-04T18:24:42.838Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -2349,90 +2349,6 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "t",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "i",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "r",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "m",
-          "type": "uint8"
-        }
-      ],
-      "name": "getChessMatch",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "enum ETour_Storage.MatchStatus",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
-        },
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
           "name": "tierId",
           "type": "uint8"
         },
@@ -2715,11 +2631,6 @@
               "internalType": "bool",
               "name": "blackQueenSideCastle",
               "type": "bool"
-            },
-            {
-              "internalType": "bytes",
-              "name": "moveHistory",
-              "type": "bytes"
             },
             {
               "internalType": "uint256",
@@ -3409,25 +3320,6 @@
           "internalType": "bool",
           "name": "isStalled",
           "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "moveHistory",
-      "outputs": [
-        {
-          "internalType": "bytes",
-          "name": "",
-          "type": "bytes"
         }
       ],
       "stateMutability": "view",

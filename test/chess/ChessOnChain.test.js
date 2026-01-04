@@ -100,10 +100,10 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             // Get match state to determine who is white/black (randomized in contract)
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
 
-            // matchState[0] is player1 (White), matchState[1] is player2 (Black)
-            if (matchState[0] === player1.address) {
+            // matchData.common.player1 is White, matchData.common.player2 is Black
+            if (matchData.common.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -161,9 +161,8 @@ describe("ChessOnChain Tests", function () {
             );
 
             // Verify White is in check after Black's queen move
-            let matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whiteInCheckAfterQueenMove = matchState[9];  // whiteInCheck is index 9
-            expect(whiteInCheckAfterQueenMove).to.be.true;
+            let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.whiteInCheck).to.be.true;
 
             // Move 7: White Bf1-e2 (blocks check)
             await chess.connect(whitePlayer).makeMove(
@@ -173,17 +172,15 @@ describe("ChessOnChain Tests", function () {
 
             // THE BUG: Before the fix, whiteInCheck would still be true here
             // After the fix, whiteInCheck should be false immediately
-            matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whiteInCheckAfterEscape = matchState[9];  // whiteInCheck is index 9
-
-            expect(whiteInCheckAfterEscape).to.be.false;
+            matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.whiteInCheck).to.be.false;
         });
 
         it("Should correctly track check status throughout a game", async function () {
             // Initial state - no one in check
-            let matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchState[9]).to.be.false;  // whiteInCheck
-            expect(matchState[10]).to.be.false; // blackInCheck
+            let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.whiteInCheck).to.be.false;
+            expect(matchData.blackInCheck).to.be.false;
 
             // After a regular move, still no check
             await chess.connect(whitePlayer).makeMove(
@@ -191,9 +188,9 @@ describe("ChessOnChain Tests", function () {
                 squares.e2, squares.e4, PieceType.None
             );
 
-            matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchState[9]).to.be.false;  // whiteInCheck
-            expect(matchState[10]).to.be.false; // blackInCheck
+            matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.whiteInCheck).to.be.false;
+            expect(matchData.blackInCheck).to.be.false;
         });
     });
 
@@ -240,8 +237,8 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchData.common.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -377,8 +374,8 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchData.common.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -490,12 +487,11 @@ describe("ChessOnChain Tests", function () {
         });
 
         it("Should return chess match data", async function () {
-            const [player1, player2, currentTurn, winner, status, isDraw, startTime, lastMoveTimestamp, fullMoveNumber, whiteInCheck, blackInCheck]
-                = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(status).to.equal(1); // InProgress
-            expect(fullMoveNumber).to.equal(1);
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.fullMoveNumber).to.equal(1);
         });
 
         it("Should return board state", async function () {
@@ -506,11 +502,6 @@ describe("ChessOnChain Tests", function () {
             expect(board[4].pieceType).to.equal(PieceType.King);
             // Black king on e8 (square 60)
             expect(board[60].pieceType).to.equal(PieceType.King);
-        });
-
-        it("Should return move history", async function () {
-            const history = await chess.getMoveHistory(tierId, instanceId, roundNumber, matchNumber);
-            expect(history).to.equal("0x"); // Empty initially
         });
     });
 
@@ -535,8 +526,8 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchState[0] === player1.address) {
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (matchData.common.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {

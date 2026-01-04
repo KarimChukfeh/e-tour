@@ -89,7 +89,7 @@ contract ChessOnChain is ETour_Storage {
 
     // One-time initialization flag
     bool public allInstancesInitialized;
-
+    
     /**
      * @dev Minimal tournament reference for player tracking
      * Gas-optimized: 2 bytes total (tierId + instanceId)
@@ -140,9 +140,6 @@ contract ChessOnChain is ETour_Storage {
         _moduleGameCacheAddress
     ) {
         MODULE_CHESS_RULES = _moduleChessRulesAddress;
-
-        // Register ChessOnChain's tournament tiers via delegatecall to Core module
-        _registerChessOnChainTiers();
     }
 
     /**
@@ -150,6 +147,8 @@ contract ChessOnChain is ETour_Storage {
      * Simplified configuration with only 2-player and 4-player tiers
      */
     function _registerChessOnChainTiers() internal {
+        require(!allInstancesInitialized, "Already initialized");
+
         uint8[] memory tier0Prizes = new uint8[](2);
         tier0Prizes[0] = 100;  // Winner takes all
         tier0Prizes[1] = 0;
@@ -225,7 +224,29 @@ contract ChessOnChain is ETour_Storage {
         require(successRaffle, "Raffle reg fail");
     }
 
-    // ChessOnChain handles match creation directly instead of delegating to modules
+ /**
+     * @dev One-time initialization of all tournament instances
+     *
+     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
+     * Can only be called once by anyone (typically by deployer immediately after deployment).
+     *
+     * Gas cost estimate:
+     * - Tier 0: 100 instances × ~20k gas = ~2M gas
+     * - Tier 1: 50 instances × ~20k gas = ~1M gas
+     * - Total: ~3M gas (~0.003 ETH at 1 gwei)
+     *
+     * After this is called:
+     * - All instances are in Enrolling state
+     * - First enrollers pay normal gas (no lazy init overhead)
+     * - Function cannot be called again
+     */
+    function initializeAllInstances() external {
+        require(!allInstancesInitialized, "Already initialized");
+
+        _registerChessOnChainTiers();
+
+        emit AllInstancesInitialized(msg.sender, tierCount);
+    }
 
     /**
      * @dev Initialize round and create matches
@@ -1185,14 +1206,6 @@ contract ChessOnChain is ETour_Storage {
         }
 
         return (player1Time, player2Time);
-    }
-
-    function getChessMatch(uint8 t, uint8 i, uint8 r, uint8 m) external view returns (
-        address, address, address, address, MatchStatus, bool, uint256, uint256, uint16, bool, bool
-    ) {
-        ChessMatch storage d = chessMatches[_getMatchId(t, i, r, m)];
-        return (d.player1, d.player2, d.currentTurn, d.winner, d.status, d.isDraw,
-                d.startTime, d.lastMoveTimestamp, d.fullMoveNumber, d.whiteInCheck, d.blackInCheck);
     }
 
     function getBoard(uint8 t, uint8 i, uint8 r, uint8 m) external view returns (Piece[64] memory) {

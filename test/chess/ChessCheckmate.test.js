@@ -92,9 +92,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             // Determine white and black players
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchState[0] === player1.address ? player1 : player2;
-            const blackPlayer = matchState[0] === player1.address ? player2 : player1;
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
 
             const sq = {
                 e2: 12, e4: 28,
@@ -139,9 +139,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchState[0] === player1.address ? player1 : player2;
-            const blackPlayer = matchState[0] === player1.address ? player2 : player1;
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
 
             // Set up a simplified back rank mate scenario
             // Note: This is a simplified sequence - in real game would need more moves
@@ -173,9 +173,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            const matchState = await chess.getChessMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchState[0] === player1.address ? player1 : player2;
-            const blackPlayer = matchState[0] === player1.address ? player2 : player1;
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
 
             const sq = {
                 e2: 12, e4: 28, e7: 52, e5: 36,

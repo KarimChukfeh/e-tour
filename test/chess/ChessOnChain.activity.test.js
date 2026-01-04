@@ -102,8 +102,8 @@ describe("ChessOnChain Player Activity Tracking", function () {
       expect(p1Active).to.be.true;
 
       // Get match info
-      const matchData = await chessOnChain.getChessMatch(TIER_0, INSTANCE_0, 0, 0);
-      const currentTurn = matchData[2]; // currentTurn is 3rd element in tuple
+      const matchData = await chessOnChain.getMatch(TIER_0, INSTANCE_0, 0, 0);
+      const currentTurn = matchData.currentTurn;
       const player = currentTurn === player1.address ? player1 : player2;
       const opponent = currentTurn === player1.address ? player2 : player1;
 
@@ -140,8 +140,8 @@ describe("ChessOnChain Player Activity Tracking", function () {
       });
 
       // Get current player and resign to complete
-      const matchData = await chessOnChain.getChessMatch(TIER_0, INSTANCE_0, 0, 0);
-      const currentTurn = matchData[2]; // currentTurn is 3rd element in tuple
+      const matchData = await chessOnChain.getMatch(TIER_0, INSTANCE_0, 0, 0);
+      const currentTurn = matchData.currentTurn;
       const player = currentTurn === player1.address ? player1 : player2;
 
       // Resign to complete match
