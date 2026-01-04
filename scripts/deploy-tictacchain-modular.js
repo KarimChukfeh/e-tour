@@ -30,7 +30,9 @@ async function main() {
         modules.prizes,
         modules.raffle,
         modules.escalation,
-        modules.gameCache
+        modules.gameCache,
+        modules.playerTracking,
+        modules.ticTacToeGame
     );
     await ticTacChain.waitForDeployment();
     const ticTacChainAddress = await ticTacChain.getAddress();
@@ -63,7 +65,10 @@ async function main() {
             ETour_Matches: modules.matches,
             ETour_Prizes: modules.prizes,
             ETour_Raffle: modules.raffle,
-            ETour_Escalation: modules.escalation
+            ETour_Escalation: modules.escalation,
+            GameCacheModule: modules.gameCache,
+            PlayerTrackingModule: modules.playerTracking,
+            TicTacToeGameModule: modules.ticTacToeGame
         },
         contracts: {
             TicTacChain: ticTacChainAddress
@@ -109,9 +114,12 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.prizes}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.raffle}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.gameCache}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.playerTracking}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.ticTacToeGame}`);
     console.log("");
     console.log("# Verify TicTacChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${ticTacChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${ticTacChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${modules.playerTracking} ${modules.ticTacToeGame}`);
     console.log("");
 
     // Final summary
@@ -125,11 +133,14 @@ async function main() {
     console.log("  Block:", blockNumber);
     console.log("");
     console.log("📍 Module Addresses:");
-    console.log("  ETour_Core:       ", modules.core);
-    console.log("  ETour_Matches:    ", modules.matches);
-    console.log("  ETour_Prizes:     ", modules.prizes);
-    console.log("  ETour_Raffle:     ", modules.raffle);
-    console.log("  ETour_Escalation: ", modules.escalation);
+    console.log("  ETour_Core:          ", modules.core);
+    console.log("  ETour_Matches:       ", modules.matches);
+    console.log("  ETour_Prizes:        ", modules.prizes);
+    console.log("  ETour_Raffle:        ", modules.raffle);
+    console.log("  ETour_Escalation:    ", modules.escalation);
+    console.log("  GameCacheModule:     ", modules.gameCache);
+    console.log("  PlayerTrackingModule:", modules.playerTracking);
+    console.log("  TicTacToeGameModule: ", modules.ticTacToeGame);
     console.log("");
     console.log("📍 Contract Address:");
     console.log("  TicTacChain:", ticTacChainAddress);

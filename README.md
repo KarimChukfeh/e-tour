@@ -1477,7 +1477,7 @@ Step 2: Clean Everything
 rm -rf artifacts/ && rm -rf cache/ && rm -f deployments/*.json
 
 Step 3: Fresh Compilation
-npx hardhat compile
+npx hardhat clean && npx hardhat compile
 
 Step 4: Deploy Modules + ChessOnChain
 npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost

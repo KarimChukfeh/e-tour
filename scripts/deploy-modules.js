@@ -62,6 +62,8 @@ export async function getOrDeployModules(forceDeploy = false) {
             console.log("  ETour_Raffle:     ", existing.raffle);
             console.log("  ETour_Escalation: ", existing.escalation);
             console.log("  GameCacheModule:  ", existing.gameCache);
+            console.log("  PlayerTrackingModule: ", existing.playerTracking);
+            console.log("  TicTacToeGameModule: ", existing.ticTacToeGame || "Not deployed");
             console.log("");
             return existing;
         }
@@ -133,6 +135,22 @@ export async function deployModules() {
     const moduleGameCacheAddress = await moduleGameCache.getAddress();
     console.log("✅ GameCacheModule deployed to:", moduleGameCacheAddress);
 
+    // Deploy PlayerTrackingModule
+    console.log("Deploying PlayerTrackingModule...");
+    const PlayerTrackingModule = await hre.ethers.getContractFactory("contracts/modules/PlayerTrackingModule.sol:PlayerTrackingModule");
+    const modulePlayerTracking = await PlayerTrackingModule.deploy();
+    await modulePlayerTracking.waitForDeployment();
+    const modulePlayerTrackingAddress = await modulePlayerTracking.getAddress();
+    console.log("✅ PlayerTrackingModule deployed to:", modulePlayerTrackingAddress);
+
+    // Deploy TicTacToeGameModule
+    console.log("Deploying TicTacToeGameModule...");
+    const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
+    const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
+    await moduleTicTacToeGame.waitForDeployment();
+    const moduleTicTacToeGameAddress = await moduleTicTacToeGame.getAddress();
+    console.log("✅ TicTacToeGameModule deployed to:", moduleTicTacToeGameAddress);
+
     console.log("");
     console.log("✅ All modules deployed successfully!");
     console.log("");
@@ -143,7 +161,9 @@ export async function deployModules() {
         prizes: modulePrizesAddress,
         raffle: moduleRaffleAddress,
         escalation: moduleEscalationAddress,
-        gameCache: moduleGameCacheAddress
+        gameCache: moduleGameCacheAddress,
+        playerTracking: modulePlayerTrackingAddress,
+        ticTacToeGame: moduleTicTacToeGameAddress
     };
 }
 
@@ -162,6 +182,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             console.log("ETour_Raffle:     ", addresses.raffle);
             console.log("ETour_Escalation: ", addresses.escalation);
             console.log("GameCacheModule:  ", addresses.gameCache);
+            console.log("PlayerTrackingModule: ", addresses.playerTracking);
+            console.log("TicTacToeGameModule: ", addresses.ticTacToeGame);
             console.log("");
             if (forceDeploy) {
                 console.log("⚠️  Forced new deployment (--force flag used)");
