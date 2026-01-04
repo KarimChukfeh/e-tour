@@ -19,22 +19,30 @@ async function main() {
     // Get or deploy modules (reuses existing if available)
     const modules = await getOrDeployModules();
 
-    // Deploy ChessOnChain_Rules module (stateless rules engine)
+    // Deploy ChessRulesModule
     console.log("=" .repeat(60));
-    console.log("Deploying ChessOnChain_Rules Module...");
+    console.log("Deploying ChessRulesModule...");
     console.log("=" .repeat(60));
-    const ChessOnChain_Rules = await hre.ethers.getContractFactory("contracts/modules/ChessOnChain_Rules.sol:ChessOnChain_Rules");
-    const chessRules = await ChessOnChain_Rules.deploy();
-    await chessRules.waitForDeployment();
-    const chessRulesAddress = await chessRules.getAddress();
-    console.log("✅ ChessOnChain_Rules module deployed to:", chessRulesAddress);
+    const ChessRulesModule = await hre.ethers.getContractFactory("ChessRulesModule");
+    const chessRulesModule = await ChessRulesModule.deploy();
+    await chessRulesModule.waitForDeployment();
+    const chessRulesModuleAddress = await chessRulesModule.getAddress();
+    console.log("✅ ChessRulesModule deployed to:", chessRulesModuleAddress);
     console.log("");
 
-    // Deploy ChessOnChain with module addresses and rules engine
+    // Deploy ChessOnChain with module addresses
     console.log("=" .repeat(60));
     console.log("Deploying ChessOnChain...");
     console.log("=" .repeat(60));
     const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain");
+    console.log("📝 Deploying with module addresses:");
+    console.log("   Core:       ", modules.core);
+    console.log("   Matches:    ", modules.matches);
+    console.log("   Prizes:     ", modules.prizes);
+    console.log("   Raffle:     ", modules.raffle);
+    console.log("   Escalation: ", modules.escalation);
+    console.log("   GameCache:  ", modules.gameCache);
+    console.log("   ChessRules: ", chessRulesModuleAddress);
     const chessOnChain = await ChessOnChain.deploy(
         modules.core,
         modules.matches,
@@ -42,7 +50,7 @@ async function main() {
         modules.raffle,
         modules.escalation,
         modules.gameCache,
-        chessRulesAddress
+        chessRulesModuleAddress
     );
     await chessOnChain.waitForDeployment();
     const chessOnChainAddress = await chessOnChain.getAddress();
@@ -77,7 +85,7 @@ async function main() {
             ETour_Raffle: modules.raffle,
             ETour_Escalation: modules.escalation,
             GameCacheModule: modules.gameCache,
-            ChessOnChain_Rules: chessRulesAddress
+            ChessRulesModule: chessRulesModuleAddress
         },
         contracts: {
             ChessOnChain: chessOnChainAddress
@@ -102,10 +110,7 @@ async function main() {
         network: hre.network.name,
         chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
         deployedAt: timestamp,
-        modules: {
-            ...modules,
-            chessRules: chessRulesAddress
-        },
+        modules: modules,
         abi: chessOnChainArtifact.abi
     };
 
@@ -127,12 +132,10 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.raffle}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.gameCache}`);
-    console.log("");
-    console.log("# Verify ChessOnChain_Rules:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${chessRulesAddress}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessRulesModuleAddress}`);
     console.log("");
     console.log("# Verify ChessOnChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${chessRulesAddress}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${chessRulesModuleAddress}`);
     console.log("");
 
     // Final summary
@@ -146,13 +149,13 @@ async function main() {
     console.log("  Block:", blockNumber);
     console.log("");
     console.log("📍 Module Addresses:");
-    console.log("  ETour_Core:         ", modules.core);
-    console.log("  ETour_Matches:      ", modules.matches);
-    console.log("  ETour_Prizes:       ", modules.prizes);
-    console.log("  ETour_Raffle:       ", modules.raffle);
-    console.log("  ETour_Escalation:   ", modules.escalation);
-    console.log("  GameCacheModule:    ", modules.gameCache);
-    console.log("  ChessOnChain_Rules: ", chessRulesAddress);
+    console.log("  ETour_Core:        ", modules.core);
+    console.log("  ETour_Matches:     ", modules.matches);
+    console.log("  ETour_Prizes:      ", modules.prizes);
+    console.log("  ETour_Raffle:      ", modules.raffle);
+    console.log("  ETour_Escalation:  ", modules.escalation);
+    console.log("  GameCacheModule:   ", modules.gameCache);
+    console.log("  ChessRulesModule:  ", chessRulesModuleAddress);
     console.log("");
     console.log("📍 Contract Address:");
     console.log("  ChessOnChain:", chessOnChainAddress);
@@ -168,7 +171,8 @@ async function main() {
     console.log("");
     console.log("🚀 ChessOnChain is live!");
     console.log("  ✅ ETour Modular Protocol - Reusable tournament infrastructure");
-    console.log("  ✅ ChessOnChain - Full-featured chess tournament game");
+    console.log("  ✅ ChessRulesModule - Stateless chess validation logic (11.3 KB)");
+    console.log("  ✅ ChessOnChain - Optimized chess tournament game (20.1 KB)");
     console.log("  📋 6 tiers, up to 128 players per tournament!");
     console.log("");
 }

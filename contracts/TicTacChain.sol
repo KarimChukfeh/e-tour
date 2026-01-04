@@ -47,21 +47,6 @@ contract TicTacChain is ETour_Storage {
         uint256 lastMoveTimestamp;
     }
 
-    struct CachedMatchData {
-        address player1;
-        address player2;
-        address firstPlayer;
-        address winner;
-        uint256 startTime;
-        uint256 endTime;
-        Cell[9] board;
-        uint8 tierId;
-        uint8 instanceId;
-        uint8 roundNumber;
-        uint8 matchNumber;
-        bool isDraw;
-        bool exists;
-    }
 
     /**
      * @dev Extended match data for TicTacToe including common fields and game-specific state
@@ -79,15 +64,6 @@ contract TicTacChain is ETour_Storage {
     // ============ Game-Specific State ============
 
     mapping(bytes32 => Match) public matches;
-
-    // Match cache (DEPRECATED - now using shared cache in ETour_Storage via GameCacheModule)
-    // MATCH_CACHE_SIZE now defined in ETour_Storage
-    CachedMatchData[1000] public matchCache;  // Kept for storage compatibility
-    uint16 public nextCacheIndex;
-    mapping(bytes32 => uint16) public cacheKeyToIndex;
-    bytes32[1000] private cacheKeys;
-    mapping(bytes32 => uint16) private matchIdToCacheIndex; // Direct matchId lookup
-    bytes32[1000] private cacheMatchIds; // Track which matchId is at each index
 
     // ============ Player Activity Tracking ============
 
@@ -132,9 +108,6 @@ contract TicTacChain is ETour_Storage {
     ) {
         // Register TicTacChain's tournament tiers via delegatecall to Core module
         _registerTicTacChainTiers();
-
-        // Pre-allocate all tournament instances, rounds, and matches
-        _preallocateAllStructs();
     }
 
     // ============ Match Creation Override ============
@@ -343,7 +316,7 @@ contract TicTacChain is ETour_Storage {
                 "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
                 0,                    // tierId
                 2,                    // playerCount
-                50,                  // instanceCount
+                100,                  // instanceCount
                 0.001 ether,          // entryFee
                 Mode.Classic,         // mode
                 timeouts0,            // timeout configuration
@@ -431,79 +404,6 @@ contract TicTacChain is ETour_Storage {
             abi.encodeWithSignature("registerRaffleThresholds(uint256[],uint256)", thresholds, 1.0 ether)
         );
         require(successRaffle, "Raffle threshold registration failed");
-    }
-
-    // ============ Pre-allocation ============
-
-    function _preallocateAllStructs() internal {
-        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
-            TierConfig storage config = _tierConfigs[tierId];
-            uint8 playerCount = config.playerCount;
-            uint8 instanceCount = config.instanceCount;
-            uint8 totalRounds = config.totalRounds;
-
-            for (uint8 instanceId = 0; instanceId < instanceCount; instanceId++) {
-                TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                tournament.tierId = tierId;
-                tournament.instanceId = instanceId;
-                tournament.status = TournamentStatus.Enrolling;
-                tournament.mode = (tierId == 0) ? Mode.Classic : Mode.Classic;
-                tournament.currentRound = 0;
-                tournament.enrolledCount = 0;
-                tournament.prizePool = 0;
-                tournament.startTime = 0;
-                tournament.winner = address(0);
-                tournament.coWinner = address(0);
-                tournament.finalsWasDraw = false;
-                tournament.allDrawResolution = false;
-                tournament.allDrawRound = NO_ROUND;
-
-                for (uint8 roundNum = 0; roundNum < totalRounds; roundNum++) {
-                    uint8 matchCount = _getMatchCountForRoundInternal(playerCount, roundNum);
-
-                    Round storage round = rounds[tierId][instanceId][roundNum];
-                    round.totalMatches = matchCount;
-                    round.completedMatches = 0;
-                    round.initialized = false;
-                    round.drawCount = 0;
-                    round.allMatchesDrew = false;
-
-                    for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
-                        bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
-                        Match storage matchData = matches[matchId];
-
-                        matchData.player1 = address(0);
-                        matchData.player2 = address(0);
-                        matchData.currentTurn = address(0);
-                        matchData.winner = address(0);
-                        matchData.status = MatchStatus.NotStarted;
-                        matchData.lastMoveTime = 0;
-                        matchData.startTime = 0;
-                        matchData.firstPlayer = address(0);
-                        matchData.isDraw = false;
-                        matchData.player1TimeRemaining = 0;
-                        matchData.player2TimeRemaining = 0;
-                        matchData.lastMoveTimestamp = 0;
-
-                        for (uint8 i = 0; i < 9; i++) {
-                            matchData.board[i] = Cell.Empty;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function _getMatchCountForRoundInternal(uint8 playerCount, uint8 roundNumber) internal pure returns (uint8) {
-        if (roundNumber == 0) {
-            return playerCount / 2;
-        } else {
-            uint8 playersInRound = playerCount;
-            for (uint8 i = 0; i < roundNumber; i++) {
-                playersInRound = playersInRound / 2;
-            }
-            return playersInRound / 2;
-        }
     }
 
     // ============ ETour Abstract Implementation ============
@@ -1216,13 +1116,11 @@ contract TicTacChain is ETour_Storage {
             TicTacToeMatchData memory fullData;
             fullData.common = cachedCommon;
 
-            // Populate from cache
-            bytes32 matchKey = keccak256(abi.encodePacked(cachedCommon.player1, cachedCommon.player2));
-            uint16 index = cacheKeyToIndex[matchKey];
-            CachedMatchData storage cached = matchCache[index];
-
-            fullData.board = cached.board;
-            fullData.firstPlayer = cached.firstPlayer;
+            // Initialize default values for cached matches
+            for (uint8 i = 0; i < 9; i++) {
+                fullData.board[i] = Cell.Empty;
+            }
+            fullData.firstPlayer = cachedCommon.player1;
             fullData.currentTurn = address(0);  // N/A for completed matches
             fullData.player1TimeRemaining = 0;  // N/A for completed matches
             fullData.player2TimeRemaining = 0;
@@ -1609,16 +1507,6 @@ contract TicTacChain is ETour_Storage {
         return _leaderboardPlayers.length;
     }
 
-    function getTotalCapacity() external view returns (uint256 totalPlayers) {
-        for (uint8 i = 0; i < tierCount; i++) {
-            if (_tierConfigs[i].initialized) {
-                TierConfig storage config = _tierConfigs[i];
-                totalPlayers += uint256(config.playerCount) * uint256(config.instanceCount);
-            }
-        }
-        return totalPlayers;
-    }
-
     function _getRaffleThreshold() internal view returns (uint256) {
         // If no raffle thresholds configured, use default
         if (raffleThresholds.length == 0) {
@@ -1664,24 +1552,6 @@ contract TicTacChain is ETour_Storage {
 
     function TIER_SIZES(uint8 tierId) external view returns (uint8) {
         return _tierConfigs[tierId].playerCount;
-    }
-
-    /**
-     * @dev Override to provide TicTacToe-specific game metadata
-     * @return gameName Name of the game
-     * @return gameVersion Version string
-     * @return gameDescription Short description
-     */
-    function getGameMetadata() external pure returns (
-        string memory gameName,
-        string memory gameVersion,
-        string memory gameDescription
-    ) {
-        return (
-            "TicTacChain",
-            "1.0.0",
-            "Classic TicTacToe with tournament brackets and escalation mechanisms"
-        );
     }
 
     // ============ View Function Wrappers (Delegatecall to Modules) ============
@@ -1941,23 +1811,6 @@ contract TicTacChain is ETour_Storage {
         }
 
         return false;
-    }
-
-    /**
-     * @dev Get protocol fee distribution percentages
-     */
-    function getFeeDistribution() external pure returns (
-        uint256 prizePoolPercentage,
-        uint256 ownerFeePercentage,
-        uint256 protocolFeePercentage,
-        uint256 basisPoints
-    ) {
-        return (
-            PARTICIPANTS_SHARE_BPS,
-            OWNER_SHARE_BPS,
-            PROTOCOL_SHARE_BPS,
-            BASIS_POINTS
-        );
     }
 
     /**

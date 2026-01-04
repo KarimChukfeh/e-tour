@@ -374,14 +374,6 @@ describe("ChessOnChain Tests", function () {
             expect(board[sq.g1].pieceType).to.equal(PieceType.King); // King on g1
             expect(board[5].pieceType).to.equal(PieceType.Rook);     // Rook on f1
         });
-
-        it("Should report correct castling rights", async function () {
-            const rights = await chess.getCastlingRights(tierId, instanceId, roundNumber, matchNumber);
-            expect(rights.whiteKingSide).to.be.true;
-            expect(rights.whiteQueenSide).to.be.true;
-            expect(rights.blackKingSide).to.be.true;
-            expect(rights.blackQueenSide).to.be.true;
-        });
     });
 
     describe("Resignation", function () {

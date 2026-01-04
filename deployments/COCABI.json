@@ -1,9 +1,9 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-02T02:16:40.539Z",
+  "deployedAt": "2026-01-03T05:59:42.899Z",
   "abi": [
     {
       "inputs": [],
@@ -1528,19 +1528,6 @@
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "declareRW3",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
         }
       ],
       "stateMutability": "view",

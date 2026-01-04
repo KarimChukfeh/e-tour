@@ -1,16 +1,16 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-03T04:51:55.636Z",
+  "deployedAt": "2026-01-04T12:42:50.436Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "gameCache": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "prizes": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "raffle": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "escalation": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "gameCache": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
   },
   "abi": [
     {
@@ -1654,25 +1654,6 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "cacheKeyToIndex",
-      "outputs": [
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "uint8",
           "name": "tierId",
           "type": "uint8"
@@ -2328,57 +2309,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getFeeDistribution",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "prizePoolPercentage",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "ownerFeePercentage",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "protocolFeePercentage",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "basisPoints",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "pure",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getGameMetadata",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "gameName",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "gameVersion",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "gameDescription",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -3069,19 +2999,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getTotalCapacity",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "totalPlayers",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "uint8",
@@ -3412,80 +3329,6 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "matchCache",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "player1",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "player2",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "firstPlayer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "startTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "endTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "isDraw",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "exists",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "bytes32",
           "name": "",
           "type": "bytes32"
@@ -3586,19 +3429,6 @@
           "internalType": "uint256",
           "name": "lastMoveTimestamp",
           "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "nextCacheIndex",
-      "outputs": [
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
         }
       ],
       "stateMutability": "view",

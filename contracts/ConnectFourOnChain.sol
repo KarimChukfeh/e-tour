@@ -57,22 +57,6 @@ contract ConnectFourOnChain is ETour_Storage {
         uint256 lastMoveTimestamp;
     }
 
-    struct CachedMatchData {
-        address player1;
-        address player2;
-        address firstPlayer;
-        address winner;
-        uint256 startTime;
-        uint256 endTime;
-        Cell[TOTAL_CELLS] board;
-        uint8 tierId;
-        uint8 instanceId;
-        uint8 roundNumber;
-        uint8 matchNumber;
-        bool isDraw;
-        bool exists;
-        uint8 moveCount;
-    }
 
     /**
      * @dev Extended match data for ConnectFour including common fields and game-specific state
@@ -92,13 +76,6 @@ contract ConnectFourOnChain is ETour_Storage {
     // ============ Game-Specific State ============
 
     mapping(bytes32 => Match) public matches;
-
-    // Match cache (DEPRECATED - now using shared cache in ETour_Storage via GameCacheModule)
-    // MATCH_CACHE_SIZE now defined in ETour_Storage
-    CachedMatchData[1000] public matchCache;  // Kept for storage compatibility
-    uint16 public nextCacheIndex;
-    mapping(bytes32 => uint16) public cacheKeyToIndex;
-    bytes32[1000] private cacheKeys;
 
     // ============ Player Activity Tracking ============
 
@@ -143,9 +120,6 @@ contract ConnectFourOnChain is ETour_Storage {
     ) {
         // Register ConnectFourOnChain's tournament tiers
         _registerConnectFourTiers();
-
-        // Pre-allocate all tournament instances, rounds, and matches
-        _preallocateAllStructs();
     }
 
     /**
@@ -437,81 +411,6 @@ contract ConnectFourOnChain is ETour_Storage {
             abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "Replacement claim failed");
-    }
-
-    // ============ Pre-allocation ============
-
-    function _preallocateAllStructs() internal {
-        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
-            TierConfig storage config = _tierConfigs[tierId];
-            uint8 playerCount = config.playerCount;
-            uint8 instanceCount = config.instanceCount;
-            uint8 totalRounds = config.totalRounds;
-
-            for (uint8 instanceId = 0; instanceId < instanceCount; instanceId++) {
-                TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                tournament.tierId = tierId;
-                tournament.instanceId = instanceId;
-                tournament.status = TournamentStatus.Enrolling;
-                tournament.mode = config.mode;
-                tournament.currentRound = 0;
-                tournament.enrolledCount = 0;
-                tournament.prizePool = 0;
-                tournament.startTime = 0;
-                tournament.winner = address(0);
-                tournament.coWinner = address(0);
-                tournament.finalsWasDraw = false;
-                tournament.allDrawResolution = false;
-                tournament.allDrawRound = NO_ROUND;
-
-                for (uint8 roundNum = 0; roundNum < totalRounds; roundNum++) {
-                    uint8 matchCount = _getMatchCountForRoundInternal(playerCount, roundNum);
-
-                    Round storage round = rounds[tierId][instanceId][roundNum];
-                    round.totalMatches = matchCount;
-                    round.completedMatches = 0;
-                    round.initialized = false;
-                    round.drawCount = 0;
-                    round.allMatchesDrew = false;
-
-                    for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
-                        bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
-                        Match storage matchData = matches[matchId];
-
-                        matchData.player1 = address(0);
-                        matchData.player2 = address(0);
-                        matchData.currentTurn = address(0);
-                        matchData.winner = address(0);
-                        matchData.status = MatchStatus.NotStarted;
-                        matchData.lastMoveTime = 0;
-                        matchData.startTime = 0;
-                        matchData.firstPlayer = address(0);
-                        matchData.isDraw = false;
-                        matchData.moveCount = 0;
-                        matchData.lastColumn = NO_COLUMN;
-                        matchData.player1TimeRemaining = 0;
-                        matchData.player2TimeRemaining = 0;
-                        matchData.lastMoveTimestamp = 0;
-
-                        for (uint8 i = 0; i < TOTAL_CELLS; i++) {
-                            matchData.board[i] = Cell.Empty;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function _getMatchCountForRoundInternal(uint8 playerCount, uint8 roundNumber) internal pure returns (uint8) {
-        if (roundNumber == 0) {
-            return playerCount / 2;
-        } else {
-            uint8 playersInRound = playerCount;
-            for (uint8 i = 0; i < roundNumber; i++) {
-                playersInRound = playersInRound / 2;
-            }
-            return playersInRound / 2;
-        }
     }
 
     // ============ ETour Abstract Implementation ============
@@ -1299,16 +1198,14 @@ contract ConnectFourOnChain is ETour_Storage {
         if (exists) {
             fullData.common = cachedCommon;
 
-            // Populate from cache
-            bytes32 matchKey = keccak256(abi.encodePacked(cachedCommon.player1, cachedCommon.player2));
-            uint16 index = cacheKeyToIndex[matchKey];
-            CachedMatchData storage cached = matchCache[index];
-
-            fullData.board = cached.board;
-            fullData.firstPlayer = cached.firstPlayer;
+            // Initialize default values for cached matches
+            for (uint8 i = 0; i < TOTAL_CELLS; i++) {
+                fullData.board[i] = Cell.Empty;
+            }
+            fullData.firstPlayer = cachedCommon.player1;
             fullData.currentTurn = address(0);  // N/A for completed matches
-            fullData.moveCount = cached.moveCount;
-            fullData.lastColumn = 0;
+            fullData.moveCount = 0;
+            fullData.lastColumn = NO_COLUMN;
             fullData.player1TimeRemaining = 0;  // N/A for completed matches
             fullData.player2TimeRemaining = 0;
             fullData.lastMoveTimestamp = 0;
@@ -1688,7 +1585,7 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 tierId,
         uint8 instanceId
     ) private view returns (bool) {
-        bytes32[] storage matches = playerActiveMatches[player];
+        bytes32[] storage activeMatches = playerActiveMatches[player];
 
         TierConfig storage config = _tierConfigs[tierId];
         for (uint8 r = 0; r < config.totalRounds; r++) {
@@ -1696,8 +1593,8 @@ contract ConnectFourOnChain is ETour_Storage {
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
 
-                for (uint256 i = 0; i < matches.length; i++) {
-                    if (matches[i] == matchId) {
+                for (uint256 i = 0; i < activeMatches.length; i++) {
+                    if (activeMatches[i] == matchId) {
                         return true;
                     }
                 }
