@@ -1,13 +1,13 @@
 {
   "network": "localhost",
   "chainId": null,
-  "timestamp": "2026-01-04T12:42:52.475Z",
+  "timestamp": "2026-01-04T15:34:16.293Z",
   "modules": {
-    "core": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-    "matches": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-    "prizes": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
-    "raffle": "0x9A676e781A523b5d0C0e43731313A708CB607508",
-    "escalation": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-    "gameCache": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
+    "core": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "matches": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "prizes": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "raffle": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "escalation": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "gameCache": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
   }
 }

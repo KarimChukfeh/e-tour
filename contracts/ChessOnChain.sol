@@ -91,6 +91,9 @@ contract ChessOnChain is ETour_Storage {
     // Move history (stored as compact representation)
     mapping(bytes32 => bytes) public moveHistory;
 
+    // One-time initialization flag
+    bool public allInstancesInitialized;
+
     /**
      * @dev Minimal tournament reference for player tracking
      * Gas-optimized: 2 bytes total (tierId + instanceId)
@@ -120,6 +123,7 @@ contract ChessOnChain is ETour_Storage {
     event EnPassantCapture(bytes32 indexed matchId, address indexed player, uint8 capturedSquare);
     event PawnPromoted(bytes32 indexed matchId, address indexed player, uint8 square, PieceType newPiece);
     event Resignation(bytes32 indexed matchId, address indexed resigningPlayer, address indexed winner);
+    event AllInstancesInitialized(address indexed caller, uint8 tierCount);
 
     address public immutable MODULE_CHESS_RULES;
 
@@ -225,6 +229,56 @@ contract ChessOnChain is ETour_Storage {
         require(successRaffle, "Raffle reg fail");
     }
 
+    /**
+     * @dev One-time initialization of all tournament instances
+     *
+     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
+     * Can only be called once by anyone (typically by deployer immediately after deployment).
+     *
+     * Gas cost estimate:
+     * - Tier 0: 100 instances × ~20k gas = ~2M gas
+     * - Tier 1: 50 instances × ~20k gas = ~1M gas
+     * - Total: ~3M gas (~0.003 ETH at 1 gwei)
+     *
+     * After this is called:
+     * - All instances are in Enrolling state
+     * - First enrollers pay normal gas (no lazy init overhead)
+     * - Function cannot be called again
+     */
+    function initializeAllInstances() external {
+        require(!allInstancesInitialized, "Already initialized");
+
+        // Initialize all instances for all tiers
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Initialize tournament instance
+                tournament.tierId = tierId;
+                tournament.instanceId = instanceId;
+                tournament.status = TournamentStatus.Enrolling;
+                tournament.mode = config.mode;
+                tournament.currentRound = 0;
+                tournament.enrolledCount = 0;
+                tournament.prizePool = 0;
+                tournament.startTime = block.timestamp;
+                tournament.winner = address(0);
+                tournament.coWinner = address(0);
+                tournament.finalsWasDraw = false;
+                tournament.allDrawResolution = false;
+                tournament.allDrawRound = 0;
+                tournament.hasStartedViaTimeout = false;
+            }
+        }
+
+        // Mark as initialized - prevents re-initialization
+        allInstancesInitialized = true;
+
+        emit AllInstancesInitialized(msg.sender, tierCount);
+    }
+
     // ChessOnChain handles match creation directly instead of delegating to modules
 
     /**
@@ -286,6 +340,28 @@ contract ChessOnChain is ETour_Storage {
      */
     function getMatchCountForRound(uint8 tierId, uint8 instanceId) public view returns (uint8) {
         return tournaments[tierId][instanceId].enrolledCount / 2;
+    }
+
+    /**
+     * @dev Get tier configuration (public getter for internal _tierConfigs)
+     */
+    function getTierConfig(uint8 tierId) external view returns (
+        uint8 playerCount,
+        uint8 instanceCount,
+        uint256 entryFee,
+        Mode mode,
+        uint8 totalRounds,
+        bool initialized
+    ) {
+        TierConfig storage config = _tierConfigs[tierId];
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee,
+            config.mode,
+            config.totalRounds,
+            config.initialized
+        );
     }
 
     /**

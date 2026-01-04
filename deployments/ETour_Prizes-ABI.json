@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Prizes",
-  "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+  "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-04T14:00:06.696Z",
+  "deployedAt": "2026-01-04T15:34:18.328Z",
   "abi": [
     {
       "inputs": [],
