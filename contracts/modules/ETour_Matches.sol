@@ -98,7 +98,7 @@ contract ETour_Matches is ETour_Storage {
             }
 
             for (uint8 i = 0; i < matchCount; i++) {
-                _createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
+                this._createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
             }
 
             if (walkoverPlayer != address(0)) {
@@ -125,7 +125,7 @@ contract ETour_Matches is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Remove match from both players' active match lists
-        (address player1, address player2) = _getMatchPlayers(matchId);
+        (address player1, address player2) = this._getMatchPlayers(matchId);
         removePlayerActiveMatch(player1, matchId);
         removePlayerActiveMatch(player2, matchId);
 
@@ -195,17 +195,17 @@ contract ETour_Matches is ETour_Storage {
         bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, nextMatchNumber);
 
         if (matchNumber % 2 == 0) {
-            _setMatchPlayer(nextMatchId, 0, winner);
+            this._setMatchPlayer(nextMatchId, 0, winner);
         } else {
-            _setMatchPlayer(nextMatchId, 1, winner);
+            this._setMatchPlayer(nextMatchId, 1, winner);
         }
 
-        (address p1, address p2) = _getMatchPlayers(nextMatchId);
-        (, , MatchStatus status) = _getMatchResult(nextMatchId);
+        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+        (, , MatchStatus status) = this._getMatchResult(nextMatchId);
 
         if (p1 != address(0) && p2 != address(0) && status == MatchStatus.NotStarted) {
             require(p1 != p2, "Cannot match player against themselves");
-            _initializeMatchForPlay(nextMatchId, tierId);
+            this._initializeMatchForPlay(nextMatchId, tierId);
 
             addPlayerActiveMatch(p1, nextMatchId);
             addPlayerActiveMatch(p2, nextMatchId);
@@ -232,8 +232,8 @@ contract ETour_Matches is ETour_Storage {
 
         if (isActualFinals) {
             bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
-            (address finalWinner, bool finalIsDraw, ) = _getMatchResult(finalMatchId);
-            (address finalPlayer1, address finalPlayer2) = _getMatchPlayers(finalMatchId);
+            (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
+            (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalMatchId);
 
             if (finalIsDraw) {
                 tournament.finalsWasDraw = true;
@@ -265,7 +265,7 @@ contract ETour_Matches is ETour_Storage {
 
                 for (uint8 i = 0; i < round.totalMatches; i++) {
                     bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = _getMatchResult(matchId);
+                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
                     if (matchStatus == MatchStatus.Completed && matchWinner != address(0) && !matchIsDraw) {
                         soleWinner = matchWinner;
                         winnerCount++;
@@ -281,7 +281,7 @@ contract ETour_Matches is ETour_Storage {
             uint8 nextRound = roundNumber + 1;
             if (nextRound == config.totalRounds - 1) {
                 bytes32 finalsMatchId = _getMatchId(tierId, instanceId, nextRound, 0);
-                (address fp1, address fp2) = _getMatchPlayers(finalsMatchId);
+                (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
 
                 bool onlyPlayer1 = fp1 != address(0) && fp2 == address(0);
                 bool onlyPlayer2 = fp2 != address(0) && fp1 == address(0);
@@ -291,10 +291,10 @@ contract ETour_Matches is ETour_Storage {
 
                     bytes32 prevMatchId0 = _getMatchId(tierId, instanceId, roundNumber, 0);
                     bytes32 prevMatchId1 = _getMatchId(tierId, instanceId, roundNumber, 1);
-                    (address pm0Winner, bool pm0Draw, ) = _getMatchResult(prevMatchId0);
-                    (address pm1Winner, bool pm1Draw, ) = _getMatchResult(prevMatchId1);
-                    (address pm0p1, address pm0p2) = _getMatchPlayers(prevMatchId0);
-                    (address pm1p1, address pm1p2) = _getMatchPlayers(prevMatchId1);
+                    (address pm0Winner, bool pm0Draw, ) = this._getMatchResult(prevMatchId0);
+                    (address pm1Winner, bool pm1Draw, ) = this._getMatchResult(prevMatchId1);
+                    (address pm0p1, address pm0p2) = this._getMatchPlayers(prevMatchId0);
+                    (address pm1p1, address pm1p2) = this._getMatchPlayers(prevMatchId1);
 
                     address runnerUp = address(0);
                     if (pm0Winner == walkoverWinner && !pm0Draw) {
@@ -321,8 +321,8 @@ contract ETour_Matches is ETour_Storage {
      */
     function completeTournament(uint8 tierId, uint8 instanceId, address winner) public {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        // NOTE: Status will be set to Enrolling at the end after reset
-        // tournament.status = TournamentStatus.Completed;
+        // Set status to Completed before reset (will be set to Enrolling during reset)
+        tournament.status = TournamentStatus.Completed;
 
         if (tournament.winner == address(0)) {
             tournament.winner = winner;
@@ -376,8 +376,8 @@ contract ETour_Matches is ETour_Storage {
         address[] memory remainingPlayers
     ) public {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        // NOTE: Status will be set to Enrolling at the end after reset
-        // tournament.status = TournamentStatus.Completed;
+        // Set status to Completed before reset (will be set to Enrolling during reset)
+        tournament.status = TournamentStatus.Completed;
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);
@@ -432,7 +432,7 @@ contract ETour_Matches is ETour_Storage {
 
         for (uint8 i = 0; i < round.totalMatches; i++) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-            (address p1, address p2) = _getMatchPlayers(matchId);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
 
             if (p1 != address(0)) {
                 playersInRound[playerCount++] = p1;
@@ -451,7 +451,7 @@ contract ETour_Matches is ETour_Storage {
 
         for (uint8 i = 0; i < round.totalMatches; i++) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-            (address p1, address p2) = _getMatchPlayers(matchId);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
 
             bool hasPlayer1 = p1 != address(0);
             bool hasPlayer2 = p2 != address(0);
@@ -475,7 +475,7 @@ contract ETour_Matches is ETour_Storage {
         // Reset all matches in the round
         for (uint8 i = 0; i < round.totalMatches; i++) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-            _resetMatchGame(matchId);
+            this._resetMatchGame(matchId);
         }
 
         // Recalculate match count for consolidated players
@@ -514,7 +514,7 @@ contract ETour_Matches is ETour_Storage {
             address p1 = playersInRound[i * 2];
             address p2 = playersInRound[i * 2 + 1];
 
-            _createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
+            this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
             emit PlayersConsolidated(tierId, instanceId, roundNumber, p1, p2);
         }
 
@@ -539,8 +539,8 @@ contract ETour_Matches is ETour_Storage {
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
 
-            (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
-            (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
+            (address w1, bool d1, MatchStatus s1) = this._getMatchResult(matchId1);
+            (address w2, bool d2, MatchStatus s2) = this._getMatchResult(matchId2);
 
             // Check if match 1 has a winner and match 2 has no winner (draw or double elimination)
             if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
@@ -573,8 +573,8 @@ contract ETour_Matches is ETour_Storage {
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
             bytes32 matchId2 = _getMatchId(tierId, instanceId, roundNumber, i + 1);
 
-            (address w1, bool d1, MatchStatus s1) = _getMatchResult(matchId1);
-            (address w2, bool d2, MatchStatus s2) = _getMatchResult(matchId2);
+            (address w1, bool d1, MatchStatus s1) = this._getMatchResult(matchId1);
+            (address w2, bool d2, MatchStatus s2) = this._getMatchResult(matchId2);
 
             // Advance winner from match 1 if match 2 has no winner (draw or double elimination)
             if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
@@ -598,7 +598,7 @@ contract ETour_Matches is ETour_Storage {
 
         for (uint8 i = 0; i < round.totalMatches; i++) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-            (address p1, address p2) = _getMatchPlayers(matchId);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
             if (p1 != address(0)) {
                 tempPlayers[count++] = p1;
             }
@@ -648,7 +648,7 @@ contract ETour_Matches is ETour_Storage {
 
         for (uint8 i = 0; i < nextRoundData.totalMatches; i++) {
             bytes32 matchId = _getMatchId(tierId, instanceId, nextRound, i);
-            (address p1, address p2) = _getMatchPlayers(matchId);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
 
             if (p1 != address(0)) {
                 soleWinner = p1;

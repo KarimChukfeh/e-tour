@@ -80,16 +80,12 @@ contract ChessOnChain is ETour_Storage {
         bool whiteQueenSideCastle;
         bool blackKingSideCastle;
         bool blackQueenSideCastle;
-        bytes moveHistory;
         uint256 player1TimeRemaining;         // Time bank for player1
         uint256 player2TimeRemaining;         // Time bank for player2
         uint256 lastMoveTimestamp;            // Timestamp of last move
     }
 
     mapping(bytes32 => ChessMatch) public chessMatches;
-
-    // Move history (stored as compact representation)
-    mapping(bytes32 => bytes) public moveHistory;
 
     // One-time initialization flag
     bool public allInstancesInitialized;
@@ -227,56 +223,6 @@ contract ChessOnChain is ETour_Storage {
             )
         );
         require(successRaffle, "Raffle reg fail");
-    }
-
-    /**
-     * @dev One-time initialization of all tournament instances
-     *
-     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
-     * Can only be called once by anyone (typically by deployer immediately after deployment).
-     *
-     * Gas cost estimate:
-     * - Tier 0: 100 instances × ~20k gas = ~2M gas
-     * - Tier 1: 50 instances × ~20k gas = ~1M gas
-     * - Total: ~3M gas (~0.003 ETH at 1 gwei)
-     *
-     * After this is called:
-     * - All instances are in Enrolling state
-     * - First enrollers pay normal gas (no lazy init overhead)
-     * - Function cannot be called again
-     */
-    function initializeAllInstances() external {
-        require(!allInstancesInitialized, "Already initialized");
-
-        // Initialize all instances for all tiers
-        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
-            TierConfig storage config = _tierConfigs[tierId];
-
-            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
-                TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-                // Initialize tournament instance
-                tournament.tierId = tierId;
-                tournament.instanceId = instanceId;
-                tournament.status = TournamentStatus.Enrolling;
-                tournament.mode = config.mode;
-                tournament.currentRound = 0;
-                tournament.enrolledCount = 0;
-                tournament.prizePool = 0;
-                tournament.startTime = block.timestamp;
-                tournament.winner = address(0);
-                tournament.coWinner = address(0);
-                tournament.finalsWasDraw = false;
-                tournament.allDrawResolution = false;
-                tournament.allDrawRound = 0;
-                tournament.hasStartedViaTimeout = false;
-            }
-        }
-
-        // Mark as initialized - prevents re-initialization
-        allInstancesInitialized = true;
-
-        emit AllInstancesInitialized(msg.sender, tierCount);
     }
 
     // ChessOnChain handles match creation directly instead of delegating to modules
@@ -581,7 +527,6 @@ contract ChessOnChain is ETour_Storage {
         for (uint8 i = 0; i < 64; i++) {
             matchData.board[i] = Piece(PieceType.None, PieceColor.None);
         }
-        delete moveHistory[matchId];
     }
 
     function _resetChessState(bytes32 matchId) private {
@@ -1039,9 +984,6 @@ contract ChessOnChain is ETour_Storage {
 
         matchData.lastMoveTimestamp = block.timestamp;
 
-        // Store move in history
-        _appendMoveToHistory(matchId, from, to, uint8(promotion));
-
         emit ChessMoveMade(matchId, msg.sender, from, to, promotion);
 
         // Switch turns
@@ -1142,18 +1084,11 @@ contract ChessOnChain is ETour_Storage {
         emit CastlingPerformed(matchId, msg.sender, kingSide);
     }
 
-    function _appendMoveToHistory(bytes32 matchId, uint8 from, uint8 to, uint8 promotion) internal {
-        bytes storage history = moveHistory[matchId];
-        history.push(bytes1(from));
-        history.push(bytes1(to));
-        history.push(bytes1(promotion));
-    }
-
     // Note: All chess rules validation logic has been moved to ChessRulesModule
 
     /**
      * @dev Get complete Chess match data with automatic cache fallback
-     * NEW: Unifies fragmented getChessMatch/getBoard/getCastlingRights/getMoveHistory
+     * NEW: Unifies fragmented getChessMatch/getBoard/getCastlingRights
      */
     function getMatch(
         uint8 tierId,
@@ -1170,7 +1105,6 @@ contract ChessOnChain is ETour_Storage {
 
         if (common.isCached) {
             // Populate from cache - LIMITED DATA!
-            // Chess cache has minimal data (no board, no history)
             // Initialize empty board (default values)
             for (uint8 i = 0; i < 64; i++) {
                 fullData.board[i] = Piece({pieceType: PieceType.None, color: PieceColor.None});
@@ -1186,7 +1120,6 @@ contract ChessOnChain is ETour_Storage {
             fullData.whiteQueenSideCastle = false;
             fullData.blackKingSideCastle = false;
             fullData.blackQueenSideCastle = false;
-            fullData.moveHistory = "";  // Not stored in cache
             fullData.player1TimeRemaining = 0;  // N/A for completed matches
             fullData.player2TimeRemaining = 0;
             fullData.lastMoveTimestamp = 0;
@@ -1205,7 +1138,6 @@ contract ChessOnChain is ETour_Storage {
             fullData.whiteQueenSideCastle = !matchData.whiteKingMoved && !matchData.whiteRookAMoved;
             fullData.blackKingSideCastle = !matchData.blackKingMoved && !matchData.blackRookHMoved;
             fullData.blackQueenSideCastle = !matchData.blackKingMoved && !matchData.blackRookAMoved;
-            fullData.moveHistory = moveHistory[matchId];
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
             fullData.lastMoveTimestamp = matchData.lastMoveTimestamp;
