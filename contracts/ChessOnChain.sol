@@ -903,88 +903,41 @@ contract ChessOnChain is ETour_Storage {
         uint8 matchNumber
     ) internal {
         ChessMatch storage matchData = chessMatches[matchId];
-        
-        Piece memory movingPiece = matchData.board[from];
-        Piece memory capturedPiece = matchData.board[to];
-        PieceColor playerColor = movingPiece.color;
-        
-        bool isCapture = capturedPiece.pieceType != PieceType.None;
-        bool isPawnMove = movingPiece.pieceType == PieceType.Pawn;
-        
-        // Handle special moves
-        
-        // Castling
-        if (movingPiece.pieceType == PieceType.King) {
-            int8 fileDiff = int8(to % 8) - int8(from % 8);
-            if (fileDiff == 2 || fileDiff == -2) {
-                _executeCastling(matchId, from, to, playerColor);
-            }
-            
-            if (playerColor == PieceColor.White) {
-                matchData.whiteKingMoved = true;
-            } else {
-                matchData.blackKingMoved = true;
-            }
+        PieceColor playerColor = (msg.sender == matchData.player1) ? PieceColor.White : PieceColor.Black;
+
+        // Delegate move execution to ChessRulesModule
+        (bool success, bytes memory result) = MODULE_CHESS_RULES.delegatecall(
+            abi.encodeWithSignature("executeMove(bytes32,uint8,uint8,uint8)", matchId, from, to, uint8(promotion))
+        );
+        require(success, "Move exec fail");
+
+        (bool isCapture, bool isPawnMove, bool isCastling, bool isEnPassantCapture) =
+            abi.decode(result, (bool, bool, bool, bool));
+
+        // Emit game-specific events
+        if (isCastling) {
+            bool kingSide = (to % 8) > (from % 8);
+            emit CastlingPerformed(matchId, msg.sender, kingSide);
         }
-        
-        // Track rook movement for castling rights
-        if (movingPiece.pieceType == PieceType.Rook) {
-            if (from == 0) matchData.whiteRookAMoved = true;
-            if (from == 7) matchData.whiteRookHMoved = true;
-            if (from == 56) matchData.blackRookAMoved = true;
-            if (from == 63) matchData.blackRookHMoved = true;
-        }
-        
-        // En passant capture
-        if (isPawnMove && to == matchData.enPassantSquare) {
+
+        if (isEnPassantCapture) {
             uint8 capturedPawnSquare = (playerColor == PieceColor.White) ? to - 8 : to + 8;
-            matchData.board[capturedPawnSquare] = Piece(PieceType.None, PieceColor.None);
-            isCapture = true;
             emit EnPassantCapture(matchId, msg.sender, capturedPawnSquare);
         }
-        
-        // Set en passant square for next move
-        matchData.enPassantSquare = NO_SQUARE;
-        if (isPawnMove) {
-            int8 rankDiff = int8(to / 8) - int8(from / 8);
-            if (rankDiff == 2 || rankDiff == -2) {
-                matchData.enPassantSquare = (from + to) / 2;
-            }
-        }
-        
-        // Execute the move
-        matchData.board[to] = movingPiece;
-        matchData.board[from] = Piece(PieceType.None, PieceColor.None);
-        
-        // Pawn promotion
+
         if (isPawnMove) {
             uint8 toRank = to / 8;
-            if ((playerColor == PieceColor.White && toRank == 7) || 
+            if ((playerColor == PieceColor.White && toRank == 7) ||
                 (playerColor == PieceColor.Black && toRank == 0)) {
-                require(promotion != PieceType.None && promotion != PieceType.Pawn && promotion != PieceType.King, "Promo");
-                matchData.board[to] = Piece(promotion, playerColor);
                 emit PawnPromoted(matchId, msg.sender, to, promotion);
             }
         }
-        
-        // Update game state
-        if (isCapture || isPawnMove) {
-            matchData.halfMoveClock = 0;
-        } else {
-            matchData.halfMoveClock++;
-        }
-        
-        if (playerColor == PieceColor.Black) {
-            matchData.fullMoveNumber++;
-        }
 
-        // Update time bank for current player (Fischer increment)
-        // Note: Players can make moves even if out of time - opponent must claim timeout victory
+        // Update time bank for current player (Fischer increment) - TOURNAMENT LOGIC
         uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
         uint256 timeIncrement = _getTimeIncrement();
 
         if (msg.sender == matchData.player1) {
-            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
             if (matchData.player1TimeRemaining >= timeElapsed) {
                 matchData.player1TimeRemaining -= timeElapsed;
             } else {
@@ -992,7 +945,6 @@ contract ChessOnChain is ETour_Storage {
             }
             matchData.player1TimeRemaining += timeIncrement;
         } else {
-            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
             if (matchData.player2TimeRemaining >= timeElapsed) {
                 matchData.player2TimeRemaining -= timeElapsed;
             } else {
@@ -1007,13 +959,6 @@ contract ChessOnChain is ETour_Storage {
 
         // Switch turns
         matchData.currentTurn = (matchData.currentTurn == matchData.player1) ? matchData.player2 : matchData.player1;
-
-        // Clear moving player's check status (they made a legal move, so not in check)
-        if (playerColor == PieceColor.White) {
-            matchData.whiteInCheck = false;
-        } else {
-            matchData.blackInCheck = false;
-        }
 
         // Check for game end conditions
         PieceColor opponentColor = (playerColor == PieceColor.White) ? PieceColor.Black : PieceColor.White;
@@ -1064,39 +1009,7 @@ contract ChessOnChain is ETour_Storage {
         }
     }
 
-    function _executeCastling(bytes32 matchId, uint8 kingFrom, uint8 kingTo, PieceColor color) internal {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        bool kingSide = (kingTo % 8) > (kingFrom % 8);
-        uint8 rookFrom;
-        uint8 rookTo;
-        
-        if (color == PieceColor.White) {
-            if (kingSide) {
-                rookFrom = 7;   // h1
-                rookTo = 5;     // f1
-            } else {
-                rookFrom = 0;   // a1
-                rookTo = 3;     // d1
-            }
-        } else {
-            if (kingSide) {
-                rookFrom = 63;  // h8
-                rookTo = 61;    // f8
-            } else {
-                rookFrom = 56;  // a8
-                rookTo = 59;    // d8
-            }
-        }
-        
-        // Move the rook
-        matchData.board[rookTo] = matchData.board[rookFrom];
-        matchData.board[rookFrom] = Piece(PieceType.None, PieceColor.None);
-        
-        emit CastlingPerformed(matchId, msg.sender, kingSide);
-    }
-
-    // Note: All chess rules validation logic has been moved to ChessRulesModule
+    // Note: All chess rules validation and execution logic has been moved to ChessRulesModule
 
     /**
      * @dev Get complete Chess match data with automatic cache fallback

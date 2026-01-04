@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Core",
-  "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-04T18:36:52.865Z",
+  "deployedAt": "2026-01-04T18:47:54.483Z",
   "abi": [
     {
       "inputs": [],

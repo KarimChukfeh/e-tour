@@ -558,4 +558,149 @@ contract ChessRulesModule is ETour_Storage {
 
         return false;
     }
+
+    // ============ Move Execution ============
+
+    /**
+     * @dev Execute a validated chess move and update all game state
+     * IMPORTANT: This assumes the move has already been validated via isValidMove
+     * @param matchId The match identifier
+     * @param from Source square
+     * @param to Destination square
+     * @param promotion Piece type for pawn promotion
+     * @return isCapture True if move captured a piece
+     * @return isPawnMove True if pawn moved
+     * @return isCastling True if castling occurred
+     * @return isEnPassantCapture True if en passant capture occurred
+     */
+    function executeMove(
+        bytes32 matchId,
+        uint8 from,
+        uint8 to,
+        PieceType promotion
+    ) public returns (
+        bool isCapture,
+        bool isPawnMove,
+        bool isCastling,
+        bool isEnPassantCapture
+    ) {
+        ChessMatch storage matchData = chessMatches[matchId];
+
+        Piece memory movingPiece = matchData.board[from];
+        Piece memory capturedPiece = matchData.board[to];
+        PieceColor playerColor = movingPiece.color;
+
+        isCapture = capturedPiece.pieceType != PieceType.None;
+        isPawnMove = movingPiece.pieceType == PieceType.Pawn;
+
+        // Handle castling
+        if (movingPiece.pieceType == PieceType.King) {
+            int8 fileDiff = int8(to % 8) - int8(from % 8);
+            if (fileDiff == 2 || fileDiff == -2) {
+                _executeCastling(matchId, from, to, playerColor);
+                isCastling = true;
+            }
+
+            // Mark king as moved
+            if (playerColor == PieceColor.White) {
+                matchData.whiteKingMoved = true;
+            } else {
+                matchData.blackKingMoved = true;
+            }
+        }
+
+        // Track rook movement for castling rights
+        if (movingPiece.pieceType == PieceType.Rook) {
+            if (from == 0) matchData.whiteRookAMoved = true;
+            if (from == 7) matchData.whiteRookHMoved = true;
+            if (from == 56) matchData.blackRookAMoved = true;
+            if (from == 63) matchData.blackRookHMoved = true;
+        }
+
+        // En passant capture
+        if (isPawnMove && to == matchData.enPassantSquare) {
+            uint8 capturedPawnSquare = (playerColor == PieceColor.White) ? to - 8 : to + 8;
+            matchData.board[capturedPawnSquare] = Piece(PieceType.None, PieceColor.None);
+            isCapture = true;
+            isEnPassantCapture = true;
+        }
+
+        // Set en passant square for next move
+        matchData.enPassantSquare = NO_SQUARE;
+        if (isPawnMove) {
+            int8 rankDiff = int8(to / 8) - int8(from / 8);
+            if (rankDiff == 2 || rankDiff == -2) {
+                matchData.enPassantSquare = (from + to) / 2;
+            }
+        }
+
+        // Execute the move
+        matchData.board[to] = movingPiece;
+        matchData.board[from] = Piece(PieceType.None, PieceColor.None);
+
+        // Pawn promotion
+        if (isPawnMove) {
+            uint8 toRank = to / 8;
+            if ((playerColor == PieceColor.White && toRank == 7) ||
+                (playerColor == PieceColor.Black && toRank == 0)) {
+                require(promotion != PieceType.None && promotion != PieceType.Pawn && promotion != PieceType.King, "Promo");
+                matchData.board[to] = Piece(promotion, playerColor);
+            }
+        }
+
+        // Update halfmove clock for 50-move rule
+        if (isCapture || isPawnMove) {
+            matchData.halfMoveClock = 0;
+        } else {
+            matchData.halfMoveClock++;
+        }
+
+        // Update full move number
+        if (playerColor == PieceColor.Black) {
+            matchData.fullMoveNumber++;
+        }
+
+        // Clear moving player's check status
+        if (playerColor == PieceColor.White) {
+            matchData.whiteInCheck = false;
+        } else {
+            matchData.blackInCheck = false;
+        }
+
+        return (isCapture, isPawnMove, isCastling, isEnPassantCapture);
+    }
+
+    /**
+     * @dev Execute castling move (rook movement)
+     * King is moved by the caller, this handles the rook
+     */
+    function _executeCastling(bytes32 matchId, uint8 kingFrom, uint8 kingTo, PieceColor color) internal {
+        ChessMatch storage matchData = chessMatches[matchId];
+
+        bool kingSide = (kingTo % 8) > (kingFrom % 8);
+        uint8 rookFrom;
+        uint8 rookTo;
+
+        if (color == PieceColor.White) {
+            if (kingSide) {
+                rookFrom = 7;   // h1
+                rookTo = 5;     // f1
+            } else {
+                rookFrom = 0;   // a1
+                rookTo = 3;     // d1
+            }
+        } else {
+            if (kingSide) {
+                rookFrom = 63;  // h8
+                rookTo = 61;    // f8
+            } else {
+                rookFrom = 56;  // a8
+                rookTo = 59;    // d8
+            }
+        }
+
+        // Move the rook
+        matchData.board[rookTo] = matchData.board[rookFrom];
+        matchData.board[rookFrom] = Piece(PieceType.None, PieceColor.None);
+    }
 }
