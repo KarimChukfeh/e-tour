@@ -23,11 +23,10 @@ contract ConnectFourOnChain is ETour_Storage {
 
     // ============ Game-Specific Constants ============
 
-    uint8 public constant ROWS = 6;
-    uint8 public constant COLS = 7;
-    uint8 public constant TOTAL_CELLS = ROWS * COLS;  // 42 cells
-    uint8 public constant CONNECT_COUNT = 4;  // Need 4 in a row to win
-    uint8 public constant NO_COLUMN = 255;
+    uint8 private constant ROWS = 6;
+    uint8 private constant COLS = 7;
+    uint8 private constant TOTAL_CELLS = 42;
+    uint8 private constant CONNECT_COUNT = 4;
 
     // ============ Game-Specific Structs ============
 
@@ -49,8 +48,6 @@ contract ConnectFourOnChain is ETour_Storage {
         uint256 lastMoveTime;
         uint256 player1TimeRemaining;  // Time bank with Fischer increment
         uint256 player2TimeRemaining;
-        uint8 moveCount;               // Tracks progress toward draw (42 moves)
-        uint8 lastColumn;              // Last column played
     }
 
     /**
@@ -62,8 +59,6 @@ contract ConnectFourOnChain is ETour_Storage {
         uint256 packedBoard;           // Game-specific: packed board state
         address currentTurn;           // Who plays next (address(0) for completed)
         address firstPlayer;           // Who started the match
-        uint8 moveCount;               // Total moves made
-        uint8 lastColumn;              // Last column played
         uint256 player1TimeRemaining;  // Time bank for player1
         uint256 player2TimeRemaining;  // Time bank for player2
     }
@@ -114,7 +109,6 @@ contract ConnectFourOnChain is ETour_Storage {
         _registerTier1();
         _registerTier2();
 
-        // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 0.05 ether;
 
         emit AllInstancesInitialized(msg.sender, tierCount);
@@ -240,13 +234,11 @@ contract ConnectFourOnChain is ETour_Storage {
                 emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
             }
 
-            // Create matches directly
             for (uint8 i = 0; i < matchCount; i++) {
                 address player1 = players[i * 2];
                 address player2 = players[i * 2 + 1];
                 _createMatchGame(tierId, instanceId, roundNumber, i, player1, player2);
 
-                // Add players to active match tracking
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
                 playerActiveMatches[player1].push(matchId);
                 playerMatchIndex[player1][matchId] = playerActiveMatches[player1].length - 1;
@@ -255,7 +247,6 @@ contract ConnectFourOnChain is ETour_Storage {
             }
 
             if (walkoverPlayer != address(0)) {
-                // Delegate winner advancement to Matches module
                 (bool success, ) = MODULE_MATCHES.delegatecall(
                     abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchCount, walkoverPlayer)
                 );
@@ -286,19 +277,15 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "E");
 
-        // Call player enrolled hook
         _onPlayerEnrolled(tierId, instanceId, msg.sender);
 
-        // If tournament auto-started, call hooks and initialize round
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
             _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
     }
 
-    /**
-     * @dev Force start tournament - delegates to Core module
-     */
+    
     function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TournamentStatus oldStatus = tournament.status;
@@ -308,32 +295,26 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "FS");
 
-        // If tournament started with multiple players
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
             _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
 
-        // If single-player tournament completed immediately
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
             address winner = tournament.winner;
             address[] memory singlePlayer = new address[](1);
             singlePlayer[0] = winner;
 
-            // Reset tournament
             (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
             );
             require(resetSuccess, "RT");
 
-            // Call completion hook
             _onTournamentCompleted(tierId, instanceId, singlePlayer);
         }
     }
 
-    /**
-     * @dev Execute protocol raffle - delegates to Raffle module
-     */
+    
     function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
             abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
@@ -341,9 +322,7 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "ER");
     }
 
-    /**
-     * @dev Reset enrollment window (single player extends timeout)
-     */
+    
     function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
@@ -351,9 +330,7 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "RW");
     }
 
-    /**
-     * @dev Check if enrollment window can be reset (single player after timeout)
-     */
+    
     function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
         (bool success, bytes memory data) = MODULE_CORE.staticcall(
             abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
@@ -362,25 +339,20 @@ contract ConnectFourOnChain is ETour_Storage {
         return abi.decode(data, (bool));
     }
 
-    /**
-     * @dev Claim abandoned enrollment pool - delegates to Core module
-     */
+    
     function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CAE");
 
-        // Reset tournament after claiming abandoned pool
         (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(resetSuccess, "RT");
     }
 
-    /**
-     * @dev Escalation Level 2: Advanced players force eliminate both stalled players
-     */
+    
     function forceEliminateStalledMatch(
         uint8 tierId,
         uint8 instanceId,
@@ -396,9 +368,7 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "FE");
     }
 
-    /**
-     * @dev Escalation Level 3: External player claims stalled match slot
-     */
+    
     function claimMatchSlotByReplacement(
         uint8 tierId,
         uint8 instanceId,
@@ -420,9 +390,8 @@ contract ConnectFourOnChain is ETour_Storage {
     // ============ Game Logic (Connect Four Specific) ============
 
     /**
-     * @dev Make a move by dropping a piece in a column
-     * Pieces fall to the lowest available row in that column
-     * Handles time bank updates with Fischer increment
+     * @dev Make a move on the Connect Four board
+     * Handles gravity (piece drops to lowest available row), time bank updates with Fischer increment
      */
     function makeMove(
         uint8 tierId,
@@ -440,7 +409,6 @@ contract ConnectFourOnChain is ETour_Storage {
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
         require(msg.sender == matchData.currentTurn, "NT");
 
-        // Update time bank for current player
         uint256 elapsed = block.timestamp - matchData.lastMoveTime;
         if (matchData.currentTurn == matchData.player1) {
             matchData.player1TimeRemaining = (matchData.player1TimeRemaining > elapsed)
@@ -455,8 +423,7 @@ contract ConnectFourOnChain is ETour_Storage {
         }
         matchData.lastMoveTime = block.timestamp;
 
-        // Find the lowest available row in this column (gravity)
-        uint8 targetRow = ROWS; // Start with invalid row
+        uint8 targetRow = ROWS;
         for (uint8 row = ROWS; row > 0; row--) {
             uint8 checkCell = _getCellIndex(row - 1, column);
             if (_getCell(matchData.packedBoard, checkCell) == 0) {
@@ -467,14 +434,10 @@ contract ConnectFourOnChain is ETour_Storage {
 
         require(targetRow < ROWS, "CF");
 
-        // Determine piece color based on player (1=Red, 2=Yellow)
         uint8 piece = (msg.sender == matchData.player1) ? 1 : 2;
 
-        // Place the piece
         uint8 cellIndex = _getCellIndex(targetRow, column);
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, piece);
-        matchData.moveCount++;
-        matchData.lastColumn = column;
 
         emit MoveMade(matchId, msg.sender, column, targetRow);
 
@@ -485,7 +448,7 @@ contract ConnectFourOnChain is ETour_Storage {
         }
 
         // Check for draw (board full)
-        if (matchData.moveCount == TOTAL_CELLS) {
+        if (_isBoardFull(matchData.packedBoard)) {
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
             return;
         }
@@ -513,7 +476,6 @@ contract ConnectFourOnChain is ETour_Storage {
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
         require(msg.sender != matchData.currentTurn, "OT");
 
-        // Check if current player has timed out
         uint256 elapsed = block.timestamp - matchData.lastMoveTime;
         uint256 opponentTimeRemaining = (matchData.currentTurn == matchData.player1)
             ? matchData.player1TimeRemaining
@@ -521,7 +483,6 @@ contract ConnectFourOnChain is ETour_Storage {
 
         require(elapsed >= opponentTimeRemaining, "TO");
 
-        // Mark match as stalled (enables L2/L3 escalation later if needed)
         (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "markMatchStalled(bytes32,uint8,uint256)",
@@ -530,7 +491,6 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(markSuccess, "MS");
 
-        // Emit timeout victory event
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
         emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
@@ -552,10 +512,8 @@ contract ConnectFourOnChain is ETour_Storage {
     ) private {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
-        // Mark match as complete in game-specific storage and cache it
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
 
-        // Clear any escalation state
         (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "clearEscalationState(bytes32)",
@@ -564,13 +522,11 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(clearSuccess, "CE");
 
-        // Save enrolled players before delegatecall
         address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
         for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
             enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
         }
 
-        // Delegate to Matches module for advancement logic
         (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature(
                 "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
@@ -579,53 +535,43 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(completeSuccess, "CM");
 
-        // Call elimination hook for loser (if not a draw)
         if (!isDraw) {
             Match storage matchData = matches[matchId];
             address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
 
-        // Check if tournament completed
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
         if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
-            // Tournament just completed - distribute prizes
             address tournamentWinner = tournament.winner;
             uint256 winnersPot = tournament.prizePool;
 
-            // Check if this is an all-draw scenario
             if (tournament.allDrawResolution) {
-                // All-draw: distribute equal prizes
                 (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
                     abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, winnersPot)
                 );
                 require(distributeSuccess, "DP");
             } else {
-                // Normal completion: distribute prizes based on ranking
                 (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
                     abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
                 );
                 require(distributeSuccess, "DP");
             }
 
-            // Update earnings
             (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tournamentWinner)
             );
             require(earningsSuccess, "UE");
 
-            // Emit TournamentCompleted event
             uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
             emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
 
-            // Reset tournament state
             (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
             );
             require(resetSuccess, "RT");
 
-            // Call tournament completion hook
             _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
         }
     }
@@ -655,15 +601,46 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Convert row and column to cell index (row-major order)
+     * @dev Convert 2D board coordinates to 1D cell index
+     * Board uses row-major ordering: cellIndex = row * 7 + col
      */
     function _getCellIndex(uint8 row, uint8 col) private pure returns (uint8) {
         return row * COLS + col;
     }
 
     /**
-     * @dev Check if the last move created a win (4 in a row)
-     * Only checks lines passing through the last placed piece for efficiency
+     * @dev Check if coordinates are within board bounds
+     */
+    function _isValidPosition(int8 row, int8 col) private pure returns (bool) {
+        return row >= 0 && row < int8(ROWS) && col >= 0 && col < int8(COLS);
+    }
+
+    /**
+     * @dev Check if board is completely full (all 42 cells occupied)
+     * Used for draw detection
+     */
+    function _isBoardFull(uint256 packedBoard) private pure returns (bool) {
+        for (uint8 i = 0; i < TOTAL_CELLS; i++) {
+            if (_getCell(packedBoard, i) == 0) return false;
+        }
+        return true;
+    }
+
+    /**
+     * @dev Count total moves made (non-empty cells)
+     * Calculated on-the-fly by scanning board
+     */
+    function _countMoves(uint256 packedBoard) private pure returns (uint8) {
+        uint8 count = 0;
+        for (uint8 i = 0; i < TOTAL_CELLS; i++) {
+            if (_getCell(packedBoard, i) != 0) count++;
+        }
+        return count;
+    }
+
+    /**
+     * @dev Check if player has won with their last move
+     * Checks all 4 directions: horizontal, vertical, diagonal, anti-diagonal
      */
     function _checkWin(
         uint256 packedBoard,
@@ -671,24 +648,24 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 row,
         uint8 col
     ) private pure returns (bool) {
-        // Check horizontal
+        // Horizontal
         if (_checkLine(packedBoard, piece, row, col, 0, 1)) return true;
 
-        // Check vertical
+        // Vertical
         if (_checkLine(packedBoard, piece, row, col, 1, 0)) return true;
 
-        // Check diagonal (top-left to bottom-right)
+        // Diagonal (down-right)
         if (_checkLine(packedBoard, piece, row, col, 1, 1)) return true;
 
-        // Check anti-diagonal (top-right to bottom-left)
+        // Anti-diagonal (down-left)
         if (_checkLine(packedBoard, piece, row, col, 1, -1)) return true;
 
         return false;
     }
 
     /**
-     * @dev Check if there are 4 in a row along a specific direction
-     * Bidirectional counting: checks both positive and negative directions from placed piece
+     * @dev Check for 4-in-a-row in a specific direction (bidirectional)
+     * Counts pieces in both directions from the last played position
      */
     function _checkLine(
         uint256 packedBoard,
@@ -698,9 +675,8 @@ contract ConnectFourOnChain is ETour_Storage {
         int8 dRow,
         int8 dCol
     ) private pure returns (bool) {
-        uint8 count = 1; // Count the placed piece itself
+        uint8 count = 1;
 
-        // Check in positive direction
         int8 r = int8(row) + dRow;
         int8 c = int8(col) + dCol;
         while (_isValidPosition(r, c) && _getCell(packedBoard, _getCellIndex(uint8(r), uint8(c))) == piece) {
@@ -710,7 +686,6 @@ contract ConnectFourOnChain is ETour_Storage {
             c += dCol;
         }
 
-        // Check in negative direction
         r = int8(row) - dRow;
         c = int8(col) - dCol;
         while (_isValidPosition(r, c) && _getCell(packedBoard, _getCellIndex(uint8(r), uint8(c))) == piece) {
@@ -721,13 +696,6 @@ contract ConnectFourOnChain is ETour_Storage {
         }
 
         return false;
-    }
-
-    /**
-     * @dev Check if a position is within the board bounds
-     */
-    function _isValidPosition(int8 row, int8 col) private pure returns (bool) {
-        return row >= 0 && row < int8(ROWS) && col >= 0 && col < int8(COLS);
     }
 
     // ============ IETourGame Interface Implementation ============
@@ -755,8 +723,6 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.lastMoveTime = block.timestamp;
         matchData.startTime = block.timestamp;
         matchData.isDraw = false;
-        matchData.moveCount = 0;
-        matchData.lastColumn = NO_COLUMN;
 
         // Random starting player
         uint256 randomness = uint256(keccak256(abi.encodePacked(
@@ -769,29 +735,23 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.currentTurn = (randomness % 2 == 0) ? player1 : player2;
         matchData.firstPlayer = matchData.currentTurn;
 
-        // Initialize time banks
         TierConfig storage config = _tierConfigs[tierId];
         matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
         matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
 
-        // Clear board
         matchData.packedBoard = 0;
 
         emit MatchCreated(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
 
-    /**
-     * @dev Check if match is active (exists and not completed)
-     */
+    
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
         Match storage matchData = matches[matchId];
         return matchData.player1 != address(0) &&
                matchData.status != MatchStatus.Completed;
     }
 
-    /**
-     * @dev Complete match with result
-     */
+    
     function _completeMatchWithResult(
         uint8 tierId,
         uint8 instanceId,
@@ -807,13 +767,10 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.winner = winner;
         matchData.isDraw = isDraw;
 
-        // Cache match before clearing
         _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
     }
 
-    /**
-     * @dev Add match to cache - delegates to GameCacheModule
-     */
+    
     function _addToMatchCacheGame(
         uint8 tierId,
         uint8 instanceId,
@@ -824,8 +781,7 @@ contract ConnectFourOnChain is ETour_Storage {
         Match storage matchData = matches[matchId];
 
         // Encode board as bytes for generic cache storage
-        // Also encode Connect Four-specific data (moveCount, lastColumn)
-        bytes memory boardData = abi.encode(matchData.packedBoard, matchData.moveCount, matchData.lastColumn);
+        bytes memory boardData = abi.encode(matchData.packedBoard);
 
         (bool success, ) = MODULE_GAME_CACHE.delegatecall(
             abi.encodeWithSignature(
@@ -847,18 +803,11 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "CF");
     }
 
-    /**
-     * @dev Get time increment per move (Fischer increment)
-     */
-    function _getTimeIncrement() public view override returns (uint256) {
-        return 15; // 15 seconds Fischer increment
+    
+    function _getTimeIncrement() public pure override returns (uint256) {
+        return 15;
     }
 
-    // ============ Wrapper Functions (bytes32 matchId variants for module compatibility) ============
-
-    /**
-     * @dev Reset match - wrapper for modules expecting bytes32 matchId
-     */
     function _resetMatchGame(bytes32 matchId) public override {
         Match storage matchData = matches[matchId];
 
@@ -874,29 +823,21 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.lastMoveTime = 0;
         matchData.player1TimeRemaining = 0;
         matchData.player2TimeRemaining = 0;
-        matchData.moveCount = 0;
-        matchData.lastColumn = NO_COLUMN;
     }
 
-    /**
-     * @dev Get match result - wrapper for modules
-     */
+    
     function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {
         Match storage matchData = matches[matchId];
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
-    /**
-     * @dev Get match players - wrapper for modules
-     */
+    
     function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
         Match storage matchData = matches[matchId];
         return (matchData.player1, matchData.player2);
     }
 
-    /**
-     * @dev Set match player - wrapper for modules
-     */
+    
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
         Match storage matchData = matches[matchId];
 
@@ -907,21 +848,16 @@ contract ConnectFourOnChain is ETour_Storage {
         }
     }
 
-    /**
-     * @dev Initialize match for play - wrapper for modules (used in draw rematches)
-     */
+    
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage matchData = matches[matchId];
 
-        // Set match status and times
         matchData.status = MatchStatus.InProgress;
         matchData.startTime = block.timestamp;
         matchData.lastMoveTime = block.timestamp;
         matchData.packedBoard = 0;  // Clear board
         matchData.isDraw = false;
         matchData.winner = address(0);
-        matchData.moveCount = 0;
-        matchData.lastColumn = NO_COLUMN;
 
         // Re-randomize starting player
         uint256 randomness = uint256(keccak256(abi.encodePacked(
@@ -935,15 +871,12 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
         matchData.firstPlayer = matchData.currentTurn;
 
-        // Reset time banks
         TierConfig storage config = _tierConfigs[tierId];
         matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
         matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
     }
 
-    /**
-     * @dev Complete match with result - wrapper for modules
-     */
+    
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
         Match storage matchData = matches[matchId];
 
@@ -952,9 +885,7 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.isDraw = isDraw;
     }
 
-    /**
-     * @dev Check if current player timed out - wrapper for modules
-     */
+    
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
         Match storage matchData = matches[matchId];
 
@@ -968,9 +899,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    /**
-     * @dev Get active match data - for modules that need CommonMatchData
-     */
+    
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 tierId,
@@ -980,7 +909,6 @@ contract ConnectFourOnChain is ETour_Storage {
     ) public view override returns (CommonMatchData memory) {
         Match storage matchData = matches[matchId];
 
-        // Derive loser
         address loser = address(0);
         if (!matchData.isDraw && matchData.winner != address(0)) {
             loser = (matchData.winner == matchData.player1)
@@ -1006,9 +934,7 @@ contract ConnectFourOnChain is ETour_Storage {
         });
     }
 
-    /**
-     * @dev Get match from cache - delegates to GameCacheModule
-     */
+    
     function _getMatchFromCache(
         bytes32 matchId,
         uint8 tierId,
@@ -1016,7 +942,6 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) public view override returns (CommonMatchData memory data, bool exists) {
-        // Static call to GameCacheModule (read-only)
         (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
             abi.encodeWithSignature(
                 "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
@@ -1032,7 +957,6 @@ contract ConnectFourOnChain is ETour_Storage {
             return (data, false);
         }
 
-        // Decode result
         (data, exists) = abi.decode(result, (CommonMatchData, bool));
         return (data, exists);
     }
@@ -1041,6 +965,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
     /**
      * @dev Get complete match data with automatic cache fallback
+     * CRITICAL: Uses staticcall for cache reads so function can be view
      */
     function getMatch(
         uint8 tierId,
@@ -1051,11 +976,9 @@ contract ConnectFourOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        // Check if match exists in active storage
         if (matchData.player1 != address(0)) {
             ConnectFourMatchData memory fullData;
 
-            // Build CommonMatchData
             address loser = address(0);
             if (!matchData.isDraw && matchData.winner != address(0)) {
                 loser = (matchData.winner == matchData.player1) ? matchData.player2 : matchData.player1;
@@ -1082,15 +1005,12 @@ contract ConnectFourOnChain is ETour_Storage {
             fullData.packedBoard = matchData.packedBoard;
             fullData.currentTurn = matchData.currentTurn;
             fullData.firstPlayer = matchData.firstPlayer;
-            fullData.moveCount = matchData.moveCount;
-            fullData.lastColumn = matchData.lastColumn;
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
 
             return fullData;
         }
 
-        // Try cache (use staticcall to keep function view)
         (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
             abi.encodeWithSignature(
                 "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
@@ -1140,16 +1060,11 @@ contract ConnectFourOnChain is ETour_Storage {
                     isCached: true
                 });
 
-                // Decode board data (packedBoard, moveCount, lastColumn)
+                // Decode board data
                 if (boardData.length > 0) {
-                    (uint256 packedBoard, uint8 moveCount, uint8 lastColumn) = abi.decode(boardData, (uint256, uint8, uint8));
-                    fullData.packedBoard = packedBoard;
-                    fullData.moveCount = moveCount;
-                    fullData.lastColumn = lastColumn;
+                    fullData.packedBoard = abi.decode(boardData, (uint256));
                 } else {
                     fullData.packedBoard = 0;
-                    fullData.moveCount = 0;
-                    fullData.lastColumn = 0;
                 }
                 fullData.currentTurn = address(0);  // Completed matches have no current turn
                 fullData.firstPlayer = firstPlayer;
@@ -1165,6 +1080,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
     /**
      * @dev Get tier configuration
+     * Public getter for tier config data
      */
     function tierConfigs(uint8 tierId) external view returns (
         uint8 playerCount,
@@ -1211,7 +1127,6 @@ contract ConnectFourOnChain is ETour_Storage {
         player1Time = matchData.player1TimeRemaining;
         player2Time = matchData.player2TimeRemaining;
 
-        // Deduct elapsed time from current player
         if (matchData.currentTurn == matchData.player1) {
             player1Time = (player1Time > elapsed) ? player1Time - elapsed : 0;
         } else {
@@ -1219,9 +1134,6 @@ contract ConnectFourOnChain is ETour_Storage {
         }
     }
 
-    /**
-     * @dev Check if a column has space for another piece
-     */
     function isColumnAvailable(
         uint8 tierId,
         uint8 instanceId,
@@ -1233,7 +1145,6 @@ contract ConnectFourOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        // Check top row of the column
         uint8 topCellIndex = _getCellIndex(0, column);
         return _getCell(matchData.packedBoard, topCellIndex) == 0;
     }
@@ -1255,7 +1166,7 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Get counts (gas-efficient for checking if player has any activity)
+     * @dev Get count of player's enrolling and active tournaments
      */
     function getPlayerActivityCounts(address player) external view returns (
         uint256 enrollingCount,
@@ -1268,7 +1179,7 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Check if player is in specific tournament (either enrolling or active)
+     * @dev Check if player is in a specific tournament
      */
     function isPlayerInTournament(address player, uint8 tierId, uint8 instanceId)
         external view returns (bool isEnrolling, bool isActive)
@@ -1277,6 +1188,9 @@ contract ConnectFourOnChain is ETour_Storage {
         isActive = playerActiveIndex[player][tierId][instanceId] != 0;
     }
 
+    /**
+     * @dev Get tournament information
+     */
     function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
         TournamentStatus status,
         Mode mode,
@@ -1363,7 +1277,7 @@ contract ConnectFourOnChain is ETour_Storage {
         address player,
         uint8 tierId,
         uint8 instanceId,
-        uint8 roundNumber
+        uint8 /* roundNumber */
     ) internal override {
         // Always remove from active tournaments after losing (player is eliminated)
         _removePlayerActiveTournament(player, tierId, instanceId);
@@ -1377,7 +1291,7 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 instanceId,
         address player
     ) internal override {
-        // External player joins mid-tournament, goes directly to active
+        // External player joins mid-tournament, goes directly to active (skip enrolling)
         _addPlayerActiveTournament(player, tierId, instanceId);
     }
 
