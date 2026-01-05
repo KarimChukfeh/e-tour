@@ -143,6 +143,10 @@ contract ETour_Matches is ETour_Storage {
 
         if (!isDraw) {
             TierConfig storage config = _tierConfigs[tierId];
+
+            // Note: Loser elimination hook is called by the game contract after delegatecall
+            // (can't call hooks from within modules as they use empty stubs)
+
             if (roundNumber < config.totalRounds - 1) {
                 advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
             }
