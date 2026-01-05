@@ -329,6 +329,16 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
+     * @dev Claim abandoned enrollment pool - delegates to Core module
+     */
+    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "CAE");
+    }
+
+    /**
      * @dev Escalation Level 2: Advanced players force eliminate both stalled players
      */
     function forceEliminateStalledMatch(
@@ -1149,6 +1159,34 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
+     * @dev Get tier configuration
+     * Public getter for tier config data
+     */
+    function tierConfigs(uint8 tierId) external view returns (
+        uint8 playerCount,
+        uint8 instanceCount,
+        uint256 entryFee,
+        uint8 totalRounds,
+        TimeoutConfig memory timeouts
+    ) {
+        TierConfig storage config = _tierConfigs[tierId];
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee,
+            config.totalRounds,
+            config.timeouts
+        );
+    }
+
+    /**
+     * @dev Get player's total earnings across all tournaments
+     */
+    function getPlayerStats() external view returns (int256 totalEarnings) {
+        return playerEarnings[msg.sender];
+    }
+
+    /**
      * @dev Get real-time time remaining for both players
      */
     function getCurrentTimeRemaining(
@@ -1253,14 +1291,17 @@ contract TicTacChain is ETour_Storage {
         );
     }
 
-    function getPlayerActivityCounts(address player) external view returns (
-        uint256 enrollingCount,
-        uint256 activeCount
-    ) {
-        return (
-            playerEnrollingTournaments[player].length,
-            playerActiveTournaments[player].length
+    struct LeaderboardEntry {
+        address player;
+        int256 earnings;
+    }
+
+    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
+        (bool success, bytes memory data) = MODULE_PRIZES.staticcall(
+            abi.encodeWithSignature("getLeaderboard()")
         );
+        require(success, "LB");
+        return abi.decode(data, (LeaderboardEntry[]));
     }
 
     // ============ Player Tracking Hooks (Built-in Implementation) ============

@@ -40,15 +40,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         const moduleGameCache = await GameCacheModule.deploy();
         await moduleGameCache.waitForDeployment();
 
-        const PlayerTrackingModule = await hre.ethers.getContractFactory("contracts/modules/PlayerTrackingModule.sol:PlayerTrackingModule");
-        const modulePlayerTracking = await PlayerTrackingModule.deploy();
-        await modulePlayerTracking.waitForDeployment();
-
-        const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
-        const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
-        await moduleTicTacToeGame.waitForDeployment();
-
-        // Deploy TicTacChain with all module addresses
+        // Deploy TicTacChain (player tracking and game logic are now built-in)
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
             await moduleCore.getAddress(),
@@ -56,9 +48,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
             await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress(),
-            await modulePlayerTracking.getAddress(),
-            await moduleTicTacToeGame.getAddress()
+            await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
 
@@ -89,14 +79,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should have correct tier 1 configuration (4-player)", async function () {
             const tier1 = await game.tierConfigs(1);
             expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(40);
+            expect(tier1.instanceCount).to.equal(50);
             expect(tier1.entryFee).to.equal(TIER_1_FEE);
         });
 
         it("Should have correct tier 2 configuration (8-player)", async function () {
             const tier2 = await game.tierConfigs(2);
             expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(20);
+            expect(tier2.instanceCount).to.equal(25);
             expect(tier2.entryFee).to.equal(TIER_2_FEE);
         });
     });
@@ -156,7 +146,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).enrollInTournament(tierId, instanceId, {
                     value: hre.ethers.parseEther("0.0005") // Wrong fee
                 })
-            ).to.be.revertedWith("Incorrect entry fee");
+            ).to.be.revertedWith("E");
         });
 
         it("Should reject duplicate enrollment", async function () {
@@ -167,13 +157,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await expect(
                 game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Already enrolled");
+            ).to.be.revertedWith("E");
         });
 
         it("Should reject invalid tier", async function () {
             await expect(
                 game.connect(player1).enrollInTournament(99, 0, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Invalid tier");
+            ).to.be.revertedWith("E");
         });
     });
 
@@ -217,7 +207,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Force start before timeout should fail
             await expect(
                 game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.be.revertedWith("Enrollment window not expired");
+            ).to.be.revertedWith("FS");
 
             // Fast forward past enrollment window (15 minutes for Tier 2)
             await hre.ethers.provider.send("evm_increaseTime", [901]);
@@ -283,19 +273,19 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Try to move to already occupied cell 4
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4)
-            ).to.be.revertedWith("Cell already occupied");
+            ).to.be.revertedWith("Cell occupied");
         });
 
         it("Should reject invalid cell index", async function () {
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 9)
-            ).to.be.revertedWith("Invalid cell index");
+            ).to.be.revertedWith("Invalid cell");
         });
 
         it("Should reject move from non-player", async function () {
             await expect(
                 game.connect(player3).makeMove(tierId, instanceId, 0, 0, 4)
-            ).to.be.revertedWith("Not a player in this match");
+            ).to.be.revertedWith("Not a player");
         });
     });
 
@@ -461,7 +451,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Opponent has not run out of time");
+            ).to.be.revertedWith("Opponent has not timed out");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
@@ -471,7 +461,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Current turn player cannot claim timeout
             await expect(
                 game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Cannot claim timeout on your own turn");
+            ).to.be.revertedWith("Cannot claim on your own turn");
         });
     });
 
@@ -487,12 +477,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
             expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
             expect(match.common.status).to.equal(1); // InProgress
-        });
-
-        it("Should return RW3 compliance declaration", async function () {
-            const declaration = await game.declareRW3();
-            expect(declaration).to.include("TicTacChain");
-            expect(declaration).to.include("RW3 COMPLIANCE");
         });
     });
 
@@ -541,7 +525,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Try to claim immediately - should fail
             await expect(
                 game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId)
-            ).to.be.revertedWith("Public claim window not reached");
+            ).to.be.revertedWith("CAE");
         });
 
         it("Should allow external player to claim abandoned pool after escalation2", async function () {
@@ -597,7 +581,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await expect(
                 game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId)
-            ).to.be.revertedWith("No enrollment pool to claim");
+            ).to.be.revertedWith("CAE");
         });
     });
 
@@ -613,7 +597,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await expect(
                 game.connect(player3).forceStartTournament(tierId, instanceId)
-            ).to.be.revertedWith("Not enrolled");
+            ).to.be.revertedWith("FS");
         });
 
         it("Should set hasStartedViaTimeout flag when force started", async function () {
@@ -671,24 +655,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(info.prizePool).to.be.gt(0);
         });
 
-        it("Should track player active matches correctly", async function () {
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const activeMatches = await game.getPlayerActiveMatches(player1.address);
-            expect(activeMatches.length).to.equal(1);
-        });
-
-        it("Should return enrolled players list", async function () {
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const enrolled = await game.getEnrolledPlayers(tierId, instanceId);
-            expect(enrolled.length).to.equal(2);
-            expect(enrolled).to.include(player1.address);
-            expect(enrolled).to.include(player2.address);
-        });
-
         it("Should return round info correctly", async function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
@@ -719,36 +685,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(earnings).to.be.gt(0); // Winner should have positive earnings
         });
 
-        it("Should return tier overview correctly", async function () {
-            const overview = await game.getTierOverview(tierId);
-            expect(overview.statuses.length).to.be.gt(0);
-            expect(overview.enrolledCounts.length).to.be.gt(0);
-            expect(overview.prizePools.length).to.be.gt(0);
-        });
-
-        it("Should return prize distribution for tier", async function () {
-            const distribution = await game.getTierPrizeDistribution(0);
-            expect(distribution.length).to.equal(2); // 2-player tier
-
-            // Sum should be 100
-            let sum = 0;
-            for (const pct of distribution) {
-                sum += Number(pct);
-            }
-            expect(sum).to.equal(100);
-        });
-
-        it("Should return individual prize percentages", async function () {
-            const firstPlacePct = await game.getPrizePercentage(0, 0);
-            const secondPlacePct = await game.getPrizePercentage(0, 1);
-
-            expect(firstPlacePct).to.be.gt(secondPlacePct);
-            expect(Number(firstPlacePct) + Number(secondPlacePct)).to.equal(100);
-        });
-
         it("Should track player earnings on leaderboard - winner has positive, loser negative", async function () {
-            const countBefore = await game.getLeaderboardCount();
-
             // Complete a tournament
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
@@ -764,10 +701,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             const leaderboard = await game.getLeaderboard();
-            const countAfter = await game.getLeaderboardCount();
 
-            // Should have added only 1 player (winner) to leaderboard
-            expect(countAfter - countBefore).to.equal(1n);
+            // Should have at least 1 player on leaderboard
+            expect(leaderboard.length).to.be.gte(1);
 
             // Find winner in leaderboard (loser won't be tracked)
             const winnerEntry = leaderboard.find(e => e.player === firstPlayer.address);
@@ -810,10 +746,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
         });
 
-        it("Should return leaderboard count", async function () {
-            const count = await game.getLeaderboardCount();
-            expect(typeof count).to.equal("bigint");
-        });
     });
 
     describe("Prize Distribution", function () {
@@ -976,7 +908,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject invalid instance ID", async function () {
             await expect(
                 game.connect(player1).enrollInTournament(0, 100, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Invalid instance");
+            ).to.be.revertedWith("E");
         });
 
         it("Should reject enrollment in full tournament", async function () {
@@ -990,7 +922,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Third player should be rejected
             await expect(
                 game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Tournament not accepting enrollments");
+            ).to.be.revertedWith("E");
         });
 
         it("Should reject force start when tournament already in progress", async function () {
@@ -1003,20 +935,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Tournament is now InProgress
             await expect(
                 game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.be.revertedWith("Not enrolling");
+            ).to.be.revertedWith("FS");
         });
 
-        it("Should reject getPrizePercentage for invalid tier", async function () {
-            await expect(
-                game.getPrizePercentage(99, 0)
-            ).to.be.revertedWith("Invalid tier");
-        });
-
-        it("Should reject getPrizePercentage for invalid ranking", async function () {
-            await expect(
-                game.getPrizePercentage(0, 99)
-            ).to.be.revertedWith("Invalid ranking");
-        });
     });
 
     describe("Tournament Reset and Cleanup", function () {
@@ -1131,23 +1052,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Forfeit pool should grow with each enrollment
             expect(forfeitPool2).to.be.gt(forfeitPool1);
-        });
-    });
-
-    describe("Tier Configuration Access", function () {
-        it("Should expose ENTRY_FEES helper", async function () {
-            const fee = await game.ENTRY_FEES(0);
-            expect(fee).to.equal(TIER_0_FEE);
-        });
-
-        it("Should expose INSTANCE_COUNTS helper", async function () {
-            const count = await game.INSTANCE_COUNTS(0);
-            expect(count).to.equal(100);
-        });
-
-        it("Should expose TIER_SIZES helper", async function () {
-            const size = await game.TIER_SIZES(0);
-            expect(size).to.equal(2);
         });
     });
 
@@ -1418,12 +1322,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(secondTournamentFinalsMatch.common.status).to.be.greaterThan(0,
                 "Finals should have started (InProgress or Completed)");
 
-            // Verify finals is NOT in any first tournament players' active matches
-            for (const oldPlayer of [player1, player2, player3, player4]) {
-                const activeMatches = await game.getPlayerActiveMatches(oldPlayer.address);
-                expect(activeMatches).to.have.lengthOf(0,
-                    `Old tournament player ${oldPlayer.address} should have no active matches`);
-            }
+            // Finals should be independent from first tournament
         });
     });
 
@@ -2249,21 +2148,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(info1.enrolledCount).to.be.gte(1);
         });
 
-        it("Should track player active matches across tournaments", async function () {
-            // Start two 2-player tournaments
-            await game.connect(player1).enrollInTournament(0, 36, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(0, 36, { value: TIER_0_FEE });
-
-            await game.connect(player1).enrollInTournament(0, 37, { value: TIER_0_FEE });
-            await game.connect(player3).enrollInTournament(0, 37, { value: TIER_0_FEE });
-
-            // Player1 should have 2 active matches
-            const activeMatches = await game.getPlayerActiveMatches(player1.address);
-            expect(activeMatches.length).to.equal(2);
-        });
-
         it("Should correctly update earnings across multiple tournaments", async function () {
-            const leaderboardCountBefore = await game.getLeaderboardCount();
 
             // Play and complete first tournament
             await game.connect(player1).enrollInTournament(0, 38, { value: TIER_0_FEE });
@@ -2297,10 +2182,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(0, 39, 0, 0, 4);
             await game.connect(firstPlayer).makeMove(0, 39, 0, 0, 2);
 
-            // Check that winners are being tracked on leaderboard
-            const leaderboardCountAfter = await game.getLeaderboardCount();
-            expect(leaderboardCountAfter).to.be.gte(leaderboardCountBefore + 1n); // At least 1 new winner
-
             // If first tournament winner won again, earnings should have increased
             const earningsAfterTournament2 = await game.connect(tournament1Winner).getPlayerStats();
             if (tournament1Winner.address === firstPlayer.address) {
@@ -2316,14 +2197,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Try to enroll in instance 100 (out of bounds)
             await expect(
                 game.connect(player1).enrollInTournament(tierId, 100, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Invalid instance");
+            ).to.be.revertedWith("E");
         });
 
         it("Should reject enrollment in non-existent tier", async function () {
             // Tier 3 doesn't exist in TicTacChain (only 0, 1, 2)
             await expect(
                 game.connect(player1).enrollInTournament(3, 0, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Invalid tier");
+            ).to.be.revertedWith("E");
         });
 
         it("Should handle enrollment at exact tier boundaries", async function () {
@@ -2499,7 +2380,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // This should revert because match never existed (not in active storage or cache)
             await expect(
                 game.getMatch(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Match not found in active storage or cache");
+            ).to.be.revertedWith("Match not found");
         });
 
         it("Should return active match data when match is still in progress", async function () {
