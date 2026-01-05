@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Raffle",
-  "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+  "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T04:46:13.237Z",
+  "deployedAt": "2026-01-05T06:47:28.116Z",
   "abi": [
     {
       "inputs": [],

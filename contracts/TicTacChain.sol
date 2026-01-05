@@ -1285,28 +1285,6 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
-     * @dev Check if player is in a specific tournament (enrolling or active)
-     */
-    function isPlayerInTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId
-    ) external view returns (bool isEnrolling, bool isActive) {
-        uint256 enrollingIdx = playerEnrollingIndex[player][tierId][instanceId];
-        uint256 activeIdx = playerActiveIndex[player][tierId][instanceId];
-
-        isEnrolling = enrollingIdx > 0 &&
-                      enrollingIdx <= playerEnrollingTournaments[player].length &&
-                      playerEnrollingTournaments[player][enrollingIdx - 1].tierId == tierId &&
-                      playerEnrollingTournaments[player][enrollingIdx - 1].instanceId == instanceId;
-
-        isActive = activeIdx > 0 &&
-                   activeIdx <= playerActiveTournaments[player].length &&
-                   playerActiveTournaments[player][activeIdx - 1].tierId == tierId &&
-                   playerActiveTournaments[player][activeIdx - 1].instanceId == instanceId;
-    }
-
-    /**
      * @dev Tier configuration - access via inherited getTierConfig() from ETour_Storage
      */
 
