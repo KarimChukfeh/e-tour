@@ -30,9 +30,9 @@ async function main() {
     // Get or deploy modules (reuses existing if available)
     const modules = await getOrDeployModules();
 
-    // Deploy ChessRulesModule
+    // Deploy ChessRulesModule (game-specific, not shared)
     console.log("=" .repeat(60));
-    console.log("Deploying ChessRulesModule...");
+    console.log("Deploying ChessRulesModule (game-specific)...");
     console.log("=" .repeat(60));
     const ChessRulesModule = await hre.ethers.getContractFactory("ChessRulesModule");
     const chessRulesModule = await ChessRulesModule.deploy();
@@ -41,15 +41,8 @@ async function main() {
     console.log("✅ ChessRulesModule deployed to:", chessRulesModuleAddress);
     console.log("");
 
-    // Deploy PlayerTrackingModule
-    console.log("=" .repeat(60));
-    console.log("Deploying PlayerTrackingModule...");
-    console.log("=" .repeat(60));
-    const PlayerTrackingModule = await hre.ethers.getContractFactory("PlayerTrackingModule");
-    const playerTrackingModule = await PlayerTrackingModule.deploy();
-    await playerTrackingModule.waitForDeployment();
-    const playerTrackingModuleAddress = await playerTrackingModule.getAddress();
-    console.log("✅ PlayerTrackingModule deployed to:", playerTrackingModuleAddress);
+    // Reuse shared PlayerTrackingModule
+    console.log("💡 Using shared PlayerTrackingModule:", modules.playerTracking);
     console.log("");
 
     // Deploy ChessOnChain with module addresses
@@ -65,7 +58,7 @@ async function main() {
     console.log("   Escalation:     ", modules.escalation);
     console.log("   GameCache:      ", modules.gameCache);
     console.log("   ChessRules:     ", chessRulesModuleAddress);
-    console.log("   PlayerTracking: ", playerTrackingModuleAddress);
+    console.log("   PlayerTracking: ", modules.playerTracking);
     const chessOnChain = await ChessOnChain.deploy(
         modules.core,
         modules.matches,
@@ -74,7 +67,7 @@ async function main() {
         modules.escalation,
         modules.gameCache,
         chessRulesModuleAddress,
-        playerTrackingModuleAddress
+        modules.playerTracking
     );
     await chessOnChain.waitForDeployment();
     const chessOnChainAddress = await chessOnChain.getAddress();
@@ -110,7 +103,7 @@ async function main() {
             ETour_Escalation: modules.escalation,
             GameCacheModule: modules.gameCache,
             ChessRulesModule: chessRulesModuleAddress,
-            PlayerTrackingModule: playerTrackingModuleAddress
+            PlayerTrackingModule: modules.playerTracking  // Shared module
         },
         contracts: {
             ChessOnChain: chessOnChainAddress
@@ -162,7 +155,7 @@ async function main() {
         { name: "ETour_Escalation", address: modules.escalation },
         { name: "GameCacheModule", address: modules.gameCache },
         { name: "ChessRulesModule", address: chessRulesModuleAddress },
-        { name: "PlayerTrackingModule", address: playerTrackingModuleAddress }
+        { name: "PlayerTrackingModule", address: modules.playerTracking }
     ];
 
     const moduleABIs = [];
@@ -202,10 +195,10 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.gameCache}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${chessRulesModuleAddress}`);
-    console.log(`npx hardhat verify --network ${hre.network.name} ${playerTrackingModuleAddress}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.playerTracking}`);
     console.log("");
     console.log("# Verify ChessOnChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${chessRulesModuleAddress} ${playerTrackingModuleAddress}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${chessRulesModuleAddress} ${modules.playerTracking}`);
     console.log("");
 
     // Final summary
@@ -219,14 +212,14 @@ async function main() {
     console.log("  Block:", blockNumber);
     console.log("");
     console.log("📍 Module Addresses:");
-    console.log("  ETour_Core:           ", modules.core);
-    console.log("  ETour_Matches:        ", modules.matches);
-    console.log("  ETour_Prizes:         ", modules.prizes);
-    console.log("  ETour_Raffle:         ", modules.raffle);
-    console.log("  ETour_Escalation:     ", modules.escalation);
-    console.log("  GameCacheModule:      ", modules.gameCache);
-    console.log("  ChessRulesModule:     ", chessRulesModuleAddress);
-    console.log("  PlayerTrackingModule: ", playerTrackingModuleAddress);
+    console.log("  ETour_Core:               ", modules.core);
+    console.log("  ETour_Matches:            ", modules.matches);
+    console.log("  ETour_Prizes:             ", modules.prizes);
+    console.log("  ETour_Raffle:             ", modules.raffle);
+    console.log("  ETour_Escalation:         ", modules.escalation);
+    console.log("  GameCacheModule:          ", modules.gameCache);
+    console.log("  ChessRulesModule:         ", chessRulesModuleAddress, "(game-specific)");
+    console.log("  PlayerTrackingModule:     ", modules.playerTracking, "(shared)");
     console.log("");
     console.log("📍 Contract Address:");
     console.log("  ChessOnChain:", chessOnChainAddress);

@@ -128,6 +128,7 @@ contract ETour_Core is ETour_Storage {
 
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
+        // Lazy initialization on first enrollment
         if (tournament.enrolledCount == 0 && tournament.status == TournamentStatus.Enrolling) {
             emit TournamentInitialized(tierId, instanceId);
             tournament.tierId = tierId;

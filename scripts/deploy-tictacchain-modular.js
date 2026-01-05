@@ -19,12 +19,12 @@ async function main() {
     // Get or deploy modules (reuses existing if available)
     const modules = await getOrDeployModules();
 
-    // Deploy TicTacChain with module addresses
+    // Deploy TicTacChain (ETour is inherited, not deployed separately)
     console.log("=" .repeat(60));
     console.log("Deploying TicTacChain...");
     console.log("=" .repeat(60));
     const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-    const ticTacChain = await TicTacChain.deploy(
+    const tictacchain = await TicTacChain.deploy(
         modules.core,
         modules.matches,
         modules.prizes,
@@ -34,10 +34,11 @@ async function main() {
         modules.playerTracking,
         modules.ticTacToeGame
     );
-    await ticTacChain.waitForDeployment();
-    const ticTacChainAddress = await ticTacChain.getAddress();
-    console.log("✅ TicTacChain deployed to:", ticTacChainAddress);
+    await tictacchain.waitForDeployment();
+    const tttAddress = await tictacchain.getAddress();
+    console.log("✅ TicTacChain deployed to:", tttAddress);
     console.log("");
+
 
     // Get current block number
     const blockNumber = await hre.ethers.provider.getBlockNumber();
@@ -71,7 +72,7 @@ async function main() {
             TicTacToeGameModule: modules.ticTacToeGame
         },
         contracts: {
-            TicTacChain: ticTacChainAddress
+            TicTacChain: tttAddress
         }
     };
 
@@ -89,7 +90,7 @@ async function main() {
 
     const fullABI = {
         contractName: "TicTacChain",
-        address: ticTacChainAddress,
+        address: tttAddress,
         network: hre.network.name,
         chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
         deployedAt: timestamp,
@@ -101,7 +102,7 @@ async function main() {
     fs.writeFileSync(abiFile, JSON.stringify(fullABI, null, 2));
     console.log("✅ Full ABI compiled and saved:", abiFile);
     console.log("");
-
+    
     // Verification instructions
     console.log("=" .repeat(60));
     console.log("Contract Verification");
@@ -119,7 +120,7 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.ticTacToeGame}`);
     console.log("");
     console.log("# Verify TicTacChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${ticTacChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${modules.playerTracking} ${modules.ticTacToeGame}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${tttAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${modules.playerTracking} ${modules.ticTacToeGame}`);
     console.log("");
 
     // Final summary
@@ -143,7 +144,7 @@ async function main() {
     console.log("  TicTacToeGameModule: ", modules.ticTacToeGame);
     console.log("");
     console.log("📍 Contract Address:");
-    console.log("  TicTacChain:", ticTacChainAddress);
+    console.log("  TicTacChain:", tttAddress);
     console.log("");
     console.log("📁 Deployment Artifacts:");
     console.log("  -", networkFile);
@@ -151,7 +152,7 @@ async function main() {
     console.log("");
     console.log("🔗 Frontend Integration:");
     console.log("  Update your client app with:");
-    console.log(`  const TICTACCHAIN_ADDRESS = "${ticTacChainAddress}";`);
+    console.log(`  const TICTACCHAIN_ADDRESS = "${tttAddress}";`);
     console.log("  Import ABI from:", abiFile);
     console.log("");
     console.log("🚀 TicTacChain is live!");

@@ -227,6 +227,7 @@ contract ChessOnChain is ETour_Storage {
 
         _registerChessOnChainTiers();
 
+        allInstancesInitialized = true;
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
 

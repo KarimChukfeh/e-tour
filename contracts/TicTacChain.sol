@@ -1214,40 +1214,50 @@ contract TicTacChain is ETour_Storage {
     // ============ View Function Wrappers (Delegatecall to Modules) ============
 
     /**
-     * @dev Get all tier IDs - delegates to Core module
+     * @dev Get all tier IDs - reads from own storage
      */
     function getAllTierIds() external view returns (uint8[] memory) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
-            abi.encodeWithSignature("getAllTierIds()")
-        );
-        require(success, "GF");
-        return abi.decode(data, (uint8[]));
+        uint8[] memory tierIds = new uint8[](tierCount);
+        for (uint8 i = 0; i < tierCount; i++) {
+            tierIds[i] = i;
+        }
+        return tierIds;
     }
 
     /**
-     * @dev Get tier info - delegates to Core module
+     * @dev Get tier info - reads from own storage
      */
     function getTierInfo(uint8 tierId) external view returns (
         uint8 playerCount,
         uint8 instanceCount,
         uint256 entryFee
     ) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
-            abi.encodeWithSignature("getTierInfo(uint8)", tierId)
+        require(_tierConfigs[tierId].initialized, "IT");
+        TierConfig storage config = _tierConfigs[tierId];
+        return (
+            config.playerCount,
+            config.instanceCount,
+            config.entryFee
         );
-        require(success, "GF");
-        return abi.decode(data, (uint8, uint8, uint256));
     }
 
     /**
-     * @dev Can reset enrollment window - delegates to Core module
+     * @dev Can reset enrollment window - reads from own storage
      */
     function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
-            abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "GF");
-        return abi.decode(data, (bool));
+        TierConfig storage config = _tierConfigs[tierId];
+
+        if (!config.initialized) return false;
+        if (instanceId >= config.instanceCount) return false;
+
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        bool isEnrollingStatus = tournament.status == TournamentStatus.Enrolling;
+        bool isExactlyOnePlayer = tournament.enrolledCount == 1;
+        bool isPlayerEnrolled = isEnrolled[tierId][instanceId][msg.sender];
+        bool hasWindowExpired = block.timestamp >= tournament.enrollmentTimeout.escalation1Start;
+
+        return isEnrollingStatus && isExactlyOnePlayer && isPlayerEnrolled && hasWindowExpired;
     }
 
     /**

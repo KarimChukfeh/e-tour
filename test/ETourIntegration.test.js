@@ -44,6 +44,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         const modulePlayerTracking = await PlayerTrackingModule.deploy();
         await modulePlayerTracking.waitForDeployment();
 
+        const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
+        const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
+        await moduleTicTacToeGame.waitForDeployment();
+
         // Deploy TicTacChain with all module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
@@ -53,9 +57,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await moduleRaffle.getAddress(),
             await moduleEscalation.getAddress(),
             await moduleGameCache.getAddress(),
-            await modulePlayerTracking.getAddress()
+            await modulePlayerTracking.getAddress(),
+            await moduleTicTacToeGame.getAddress()
         );
         await game.waitForDeployment();
+
+        // Initialize tiers (moved out of constructor for gas optimization)
+        await game.initializeAllInstances();
     });
 
     describe("Deployment", function () {
