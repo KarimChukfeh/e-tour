@@ -106,7 +106,7 @@ contract TicTacChain is ETour_Storage {
      * but tournaments[] mapping needs explicit initialization per instance.
      */
     function initializeAllInstances() external nonReentrant {
-        require(tierCount == 0, "Already initialized");
+        require(tierCount == 0, "AI");
 
         _registerTier0();
         _registerTier1();
@@ -351,7 +351,7 @@ contract TicTacChain is ETour_Storage {
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "Reset window failed");
+        require(success, "RW");
     }
 
     /**
@@ -361,7 +361,7 @@ contract TicTacChain is ETour_Storage {
         (bool success, bytes memory data) = MODULE_CORE.staticcall(
             abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "Check reset failed");
+        require(success, "CR");
         return abi.decode(data, (bool));
     }
 
@@ -433,15 +433,15 @@ contract TicTacChain is ETour_Storage {
         uint8 matchNumber,
         uint8 cellIndex
     ) external nonReentrant {
-        require(cellIndex < 9, "Invalid cell");
+        require(cellIndex < 9, "IC");
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        require(msg.sender == matchData.currentTurn, "Not your turn");
-        require(_getCell(matchData.packedBoard, cellIndex) == 0, "Cell occupied");
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender == matchData.currentTurn, "NT");
+        require(_getCell(matchData.packedBoard, cellIndex) == 0, "CO");
 
         // Update time bank for current player
         uint256 elapsed = block.timestamp - matchData.lastMoveTime;
@@ -495,9 +495,9 @@ contract TicTacChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        require(msg.sender != matchData.currentTurn, "Cannot claim on your own turn");
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender != matchData.currentTurn, "OT");
 
         // Check if current player has timed out
         uint256 elapsed = block.timestamp - matchData.lastMoveTime;
@@ -505,7 +505,7 @@ contract TicTacChain is ETour_Storage {
             ? matchData.player1TimeRemaining
             : matchData.player2TimeRemaining;
 
-        require(elapsed >= opponentTimeRemaining, "Opponent has not timed out");
+        require(elapsed >= opponentTimeRemaining, "TO");
 
         // Mark match as stalled (enables L2/L3 escalation later if needed)
         (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
@@ -727,60 +727,6 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
-     * @dev Reset match for reuse
-     */
-    function _resetMatchGame(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        matchData.player1 = address(0);
-        matchData.player2 = address(0);
-        matchData.winner = address(0);
-        matchData.currentTurn = address(0);
-        matchData.firstPlayer = address(0);
-        matchData.status = MatchStatus.NotStarted;
-        matchData.isDraw = false;
-        matchData.packedBoard = 0;
-        matchData.startTime = 0;
-        matchData.lastMoveTime = 0;
-        matchData.player1TimeRemaining = 0;
-        matchData.player2TimeRemaining = 0;
-    }
-
-    /**
-     * @dev Get match result
-     */
-    function _getMatchResult(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view returns (address winner, bool isDraw, MatchStatus status) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-        return (matchData.winner, matchData.isDraw, matchData.status);
-    }
-
-    /**
-     * @dev Get match players
-     */
-    function _getMatchPlayers(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view returns (address player1, address player2) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-        return (matchData.player1, matchData.player2);
-    }
-
-    /**
      * @dev Check if match is active (exists and not completed)
      */
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
@@ -788,58 +734,6 @@ contract TicTacChain is ETour_Storage {
         // Active if player1 assigned and not completed
         return matchData.player1 != address(0) &&
                matchData.status != MatchStatus.Completed;
-    }
-
-    /**
-     * @dev Set match player (for replacement scenarios)
-     */
-    function _setMatchPlayer(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        uint8 playerSlot,
-        address newPlayer
-    ) public {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        if (playerSlot == 0) {
-            matchData.player1 = newPlayer;
-        } else {
-            matchData.player2 = newPlayer;
-        }
-    }
-
-    /**
-     * @dev Initialize match for play (set starting player, reset timers)
-     */
-    function _initializeMatchForPlay(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        // Re-randomize starting player
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao,
-            block.timestamp,
-            matchData.player1,
-            matchData.player2,
-            matchId,
-            "replay"
-        )));
-        matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
-        matchData.firstPlayer = matchData.currentTurn;
-
-        // Reset time banks
-        TierConfig storage config = _tierConfigs[tierId];
-        matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
-        matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
-        matchData.lastMoveTime = block.timestamp;
     }
 
     /**
@@ -896,29 +790,7 @@ contract TicTacChain is ETour_Storage {
                 boardData
             )
         );
-        require(success, "Cache failed");
-    }
-
-    /**
-     * @dev Check if current player has timed out
-     */
-    function _hasCurrentPlayerTimedOut(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view returns (bool) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        if (matchData.status != MatchStatus.InProgress) return false;
-
-        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
-        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
-            ? matchData.player1TimeRemaining
-            : matchData.player2TimeRemaining;
-
-        return elapsed >= currentPlayerTime;
+        require(success, "CF");
     }
 
     /**
@@ -1229,7 +1101,7 @@ contract TicTacChain is ETour_Storage {
             }
         }
 
-        revert("Match not found");
+        revert("MNF");
     }
 
     /**
@@ -1478,37 +1350,5 @@ contract TicTacChain is ETour_Storage {
 
         playerActiveTournaments[player].pop();
         delete playerActiveIndex[player][tierId][instanceId];
-    }
-
-    /**
-     * @dev Check if player has any active matches in tournament
-     */
-    function _playerHasActiveMatchInTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId
-    ) private view returns (bool) {
-        bytes32[] storage activeMatches = playerActiveMatches[player];
-
-        for (uint256 i = 0; i < activeMatches.length; i++) {
-            bytes32 matchId = activeMatches[i];
-            Match storage matchData = matches[matchId];
-
-            // Check if this match belongs to the tournament
-            // We need to decode tierId/instanceId from matchId
-            // For now, iterate through rounds
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
-            for (uint8 round = 0; round <= tournament.currentRound; round++) {
-                Round storage roundData = rounds[tierId][instanceId][round];
-                for (uint8 matchNum = 0; matchNum < roundData.totalMatches; matchNum++) {
-                    bytes32 checkId = _getMatchId(tierId, instanceId, round, matchNum);
-                    if (checkId == matchId) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 }
