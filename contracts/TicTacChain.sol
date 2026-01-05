@@ -122,10 +122,10 @@ contract TicTacChain is ETour_Storage {
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 60,
             timeIncrementPerMove: 15,
-            matchLevel2Delay: 120,
-            matchLevel3Delay: 240,
-            enrollmentWindow: 300,
-            enrollmentLevel2Delay: 600
+            matchLevel2Delay: 60,
+            matchLevel3Delay: 60,
+            enrollmentWindow: 60,
+            enrollmentLevel2Delay: 60
         });
 
         uint8[] memory prizes = new uint8[](2);
@@ -342,6 +342,27 @@ contract TicTacChain is ETour_Storage {
             abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
         );
         require(success, "ER");
+    }
+
+    /**
+     * @dev Reset enrollment window (single player extends timeout)
+     */
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "Reset window failed");
+    }
+
+    /**
+     * @dev Check if enrollment window can be reset (single player after timeout)
+     */
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
+        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+            abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "Check reset failed");
+        return abi.decode(data, (bool));
     }
 
     /**
