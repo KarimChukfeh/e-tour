@@ -1,12 +1,56 @@
 {
-  "contractName": "GameCacheModule",
-  "address": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+  "contractName": "ChessOnChain",
+  "address": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
   "network": "localhost",
   "chainId": "412346",
   "deployedAt": "2026-01-05T13:04:20.803Z",
+  "modules": {
+    "core": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+    "matches": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+    "prizes": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+    "raffle": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+    "escalation": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "gameCache": "0xc5a5C42992dECbae36851359345FE25997F5C42d"
+  },
   "abi": [
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_moduleCoreAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleMatchesAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_modulePrizesAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleRaffleAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleEscalationAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleGameCacheAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_moduleChessRulesAddress",
+          "type": "address"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
@@ -120,6 +164,31 @@
         {
           "indexed": true,
           "internalType": "bytes32",
+          "name": "matchId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "endType",
+          "type": "uint8"
+        }
+      ],
+      "name": "GameEnded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
           "name": "matchKey",
           "type": "bytes32"
         },
@@ -211,6 +280,37 @@
         }
       ],
       "name": "MatchStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "matchId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "from",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "to",
+          "type": "uint8"
+        }
+      ],
+      "name": "MoveMade",
       "type": "event"
     },
     {
@@ -879,6 +979,19 @@
     },
     {
       "inputs": [],
+      "name": "CHESS_RULES",
+      "outputs": [
+        {
+          "internalType": "contract IChessRules",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "MATCH_CACHE_SIZE",
       "outputs": [
         {
@@ -1024,22 +1137,22 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "roundNumber",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "matchNumber",
           "type": "uint8"
         }
       ],
@@ -1051,18 +1164,56 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "winner",
           "type": "address"
         },
         {
           "internalType": "bool",
-          "name": "",
+          "name": "isDraw",
+          "type": "bool"
+        }
+      ],
+      "name": "_completeMatchWithResult",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "matchId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "isDraw",
           "type": "bool"
         }
       ],
@@ -1075,32 +1226,32 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "roundNumber",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "matchNumber",
           "type": "uint8"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "player1",
           "type": "address"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "player2",
           "type": "address"
         }
       ],
@@ -1113,27 +1264,27 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "roundNumber",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "matchNumber",
           "type": "uint8"
         }
       ],
@@ -1219,27 +1370,27 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "instanceId",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "roundNumber",
           "type": "uint8"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "matchNumber",
           "type": "uint8"
         }
       ],
@@ -1314,12 +1465,12 @@
             }
           ],
           "internalType": "struct ETour_Storage.CommonMatchData",
-          "name": "",
+          "name": "data",
           "type": "tuple"
         },
         {
           "internalType": "bool",
-          "name": "",
+          "name": "exists",
           "type": "bool"
         }
       ],
@@ -1330,7 +1481,7 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         }
       ],
@@ -1354,7 +1505,7 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         }
       ],
@@ -1389,14 +1540,14 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         }
       ],
@@ -1415,12 +1566,12 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "tierId",
           "type": "uint8"
         }
       ],
@@ -1433,7 +1584,7 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         }
       ],
@@ -1475,7 +1626,7 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         }
       ],
@@ -1488,17 +1639,17 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "",
+          "name": "matchId",
           "type": "bytes32"
         },
         {
           "internalType": "uint8",
-          "name": "",
+          "name": "slot",
           "type": "uint8"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "player",
           "type": "address"
         }
       ],
@@ -1523,10 +1674,47 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "matchId",
-          "type": "bytes32"
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
         },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "canResetEnrollmentWindow",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "claimAbandonedEnrollmentPool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
         {
           "internalType": "uint8",
           "name": "tierId",
@@ -1546,44 +1734,37 @@
           "internalType": "uint8",
           "name": "matchNumber",
           "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "player1",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "player2",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "firstPlayer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "startTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "isDraw",
-          "type": "bool"
-        },
-        {
-          "internalType": "bytes",
-          "name": "boardData",
-          "type": "bytes"
         }
       ],
-      "name": "addToMatchCache",
+      "name": "claimMatchSlotByReplacement",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "claimTimeoutWin",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1644,6 +1825,24 @@
       "inputs": [
         {
           "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "enrollInTournament",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
           "name": "",
           "type": "uint8"
         },
@@ -1670,178 +1869,25 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getAllCachedMatches",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "player1",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "player2",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "firstPlayer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "winner",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "startTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "endTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "tierId",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "instanceId",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "roundNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "matchNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bool",
-              "name": "isDraw",
-              "type": "bool"
-            },
-            {
-              "internalType": "bool",
-              "name": "exists",
-              "type": "bool"
-            },
-            {
-              "internalType": "bytes",
-              "name": "boardData",
-              "type": "bytes"
-            }
-          ],
-          "internalType": "struct ETour_Storage.CachedMatch[]",
-          "name": "cachedMatches",
-          "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
-          "internalType": "uint16",
-          "name": "index",
-          "type": "uint16"
-        }
-      ],
-      "name": "getCachedMatchByIndex",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "player1",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "player2",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "firstPlayer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "winner",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "startTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "endTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "tierId",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "instanceId",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "roundNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "matchNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bool",
-              "name": "isDraw",
-              "type": "bool"
-            },
-            {
-              "internalType": "bool",
-              "name": "exists",
-              "type": "bool"
-            },
-            {
-              "internalType": "bytes",
-              "name": "boardData",
-              "type": "bytes"
-            }
-          ],
-          "internalType": "struct ETour_Storage.CachedMatch",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "matchId",
-          "type": "bytes32"
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
         },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "executeProtocolRaffle",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
         {
           "internalType": "uint8",
           "name": "tierId",
@@ -1863,52 +1909,58 @@
           "type": "uint8"
         }
       ],
-      "name": "getMatchFromCacheByMatchId",
+      "name": "forceEliminateStalledMatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "forceStartTournament",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "getBoard",
       "outputs": [
         {
-          "internalType": "address",
-          "name": "player1",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "player2",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "firstPlayer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "startTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "endTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "isDraw",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "exists",
-          "type": "bool"
-        },
-        {
-          "internalType": "bytes",
-          "name": "boardData",
-          "type": "bytes"
+          "internalType": "uint8[64]",
+          "name": "board",
+          "type": "uint8[64]"
         }
       ],
       "stateMutability": "view",
@@ -1917,23 +1969,179 @@
     {
       "inputs": [
         {
-          "internalType": "uint16",
-          "name": "count",
-          "type": "uint16"
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
         }
       ],
-      "name": "getRecentCachedMatches",
+      "name": "getCurrentTimeRemaining",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "p1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "p2",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getLeaderboard",
       "outputs": [
         {
           "components": [
             {
               "internalType": "address",
-              "name": "player1",
+              "name": "player",
               "type": "address"
             },
             {
+              "internalType": "int256",
+              "name": "earnings",
+              "type": "int256"
+            }
+          ],
+          "internalType": "struct ChessOnChain.LeaderboardEntry[]",
+          "name": "entries",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "getMatch",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "player1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "player2",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "winner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "loser",
+                  "type": "address"
+                },
+                {
+                  "internalType": "enum ETour_Storage.MatchStatus",
+                  "name": "status",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isDraw",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastMoveTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "tierId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "instanceId",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "roundNumber",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "matchNumber",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isCached",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct ETour_Storage.CommonMatchData",
+              "name": "common",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "packedBoard",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "packedState",
+              "type": "uint256"
+            },
+            {
               "internalType": "address",
-              "name": "player2",
+              "name": "currentTurn",
               "type": "address"
             },
             {
@@ -1942,20 +2150,60 @@
               "type": "address"
             },
             {
-              "internalType": "address",
-              "name": "winner",
-              "type": "address"
-            },
-            {
               "internalType": "uint256",
-              "name": "startTime",
+              "name": "player1TimeRemaining",
               "type": "uint256"
             },
             {
               "internalType": "uint256",
-              "name": "endTime",
+              "name": "player2TimeRemaining",
               "type": "uint256"
-            },
+            }
+          ],
+          "internalType": "struct ChessOnChain.ChessMatchData",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getMatchCountForRound",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        }
+      ],
+      "name": "getPlayerActiveTournaments",
+      "outputs": [
+        {
+          "components": [
             {
               "internalType": "uint8",
               "name": "tierId",
@@ -1965,39 +2213,229 @@
               "internalType": "uint8",
               "name": "instanceId",
               "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "roundNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "matchNumber",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bool",
-              "name": "isDraw",
-              "type": "bool"
-            },
-            {
-              "internalType": "bool",
-              "name": "exists",
-              "type": "bool"
-            },
-            {
-              "internalType": "bytes",
-              "name": "boardData",
-              "type": "bytes"
             }
           ],
-          "internalType": "struct ETour_Storage.CachedMatch[]",
-          "name": "recentMatches",
+          "internalType": "struct ETour_Storage.TournamentRef[]",
+          "name": "",
           "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        }
+      ],
+      "name": "getPlayerEnrollingTournaments",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "tierId",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "instanceId",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct ETour_Storage.TournamentRef[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPlayerStats",
+      "outputs": [
+        {
+          "internalType": "int256",
+          "name": "",
+          "type": "int256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getRaffleInfo",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "raffleIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isReady",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currentAccumulated",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "threshold",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "reserve",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "raffleAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ownerShare",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "winnerShare",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "eligiblePlayerCount",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "getRoundInfo",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTournamentInfo",
+      "outputs": [
+        {
+          "internalType": "enum ETour_Storage.TournamentStatus",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum ETour_Storage.Mode",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "initializeAllInstances",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "initializeRound",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2032,6 +2470,49 @@
     {
       "inputs": [
         {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "from",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "to",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "promotion",
+          "type": "uint8"
+        }
+      ],
+      "name": "makeMove",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "bytes32",
           "name": "",
           "type": "bytes32"
@@ -2058,6 +2539,85 @@
           "internalType": "bool",
           "name": "isStalled",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "matches",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "player1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "player2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "currentTurn",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "firstPlayer",
+          "type": "address"
+        },
+        {
+          "internalType": "enum ETour_Storage.MatchStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bool",
+          "name": "isDraw",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "packedBoard",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "packedState",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastMoveTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "player1TimeRemaining",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "player2TimeRemaining",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -2291,6 +2851,24 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "resetEnrollmentWindow",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

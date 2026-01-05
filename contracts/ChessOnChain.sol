@@ -11,8 +11,8 @@ contract ChessOnChain is ETour_Storage {
 
     IChessRules public immutable CHESS_RULES;
 
-    uint256 private constant INITIAL_BOARD = 0xA89BC98A777777770000000000000000000000001111111142356324;
-    uint256 private constant INITIAL_STATE = 64 | (1 << 22);
+    uint256 private constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
+    uint256 private constant INITIAL_STATE = 63 | (1 << 22);  // 63 = NO_EN_PASSANT, bit 22 = fullMoveNumber=1
 
     // Precomputed function selectors
     bytes4 private constant S_RESET = 0x57f7cf71;

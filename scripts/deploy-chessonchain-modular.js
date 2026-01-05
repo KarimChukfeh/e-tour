@@ -58,7 +58,6 @@ async function main() {
     console.log("   Escalation:     ", modules.escalation);
     console.log("   GameCache:      ", modules.gameCache);
     console.log("   ChessRules:     ", chessRulesModuleAddress);
-    console.log("   PlayerTracking: ", modules.playerTracking);
     const chessOnChain = await ChessOnChain.deploy(
         modules.core,
         modules.matches,
@@ -67,7 +66,6 @@ async function main() {
         modules.escalation,
         modules.gameCache,
         chessRulesModuleAddress,
-        modules.playerTracking
     );
     await chessOnChain.waitForDeployment();
     const chessOnChainAddress = await chessOnChain.getAddress();

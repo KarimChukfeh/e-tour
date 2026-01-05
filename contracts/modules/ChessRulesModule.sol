@@ -21,7 +21,7 @@ contract ChessRulesModule {
 
     // ============ Constants ============
 
-    uint8 public constant NO_EN_PASSANT = 64;
+    uint8 public constant NO_EN_PASSANT = 63;  // Max 6-bit value (bits 0-5), not 64 which overlaps bit 6
 
     // Piece types
     uint8 public constant PIECE_NONE = 0;
@@ -64,7 +64,7 @@ contract ChessRulesModule {
     uint256 public constant FULL_MOVE_MASK = 0x3FF << FULL_MOVE_SHIFT;
 
     // Initial positions
-    uint256 public constant INITIAL_BOARD = 0xA89BC98A777777770000000000000000000000001111111142356324;
+    uint256 public constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
     uint256 public constant INITIAL_STATE = NO_EN_PASSANT | (1 << FULL_MOVE_SHIFT);
 
     // ============ Board Helpers ============
