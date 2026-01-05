@@ -328,11 +328,11 @@ describe("ChessOnChain Tests", function () {
             expect(roundInfo[1]).to.equal(0);    // completedMatches = 0
             expect(roundInfo[2]).to.be.true;     // initialized = true
 
-            // Check via getTournamentInfo() - returns (status, mode, currentRound, enrolledCount, prizePool, winner)
+            // Check via getTournamentInfo() - returns (status, currentRound, enrolledCount, prizePool, winner)
             const tournamentInfo = await chess.getTournamentInfo(tierId, freshInstanceId);
             expect(tournamentInfo[0]).to.equal(1); // TournamentStatus.InProgress
-            expect(tournamentInfo[2]).to.equal(0); // currentRound = 0
-            expect(tournamentInfo[3]).to.equal(2); // enrolledCount = 2
+            expect(tournamentInfo[1]).to.equal(0); // currentRound = 0
+            expect(tournamentInfo[2]).to.equal(2); // enrolledCount = 2
 
             // Check via raw matches mapping - returns Match struct fields
             // Compute matchId: keccak256(abi.encodePacked(tierId, instanceId, roundNumber, matchNumber))

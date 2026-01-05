@@ -1,16 +1,16 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+  "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T21:04:20.384Z",
+  "deployedAt": "2026-01-05T21:52:40.402Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "gameCache": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "core": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "matches": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "prizes": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "raffle": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "escalation": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "gameCache": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
   },
   "abi": [
     {
@@ -2321,11 +2321,6 @@
           "type": "uint8"
         },
         {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
-          "type": "uint8"
-        },
-        {
           "internalType": "uint8",
           "name": "currentRound",
           "type": "uint8"
@@ -3012,11 +3007,6 @@
         {
           "internalType": "enum ETour_Storage.TournamentStatus",
           "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
           "type": "uint8"
         },
         {

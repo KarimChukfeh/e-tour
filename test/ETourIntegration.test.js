@@ -2052,9 +2052,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const winner = await winMatch(2, 0);
 
             // Verify prizes distributed
-            // TicTacChain tier 2: [70, 20, 5, 5, 0, 0, 0, 0]
+            // Simplified prize distribution: first place gets 100%
             const winnerPrize = await game.playerPrizes(tierId, instanceId, winner);
-            const expectedWinnerPrize = (prizePool * 70n) / 100n;
+            const expectedWinnerPrize = prizePool;
             expect(winnerPrize).to.equal(expectedWinnerPrize);
 
             // Total prizes should equal prize pool

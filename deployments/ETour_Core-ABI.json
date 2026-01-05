@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Core",
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T21:04:20.384Z",
+  "deployedAt": "2026-01-05T21:54:59.416Z",
   "abi": [
     {
       "inputs": [],
@@ -1890,11 +1890,6 @@
           "type": "uint8"
         },
         {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
-          "type": "uint8"
-        },
-        {
           "internalType": "uint8",
           "name": "currentRound",
           "type": "uint8"
@@ -2252,11 +2247,6 @@
           "type": "uint256"
         },
         {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
-          "type": "uint8"
-        },
-        {
           "components": [
             {
               "internalType": "uint256",
@@ -2292,11 +2282,6 @@
           "internalType": "struct ETour_Storage.TimeoutConfig",
           "name": "timeouts",
           "type": "tuple"
-        },
-        {
-          "internalType": "uint8[]",
-          "name": "prizeDistribution",
-          "type": "uint8[]"
         }
       ],
       "name": "registerTier",
@@ -2542,11 +2527,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum ETour_Storage.Mode",
-              "name": "mode",
-              "type": "uint8"
-            },
-            {
               "components": [
                 {
                   "internalType": "uint256",
@@ -2643,11 +2623,6 @@
         {
           "internalType": "enum ETour_Storage.TournamentStatus",
           "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
           "type": "uint8"
         },
         {

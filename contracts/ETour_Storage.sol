@@ -45,7 +45,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     enum TournamentStatus { Enrolling, InProgress, Completed }
     enum MatchStatus { NotStarted, InProgress, Completed }
-    enum Mode { Classic, Pro }
+    // REMOVED: Mode enum - not used for any logic
 
     enum EscalationLevel {
         None,
@@ -77,7 +77,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 playerCount;          // Number of players in tournament (must be power of 2 for brackets)
         uint8 instanceCount;        // How many concurrent instances of this tier
         uint256 entryFee;           // Entry fee in wei
-        Mode mode;                  // Classic or Pro mode
         TimeoutConfig timeouts;     // Timeout configuration for escalation windows
         uint8 totalRounds;          // Calculated: log2(playerCount)
         bool initialized;           // Whether this tier has been configured
@@ -89,7 +88,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 tierId;
         uint8 instanceId;
         TournamentStatus status;
-        Mode mode;
         uint8 currentRound;
         uint8 enrolledCount;
         uint256 prizePool;
@@ -177,7 +175,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     // Tier configuration - set by implementing contract
     uint8 public tierCount;
     mapping(uint8 => TierConfig) internal _tierConfigs;
-    mapping(uint8 => uint8[]) internal _tierPrizeDistribution; // tierId => percentages array
+    // REMOVED: _tierPrizeDistribution - Prize distribution simplified to 100% for first place
 
     // Accumulated protocol share from failed prize distributions
     uint256 public accumulatedProtocolShare;

@@ -133,14 +133,10 @@ contract TicTacChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](2);
-        prizes[0] = 100;
-        prizes[1] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                0, 2, 100, 0.001 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                0, 2, 100, 0.001 ether, timeouts
             )
         );
         require(success, "T0");
@@ -156,16 +152,10 @@ contract TicTacChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](4);
-        prizes[0] = 80;
-        prizes[1] = 20;
-        prizes[2] = 0;
-        prizes[3] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                1, 4, 50, 0.002 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                1, 4, 50, 0.002 ether, timeouts
             )
         );
         require(success, "T1");
@@ -181,20 +171,10 @@ contract TicTacChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](8);
-        prizes[0] = 70;
-        prizes[1] = 30;
-        prizes[2] = 0;
-        prizes[3] = 0;
-        prizes[4] = 0;
-        prizes[5] = 0;
-        prizes[6] = 0;
-        prizes[7] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                2, 8, 25, 0.004 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                2, 8, 25, 0.004 ether, timeouts
             )
         );
         require(success, "T2");
@@ -1151,7 +1131,6 @@ contract TicTacChain is ETour_Storage {
 
     function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
         TournamentStatus status,
-        Mode mode,
         uint8 currentRound,
         uint8 enrolledCount,
         uint256 prizePool,
@@ -1160,7 +1139,6 @@ contract TicTacChain is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         return (
             tournament.status,
-            tournament.mode,
             tournament.currentRound,
             tournament.enrolledCount,
             tournament.prizePool,

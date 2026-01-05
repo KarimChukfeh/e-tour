@@ -187,10 +187,10 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             expect(totalDistributed).to.equal(prizePool);
 
             // Verify prize distribution percentages
-            // Tier 2 (8-player): 1st=50%, 2nd=25%, 3rd/4th=10% each, 5th-8th=0%
+            // Tier 2 (8-player): 1st=100%, all others=0%
             const winner = players.find(async (p) => {
                 const prize = await game.playerPrizes(tierId, instanceId, p.address);
-                return prize === prizePool * 50n / 100n;
+                return prize === prizePool;
             });
 
             expect(winner).to.not.be.undefined;

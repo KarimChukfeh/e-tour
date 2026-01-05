@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Prizes",
-  "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+  "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T21:04:20.384Z",
+  "deployedAt": "2026-01-05T21:54:59.416Z",
   "abi": [
     {
       "inputs": [],
@@ -1551,7 +1551,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -2284,11 +2284,6 @@
         {
           "internalType": "enum ETour_Storage.TournamentStatus",
           "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
           "type": "uint8"
         },
         {

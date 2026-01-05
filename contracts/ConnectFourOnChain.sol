@@ -103,19 +103,11 @@ contract ConnectFourOnChain is ETour_Storage {
      * Can only be called once by anyone (typically by deployer immediately after deployment).
      */
     function initializeAllInstances() external nonReentrant {
-        require(tierCount == 0, "AI");
-
         _registerTier0();
         _registerTier1();
         _registerTier2();
 
-        // Set raffle thresholds: [0.4, 0.75, 1, 2]
-        raffleThresholds.push(0.4 ether);
-        raffleThresholds.push(0.75 ether);
-        raffleThresholds.push(1.0 ether);
-
-        // Set final raffle threshold (used after initial thresholds exhausted)
-        raffleThresholdFinal = 2.0 ether;
+        raffleThresholdFinal = 1 ether;
 
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
@@ -130,14 +122,10 @@ contract ConnectFourOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](2);
-        prizes[0] = 100;
-        prizes[1] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                0, 2, 100, 0.002 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                0, 2, 100, 0.002 ether, timeouts
             )
         );
         require(success, "T0");
@@ -153,19 +141,15 @@ contract ConnectFourOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](4);
-        prizes[0] = 75;
-        prizes[1] = 25;
-        prizes[2] = 0;
-        prizes[3] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                1, 4, 50, 0.004 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                1, 4, 50, 0.004 ether, timeouts
             )
         );
         require(success, "T1");
+
+        raffleThresholds.push(0.4 ether);
     }
 
     function _registerTier2() private {
@@ -178,23 +162,14 @@ contract ConnectFourOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](8);
-        prizes[0] = 80;
-        prizes[1] = 20;
-        prizes[2] = 0;
-        prizes[3] = 0;
-        prizes[4] = 0;
-        prizes[5] = 0;
-        prizes[6] = 0;
-        prizes[7] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                2, 8, 30, 0.008 ether, Mode.Classic, timeouts, prizes
+                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                2, 8, 30, 0.008 ether, timeouts
             )
         );
         require(success, "T2");
+        raffleThresholds.push(0.75 ether);
     }
 
     /**
@@ -1105,7 +1080,6 @@ contract ConnectFourOnChain is ETour_Storage {
      */
     function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
         TournamentStatus status,
-        Mode mode,
         uint8 currentRound,
         uint8 enrolledCount,
         uint256 prizePool,
@@ -1114,7 +1088,6 @@ contract ConnectFourOnChain is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         return (
             tournament.status,
-            tournament.mode,
             tournament.currentRound,
             tournament.enrolledCount,
             tournament.prizePool,

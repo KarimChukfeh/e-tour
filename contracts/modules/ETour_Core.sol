@@ -51,41 +51,27 @@ contract ETour_Core is ETour_Storage {
 
     /**
      * @dev Register a tournament tier - called by implementing contract during construction
-     * EXACT COPY from ETour.sol lines 257-297
+     * Simplified: No prize distribution needed - first place always gets 100%
      */
     function registerTier(
         uint8 tierId,
         uint8 playerCount,
         uint8 instanceCount,
         uint256 entryFee,
-        Mode mode,
-        TimeoutConfig memory timeouts,
-        uint8[] memory prizeDistribution
+        TimeoutConfig memory timeouts
     ) external {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
         require(playerCount >= 2, "Need at least 2 players");
         require(instanceCount >= 1, "Need at least 1 instance");
-        require(prizeDistribution.length == playerCount, "Prize distribution length must match player count");
-
-        // Validate prize distribution sums to 100
-        uint256 totalPercent = 0;
-        for (uint8 i = 0; i < prizeDistribution.length; i++) {
-            totalPercent += prizeDistribution[i];
-        }
-        require(totalPercent == 100, "Prize distribution must sum to 100");
 
         _tierConfigs[tierId] = TierConfig({
             playerCount: playerCount,
             instanceCount: instanceCount,
             entryFee: entryFee,
-            mode: mode,
             timeouts: timeouts,
             totalRounds: _log2(playerCount),
             initialized: true
         });
-
-        // Store prize distribution
-        _tierPrizeDistribution[tierId] = prizeDistribution;
 
         // Update tier count if this is a new highest tier
         if (tierId >= tierCount) {
@@ -133,7 +119,6 @@ contract ETour_Core is ETour_Storage {
             emit TournamentInitialized(tierId, instanceId);
             tournament.tierId = tierId;
             tournament.instanceId = instanceId;
-            tournament.mode = config.mode;
 
             tournament.enrollmentTimeout.escalation1Start = block.timestamp + config.timeouts.enrollmentWindow;
             tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
@@ -506,7 +491,6 @@ contract ETour_Core is ETour_Storage {
      */
     function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
         TournamentStatus status,
-        Mode mode,
         uint8 currentRound,
         uint8 enrolledCount,
         uint256 prizePool,
@@ -515,7 +499,6 @@ contract ETour_Core is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         return (
             tournament.status,
-            tournament.mode,
             tournament.currentRound,
             tournament.enrolledCount,
             tournament.prizePool,

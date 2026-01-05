@@ -2,7 +2,7 @@
   "contractName": "PlayerTrackingModule",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T20:55:13.307Z",
+  "deployedAt": "2026-01-05T21:49:36.405Z",
   "abi": [
     {
       "inputs": [],
@@ -2319,11 +2319,6 @@
         {
           "internalType": "enum ETour_Storage.TournamentStatus",
           "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
           "type": "uint8"
         },
         {

@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Matches",
-  "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T21:04:20.384Z",
+  "deployedAt": "2026-01-05T21:54:59.416Z",
   "abi": [
     {
       "inputs": [],
@@ -2469,11 +2469,6 @@
         {
           "internalType": "enum ETour_Storage.TournamentStatus",
           "name": "status",
-          "type": "uint8"
-        },
-        {
-          "internalType": "enum ETour_Storage.Mode",
-          "name": "mode",
           "type": "uint8"
         },
         {

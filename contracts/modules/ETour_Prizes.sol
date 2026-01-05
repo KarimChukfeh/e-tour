@@ -150,46 +150,36 @@ contract ETour_Prizes is ETour_Storage {
 
     /**
      * @dev Calculate prize amount for a specific rank
-     * EXACT COPY from ETour.sol lines 1299-1314
+     * Simplified: First place gets 100%, everyone else gets 0%
      */
     function calculatePrizeForRank(
         uint8 tierId,
         uint8 ranking,
         uint8 playersAtRank,
         uint256 winnersPot
-    ) external view returns (uint256) {
-        uint8 prizeIndex = ranking - 1;
-        uint256 combinedPercentage = 0;
-
-        uint8[] storage prizeDistribution = _tierPrizeDistribution[tierId];
-        for (uint8 j = 0; j < playersAtRank && (prizeIndex + j) < prizeDistribution.length; j++) {
-            combinedPercentage += prizeDistribution[prizeIndex + j];
+    ) external pure returns (uint256) {
+        if (ranking == 1) {
+            return winnersPot / uint256(playersAtRank);
         }
-
-        return (winnersPot * combinedPercentage) / (100 * uint256(playersAtRank));
+        return 0;
     }
 
     // ============ Internal Prize Calculation Helper ============
 
     /**
      * @dev Internal helper for prize calculation (called by distributePrizes)
-     * EXACT COPY from ETour.sol lines 1299-1314
+     * Simplified: First place gets 100%, everyone else gets 0%
      */
     function _calculatePrizeForRank(
         uint8 tierId,
         uint8 ranking,
         uint8 playersAtRank,
         uint256 winnersPot
-    ) internal view returns (uint256) {
-        uint8 prizeIndex = ranking - 1;
-        uint256 combinedPercentage = 0;
-
-        uint8[] storage prizeDistribution = _tierPrizeDistribution[tierId];
-        for (uint8 j = 0; j < playersAtRank && (prizeIndex + j) < prizeDistribution.length; j++) {
-            combinedPercentage += prizeDistribution[prizeIndex + j];
+    ) internal pure returns (uint256) {
+        if (ranking == 1) {
+            return winnersPot / uint256(playersAtRank);
         }
-
-        return (winnersPot * combinedPercentage) / (100 * uint256(playersAtRank));
+        return 0;
     }
 
     // ============ Earnings & Leaderboard Functions ============

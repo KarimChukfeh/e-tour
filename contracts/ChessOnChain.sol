@@ -31,7 +31,7 @@ contract ChessOnChain is ETour_Storage {
     bytes4 private constant S_CLAIM_POOL = 0x3864cd6b;
     bytes4 private constant S_MARK_STALLED = 0xa03fa4e2;
     bytes4 private constant S_FORCE_ELIM = 0x4d9d1611;
-    bytes4 private constant S_REG_TIER = 0x09d11657;
+    bytes4 private constant S_REG_TIER = 0x58be2c1d;  // Updated after removing prizes array and Mode
     bytes4 private constant S_ADV_WIN = 0xb902ec47;
     bytes4 private constant S_CLAIM_SLOT = 0x367639e2;
     bytes4 private constant S_ADD_CACHE = 0x3b590b7a;
@@ -97,17 +97,8 @@ contract ChessOnChain is ETour_Storage {
     // ============ Initialization ============
 
     function initializeAllInstances() external nonReentrant {
-        require(tierCount == 0, "AI");
         _registerTier0();
         _registerTier1();
-
-        // Set raffle thresholds: [0.5, 1, 2, 3]
-        raffleThresholds.push(0.5 ether);
-        raffleThresholds.push(1.0 ether);
-        raffleThresholds.push(2.0 ether);
-
-        // Set final raffle threshold (used after initial thresholds exhausted)
-        raffleThresholdFinal = 3.0 ether;
     }
 
     function _registerTier0() private {
@@ -120,15 +111,13 @@ contract ChessOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](2);
-        prizes[0] = 100;
-        prizes[1] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                0, 2, 100, 0.01 ether, Mode.Classic, timeouts, prizes
+                0, 2, 100, 0.01 ether, timeouts
             )
         );
+
+        raffleThresholds.push(0.5 ether);
         require(success, "T0");
     }
 
@@ -142,18 +131,15 @@ contract ChessOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        uint8[] memory prizes = new uint8[](4);
-        prizes[0] = 80;
-        prizes[1] = 20;
-        prizes[2] = 0;
-        prizes[3] = 0;
-
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.02 ether, Mode.Pro, timeouts, prizes
+                1, 4, 50, 0.02 ether, timeouts
             )
         );
+
         require(success, "T1");
+        raffleThresholds.push(1.0 ether);
+        raffleThresholdFinal = 2.0 ether;
     }
 
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
@@ -639,9 +625,9 @@ contract ChessOnChain is ETour_Storage {
     function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) { return playerEnrollingTournaments[player]; }
     function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) { return playerActiveTournaments[player]; }
 
-    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (TournamentStatus, Mode, uint8, uint8, uint256, address) {
+    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (TournamentStatus, uint8, uint8, uint256, address) {
         TournamentInstance storage t = tournaments[tierId][instanceId];
-        return (t.status, t.mode, t.currentRound, t.enrolledCount, t.prizePool, t.winner);
+        return (t.status, t.currentRound, t.enrolledCount, t.prizePool, t.winner);
     }
 
     function getRoundInfo(uint8 tierId, uint8 instanceId, uint8 roundNumber) external view returns (uint8, uint8, bool) {
