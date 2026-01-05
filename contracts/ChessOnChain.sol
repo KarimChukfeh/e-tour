@@ -101,13 +101,10 @@ contract ChessOnChain is ETour_Storage {
         _registerTier0();
         _registerTier1();
 
-        // Set raffle thresholds: [0.5, 1, 1.5, 2, 2.5, 3]
+        // Set raffle thresholds: [0.5, 1, 2, 3]
         raffleThresholds.push(0.5 ether);
         raffleThresholds.push(1.0 ether);
-        raffleThresholds.push(1.5 ether);
         raffleThresholds.push(2.0 ether);
-        raffleThresholds.push(2.5 ether);
-        raffleThresholds.push(3.0 ether);
 
         // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 3.0 ether;

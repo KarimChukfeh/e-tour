@@ -112,12 +112,10 @@ contract TicTacChain is ETour_Storage {
         _registerTier1();
         _registerTier2();
 
-        // Set raffle thresholds: [0.2, 0.4, 0.6, 0.8, 1]
-        raffleThresholds.push(0.2 ether);
-        raffleThresholds.push(0.4 ether);
-        raffleThresholds.push(0.6 ether);
-        raffleThresholds.push(0.8 ether);
-        raffleThresholds.push(1.0 ether);
+        // Set raffle thresholds: [0.25, 0.5, 0.75, 1]
+        raffleThresholds.push(0.25 ether);
+        raffleThresholds.push(0.5 ether);
+        raffleThresholds.push(0.75 ether);
 
         // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 1.0 ether;

@@ -109,12 +109,10 @@ contract ConnectFourOnChain is ETour_Storage {
         _registerTier1();
         _registerTier2();
 
-        // Set raffle thresholds: [0.4, 0.8, 1.2, 1.6, 2]
+        // Set raffle thresholds: [0.4, 0.75, 1, 2]
         raffleThresholds.push(0.4 ether);
-        raffleThresholds.push(0.8 ether);
-        raffleThresholds.push(1.2 ether);
-        raffleThresholds.push(1.6 ether);
-        raffleThresholds.push(2.0 ether);
+        raffleThresholds.push(0.75 ether);
+        raffleThresholds.push(1.0 ether);
 
         // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 2.0 ether;
