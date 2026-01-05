@@ -93,9 +93,46 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
   beforeEach(async function () {
     [owner, p1, p2, p3, p4, p5, p6, p7, p8, external1, external2] = await hre.ethers.getSigners();
 
-    const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-    ticTacChain = await TicTacChain.deploy();
+    // Deploy modules
+    const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+    const moduleCore = await ETour_Core.deploy();
+    await moduleCore.waitForDeployment();
+
+    const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+    const moduleMatches = await ETour_Matches.deploy();
+    await moduleMatches.waitForDeployment();
+
+    const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+    const modulePrizes = await ETour_Prizes.deploy();
+    await modulePrizes.waitForDeployment();
+
+    const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+    const moduleRaffle = await ETour_Raffle.deploy();
+    await moduleRaffle.waitForDeployment();
+
+    const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+    const moduleEscalation = await ETour_Escalation.deploy();
+    await moduleEscalation.waitForDeployment();
+
+    const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
+    const moduleGameCache = await GameCacheModule.deploy();
+    await moduleGameCache.waitForDeployment();
+
+    // Deploy TicTacChain (game logic is built-in, no separate game module)
+    const TicTacChain = await hre.ethers.getContractFactory("contracts/TicTacChain.sol:TicTacChain");
+    ticTacChain = await TicTacChain.deploy(
+      await moduleCore.getAddress(),
+      await moduleMatches.getAddress(),
+      await modulePrizes.getAddress(),
+      await moduleRaffle.getAddress(),
+      await moduleEscalation.getAddress(),
+      await moduleGameCache.getAddress()
+    );
     await ticTacChain.waitForDeployment();
+
+    // Initialize
+    const initTx = await ticTacChain.initializeAllInstances();
+    await initTx.wait();
 
     storageSnapshots.length = 0;
   });
@@ -284,6 +321,19 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await ticTacChain.connect(p3).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
     await ticTacChain.connect(p4).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });
 
+    // Check tournament status
+    const tournament = await ticTacChain.tournaments(TIER_1, INSTANCE_0);
+    console.log("\nTournament status:", tournament.status);
+    console.log("Enrolled count:", tournament.enrolledCount);
+    console.log("Current round:", tournament.currentRound);
+
+    // Check round info
+    const [totalMatches, completedMatches, initialized] = await ticTacChain.getRoundInfo(TIER_1, INSTANCE_0, 0);
+    console.log("\nRound 0 info:");
+    console.log("  Total matches:", totalMatches);
+    console.log("  Completed:", completedMatches);
+    console.log("  Initialized:", initialized);
+
     // Verify all 4 players are in active tournaments
     let p1Active = await ticTacChain.getPlayerActiveTournaments(p1.address);
     let p2Active = await ticTacChain.getPlayerActiveTournaments(p2.address);
@@ -294,6 +344,26 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     expect(p2Active.length).to.equal(1);
     expect(p3Active.length).to.equal(1);
     expect(p4Active.length).to.equal(1);
+
+    // Try to check match ID
+    console.log("\nAttempting to get match 0,0...");
+    try {
+      const match = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 0);
+      console.log("Match retrieved successfully!");
+      console.log("Player 1:", match.common.player1);
+      console.log("Player 2:", match.common.player2);
+      console.log("Status:", match.common.status);
+    } catch (err) {
+      console.log("Error getting match:", err.message);
+
+      // Try getting matchId
+      const matchId = await ticTacChain._getMatchId(TIER_1, INSTANCE_0, 0, 0);
+      console.log("Match ID:", matchId);
+
+      // Try _isMatchActive
+      const isActive = await ticTacChain._isMatchActive(matchId);
+      console.log("Is match active?", isActive);
+    }
 
     // Complete FIRST semifinal (Round 0, Match 0)
     await playMatch(TIER_1, INSTANCE_0, 0, 0, 1); // Player 1 wins

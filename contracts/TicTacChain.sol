@@ -5,103 +5,68 @@ import "./ETour_Storage.sol";
 
 /**
  * @title TicTacChain
- * @dev Classic Tic-Tac-Toe game implementing ETour tournament protocol (MODULAR VERSION)
+ * @dev Classic Tic-Tac-Toe game implementing ETour tournament protocol (Modular Architecture)
  * Simple, solved game used as the lowest-barrier demonstration of the ETour protocol.
  *
- * This contract demonstrates how to implement ETour by:
- * 1. Registering custom tier configurations in the constructor
- * 2. Implementing all abstract game functions
- * 3. Providing game-specific logic (board state, win detection, etc.)
- *
- * MODULAR ARCHITECTURE:
- * - Inherits ETour_Storage for storage layout
- * - Delegates tournament logic to 5 stateless modules via delegatecall
- * - Modules: Core, Matches, Prizes, Raffle, Escalation
- *
- * ERROR CODES:
- * E=Enrollment, S=Start, C=Claim, R=Reset, RF=Raffle, FE=ForceElim, RC=ReplClaim
- * T0/T1/T2=Tier registration, RT=RaffleThreshold, A=Advance, P1=Player, P2=Address
- * CA=CacheAdd, CT=CompleteTournament, AW=AdvanceWalkover, CE=ClearEscalation
- * CR=CompleteRound, MA=MatchActive, NP=NotPlayer, NT=NotTurn, IC=InvalidCell
- * CO=CellOccupied, TO=Timeout, MS=MarkStalled, CL=CacheLookup, IT=InvalidTier
- * IR=InvalidRanking, GF=GetFailed, RR=RaffleReserve
+ * This contract demonstrates modular ETour integration by:
+ * 1. Inheriting ETour_Storage for shared tournament state
+ * 2. Delegating to specialized modules (Core, Matches, Prizes, etc.)
+ * 3. Implementing IETourGame interface (8 abstract functions)
+ * 4. Managing game-specific logic (board state, win detection, time banks)
  *
  * Part of the RW3 (Reclaim Web3) movement.
  */
 contract TicTacChain is ETour_Storage {
 
-    // ============ Game-Specific Constants ============
-
-    // ============ Game-Specific Enums ============
-
-    enum Cell { Empty, X, O }
-
     // ============ Game-Specific Structs ============
 
     /**
-     * @dev Match struct with optimized storage packing
-     * Slot 1 (22 bytes): player1 (20) + status (1) + isDraw (1)
-     * Slot 2 (20 bytes): player2
-     * Slot 3 (20 bytes): currentTurn
-     * Slot 4 (20 bytes): winner
-     * Slot 5 (20 bytes): firstPlayer
-     * Slot 6-11 (192 bytes): 6 uint256 fields
-     * Total: 11 slots (saves 2-3 slots vs unpacked)
+     * @dev Match storage structure for active Tic-Tac-Toe games
+     * Board is packed: 2 bits per cell (0=empty, 1=player1, 2=player2)
+     * Total 9 cells = 18 bits (fits in uint256 with room to spare)
      */
     struct Match {
-        // Slot 1: Pack address + enums + bool (20 + 1 + 1 = 22 bytes)
         address player1;
-        MatchStatus status;         // uint8 enum
-        bool isDraw;
-
-        // Slots 2-5: Individual addresses (20 bytes each)
         address player2;
-        address currentTurn;
         address winner;
+        address currentTurn;
         address firstPlayer;
-
-        // Slot 6: Packed board (32 bytes)
-        uint256 packedBoard;        // 2 bits per cell, 9 cells = 18 bits
-
-        // Slots 7-11: Time and timestamp fields (32 bytes each)
-        uint256 lastMoveTime;
+        MatchStatus status;
+        bool isDraw;
+        uint256 packedBoard;           // 9 cells, 2 bits each
         uint256 startTime;
-        uint256 player1TimeRemaining;
+        uint256 lastMoveTime;
+        uint256 player1TimeRemaining;  // Time bank with Fischer increment
         uint256 player2TimeRemaining;
-        uint256 lastMoveTimestamp;
     }
-
 
     /**
      * @dev Extended match data for TicTacToe including common fields and game-specific state
+     * Used for view functions to return complete match information
      */
     struct TicTacToeMatchData {
-        CommonMatchData common;     // Embedded common data
-        uint256 packedBoard;              // Packed board: 2 bits per cell
-        address currentTurn;
-        address firstPlayer;
-        uint256 player1TimeRemaining;     // Time bank for player1 (seconds)
-        uint256 player2TimeRemaining;     // Time bank for player2 (seconds)
-        uint256 lastMoveTimestamp;        // Timestamp of last move
+        CommonMatchData common;        // Standardized tournament match data
+        uint256 packedBoard;           // Game-specific: packed board state
+        address currentTurn;           // Who plays next (address(0) for completed)
+        address firstPlayer;           // Who started the match
+        uint256 player1TimeRemaining;  // Time bank for player1
+        uint256 player2TimeRemaining;  // Time bank for player2
+        uint256 lastMoveTimestamp;     // When last move was made
     }
 
-    // ============ Game-Specific State ============
+    // ============ Game-Specific Storage ============
 
-    mapping(bytes32 => Match) public matches;
+    mapping(bytes32 => Match) public matches;  // Active matches only (matchId => Match)
 
-    // One-time initialization flag
-    bool public allInstancesInitialized;
+    // ============ Module Addresses ============
+    // (All ETour modules inherited from ETour_Storage, game logic is built-in)
 
-    // ============ Game-Specific Events ============
+    // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
     event AllInstancesInitialized(address indexed caller, uint8 tierCount);
+    event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     // MatchCached event now defined in ETour_Storage
-
-    // ============ Module Addresses ============
-
-    address public immutable MODULE_PLAYER_TRACKING;
-    address public immutable MODULE_GAME;
 
     // ============ Constructor ============
 
@@ -111,9 +76,7 @@ contract TicTacChain is ETour_Storage {
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
         address _moduleEscalationAddress,
-        address _moduleGameCacheAddress,
-        address _modulePlayerTrackingAddress,
-        address _moduleGameAddress
+        address _moduleGameCacheAddress
     ) ETour_Storage(
         _moduleCoreAddress,
         _moduleMatchesAddress,
@@ -122,8 +85,6 @@ contract TicTacChain is ETour_Storage {
         _moduleEscalationAddress,
         _moduleGameCacheAddress
     ) {
-        MODULE_PLAYER_TRACKING = _modulePlayerTrackingAddress;
-        MODULE_GAME = _moduleGameAddress;
         // Tier registration moved to initializeAllInstances() for gas optimization
     }
 
@@ -137,30 +98,110 @@ contract TicTacChain is ETour_Storage {
      *
      * Gas cost estimate:
      * - Tier 0: 100 instances × ~20k gas = ~2M gas
-     * - Tier 1: 40 instances × ~20k gas = ~800k gas
-     * - Tier 2: 20 instances × ~20k gas = ~400k gas
-     * - Total: ~3.2M gas (~0.0032 ETH at 1 gwei)
+     * - Tier 1: 50 instances × ~20k gas = ~1M gas
+     * - Tier 2: 25 instances × ~20k gas = ~500k gas
+     * Total: ~3.5M gas (fits in 4M block gas limit with room for execution)
      *
-     * After this is called:
-     * - All instances are in Enrolling state
-     * - First enrollers pay normal gas (no lazy init overhead)
-     * - Function cannot be called again
+     * Note: Registration is separate from storage allocation. Modules store configuration,
+     * but tournaments[] mapping needs explicit initialization per instance.
      */
-    function initializeAllInstances() external {
-        require(!allInstancesInitialized, "I");
+    function initializeAllInstances() external nonReentrant {
+        require(tierCount == 0, "Already initialized");
 
-        _registerTicTacChainTiers();
+        _registerTier0();
+        _registerTier1();
+        _registerTier2();
 
-        allInstancesInitialized = true;
+        // Set final raffle threshold (used after initial thresholds exhausted)
+        raffleThresholdFinal = 0.05 ether;
+
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
 
-    // ============ Match Creation Override ============
-    // TicTacChain handles match creation directly instead of delegating to modules
+    function _registerTier0() private {
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 60,
+            timeIncrementPerMove: 15,
+            matchLevel2Delay: 120,
+            matchLevel3Delay: 240,
+            enrollmentWindow: 300,
+            enrollmentLevel2Delay: 600
+        });
+
+        uint8[] memory prizes = new uint8[](2);
+        prizes[0] = 100;
+        prizes[1] = 0;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature(
+                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
+                0, 2, 100, 0.001 ether, Mode.Classic, timeouts, prizes
+            )
+        );
+        require(success, "T0");
+
+        raffleThresholds.push(0.01 ether);
+    }
+
+    function _registerTier1() private {
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 60,
+            timeIncrementPerMove: 15,
+            matchLevel2Delay: 120,
+            matchLevel3Delay: 240,
+            enrollmentWindow: 300,
+            enrollmentLevel2Delay: 600
+        });
+
+        uint8[] memory prizes = new uint8[](4);
+        prizes[0] = 70;
+        prizes[1] = 30;
+        prizes[2] = 0;
+        prizes[3] = 0;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature(
+                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
+                1, 4, 50, 0.002 ether, Mode.Classic, timeouts, prizes
+            )
+        );
+        require(success, "T1");
+        raffleThresholds.push(0.02 ether);
+    }
+
+    function _registerTier2() private {
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 60,
+            timeIncrementPerMove: 15,
+            matchLevel2Delay: 120,
+            matchLevel3Delay: 240,
+            enrollmentWindow: 300,
+            enrollmentLevel2Delay: 600
+        });
+
+        uint8[] memory prizes = new uint8[](8);
+        prizes[0] = 70;
+        prizes[1] = 20;
+        prizes[2] = 5;
+        prizes[3] = 5;
+        prizes[4] = 0;
+        prizes[5] = 0;
+        prizes[6] = 0;
+        prizes[7] = 0;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature(
+                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
+                2, 8, 25, 0.004 ether, Mode.Classic, timeouts, prizes
+            )
+        );
+        require(success, "T2");
+        raffleThresholds.push(0.04 ether);
+    }
 
     /**
      * @dev Initialize round and create matches
-     * Overrides module implementation to call _createMatchGame directly
+     * Called when tournament starts or when advancing to next round
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId);
@@ -230,14 +271,21 @@ contract TicTacChain is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TournamentStatus oldStatus = tournament.status;
 
-        // MODULE_CORE handles enrollment and calls _onPlayerEnrolled and _onTournamentStarted internally
+        // MODULE_CORE handles enrollment logic via delegatecall
+        // Note: MODULE_CORE calls _onPlayerEnrolled/_onTournamentStarted internally,
+        // but those are empty stubs in the module's bytecode.
+        // We must call the real hooks here after the delegatecall.
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
         );
         require(success, "E");
 
-        // If tournament auto-started (enrollment filled up), initialize round
+        // Call player enrolled hook (always call, module checks if already enrolled)
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
+
+        // If tournament auto-started, call hooks and initialize round
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
     }
@@ -249,55 +297,30 @@ contract TicTacChain is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TournamentStatus oldStatus = tournament.status;
 
-        // MODULE_CORE.forceStartTournament calls startTournament which calls _onTournamentStarted internally
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "S");
+        require(success, "FS");
 
-        // If tournament status changed to InProgress, initialize round
-        if (oldStatus != TournamentStatus.InProgress && tournament.status == TournamentStatus.InProgress) {
+        // If tournament started, call hooks
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
     }
 
     /**
-     * @dev Claim abandoned enrollment pool - delegates to Core module
-     */
-    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "C");
-    }
-
-    /**
-     * @dev Reset enrollment window - delegates to Core module
-     */
-    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "R");
-    }
-
-    /**
      * @dev Execute protocol raffle - delegates to Raffle module
      */
-    function executeProtocolRaffle() external nonReentrant returns (
-        address winner,
-        uint256 ownerAmount,
-        uint256 winnerAmount
-    ) {
-        (bool success, bytes memory data) = MODULE_RAFFLE.delegatecall(
-            abi.encodeWithSignature("executeProtocolRaffle()")
+    function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_RAFFLE.delegatecall(
+            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "RF");
-        return abi.decode(data, (address, uint256, uint256));
+        require(success, "ER");
     }
 
     /**
-     * @dev Force eliminate stalled match - delegates to Escalation module
+     * @dev Escalation Level 2: Advanced players force eliminate both stalled players
      */
     function forceEliminateStalledMatch(
         uint8 tierId,
@@ -306,13 +329,16 @@ contract TicTacChain is ETour_Storage {
         uint8 matchNumber
     ) external nonReentrant {
         (bool success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("forceEliminateStalledMatch(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature(
+                "forceEliminateStalledMatch(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
         );
         require(success, "FE");
     }
 
     /**
-     * @dev Claim match slot by replacement - delegates to Escalation module
+     * @dev Escalation Level 3: External player claims stalled match slot
      */
     function claimMatchSlotByReplacement(
         uint8 tierId,
@@ -321,131 +347,209 @@ contract TicTacChain is ETour_Storage {
         uint8 matchNumber
     ) external nonReentrant {
         (bool success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature(
+                "claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
         );
-        require(success, "RC");
+        require(success, "CR");
+
+        // Hook for external player replacement
+        _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
     }
 
-    // ============ Tier Registration ============
+    // ============ Game Logic (Tic-Tac-Toe Specific) ============
 
     /**
-     * @dev Register all tournament tiers for TicTacChain
-     * This is where TicTacChain defines its specific tournament structure.
-     * Other games implementing ETour would define their own tiers here.
+     * @dev Make a move on the Tic-Tac-Toe board
+     * Handles time bank updates with Fischer increment
      */
-    function _registerTicTacChainTiers() internal {
-        // ============ Tier 0: 2-Player Classic (Entry Level) ============
-        // Simple head-to-head, winner takes all
-        uint8[] memory tier0Prizes = new uint8[](2);
-        tier0Prizes[0] = 100;  // 1st place: 100%
-        tier0Prizes[1] = 0;    // 2nd place: 0%
+    function makeMove(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 cellIndex
+    ) external nonReentrant {
+        require(cellIndex < 9, "Invalid cell");
 
-        TimeoutConfig memory timeouts0 = TimeoutConfig({
-            matchTimePerPlayer: 2 minutes,      // 2 minutes per player
-            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
-            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
-            enrollmentWindow: 5 minutes,        // 5 min to fill tournament
-            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after enrollment window
-        });
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
 
-        (bool success0, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                0,                    // tierId
-                2,                    // playerCount
-                100,                  // instanceCount
-                0.001 ether,          // entryFee
-                Mode.Classic,         // mode
-                timeouts0,            // timeout configuration
-                tier0Prizes           // prizeDistribution
-            )
-        );
-        require(success0, "T0");
+        require(matchData.status == MatchStatus.InProgress, "Match not active");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
+        require(msg.sender == matchData.currentTurn, "Not your turn");
+        require(_getCell(matchData.packedBoard, cellIndex) == 0, "Cell occupied");
 
-        // ============ Tier 1: 4-Player Classic ============
-        // Semi-final + Final bracket, winner takes majority
-        uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 70;   // 1st place: 70%
-        tier1Prizes[1] = 30;   // 2nd place: 30%
-        tier1Prizes[2] = 0;    // 3rd place: 0%
-        tier1Prizes[3] = 0;    // 4th place: 0%
+        // Update time bank for current player
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        if (matchData.currentTurn == matchData.player1) {
+            matchData.player1TimeRemaining = (matchData.player1TimeRemaining > elapsed)
+                ? matchData.player1TimeRemaining - elapsed
+                : 0;
+            matchData.player1TimeRemaining += _getTimeIncrement();
+        } else {
+            matchData.player2TimeRemaining = (matchData.player2TimeRemaining > elapsed)
+                ? matchData.player2TimeRemaining - elapsed
+                : 0;
+            matchData.player2TimeRemaining += _getTimeIncrement();
+        }
+        matchData.lastMoveTime = block.timestamp;
 
-        TimeoutConfig memory timeouts1 = TimeoutConfig({
-            matchTimePerPlayer: 2 minutes,      // 2 minutes per player
-            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
-            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
-            enrollmentWindow: 10 minutes,       // 10 min to fill tournament
-            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after enrollment window
-        });
+        // Make move: Set cell to player's symbol (1 or 2)
+        uint8 symbol = (msg.sender == matchData.player1) ? 1 : 2;
+        matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, symbol);
 
-        (bool success1, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                1,                    // tierId
-                4,                    // playerCount
-                40,                   // instanceCount
-                0.002 ether,          // entryFee
-                Mode.Classic,
-                timeouts1,
-                tier1Prizes
-            )
-        );
-        require(success1, "T1");
+        emit MoveMade(matchId, msg.sender, cellIndex);
 
-        // ============ Tier 2: 8-Player Classic ============
-        uint8[] memory tier2Prizes = new uint8[](8);
-        tier2Prizes[0] = 70;   // 1st
-        tier2Prizes[1] = 20;   // 2nd
-        tier2Prizes[2] = 5;    // 3rd
-        tier2Prizes[3] = 5;    // 4th
-        tier2Prizes[4] = 0;    // 5th-8th
-        tier2Prizes[5] = 0;
-        tier2Prizes[6] = 0;
-        tier2Prizes[7] = 0;
+        // Check for win
+        if (_checkWin(matchData.packedBoard, symbol)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+            return;
+        }
 
-        TimeoutConfig memory timeouts2 = TimeoutConfig({
-            matchTimePerPlayer: 2 minutes,      // 2 minutes per player
-            timeIncrementPerMove: 15 seconds,   // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 2 minutes,        // L2 starts 2 min after timeout
-            matchLevel3Delay: 4 minutes,        // L3 starts 4 min after timeout (cumulative)
-            enrollmentWindow: 15 minutes,       // 15 min to fill tournament
-            enrollmentLevel2Delay: 2 minutes    // L2 starts 2 min after enrollment window
-        });
+        // Check for draw
+        if (_checkDraw(matchData.packedBoard)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+            return;
+        }
 
-        (bool success2, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,uint8,(uint256,uint256,uint256,uint256,uint256,uint256),uint8[])",
-                2,                    // tierId
-                8,                    // playerCount
-                20,                   // instanceCount
-                0.004 ether,          // entryFee
-                Mode.Classic,
-                timeouts2,
-                tier2Prizes
-            )
-        );
-        require(success2, "T2");
-
-        // ============ Configure Raffle Thresholds ============
-        // Progressive thresholds: 0.1, 0.2, 0.3, 0.3, 0.5 ETH for first 5 raffles
-        // Then 1.0 ETH for all subsequent raffles
-        uint256[] memory thresholds = new uint256[](5);
-        thresholds[0] = 0.1 ether;
-        thresholds[1] = 0.2 ether;
-        thresholds[2] = 0.3 ether;
-        thresholds[3] = 0.3 ether;
-        thresholds[4] = 0.5 ether;
-
-        (bool successRaffle, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("registerRaffleThresholds(uint256[],uint256)", thresholds, 1.0 ether)
-        );
-        require(successRaffle, "RT");
+        // Switch turn
+        matchData.currentTurn = (matchData.currentTurn == matchData.player1)
+            ? matchData.player2
+            : matchData.player1;
     }
 
-    // ============ ETour Abstract Implementation ============
+    /**
+     * @dev Claim timeout victory when opponent runs out of time
+     * This is Escalation Level 1 (player-initiated)
+     */
+    function claimTimeoutWin(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
 
+        require(matchData.status == MatchStatus.InProgress, "Match not active");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
+        require(msg.sender != matchData.currentTurn, "Cannot claim on your own turn");
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 opponentTimeRemaining = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        require(elapsed >= opponentTimeRemaining, "Opponent has not timed out");
+
+        // Mark match as stalled (enables L2/L3 escalation later if needed)
+        (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature(
+                "markMatchStalled(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(markSuccess, "MS");
+
+        // Complete match with timeout winner
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+    }
+
+    /**
+     * @dev Internal match completion handler
+     * Coordinates with Escalation and Matches modules
+     */
+    function _completeMatchInternal(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw
+    ) private {
+        // Clear any escalation state
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature(
+                "clearEscalationState(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(clearSuccess, "CE");
+
+        // Delegate to Matches module for advancement logic
+        (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
+            abi.encodeWithSignature(
+                "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
+                tierId, instanceId, roundNumber, matchNumber, winner, isDraw
+            )
+        );
+        require(completeSuccess, "CM");
+    }
+
+    // ============ Board Helper Functions ============
+
+    /**
+     * @dev Get cell value from packed board
+     * @param packedBoard The packed board state (2 bits per cell)
+     * @param cellIndex Index 0-8
+     * @return value 0=empty, 1=player1, 2=player2
+     */
+    function _getCell(uint256 packedBoard, uint8 cellIndex) private pure returns (uint8) {
+        return uint8((packedBoard >> (cellIndex * 2)) & 3);
+    }
+
+    /**
+     * @dev Set cell value in packed board
+     * @param packedBoard Current packed board state
+     * @param cellIndex Index 0-8
+     * @param value 0=empty, 1=player1, 2=player2
+     * @return Updated packed board
+     */
+    function _setCell(uint256 packedBoard, uint8 cellIndex, uint8 value) private pure returns (uint256) {
+        uint256 mask = ~(uint256(3) << (cellIndex * 2));
+        return (packedBoard & mask) | (uint256(value) << (cellIndex * 2));
+    }
+
+    /**
+     * @dev Check if player has won
+     * Checks all 8 winning lines: 3 rows, 3 columns, 2 diagonals
+     */
+    function _checkWin(uint256 board, uint8 player) private pure returns (bool) {
+        // Rows
+        if (_getCell(board, 0) == player && _getCell(board, 1) == player && _getCell(board, 2) == player) return true;
+        if (_getCell(board, 3) == player && _getCell(board, 4) == player && _getCell(board, 5) == player) return true;
+        if (_getCell(board, 6) == player && _getCell(board, 7) == player && _getCell(board, 8) == player) return true;
+
+        // Columns
+        if (_getCell(board, 0) == player && _getCell(board, 3) == player && _getCell(board, 6) == player) return true;
+        if (_getCell(board, 1) == player && _getCell(board, 4) == player && _getCell(board, 7) == player) return true;
+        if (_getCell(board, 2) == player && _getCell(board, 5) == player && _getCell(board, 8) == player) return true;
+
+        // Diagonals
+        if (_getCell(board, 0) == player && _getCell(board, 4) == player && _getCell(board, 8) == player) return true;
+        if (_getCell(board, 2) == player && _getCell(board, 4) == player && _getCell(board, 6) == player) return true;
+
+        return false;
+    }
+
+    /**
+     * @dev Check if board is full (draw)
+     */
+    function _checkDraw(uint256 board) private pure returns (bool) {
+        for (uint8 i = 0; i < 9; i++) {
+            if (_getCell(board, i) == 0) return false;
+        }
+        return true;
+    }
+
+    // ============ IETourGame Interface Implementation ============
+
+    /**
+     * @dev Create new match - called by initializeRound
+     */
     function _createMatchGame(
         uint8 tierId,
         uint8 instanceId,
@@ -478,45 +582,158 @@ contract TicTacChain is ETour_Storage {
         matchData.currentTurn = (randomness % 2 == 0) ? player1 : player2;
         matchData.firstPlayer = matchData.currentTurn;
 
-        // Initialize empty board (packed board = 0 means all cells empty)
+        // Initialize time banks: 60 seconds base
+        TierConfig storage config = _tierConfigs[tierId];
+        matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
+        matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
+
+        // Clear board
         matchData.packedBoard = 0;
 
-        // Initialize time banks for both players
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
-        matchData.player1TimeRemaining = timePerPlayer;
-        matchData.player2TimeRemaining = timePerPlayer;
-        matchData.lastMoveTimestamp = block.timestamp;
-
-        // Add match to both players' active match lists
-        playerActiveMatches[player1].push(matchId);
-        playerMatchIndex[player1][matchId] = playerActiveMatches[player1].length - 1;
-
-        playerActiveMatches[player2].push(matchId);
-        playerMatchIndex[player2][matchId] = playerActiveMatches[player2].length - 1;
-
-        emit MatchStarted(tierId, instanceId, roundNumber, matchNumber, player1, player2);
+        emit MatchCreated(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
 
-    function _resetMatchGame(bytes32 matchId) public override {
+    /**
+     * @dev Reset match for reuse
+     */
+    function _resetMatchGame(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
         matchData.player1 = address(0);
         matchData.player2 = address(0);
-        matchData.currentTurn = address(0);
         matchData.winner = address(0);
-        matchData.status = MatchStatus.NotStarted;
-        matchData.lastMoveTime = 0;
-        matchData.startTime = 0;
+        matchData.currentTurn = address(0);
         matchData.firstPlayer = address(0);
+        matchData.status = MatchStatus.NotStarted;
         matchData.isDraw = false;
-        matchData.packedBoard = 0;  // Reset to empty board
+        matchData.packedBoard = 0;
+        matchData.startTime = 0;
+        matchData.lastMoveTime = 0;
+        matchData.player1TimeRemaining = 0;
+        matchData.player2TimeRemaining = 0;
     }
 
-    function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {
+    /**
+     * @dev Get match result
+     */
+    function _getMatchResult(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public view returns (address winner, bool isDraw, MatchStatus status) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
+    /**
+     * @dev Get match players
+     */
+    function _getMatchPlayers(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public view returns (address player1, address player2) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+        return (matchData.player1, matchData.player2);
+    }
+
+    /**
+     * @dev Check if match is active (exists and not completed)
+     */
+    function _isMatchActive(bytes32 matchId) public view override returns (bool) {
+        Match storage matchData = matches[matchId];
+        // Active if player1 assigned and not completed
+        return matchData.player1 != address(0) &&
+               matchData.status != MatchStatus.Completed;
+    }
+
+    /**
+     * @dev Set match player (for replacement scenarios)
+     */
+    function _setMatchPlayer(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 playerSlot,
+        address newPlayer
+    ) public {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        if (playerSlot == 1) {
+            matchData.player1 = newPlayer;
+        } else {
+            matchData.player2 = newPlayer;
+        }
+    }
+
+    /**
+     * @dev Initialize match for play (set starting player, reset timers)
+     */
+    function _initializeMatchForPlay(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Re-randomize starting player
+        uint256 randomness = uint256(keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            matchData.player1,
+            matchData.player2,
+            matchId,
+            "replay"
+        )));
+        matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
+        matchData.firstPlayer = matchData.currentTurn;
+
+        // Reset time banks
+        TierConfig storage config = _tierConfigs[tierId];
+        matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
+        matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
+        matchData.lastMoveTime = block.timestamp;
+    }
+
+    /**
+     * @dev Complete match with result
+     */
+    function _completeMatchWithResult(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw
+    ) public {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        matchData.status = MatchStatus.Completed;
+        matchData.winner = winner;
+        matchData.isDraw = isDraw;
+
+        // Cache match before clearing
+        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
+    }
+
+    /**
+     * @dev Add match to cache - delegates to GameCacheModule
+     */
     function _addToMatchCacheGame(
         uint8 tierId,
         uint8 instanceId,
@@ -526,14 +743,12 @@ contract TicTacChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        // Encode packed board state for generic storage
+        // Encode board as bytes for generic cache storage
         bytes memory boardData = abi.encode(matchData.packedBoard);
 
-        // Delegate to GameCacheModule
         (bool success, ) = MODULE_GAME_CACHE.delegatecall(
             abi.encodeWithSignature(
-                "addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
-                matchId,
+                "addToMatchCache(uint8,uint8,uint8,uint8,address,address,address,address,bool,uint256,uint256,bytes)",
                 tierId,
                 instanceId,
                 roundNumber,
@@ -542,211 +757,150 @@ contract TicTacChain is ETour_Storage {
                 matchData.player2,
                 matchData.firstPlayer,
                 matchData.winner,
-                matchData.startTime,
                 matchData.isDraw,
+                matchData.startTime,
+                block.timestamp,  // endTime
                 boardData
             )
         );
-        require(success, "CA");
+        require(success, "Cache failed");
     }
 
+    /**
+     * @dev Check if current player has timed out
+     */
+    function _hasCurrentPlayerTimedOut(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public view returns (bool) {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        if (matchData.status != MatchStatus.InProgress) return false;
+
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        return elapsed >= currentPlayerTime;
+    }
+
+    /**
+     * @dev Get time increment per move (Fischer increment)
+     */
+    function _getTimeIncrement() public view override returns (uint256) {
+        return 15; // 15 seconds Fischer increment
+    }
+
+    // ============ Wrapper Functions (bytes32 matchId variants for module compatibility) ============
+
+    /**
+     * @dev Reset match - wrapper for modules expecting bytes32 matchId
+     */
+    function _resetMatchGame(bytes32 matchId) public override {
+        Match storage matchData = matches[matchId];
+
+        matchData.player1 = address(0);
+        matchData.player2 = address(0);
+        matchData.winner = address(0);
+        matchData.currentTurn = address(0);
+        matchData.firstPlayer = address(0);
+        matchData.status = MatchStatus.NotStarted;
+        matchData.isDraw = false;
+        matchData.packedBoard = 0;
+        matchData.startTime = 0;
+        matchData.lastMoveTime = 0;
+        matchData.player1TimeRemaining = 0;
+        matchData.player2TimeRemaining = 0;
+    }
+
+    /**
+     * @dev Get match result - wrapper for modules
+     */
+    function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {
+        Match storage matchData = matches[matchId];
+        return (matchData.winner, matchData.isDraw, matchData.status);
+    }
+
+    /**
+     * @dev Get match players - wrapper for modules
+     */
     function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
         Match storage matchData = matches[matchId];
         return (matchData.player1, matchData.player2);
     }
 
-    // ============ Match Management Overrides ============
-
     /**
-     * @dev Consolidate scattered players - delegated to MODULE_MATCHES
-     * Call MODULE_MATCHES.consolidateScatteredPlayers() directly
+     * @dev Set match player - wrapper for modules
      */
-
-    /**
-     * @dev Override completeMatch to handle storage access directly
-     * This avoids delegatecall issues with removePlayerActiveMatch
-     */
-    function completeMatch(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw
-    ) public {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Mark match as completed with result
-        _completeMatchWithResult(matchId, winner, isDraw);
-
-        // Get players
-        (address player1, address player2) = _getMatchPlayers(matchId);
-
-        // Remove match from player1's active matches - DIRECT storage access
-        uint256 index1 = playerMatchIndex[player1][matchId];
-        uint256 lastIndex1 = playerActiveMatches[player1].length - 1;
-        if (index1 != lastIndex1) {
-            bytes32 lastMatchId1 = playerActiveMatches[player1][lastIndex1];
-            playerActiveMatches[player1][index1] = lastMatchId1;
-            playerMatchIndex[player1][lastMatchId1] = index1;
-        }
-        playerActiveMatches[player1].pop();
-        delete playerMatchIndex[player1][matchId];
-
-        // Remove match from player2's active matches - DIRECT storage access
-        uint256 index2 = playerMatchIndex[player2][matchId];
-        uint256 lastIndex2 = playerActiveMatches[player2].length - 1;
-        if (index2 != lastIndex2) {
-            bytes32 lastMatchId2 = playerActiveMatches[player2][lastIndex2];
-            playerActiveMatches[player2][index2] = lastMatchId2;
-            playerMatchIndex[player2][lastMatchId2] = index2;
-        }
-        playerActiveMatches[player2].pop();
-        delete playerMatchIndex[player2][matchId];
-
-        // Trigger elimination hook for both players - module will check if they should be removed
-        // Note: We don't know which player was eliminated (could be draw, timeout, etc)
-        // So we call the hook for both and let the module determine if removal is needed
-        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
-        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
-
-        // Update player stats - DIRECT storage access
-        playerStats[player1].matchesPlayed++;
-        playerStats[player2].matchesPlayed++;
-        if (!isDraw) {
-            playerStats[winner].matchesWon++;
-        }
-
-        // Clear escalation state - delegate to Escalation module
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
-        );
-        require(clearSuccess, "CE");
-
-        emit MatchCompleted(matchId, winner, isDraw);
-
-        // Handle winner advancement if not a draw and not final round
-        if (!isDraw) {
-            TierConfig storage config = _tierConfigs[tierId];
-            if (roundNumber < config.totalRounds - 1) {
-                // Delegate to Matches module for advanceWinner
-                (bool advanceSuccess, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)",
-                        tierId, instanceId, roundNumber, matchNumber, winner)
-                );
-                require(advanceSuccess, "A");
-            }
-        }
-
-        // Update round completion tracking
-        Round storage round = rounds[tierId][instanceId][roundNumber];
-        round.completedMatches++;
-
-        if (isDraw) {
-            round.drawCount++;
-        }
-
-        // Check if round is complete
-        if (round.completedMatches == round.totalMatches) {
-            // Complete the round - this handles orphaned winners, tournament completion, etc.
-            // Note: completeRound in MODULE_MATCHES calls hasOrphanedWinners, processOrphanedWinners,
-            // and checkForSoleWinnerCompletion internally, so we don't need to call them explicitly
-            (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("completeRound(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-            );
-            require(completeSuccess, "CR");
-        }
-    }
-
-    // ============ IETourGame Public Interface (Makes internal functions accessible to modules) ============
-    // Note: These are not true external wrappers - they make the contract satisfy IETourGame interface
-    // by exposing internal functions publicly
-
-    function _getTimeIncrement() public view override returns (uint256) {
-        // Note: This function is called during match, so we get config from the match's tier
-        // In practice, all tiers in TicTacChain use 15 seconds
-        return 15 seconds; // Fischer increment: 15 seconds per move
-    }
-
-    /**
-     * @dev Check if the current player has run out of time
-     * Used by escalation system to detect stalled matches
-     */
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
-
-        // If match is not in progress, return false
-        if (matchData.status != MatchStatus.InProgress) {
-            return false;
-        }
-
-        // Calculate time elapsed since last move
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
-
-        // Get current player's remaining time
-        uint256 currentPlayerTimeRemaining;
-        if (matchData.currentTurn == matchData.player1) {
-            currentPlayerTimeRemaining = matchData.player1TimeRemaining;
-        } else {
-            currentPlayerTimeRemaining = matchData.player2TimeRemaining;
-        }
-
-        // Current player has timed out if elapsed time >= their remaining time
-        return timeElapsed >= currentPlayerTimeRemaining;
-    }
-
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
         Match storage matchData = matches[matchId];
-        if (slot == 0) {
+
+        if (slot == 1) {
             matchData.player1 = player;
         } else {
             matchData.player2 = player;
         }
     }
 
+    /**
+     * @dev Initialize match for play - wrapper for modules
+     */
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage matchData = matches[matchId];
 
-        require(matchData.player1 != matchData.player2, "P1");
-
-        matchData.status = MatchStatus.InProgress;
-        matchData.lastMoveTime = block.timestamp;
-        matchData.startTime = block.timestamp;
-
+        // Re-randomize starting player
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
             matchData.player1,
             matchData.player2,
-            matchId
+            matchId,
+            "replay"
         )));
-        matchData.firstPlayer = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
-        matchData.currentTurn = matchData.firstPlayer;
+        matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
+        matchData.firstPlayer = matchData.currentTurn;
 
-        // Initialize empty board
-        matchData.packedBoard = 0;
-
-        // Initialize time banks for both players
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
-        matchData.player1TimeRemaining = timePerPlayer;
-        matchData.player2TimeRemaining = timePerPlayer;
-        matchData.lastMoveTimestamp = block.timestamp;
+        // Reset time banks
+        TierConfig storage config = _tierConfigs[tierId];
+        matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
+        matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
+        matchData.lastMoveTime = block.timestamp;
     }
 
+    /**
+     * @dev Complete match with result - wrapper for modules
+     */
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
         Match storage matchData = matches[matchId];
+
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
     }
 
-    function _isMatchActive(bytes32 matchId) public view override returns (bool) {
+    /**
+     * @dev Check if current player timed out - wrapper for modules
+     */
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
         Match storage matchData = matches[matchId];
-        // Active if player1 assigned and not completed
-        return matchData.player1 != address(0) &&
-               matchData.status != MatchStatus.Completed;
+
+        if (matchData.status != MatchStatus.InProgress) return false;
+
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        return elapsed >= currentPlayerTime;
     }
 
+    /**
+     * @dev Get active match data - for modules that need CommonMatchData
+     */
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 tierId,
@@ -773,7 +927,7 @@ contract TicTacChain is ETour_Storage {
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
             lastMoveTime: matchData.lastMoveTime,
-            endTime: 0,
+            endTime: 0,  // endTime set when match cached
             tierId: tierId,
             instanceId: instanceId,
             roundNumber: roundNumber,
@@ -782,15 +936,18 @@ contract TicTacChain is ETour_Storage {
         });
     }
 
+    /**
+     * @dev Get match from cache - delegates to GameCacheModule
+     */
     function _getMatchFromCache(
         bytes32 matchId,
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public override returns (CommonMatchData memory data, bool exists) {
-        // Delegate to GameCacheModule
-        (bool success, bytes memory result) = MODULE_GAME_CACHE.delegatecall(
+    ) public view override returns (CommonMatchData memory data, bool exists) {
+        // Static call to GameCacheModule (read-only)
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
             abi.encodeWithSignature(
                 "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
                 matchId,
@@ -806,295 +963,167 @@ contract TicTacChain is ETour_Storage {
         }
 
         // Decode result
-        (
-            address player1,
-            address player2,
-            address firstPlayer,
-            address winner,
-            uint256 startTime,
-            uint256 endTime,
-            bool isDraw,
-            bool cacheExists,
-            bytes memory boardData
-        ) = abi.decode(result, (address, address, address, address, uint256, uint256, bool, bool, bytes));
-
-        if (!cacheExists) {
-            return (data, false);
-        }
-
-        // Derive loser
-        address loser = address(0);
-        if (!isDraw && winner != address(0)) {
-            loser = (winner == player1) ? player2 : player1;
-        }
-
-        // Populate CommonMatchData
-        data = CommonMatchData({
-            player1: player1,
-            player2: player2,
-            winner: winner,
-            loser: loser,
-            status: MatchStatus.Completed,
-            isDraw: isDraw,
-            startTime: startTime,
-            lastMoveTime: endTime,
-            endTime: endTime,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isCached: true
-        });
-
-        return (data, true);
+        (data, exists) = abi.decode(result, (CommonMatchData, bool));
+        return (data, exists);
     }
-
-    // ============ Gameplay Functions ============
-
-    function makeMove(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        uint8 cellIndex
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Delegate game logic to MODULE_GAME
-        (bool success, ) = MODULE_GAME.delegatecall(
-            abi.encodeWithSignature("makeMove(uint8,uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber, cellIndex)
-        );
-        require(success, "MV");
-
-        // Check if match was completed by the module
-        Match storage matchData = matches[matchId];
-        if (matchData.status == MatchStatus.Completed) {
-            completeMatch(tierId, instanceId, roundNumber, matchNumber, matchData.winner, matchData.isDraw);
-            _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
-        }
-    }
-
-    // ============ Timeout Functions ============
-
-    function claimTimeoutWin(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Delegate timeout logic to MODULE_GAME
-        (bool success, ) = MODULE_GAME.delegatecall(
-            abi.encodeWithSignature("claimTimeoutWin(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber)
-        );
-        require(success, "TW");
-
-        // Mark match as stalled to enable escalation
-        (bool stallSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("markMatchStalled(bytes32,uint8,uint256)", matchId, tierId, uint256(0))
-        );
-        require(stallSuccess, "MS");
-
-        // Complete match and cache
-        Match storage matchData = matches[matchId];
-        address loser = (matchData.winner == matchData.player1) ? matchData.player2 : matchData.player1;
-        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, matchData.winner, loser);
-
-        completeMatch(tierId, instanceId, roundNumber, matchNumber, matchData.winner, matchData.isDraw);
-        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
-    }
-
-    // ============ Game Logic ============
-    // Game-specific logic (makeMove, claimTimeoutWin, board helpers) delegated to MODULE_GAME
 
     // ============ View Functions ============
 
     /**
-     * @dev Get complete TicTacToe match data with automatic cache fallback
-     * Replaces legacy tuple return with structured data
-     * BREAKING CHANGE: Returns struct instead of tuple
+     * @dev Get complete match data with automatic cache fallback
+     * CRITICAL: Uses staticcall for cache reads so function can be view
      */
     function getMatch(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public returns (TicTacToeMatchData memory) {
-        // Get common data via helper
+    ) public view returns (TicTacToeMatchData memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Try active match first
         if (_isMatchActive(matchId)) {
-            CommonMatchData memory common = _getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+            Match storage matchData = matches[matchId];
 
             TicTacToeMatchData memory fullData;
-            fullData.common = common;
 
-            Match storage matchData = matches[matchId];
+            // Build CommonMatchData
+            address loser = address(0);
+            if (!matchData.isDraw && matchData.winner != address(0)) {
+                loser = (matchData.winner == matchData.player1) ? matchData.player2 : matchData.player1;
+            }
+
+            fullData.common = CommonMatchData({
+                player1: matchData.player1,
+                player2: matchData.player2,
+                winner: matchData.winner,
+                loser: loser,
+                status: matchData.status,
+                isDraw: matchData.isDraw,
+                startTime: matchData.startTime,
+                lastMoveTime: matchData.lastMoveTime,
+                endTime: 0,
+                tierId: tierId,
+                instanceId: instanceId,
+                roundNumber: roundNumber,
+                matchNumber: matchNumber,
+                isCached: false
+            });
+
+            // Add game-specific data
             fullData.packedBoard = matchData.packedBoard;
             fullData.currentTurn = matchData.currentTurn;
             fullData.firstPlayer = matchData.firstPlayer;
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
-            fullData.lastMoveTimestamp = matchData.lastMoveTimestamp;
+            fullData.lastMoveTimestamp = matchData.lastMoveTime;
 
             return fullData;
         }
 
-        // Try cache
-        (CommonMatchData memory cachedCommon, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, roundNumber, matchNumber);
-        if (exists) {
-            TicTacToeMatchData memory fullData;
-            fullData.common = cachedCommon;
+        // Try cache (use staticcall to keep function view)
+        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
+            abi.encodeWithSignature(
+                "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
+                matchId,
+                tierId,
+                instanceId,
+                roundNumber,
+                matchNumber
+            )
+        );
 
-            // Initialize default values for cached matches
-            fullData.packedBoard = 0;  // Empty board for cached matches
-            fullData.firstPlayer = cachedCommon.player1;
-            fullData.currentTurn = address(0);  // N/A for completed matches
-            fullData.player1TimeRemaining = 0;  // N/A for completed matches
-            fullData.player2TimeRemaining = 0;
-            fullData.lastMoveTimestamp = 0;
+        if (success) {
+            (CommonMatchData memory cachedCommon, bool exists) = abi.decode(result, (CommonMatchData, bool));
 
-            return fullData;
+            if (exists) {
+                TicTacToeMatchData memory fullData;
+                fullData.common = cachedCommon;
+
+                // Decode board from cache
+                // Note: boardData is stored in cache, we need to decode it
+                // For now, return empty board for cached matches
+                // TODO: Enhance cache to return boardData
+                fullData.packedBoard = 0;
+                fullData.currentTurn = address(0);  // Completed matches have no current turn
+                fullData.firstPlayer = address(0);  // Would need to be stored in cache
+                fullData.player1TimeRemaining = 0;
+                fullData.player2TimeRemaining = 0;
+                fullData.lastMoveTimestamp = 0;
+
+                return fullData;
+            }
         }
 
         revert("Match not found");
     }
 
     /**
-     * @dev Get real-time remaining time for both players
-     * Calculates current player's time by subtracting elapsed time since last move
-     * Returns stored time for waiting player
+     * @dev Get real-time time remaining for both players
      */
     function getCurrentTimeRemaining(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view returns (uint256 player1Time, uint256 player2Time) {
+    ) external view returns (uint256 player1Time, uint256 player2Time) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        // For completed or not started matches, return stored values
         if (matchData.status != MatchStatus.InProgress) {
             return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
         }
 
-        // Calculate elapsed time since last move
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
 
-        // Calculate real-time remaining for current player
+        player1Time = matchData.player1TimeRemaining;
+        player2Time = matchData.player2TimeRemaining;
+
+        // Deduct elapsed time from current player
         if (matchData.currentTurn == matchData.player1) {
-            // Player 1's turn - deduct elapsed time
-            player1Time = matchData.player1TimeRemaining > timeElapsed
-                ? matchData.player1TimeRemaining - timeElapsed
-                : 0;
-            player2Time = matchData.player2TimeRemaining;
+            player1Time = (player1Time > elapsed) ? player1Time - elapsed : 0;
         } else {
-            // Player 2's turn - deduct elapsed time
-            player1Time = matchData.player1TimeRemaining;
-            player2Time = matchData.player2TimeRemaining > timeElapsed
-                ? matchData.player2TimeRemaining - timeElapsed
-                : 0;
+            player2Time = (player2Time > elapsed) ? player2Time - elapsed : 0;
         }
+    }
 
-        return (player1Time, player2Time);
+    // ============ Player Tracking View Functions ============
+
+    /**
+     * @dev Get all tournaments a player is currently enrolling in
+     */
+    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerEnrollingTournaments[player];
     }
 
     /**
-     * @dev Cache getter functions - call MODULE_GAME_CACHE directly:
-     * - getCachedMatch(address, address)
-     * - getCachedMatchByIndex(uint16)
-     * - getAllCachedMatches()
-     * - getRecentCachedMatches(uint16)
-     * - isMatchCached(address, address)
+     * @dev Get all tournaments a player is actively competing in
      */
-
-    // ============ Player Activity Tracking Implementation ============
+    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerActiveTournaments[player];
+    }
 
     /**
-     * @dev Hook override: Called when player enrolls in tournament
-     * Adds player to enrolling list for activity tracking
+     * @dev Check if player is in a specific tournament (enrolling or active)
      */
-    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onPlayerEnrolled(uint8,uint8,address)", tierId, instanceId, player)
-        );
-        require(success, "TE");
-    }
-
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onTournamentStarted(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "TS");
-    }
-
-    function _onPlayerEliminatedFromTournament(
+    function isPlayerInTournament(
         address player,
         uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber
-    ) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onPlayerEliminatedFromTournament(address,uint8,uint8,uint8)",
-                player, tierId, instanceId, roundNumber)
-        );
-        require(success, "TL");
+        uint8 instanceId
+    ) external view returns (bool isEnrolling, bool isActive) {
+        uint256 enrollingIdx = playerEnrollingIndex[player][tierId][instanceId];
+        uint256 activeIdx = playerActiveIndex[player][tierId][instanceId];
+
+        isEnrolling = enrollingIdx > 0 &&
+                      enrollingIdx <= playerEnrollingTournaments[player].length &&
+                      playerEnrollingTournaments[player][enrollingIdx - 1].tierId == tierId &&
+                      playerEnrollingTournaments[player][enrollingIdx - 1].instanceId == instanceId;
+
+        isActive = activeIdx > 0 &&
+                   activeIdx <= playerActiveTournaments[player].length &&
+                   playerActiveTournaments[player][activeIdx - 1].tierId == tierId &&
+                   playerActiveTournaments[player][activeIdx - 1].instanceId == instanceId;
     }
-
-    function _onExternalPlayerReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onExternalPlayerReplacement(uint8,uint8,address)",
-                tierId, instanceId, player)
-        );
-        require(success, "TR");
-    }
-
-    function _onTournamentCompleted(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory players
-    ) public override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onTournamentCompleted(uint8,uint8,address[])",
-                tierId, instanceId, players)
-        );
-        require(success, "TC");
-    }
-
-    // ============ Player Activity View Functions ============
-    // Player tracking logic delegated to MODULE_PLAYER_TRACKING
-
-    /**
-     * @dev Player tournament list getters - call MODULE_PLAYER_TRACKING directly:
-     * - getPlayerEnrollingTournaments(address)
-     * - getPlayerActiveTournaments(address)
-     */
-
-    /**
-     * @dev Get counts (gas-efficient for checking if player has any activity)
-     */
-    function getPlayerActivityCounts(address player) external view returns (
-        uint256 enrollingCount,
-        uint256 activeCount
-    ) {
-        return (
-            playerEnrollingTournaments[player].length,
-            playerActiveTournaments[player].length
-        );
-    }
-
-    /**
-     * @dev Player tournament status - call MODULE_PLAYER_TRACKING.isPlayerInTournament() directly
-     */
 
     /**
      * @dev Tier configuration - access via inherited getTierConfig() from ETour_Storage
@@ -1121,209 +1150,182 @@ contract TicTacChain is ETour_Storage {
         );
     }
 
-    function getPlayerActiveMatches(address player) external view returns (bytes32[] memory) {
-        return playerActiveMatches[player];
-    }
-
-    function getEnrolledPlayers(uint8 tierId, uint8 instanceId) external view returns (address[] memory) {
-        return enrolledPlayers[tierId][instanceId];
-    }
-
     function getRoundInfo(uint8 tierId, uint8 instanceId, uint8 roundNumber) external view returns (
         uint8 totalMatches,
         uint8 completedMatches,
         bool initialized
     ) {
         Round storage round = rounds[tierId][instanceId][roundNumber];
-        return (round.totalMatches, round.completedMatches, round.initialized);
-    }
-
-    function getPlayerStats() external view returns (int256 totalEarnings) {
-        return playerEarnings[msg.sender];
-    }
-
-    function getTierOverview(uint8 tierId) external view returns (
-        TournamentStatus[] memory statuses,
-        uint8[] memory enrolledCounts,
-        uint256[] memory prizePools
-    ) {
-        TierConfig storage config = _tierConfigs[tierId];
-        uint8 instanceCount = config.instanceCount;
-        statuses = new TournamentStatus[](instanceCount);
-        enrolledCounts = new uint8[](instanceCount);
-        prizePools = new uint256[](instanceCount);
-
-        for (uint8 i = 0; i < instanceCount; i++) {
-            TournamentInstance storage tournament = tournaments[tierId][i];
-            statuses[i] = tournament.status;
-            enrolledCounts[i] = tournament.enrolledCount;
-            prizePools[i] = tournament.prizePool;
-        }
-
-        return (statuses, enrolledCounts, prizePools);
-    }
-
-    /**
-     * @dev Prize and leaderboard getters - access storage directly:
-     * - _tierPrizeDistribution[tierId][ranking] - get prize percentage
-     * - _tierPrizeDistribution[tierId] - get full distribution array
-     * - _leaderboardPlayers.length - get leaderboard count
-     */
-
-    function _getRaffleThreshold() internal view returns (uint256) {
-        // If no raffle thresholds configured, use default
-        if (raffleThresholds.length == 0) {
-            return 3 ether;
-        }
-
-        // If currentRaffleIndex is within the configured array, use that value
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-
-        // Otherwise, use the final threshold
-        return raffleThresholdFinal;
-    }
-
-    function getRaffleThresholds() external view returns (
-        uint256[] memory thresholds,
-        uint256 finalThreshold,
-        uint256 currentThreshold
-    ) {
-        thresholds = raffleThresholds;
-        finalThreshold = raffleThresholdFinal;
-        currentThreshold = _getRaffleThreshold();
-        return (thresholds, finalThreshold, currentThreshold);
-    }
-
-    /**
-     * @dev Simple getters - access storage/helpers directly:
-     * - _getMatchId(tierId, instanceId, roundNumber, matchNumber) - get match ID
-     * - _tierConfigs[tierId].entryFee - get entry fee
-     * - _tierConfigs[tierId].instanceCount - get instance count
-     * - _tierConfigs[tierId].playerCount - get tier size
-     */
-
-    // ============ View Function Wrappers (Delegatecall to Modules) ============
-
-    /**
-     * @dev Get all tier IDs - reads from own storage
-     */
-    function getAllTierIds() external view returns (uint8[] memory) {
-        uint8[] memory tierIds = new uint8[](tierCount);
-        for (uint8 i = 0; i < tierCount; i++) {
-            tierIds[i] = i;
-        }
-        return tierIds;
-    }
-
-    /**
-     * @dev Get tier info - reads from own storage
-     */
-    function getTierInfo(uint8 tierId) external view returns (
-        uint8 playerCount,
-        uint8 instanceCount,
-        uint256 entryFee
-    ) {
-        require(_tierConfigs[tierId].initialized, "IT");
-        TierConfig storage config = _tierConfigs[tierId];
         return (
-            config.playerCount,
-            config.instanceCount,
-            config.entryFee
+            round.totalMatches,
+            round.completedMatches,
+            round.initialized
         );
     }
 
-    /**
-     * @dev Can reset enrollment window - reads from own storage
-     */
-    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
-        TierConfig storage config = _tierConfigs[tierId];
-
-        if (!config.initialized) return false;
-        if (instanceId >= config.instanceCount) return false;
-
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        bool isEnrollingStatus = tournament.status == TournamentStatus.Enrolling;
-        bool isExactlyOnePlayer = tournament.enrolledCount == 1;
-        bool isPlayerEnrolled = isEnrolled[tierId][instanceId][msg.sender];
-        bool hasWindowExpired = block.timestamp >= tournament.enrollmentTimeout.escalation1Start;
-
-        return isEnrollingStatus && isExactlyOnePlayer && isPlayerEnrolled && hasWindowExpired;
-    }
-
-    /**
-     * @dev Get raffle info - delegates to Raffle module
-     */
-    function getRaffleInfo() external view returns (
-        uint256 raffleIndex,
-        bool isReady,
-        uint256 currentAccumulated,
-        uint256 threshold,
-        uint256 reserve,
-        uint256 raffleAmount,
-        uint256 ownerShare,
-        uint256 winnerShare,
-        uint256 eligiblePlayerCount
+    function getPlayerActivityCounts(address player) external view returns (
+        uint256 enrollingCount,
+        uint256 activeCount
     ) {
-        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
-            abi.encodeWithSignature("getRaffleInfo()")
-        );
-        require(success, "GF");
-        return abi.decode(data, (uint256, bool, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
-    }
-
-    /**
-     * @dev Get leaderboard - delegates to Prizes module
-     */
-    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
-        (bool success, bytes memory data) = MODULE_PRIZES.staticcall(
-            abi.encodeWithSignature("getLeaderboard()")
-        );
-        require(success, "GF");
-        // Decode the struct array - we need to define LeaderboardEntry locally
-        return abi.decode(data, (LeaderboardEntry[]));
-    }
-
-    /**
-     * @dev LeaderboardEntry struct for decoding
-     */
-    struct LeaderboardEntry {
-        address player;
-        int256 earnings;
-    }
-
-    /**
-     * @dev Escalation availability checks (L1, L2, L3) - delegated to MODULE_ESCALATION
-     * Call MODULE_ESCALATION.isMatchEscLXAvailable() directly
-     */
-
-    /**
-     * @dev Advanced player checks - delegated to MODULE_ESCALATION
-     * Call MODULE_ESCALATION.isPlayerInAdvancedRound() directly
-     */
-
-    /**
-     * @dev Get raffle configuration - delegates to Raffle module
-     */
-    function getRaffleConfiguration() external view returns (
-        uint256 threshold,
-        uint256 reserve,
-        uint256 ownerSharePercentage,
-        uint256 winnerSharePercentage
-    ) {
-        threshold = _getRaffleThreshold();
-        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
-            abi.encodeWithSignature("getRaffleReserve()")
-        );
-        require(success, "RR");
-        reserve = abi.decode(data, (uint256));
         return (
-            threshold,
-            reserve,
-            20,  // 20% to owner
-            80   // 80% to winner
+            playerEnrollingTournaments[player].length,
+            playerActiveTournaments[player].length
         );
+    }
+
+    // ============ Player Tracking Hooks (Built-in Implementation) ============
+
+    /**
+     * @dev Hook: Called when player enrolls in tournament
+     */
+    function _onPlayerEnrolled(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal override {
+        _addPlayerEnrollingTournament(player, tierId, instanceId);
+    }
+
+    /**
+     * @dev Hook: Called when tournament starts
+     * Atomic transition: Move ALL enrolled players from enrolling → active
+     */
+    function _onTournamentStarted(
+        uint8 tierId,
+        uint8 instanceId
+    ) internal override {
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            _removePlayerEnrollingTournament(player, tierId, instanceId);
+            _addPlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    /**
+     * @dev Hook: Called when player is eliminated from tournament
+     * Only removes if player has NO remaining active matches
+     */
+    function _onPlayerEliminatedFromTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal override {
+        // Check if player has any remaining matches in this tournament
+        bool hasActiveMatch = _playerHasActiveMatchInTournament(player, tierId, instanceId);
+
+        if (!hasActiveMatch) {
+            _removePlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    /**
+     * @dev Hook: Called when external player replaces stalled player (L3 escalation)
+     */
+    function _onExternalPlayerReplacement(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal override {
+        // External player joins mid-tournament, goes directly to active (skip enrolling)
+        _addPlayerActiveTournament(player, tierId, instanceId);
+    }
+
+    /**
+     * @dev Hook: Called when tournament completes
+     * Clean up ALL player tracking for this tournament
+     */
+    function _onTournamentCompleted(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory players
+    ) public override {
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            _removePlayerEnrollingTournament(player, tierId, instanceId);
+            _removePlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
+
+    // ============ Player Tracking Helper Functions ============
+
+    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
+        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+    }
+
+    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
+            playerEnrollingTournaments[player][index] = lastRef;
+            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerEnrollingTournaments[player].pop();
+        delete playerEnrollingIndex[player][tierId][instanceId];
+    }
+
+    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
+        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
+    }
+
+    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerActiveTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
+            playerActiveTournaments[player][index] = lastRef;
+            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerActiveTournaments[player].pop();
+        delete playerActiveIndex[player][tierId][instanceId];
+    }
+
+    /**
+     * @dev Check if player has any active matches in tournament
+     */
+    function _playerHasActiveMatchInTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId
+    ) private view returns (bool) {
+        bytes32[] storage activeMatches = playerActiveMatches[player];
+
+        for (uint256 i = 0; i < activeMatches.length; i++) {
+            bytes32 matchId = activeMatches[i];
+            Match storage matchData = matches[matchId];
+
+            // Check if this match belongs to the tournament
+            // We need to decode tierId/instanceId from matchId
+            // For now, iterate through rounds
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            for (uint8 round = 0; round <= tournament.currentRound; round++) {
+                Round storage roundData = rounds[tierId][instanceId][round];
+                for (uint8 matchNum = 0; matchNum < roundData.totalMatches; matchNum++) {
+                    bytes32 checkId = _getMatchId(tierId, instanceId, round, matchNum);
+                    if (checkId == matchId) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

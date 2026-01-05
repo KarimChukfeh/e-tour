@@ -452,7 +452,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public virtual returns (CommonMatchData memory data, bool exists);
+    ) public view virtual returns (CommonMatchData memory data, bool exists);
 
     // ============ Hooks (Optional overrides by Game Contracts) ============
 

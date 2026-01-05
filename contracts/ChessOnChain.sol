@@ -1055,71 +1055,132 @@ contract ChessOnChain is ETour_Storage {
     // Note: getBoard() removed - use getMatch() instead which returns complete match data including board
 
     /**
-     * @dev Hook called when player enrolls in tournament - delegates to PlayerTrackingModule
+     * @dev Hook: Called when player enrolls in tournament
      */
     function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onPlayerEnrolled(uint8,uint8,address)", tierId, instanceId, player)
-        );
-        require(success, "Track enroll fail");
+        _addPlayerEnrollingTournament(player, tierId, instanceId);
     }
 
     /**
-     * @dev Hook called when tournament starts - delegates to PlayerTrackingModule
+     * @dev Hook: Called when tournament starts
+     * Moves ALL enrolled players from enrolling → active
      */
     function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onTournamentStarted(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "Track start fail");
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+        for (uint256 i = 0; i < players.length; i++) {
+            _removePlayerEnrollingTournament(players[i], tierId, instanceId);
+            _addPlayerActiveTournament(players[i], tierId, instanceId);
+        }
     }
 
     /**
-     * @dev Hook called when player is eliminated - delegates to PlayerTrackingModule
+     * @dev Hook: Called when player is eliminated from tournament
      */
     function _onPlayerEliminatedFromTournament(
         address player,
         uint8 tierId,
         uint8 instanceId,
-        uint8 roundNumber
+        uint8 /* roundNumber */
     ) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onPlayerEliminatedFromTournament(address,uint8,uint8,uint8)", player, tierId, instanceId, roundNumber)
-        );
-        require(success, "Track elim fail");
+        if (!_playerHasActiveMatchInTournament(player, tierId, instanceId)) {
+            _removePlayerActiveTournament(player, tierId, instanceId);
+        }
     }
 
     /**
-     * @dev Hook called when external player joins - delegates to PlayerTrackingModule
+     * @dev Hook: Called when external player joins via L3 replacement
      */
     function _onExternalPlayerReplacement(
         uint8 tierId,
         uint8 instanceId,
         address player
     ) internal override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onExternalPlayerReplacement(uint8,uint8,address)", tierId, instanceId, player)
-        );
-        require(success, "Track replace fail");
+        _addPlayerActiveTournament(player, tierId, instanceId);
     }
 
     /**
-     * @dev Hook called when tournament completes - delegates to PlayerTrackingModule
+     * @dev Hook: Called when tournament completes
      */
     function _onTournamentCompleted(
         uint8 tierId,
         uint8 instanceId,
         address[] memory players
     ) public override {
-        (bool success, ) = MODULE_PLAYER_TRACKING.delegatecall(
-            abi.encodeWithSignature("onTournamentCompleted(uint8,uint8,address[])", tierId, instanceId, players)
-        );
-        require(success, "Track complete fail");
+        for (uint256 i = 0; i < players.length; i++) {
+            _removePlayerEnrollingTournament(players[i], tierId, instanceId);
+            _removePlayerActiveTournament(players[i], tierId, instanceId);
+        }
     }
 
-    // Note: All player tracking functions moved to PlayerTrackingModule
-    // Use MODULE_PLAYER_TRACKING.staticcall to access getPlayerEnrollingTournaments,
-    // getPlayerActiveTournaments, and isPlayerInTournament
+    // ============ Player Tracking Internal Helpers ============
+
+    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
+        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+    }
+
+    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
+            playerEnrollingTournaments[player][index] = lastRef;
+            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerEnrollingTournaments[player].pop();
+        delete playerEnrollingIndex[player][tierId][instanceId];
+    }
+
+    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
+        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
+    }
+
+    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
+        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerActiveTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
+            playerActiveTournaments[player][index] = lastRef;
+            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerActiveTournaments[player].pop();
+        delete playerActiveIndex[player][tierId][instanceId];
+    }
+
+    function _playerHasActiveMatchInTournament(
+        address player,
+        uint8 tierId,
+        uint8 instanceId
+    ) private view returns (bool) {
+        bytes32[] storage matches = playerActiveMatches[player];
+        TierConfig storage config = _tierConfigs[tierId];
+
+        for (uint8 r = 0; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                for (uint256 i = 0; i < matches.length; i++) {
+                    if (matches[i] == matchId) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * @dev Override to provide Chess-specific game metadata

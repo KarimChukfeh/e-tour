@@ -67,7 +67,7 @@ contract ChessRulesModule is ETour_Storage {
     mapping(bytes32 => ChessMatch) public chessMatches;
 
     // Additional ChessOnChain storage (not accessed by this module, but needed for slot alignment)
-    mapping(bytes32 => bytes) public moveHistory;
+    bool public allInstancesInitialized;
 
     // Constructor
     constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
@@ -86,7 +86,7 @@ contract ChessRulesModule is ETour_Storage {
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
-    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public override returns (CommonMatchData memory, bool) { revert("Module: Use IETourGame"); }
+    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) { revert("Module: Use IETourGame"); }
 
     // ============ Move Validation Functions ============
 

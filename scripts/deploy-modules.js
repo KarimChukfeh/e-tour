@@ -135,24 +135,9 @@ export async function deployModules() {
     const moduleGameCacheAddress = await moduleGameCache.getAddress();
     console.log("✅ GameCacheModule deployed to:", moduleGameCacheAddress);
 
-    // Deploy PlayerTrackingModule
-    console.log("Deploying PlayerTrackingModule...");
-    const PlayerTrackingModule = await hre.ethers.getContractFactory("contracts/modules/PlayerTrackingModule.sol:PlayerTrackingModule");
-    const modulePlayerTracking = await PlayerTrackingModule.deploy();
-    await modulePlayerTracking.waitForDeployment();
-    const modulePlayerTrackingAddress = await modulePlayerTracking.getAddress();
-    console.log("✅ PlayerTrackingModule deployed to:", modulePlayerTrackingAddress);
-
-    // Deploy TicTacToeGameModule
-    console.log("Deploying TicTacToeGameModule...");
-    const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
-    const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
-    await moduleTicTacToeGame.waitForDeployment();
-    const moduleTicTacToeGameAddress = await moduleTicTacToeGame.getAddress();
-    console.log("✅ TicTacToeGameModule deployed to:", moduleTicTacToeGameAddress);
-
     console.log("");
-    console.log("✅ All modules deployed successfully!");
+    console.log("✅ All 6 core modules deployed successfully!");
+    console.log("   (Player tracking is built-in, game logic is integrated)");
     console.log("");
 
     return {
@@ -161,9 +146,7 @@ export async function deployModules() {
         prizes: modulePrizesAddress,
         raffle: moduleRaffleAddress,
         escalation: moduleEscalationAddress,
-        gameCache: moduleGameCacheAddress,
-        playerTracking: modulePlayerTrackingAddress,
-        ticTacToeGame: moduleTicTacToeGameAddress
+        gameCache: moduleGameCacheAddress
     };
 }
 

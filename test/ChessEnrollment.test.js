@@ -93,7 +93,7 @@ describe("ChessOnChain - Enrollment Test", function () {
     it("Should allow second player enrollment and auto-start tournament", async function () {
         const entryFee = hre.ethers.parseEther("0.01");
 
-        const tx = await game.connect(player2).enrollInTournament(0, 0, { value: entryFee });
+        const tx = await game.connect(player2).enrollInTournament(0, 0, { value: entryFee, gasLimit: 5000000 });
         await tx.wait();
 
         // Verify enrollment
