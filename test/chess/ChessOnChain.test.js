@@ -225,6 +225,140 @@ describe("ChessOnChain Tests", function () {
         });
     });
 
+    describe("1v1 Duel Match Initialization", function () {
+        const tierId = 0;
+        const instanceId = 10;  // Fresh instance for this test
+        const roundNumber = 0;
+        const matchNumber = 0;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        it("Should start match immediately after 2 players enroll in 1v1 duel", async function () {
+            // First player enrolls - tournament should still be in Enrolling state
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            let tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling
+            expect(tournament.enrolledCount).to.equal(1);
+
+            // Second player enrolls - should trigger tournament start AND match creation
+            const tx = await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
+
+            // Verify all expected events are emitted
+            await expect(tx).to.emit(chess, "PlayerEnrolled");
+            await expect(tx).to.emit(chess, "TournamentStarted");
+            await expect(tx).to.emit(chess, "RoundInitialized").withArgs(tierId, instanceId, 0, 1); // 1 match for 2 players
+
+            // Tournament should be InProgress
+            tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(1); // InProgress
+            expect(tournament.enrolledCount).to.equal(2);
+            expect(tournament.currentRound).to.equal(0);
+
+            // Round should be initialized with 1 match
+            const round = await chess.rounds(tierId, instanceId, roundNumber);
+            expect(round.initialized).to.be.true;
+            expect(round.totalMatches).to.equal(1);
+            expect(round.completedMatches).to.equal(0);
+
+            // Match should exist and be InProgress
+            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.common.status).to.equal(1); // InProgress (not NotStarted)
+            expect(matchData.common.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+
+            // Both enrolled players should be in the match
+            const matchPlayers = [matchData.common.player1, matchData.common.player2];
+            expect(matchPlayers).to.include(player1.address);
+            expect(matchPlayers).to.include(player2.address);
+
+            // Match should have proper timing initialized
+            expect(matchData.common.startTime).to.be.gt(0);
+            expect(matchData.common.lastMoveTime).to.be.gt(0);
+
+            // Time remaining should be set (600 seconds per player for tier 0)
+            expect(matchData.player1TimeRemaining).to.equal(600);
+            expect(matchData.player2TimeRemaining).to.equal(600);
+
+            // Board should be initialized (initial chess position)
+            expect(matchData.packedBoard).to.not.equal(0);
+
+            // Current turn should be set to player1 (white)
+            expect(matchData.currentTurn).to.equal(matchData.common.player1);
+            expect(matchData.firstPlayer).to.equal(matchData.common.player1);
+        });
+
+        it("Should allow immediate gameplay after match starts in 1v1 duel", async function () {
+            const freshInstanceId = 11;
+
+            // Enroll both players
+            await chess.connect(player1).enrollInTournament(tierId, freshInstanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, freshInstanceId, { value: entryFee });
+
+            // Get match data to determine who is white
+            const matchData = await chess.getMatch(tierId, freshInstanceId, roundNumber, matchNumber);
+            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
+
+            // White should be able to make a move immediately (e2-e4)
+            const e2 = 12;
+            const e4 = 28;
+            await expect(
+                chess.connect(whitePlayer).makeMove(tierId, freshInstanceId, roundNumber, matchNumber, e2, e4, 0)
+            ).to.emit(chess, "MoveMade");
+
+            // Verify the board state changed
+            const board = await chess.getBoard(tierId, freshInstanceId, roundNumber, matchNumber);
+            expect(Number(board[e4])).to.equal(1); // White pawn now on e4
+            expect(Number(board[e2])).to.equal(0); // e2 is empty
+        });
+
+        it("Should return correct status from all view functions after 1v1 duel starts", async function () {
+            const freshInstanceId = 12;
+
+            // Enroll both players
+            await chess.connect(player1).enrollInTournament(tierId, freshInstanceId, { value: entryFee });
+            await chess.connect(player2).enrollInTournament(tierId, freshInstanceId, { value: entryFee });
+
+            // Check via getMatch() - returns ChessMatchData struct
+            const matchData = await chess.getMatch(tierId, freshInstanceId, roundNumber, matchNumber);
+            expect(matchData.common.status).to.equal(1); // InProgress
+
+            // Check via getRoundInfo() - returns (totalMatches, completedMatches, initialized)
+            const roundInfo = await chess.getRoundInfo(tierId, freshInstanceId, roundNumber);
+            expect(roundInfo[0]).to.equal(1);    // totalMatches = 1
+            expect(roundInfo[1]).to.equal(0);    // completedMatches = 0
+            expect(roundInfo[2]).to.be.true;     // initialized = true
+
+            // Check via getTournamentInfo() - returns (status, mode, currentRound, enrolledCount, prizePool, winner)
+            const tournamentInfo = await chess.getTournamentInfo(tierId, freshInstanceId);
+            expect(tournamentInfo[0]).to.equal(1); // TournamentStatus.InProgress
+            expect(tournamentInfo[2]).to.equal(0); // currentRound = 0
+            expect(tournamentInfo[3]).to.equal(2); // enrolledCount = 2
+
+            // Check via raw matches mapping - returns Match struct fields
+            // Compute matchId: keccak256(abi.encodePacked(tierId, instanceId, roundNumber, matchNumber))
+            const matchId = hre.ethers.solidityPackedKeccak256(
+                ["uint8", "uint8", "uint8", "uint8"],
+                [tierId, freshInstanceId, roundNumber, matchNumber]
+            );
+            const rawMatch = await chess.matches(matchId);
+
+            // rawMatch returns: (player1, player2, winner, currentTurn, firstPlayer, status, isDraw, packedBoard, packedState, startTime, lastMoveTime, player1TimeRemaining, player2TimeRemaining)
+            expect(rawMatch.status).to.equal(1);      // MatchStatus.InProgress
+            expect(rawMatch.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(rawMatch.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(rawMatch.startTime).to.be.gt(0);
+
+            // Also verify via tournaments mapping
+            const tournament = await chess.tournaments(tierId, freshInstanceId);
+            expect(tournament.status).to.equal(1); // TournamentStatus.InProgress
+
+            // Also verify via rounds mapping
+            const round = await chess.rounds(tierId, freshInstanceId, roundNumber);
+            expect(round.initialized).to.be.true;
+            expect(round.totalMatches).to.equal(1);
+        });
+    });
+
     describe("Pawn Promotion", function () {
         let whitePlayer, blackPlayer;
         const tierId = 0;
