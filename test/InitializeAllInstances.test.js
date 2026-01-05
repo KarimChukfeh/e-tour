@@ -43,12 +43,14 @@ describe("TicTacChain - initializeAllInstances()", function () {
         expect(tierCount).to.equal(3);
     });
 
-    it("Should have allInstancesInitialized = true after initialization", async function () {
+    // NOTE: allInstancesInitialized was removed for gas optimization
+    // Verify initialization by checking tier count instead
+    it("Should have tiers registered after initialization", async function () {
         const tx = await game.initializeAllInstances();
         await tx.wait();
 
-        const initialized = await game.allInstancesInitialized();
-        expect(initialized).to.equal(true);
+        const tierCount = await game.tierCount();
+        expect(tierCount).to.be.gt(0);
     });
 
     it("Should emit AllInstancesInitialized event", async function () {
