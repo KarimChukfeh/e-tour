@@ -10,8 +10,34 @@ describe("Enrollment Window Reset", function () {
     beforeEach(async function () {
         [, player1, player2, player3] = await hre.ethers.getSigners();
 
+        // Deploy modules
+        const ETour_Core = await hre.ethers.getContractFactory("ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
         await game.waitForDeployment();
         await game.initializeAllInstances();
     });

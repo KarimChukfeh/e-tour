@@ -178,19 +178,21 @@ contract ETour_Escalation is ETour_Storage {
             return true;
         }
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Check if match is active
-        if (!this._isMatchActive(matchId)) {
+        if (!gameContract._isMatchActive(matchId)) {
             return false;
         }
 
         // Get match common data to check status
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
 
         // Check if current player has run out of time (using game-specific time bank logic)
-        if (this._hasCurrentPlayerTimedOut(matchId)) {
+        if (gameContract._hasCurrentPlayerTimedOut(matchId)) {
             TierConfig storage config = _tierConfigs[tierId];
 
             // Calculate when the timeout occurred for accurate escalation timing
@@ -220,11 +222,7 @@ contract ETour_Escalation is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check and mark match as stalled if it qualifies
-        // Call to MODULE_ESCALATION for _checkAndMarkStalled via delegatecall
-        (bool checkSuccess, bytes memory checkData) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("checkAndMarkStalled(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
-        );
-        require(checkSuccess, "Check stalled failed");
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
 
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
 
@@ -233,22 +231,14 @@ contract ETour_Escalation is ETour_Storage {
         require(block.timestamp >= timeout.escalation1Start, "Level 2 not active yet");
 
         // Require caller is an advanced player
-        // Call to MODULE_ESCALATION for _isPlayerInAdvancedRound via delegatecall
-        (bool advancedSuccess, bytes memory advancedData) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("isPlayerInAdvancedRound(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, msg.sender)
-        );
-        require(advancedSuccess, "Advanced check failed");
-        bool isAdvanced = abi.decode(advancedData, (bool));
+        bool isAdvanced = _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender);
         require(isAdvanced, "Not an advanced player");
 
         // Mark escalation level and double eliminate both players
         timeout.activeEscalation = EscalationLevel.Escalation2_AdvancedPlayers;
 
-        // Call to MODULE_ESCALATION for _completeMatchDoubleElimination via delegatecall
-        (bool eliminateSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("completeMatchDoubleElimination(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
-        );
-        require(eliminateSuccess, "Double elimination failed");
+        // Complete match with double elimination
+        _completeMatchDoubleEliminationInternal(tierId, instanceId, roundNumber, matchNumber);
     }
 
     /**
@@ -264,11 +254,7 @@ contract ETour_Escalation is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check and mark match as stalled if it qualifies
-        // Call to MODULE_ESCALATION for _checkAndMarkStalled via delegatecall
-        (bool checkSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("checkAndMarkStalled(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
-        );
-        require(checkSuccess, "Check stalled failed");
+        _checkAndMarkStalled(matchId, tierId, instanceId, roundNumber, matchNumber);
 
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
 
@@ -277,22 +263,14 @@ contract ETour_Escalation is ETour_Storage {
         require(block.timestamp >= timeout.escalation2Start, "Level 3 not active yet");
 
         // Prevent advanced players from claiming (they should use L2 instead)
-        // Call to MODULE_ESCALATION for _isPlayerInAdvancedRound via delegatecall
-        (bool advancedSuccess, bytes memory advancedData) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("isPlayerInAdvancedRound(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, msg.sender)
-        );
-        require(advancedSuccess, "Advanced check failed");
-        bool isAdvanced = abi.decode(advancedData, (bool));
+        bool isAdvanced = _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender);
         require(!isAdvanced, "Advanced players cannot claim L3");
 
         // Mark escalation level and complete match with replacement winner
         timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
 
-        // Call to MODULE_ESCALATION for _completeMatchByReplacement via delegatecall
-        (bool replacementSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("completeMatchByReplacement(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchNumber, msg.sender)
-        );
-        require(replacementSuccess, "Replacement failed");
+        // Complete match with replacement
+        _completeMatchByReplacementInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender);
     }
 
     // ============ Advanced Player Checking ============
@@ -361,13 +339,15 @@ contract ETour_Escalation is ETour_Storage {
             return false;
         }
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Check 1: Has player won a match in any round up to and including the stalled round?
         for (uint8 r = 0; r <= stalledRoundNumber; r++) {
             Round storage round = rounds[tierId][instanceId][r];
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
 
                 if (status == MatchStatus.Completed &&
                     winner == player &&
@@ -386,7 +366,7 @@ contract ETour_Escalation is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address p1, address p2) = this._getMatchPlayers(matchId);
+                (address p1, address p2) = gameContract._getMatchPlayers(matchId);
 
                 if (p1 == player || p2 == player) {
                     return true;
@@ -401,41 +381,27 @@ contract ETour_Escalation is ETour_Storage {
 
     /**
      * @dev Complete a match by double elimination (both players eliminated, no winner)
-     * EXACT COPY from ETour.sol lines 1871-1910
+     * Internal version called from within the module
      */
-    function completeMatchDoubleElimination(
+    function _completeMatchDoubleEliminationInternal(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external {
+    ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         (address player1, address player2) = this._getMatchPlayers(matchId);
 
         this._completeMatchWithResult(matchId, address(0), false);
         this._addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
 
-        // Call to MODULE_ESCALATION for _assignRankingOnElimination via delegatecall
-        (bool rank1Success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("assignRankingOnElimination(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, player1)
-        );
-        require(rank1Success, "Ranking assignment failed");
+        // Assign rankings directly
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
 
-        (bool rank2Success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("assignRankingOnElimination(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, player2)
-        );
-        require(rank2Success, "Ranking assignment failed");
-
-        // Call to MODULE_MATCHES for _removePlayerActiveMatch via delegatecall
-        (bool remove1Success, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("removePlayerActiveMatch(address,bytes32)", player1, matchId)
-        );
-        require(remove1Success, "Remove active match failed");
-
-        (bool remove2Success, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("removePlayerActiveMatch(address,bytes32)", player2, matchId)
-        );
-        require(remove2Success, "Remove active match failed");
+        // Remove player active match tracking (inline instead of delegatecall)
+        _removePlayerFromActiveMatch(player1, matchId);
+        _removePlayerFromActiveMatch(player2, matchId);
 
         _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
         _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
@@ -452,44 +418,22 @@ contract ETour_Escalation is ETour_Storage {
         round.completedMatches++;
 
         if (round.completedMatches == round.totalMatches) {
-            // Call to MODULE_MATCHES for _hasOrphanedWinners via delegatecall
-            (bool hasOrphansSuccess, bytes memory hasOrphansData) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("hasOrphanedWinners(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-            );
-            require(hasOrphansSuccess, "Check orphans failed");
-            bool hasOrphans = abi.decode(hasOrphansData, (bool));
-
-            if (hasOrphans) {
-                (bool processSuccess, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("processOrphanedWinners(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-                );
-                require(processSuccess, "Process orphans failed");
-
-                // After processing orphaned winners, check if tournament can complete
-                (bool checkSoleSuccess, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("checkForSoleWinnerCompletion(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-                );
-                require(checkSoleSuccess, "Check sole winner failed");
-            }
-
-            (bool completeRoundSuccess, ) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("completeRound(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-            );
-            require(completeRoundSuccess, "Complete round failed");
+            // Check for orphaned winners and complete round (inline logic)
+            _handleRoundCompletion(tierId, instanceId, roundNumber);
         }
     }
 
     /**
      * @dev Complete a match by replacement (external player takes over as winner)
-     * EXACT COPY from ETour.sol lines 1915-1972
+     * Internal version called from within the module
      */
-    function completeMatchByReplacement(
+    function _completeMatchByReplacementInternal(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber,
         address replacementPlayer
-    ) external {
+    ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         IETourGame gameContract = IETourGame(address(this));
         (address player1, address player2) = gameContract._getMatchPlayers(matchId);
@@ -497,27 +441,13 @@ contract ETour_Escalation is ETour_Storage {
         gameContract._completeMatchWithResult(matchId, replacementPlayer, false);
         gameContract._addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
 
-        // Call to MODULE_ESCALATION for _assignRankingOnElimination via delegatecall
-        (bool rank1Success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("assignRankingOnElimination(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, player1)
-        );
-        require(rank1Success, "Ranking assignment failed");
+        // Assign rankings directly
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
+        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
 
-        (bool rank2Success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("assignRankingOnElimination(uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, player2)
-        );
-        require(rank2Success, "Ranking assignment failed");
-
-        // Call to MODULE_MATCHES for _removePlayerActiveMatch via delegatecall
-        (bool remove1Success, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("removePlayerActiveMatch(address,bytes32)", player1, matchId)
-        );
-        require(remove1Success, "Remove active match failed");
-
-        (bool remove2Success, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("removePlayerActiveMatch(address,bytes32)", player2, matchId)
-        );
-        require(remove2Success, "Remove active match failed");
+        // Remove player active match tracking (inline instead of delegatecall)
+        _removePlayerFromActiveMatch(player1, matchId);
+        _removePlayerFromActiveMatch(player2, matchId);
 
         _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
         _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
@@ -544,41 +474,16 @@ contract ETour_Escalation is ETour_Storage {
 
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber < config.totalRounds - 1) {
-            // Call to MODULE_MATCHES for _advanceWinner via delegatecall
-            (bool advanceSuccess, ) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchNumber, replacementPlayer)
-            );
-            require(advanceSuccess, "Advance winner failed");
+            // Advance winner inline
+            _advanceWinnerToNextRound(tierId, instanceId, roundNumber, matchNumber, replacementPlayer);
         }
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
 
         if (round.completedMatches == round.totalMatches) {
-            // Call to MODULE_MATCHES for _hasOrphanedWinners via delegatecall
-            (bool hasOrphansSuccess, bytes memory hasOrphansData) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("hasOrphanedWinners(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-            );
-            require(hasOrphansSuccess, "Check orphans failed");
-            bool hasOrphans = abi.decode(hasOrphansData, (bool));
-
-            if (hasOrphans) {
-                (bool processSuccess, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("processOrphanedWinners(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-                );
-                require(processSuccess, "Process orphans failed");
-
-                // After processing orphaned winners, check if tournament can complete
-                (bool checkSoleSuccess, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("checkForSoleWinnerCompletion(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-                );
-                require(checkSoleSuccess, "Check sole winner failed");
-            }
-
-            (bool completeRoundSuccess, ) = MODULE_MATCHES.delegatecall(
-                abi.encodeWithSignature("completeRound(uint8,uint8,uint8)", tierId, instanceId, roundNumber)
-            );
-            require(completeRoundSuccess, "Complete round failed");
+            // Check for orphaned winners and complete round (inline logic)
+            _handleRoundCompletion(tierId, instanceId, roundNumber);
         }
     }
 
@@ -745,5 +650,120 @@ contract ETour_Escalation is ETour_Storage {
 
         // If already marked as stalled, check if L3 window is active
         return block.timestamp >= timeout.escalation2Start;
+    }
+
+    // ============ Helper Functions for Escalation ============
+
+    /**
+     * @dev Remove player from active match tracking
+     */
+    function _removePlayerFromActiveMatch(address player, bytes32 matchId) internal {
+        bytes32[] storage activeMatches = playerActiveMatches[player];
+        uint256 length = activeMatches.length;
+
+        for (uint256 i = 0; i < length; i++) {
+            if (activeMatches[i] == matchId) {
+                // Swap with last element and pop
+                activeMatches[i] = activeMatches[length - 1];
+                activeMatches.pop();
+                break;
+            }
+        }
+    }
+
+    /**
+     * @dev Advance winner to next round
+     */
+    function _advanceWinnerToNextRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 currentRound,
+        uint8 currentMatchNum,
+        address winner
+    ) internal {
+        // Calculate next round and match position
+        uint8 nextRound = currentRound + 1;
+        uint8 nextMatchNum = currentMatchNum / 2;
+
+        // Get or create next match
+        Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
+
+        // Initialize next round if needed
+        if (!nextRoundStruct.initialized) {
+            TierConfig storage config = _tierConfigs[tierId];
+            // Calculate matches for next round: playerCount / 2^(round+1)
+            uint8 nextRoundMatches = config.playerCount / uint8(2 ** (nextRound + 1));
+            nextRoundStruct.initialized = true;
+            nextRoundStruct.totalMatches = nextRoundMatches;
+            nextRoundStruct.completedMatches = 0;
+        }
+
+        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, nextMatchNum);
+
+        // Set player in next match (use game interface to set properly)
+        uint8 slot = currentMatchNum % 2; // 0 or 1
+        this._setMatchPlayer(nextMatchId, slot, winner);
+
+        // If both players assigned, initialize the match
+        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+        if (p1 != address(0) && p2 != address(0)) {
+            this._initializeMatchForPlay(nextMatchId, tierId);
+            this._addToMatchCacheGame(tierId, instanceId, nextRound, nextMatchNum);
+        }
+    }
+
+    /**
+     * @dev Handle round completion logic
+     * Simplified version - just marks tournament complete if appropriate
+     */
+    function _handleRoundCompletion(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
+        TierConfig storage config = _tierConfigs[tierId];
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+
+        // Check if this is the final round
+        if (roundNumber == config.totalRounds - 1) {
+            // Finals completed - check for winner
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
+            (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
+
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            if (!isDraw && winner != address(0)) {
+                // Normal winner
+                tournament.winner = winner;
+                tournament.status = TournamentStatus.Completed;
+                playerRanking[tierId][instanceId][winner] = 1;
+            } else if (isDraw) {
+                // Draw in finals
+                tournament.finalsWasDraw = true;
+                tournament.status = TournamentStatus.Completed;
+
+                (address p1, address p2) = this._getMatchPlayers(finalsMatchId);
+                playerRanking[tierId][instanceId][p1] = 1;
+                playerRanking[tierId][instanceId][p2] = 1;
+            }
+        } else {
+            // Non-final round completed - check for orphaned winner scenario
+            // Count winners from current round
+            uint8 winnersCount = 0;
+            address lastWinner = address(0);
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, m);
+                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+
+                if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
+                    winnersCount++;
+                    lastWinner = winner;
+                }
+            }
+
+            // If only one winner, they win the tournament
+            if (winnersCount == 1 && lastWinner != address(0)) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+                tournament.winner = lastWinner;
+                tournament.status = TournamentStatus.Completed;
+                playerRanking[tierId][instanceId][lastWinner] = 1;
+            }
+        }
     }
 }

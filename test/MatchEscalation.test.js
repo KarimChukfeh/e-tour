@@ -26,16 +26,44 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6] = await hre.ethers.getSigners();
 
+        // Deploy modules first
+        const ETour_Core = await hre.ethers.getContractFactory("ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+
+        // Deploy TicTacChain with module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
         await game.waitForDeployment();
         await game.initializeAllInstances();
 
         // Hardcoded timeout values (tierConfigs removed)
-        // Tier 0 (2-player): 60s match time, 60s L2 delay, 120s L3 delay
+        // Tier 0 (2-player): 60s match time, 60s L2 delay, 60s L3 delay
+        // Tier 1 (4-player): 60s match time, 120s L2 delay, 240s L3 delay
         MATCH_TIME_PER_PLAYER = 60;
-        L2_DELAY = 60;
-        L3_DELAY = 120;
+        L2_DELAY = 120;  // Tier 1 value
+        L3_DELAY = 240;  // Tier 1 value
     });
 
     describe("Level 1: Normal Timeout Claim (Baseline)", function () {
@@ -171,7 +199,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player (not in tournament) tries to force eliminate
             await expect(
                 game.connect(player5).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("FE"); // Short error code for force elimination failure
+            ).to.be.revertedWith("Not an advanced player");
         });
 
         it("Should reject force elimination before escalation window", async function () {
@@ -208,7 +236,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Try to force eliminate immediately (before escalation window)
             await expect(
                 game.connect(advancedPlayer).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("FE"); // Short error code for force elimination failure
+            ).to.be.revertedWith("Level 2 not active yet");
         });
     });
 
@@ -270,7 +298,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player tries to claim too early
             await expect(
                 game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
+            ).to.be.revertedWith("Level 3 not active yet");
         });
 
         it("Should reject replacement claim on non-stalled match", async function () {
@@ -286,7 +314,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player tries to claim
             await expect(
                 game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
+            ).to.be.revertedWith("Match not stalled");
         });
     });
 
@@ -460,7 +488,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Try to claim completed match
             await expect(
                 game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
+            ).to.be.revertedWith("Match not stalled");
         });
 
         it("Should clear escalation state after match completion", async function () {
