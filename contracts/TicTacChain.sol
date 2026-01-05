@@ -65,6 +65,8 @@ contract TicTacChain is ETour_Storage {
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
     event PlayerEliminated(address indexed player, uint8 tierId, uint8 instanceId, bool hadActiveMatches);
+    event TournamentCompletedHookCalled(uint8 tierId, uint8 instanceId, uint256 playerCount);
+    event DebugTournamentCompletion(bool enrolledCleared, uint256 enrolledLength, uint256 copyLength);
     event AllInstancesInitialized(address indexed caller, uint8 tierCount);
     event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     // MatchCached event now defined in ETour_Storage
@@ -494,6 +496,12 @@ contract TicTacChain is ETour_Storage {
         );
         require(clearSuccess, "CE");
 
+        // Save enrolled players before delegatecall (in case tournament completes and resets)
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         // Delegate to Matches module for advancement logic
         // Note: MODULE_MATCHES calls _onPlayerEliminatedFromTournament internally,
         // but it's an empty stub in the module's bytecode.
@@ -511,6 +519,26 @@ contract TicTacChain is ETour_Storage {
             Match storage matchData = matches[matchId];
             address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
+        }
+
+        // Check if tournament completed by looking at status change
+        // MODULE_MATCHES.completeMatch() sets status to Completed and calls prize distribution
+        // But nested delegatecall to MODULE_PRIZES.resetTournamentAfterCompletion() doesn't work
+        // So we call it directly from TicTacChain and trigger the hook
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
+            // Tournament just completed - call reset and hook directly
+            // (prizes already distributed by MODULE_MATCHES.completeTournament)
+
+            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            );
+            require(resetSuccess, "RT");
+
+            // Call tournament completion hook
+            emit TournamentCompletedHookCalled(tierId, instanceId, enrolledPlayersCopy.length);
+            _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
         }
     }
 
@@ -877,6 +905,14 @@ contract TicTacChain is ETour_Storage {
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage matchData = matches[matchId];
 
+        // Set match status and times
+        matchData.status = MatchStatus.InProgress;
+        matchData.startTime = block.timestamp;
+        matchData.lastMoveTime = block.timestamp;
+        matchData.packedBoard = 0;  // Clear board
+        matchData.isDraw = false;
+        matchData.winner = address(0);
+
         // Re-randomize starting player
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
@@ -893,7 +929,6 @@ contract TicTacChain is ETour_Storage {
         TierConfig storage config = _tierConfigs[tierId];
         matchData.player1TimeRemaining = config.timeouts.matchTimePerPlayer;
         matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
-        matchData.lastMoveTime = block.timestamp;
     }
 
     /**

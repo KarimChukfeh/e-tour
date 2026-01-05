@@ -74,6 +74,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       { player: winnerPlayer, cell: 2 }, // WIN!
     ];
 
+    let lastTx;
     for (const move of moves) {
       const currentMatchData = await ticTacChain.getMatch(tierId, instanceId, roundNum, matchNum);
       if (currentMatchData.common.status === 2) break; // Already completed
@@ -83,11 +84,12 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       // Skip if not current player's turn
       if (currentPlayer.address !== move.player.address) {
         // Adjust moves on the fly
-        await ticTacChain.connect(currentPlayer).makeMove(tierId, instanceId, roundNum, matchNum, move.cell);
+        lastTx = await ticTacChain.connect(currentPlayer).makeMove(tierId, instanceId, roundNum, matchNum, move.cell);
       } else {
-        await ticTacChain.connect(move.player).makeMove(tierId, instanceId, roundNum, matchNum, move.cell);
+        lastTx = await ticTacChain.connect(move.player).makeMove(tierId, instanceId, roundNum, matchNum, move.cell);
       }
     }
+    return lastTx;
   }
 
   beforeEach(async function () {
@@ -425,11 +427,56 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     expect(sf1LoserActive.length).to.equal(0, "SF1 loser should be eliminated");
 
     // Complete finals
-    await playMatch(TIER_1, INSTANCE_0, 1, 0, 1);
+    console.log("\nPlaying finals match (Round 1, Match 0)...");
+    const finalsReceipt = await (await playMatch(TIER_1, INSTANCE_0, 1, 0, 1)).wait();
+    console.log("Finals complete!");
+
+    // Check what events were emitted
+    const roundCompletedEvents = finalsReceipt.logs.filter(log => {
+      try { return ticTacChain.interface.parseLog(log).name === 'RoundCompleted'; } catch { return false; }
+    });
+    const tournamentCompletedEvents = finalsReceipt.logs.filter(log => {
+      try { return ticTacChain.interface.parseLog(log).name === 'TournamentCompleted'; } catch { return false; }
+    });
+    const debugCompletionEvents = finalsReceipt.logs.filter(log => {
+      try { return ticTacChain.interface.parseLog(log).name === 'DebugTournamentCompletion'; } catch { return false; }
+    });
+    const hookCalledEvents = finalsReceipt.logs.filter(log => {
+      try { return ticTacChain.interface.parseLog(log).name === 'TournamentCompletedHookCalled'; } catch { return false; }
+    });
+    console.log(`  RoundCompleted events: ${roundCompletedEvents.length}`);
+    console.log(`  TournamentCompleted events: ${tournamentCompletedEvents.length}`);
+    console.log(`  DebugTournamentCompletion events: ${debugCompletionEvents.length}`);
+    console.log(`  TournamentCompletedHookCalled events: ${hookCalledEvents.length}`);
+
+    if (debugCompletionEvents.length > 0) {
+      const parsedDebug = ticTacChain.interface.parseLog(debugCompletionEvents[0]);
+      console.log(`\nDebugTournamentCompletion details:`);
+      console.log(`  enrolledCleared: ${parsedDebug.args.enrolledCleared}`);
+      console.log(`  enrolledLength: ${parsedDebug.args.enrolledLength}`);
+      console.log(`  copyLength: ${parsedDebug.args.copyLength}`);
+    }
+
+    // Check tournament status after finals
+    const tournamentAfter = await ticTacChain.tournaments(TIER_1, INSTANCE_0);
+    const round1After = await ticTacChain.rounds(TIER_1, INSTANCE_0, 1);
+    console.log(`\nTournament after finals:`);
+    console.log(`  Status: ${tournamentAfter.status} (0=NotStarted, 1=Enrolling, 2=InProgress, 3=Completed)`);
+    console.log(`  Enrolled count: ${tournamentAfter.enrolledCount}`);
+    console.log(`  Current round: ${tournamentAfter.currentRound}`);
+    console.log(`  Winner: ${tournamentAfter.winner}`);
+    console.log(`\nRound 1 (finals) after match:`);
+    console.log(`  Total matches: ${round1After.totalMatches}`);
+    console.log(`  Completed matches: ${round1After.completedMatches}`);
+    console.log(`  Initialized: ${round1After.initialized}`);
 
     // After tournament completes, all players should be removed
     const finalSf0WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf0Winner);
     const finalSf1WinnerActive = await ticTacChain.getPlayerActiveTournaments(sf1Winner);
+
+    console.log(`\nAfter finals:`);
+    console.log(`  Champion (${sf0Winner}) active tournaments: ${finalSf0WinnerActive.length}`);
+    console.log(`  Finalist (${sf1Winner}) active tournaments: ${finalSf1WinnerActive.length}`);
 
     expect(finalSf0WinnerActive.length).to.equal(0, "Champion should be removed after tournament");
     expect(finalSf1WinnerActive.length).to.equal(0, "Finalist should be removed after tournament");
