@@ -1,7 +1,10 @@
 import { expect } from "chai";
 import hre from "hardhat";
 
-describe("Escalation Helper Functions Tests", function() {
+// NOTE: The escalation helper functions (isMatchEscL1Available, isMatchEscL2Available, etc.)
+// were removed from ConnectFourOnChain for gas optimization.
+// These functions may still exist in ChessOnChain or can be computed off-chain.
+describe.skip("Escalation Helper Functions Tests (DEPRECATED - functions removed from ConnectFourOnChain)", function() {
     let game;
     let players = [];
     let outsiders = [];
