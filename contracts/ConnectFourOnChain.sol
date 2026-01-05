@@ -109,7 +109,15 @@ contract ConnectFourOnChain is ETour_Storage {
         _registerTier1();
         _registerTier2();
 
-        raffleThresholdFinal = 0.05 ether;
+        // Set raffle thresholds: [0.4, 0.8, 1.2, 1.6, 2]
+        raffleThresholds.push(0.4 ether);
+        raffleThresholds.push(0.8 ether);
+        raffleThresholds.push(1.2 ether);
+        raffleThresholds.push(1.6 ether);
+        raffleThresholds.push(2.0 ether);
+
+        // Set final raffle threshold (used after initial thresholds exhausted)
+        raffleThresholdFinal = 2.0 ether;
 
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
@@ -135,8 +143,6 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success, "T0");
-
-        raffleThresholds.push(0.02 ether);
     }
 
     function _registerTier1() private {
@@ -162,7 +168,6 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success, "T1");
-        raffleThresholds.push(0.04 ether);
     }
 
     function _registerTier2() private {
@@ -192,7 +197,6 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success, "T2");
-        raffleThresholds.push(0.08 ether);
     }
 
     /**

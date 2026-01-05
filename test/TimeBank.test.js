@@ -15,7 +15,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
     const TEN_SECONDS = 10;
 
     // Dynamic timeout values (read from tier config)
-    let MATCH_TIME_PER_PLAYER;
+    let TIER_0_MATCH_TIME;
+    let TIER_1_MATCH_TIME;
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
@@ -25,9 +26,11 @@ describe("Time Bank System (Chess Clock) Tests", function () {
         await game.waitForDeployment();
         await game.initializeAllInstances();
 
-        // Hardcoded timeout values (tierConfigs removed)
-        // Tier 0 (2-player): 60s match time per player
-        MATCH_TIME_PER_PLAYER = 60;
+        // Hardcoded timeout values matching TicTacChain.sol configuration
+        // Tier 0 (2-player): 120s match time per player
+        // Tier 1 (4-player): 60s match time per player
+        TIER_0_MATCH_TIME = 120;
+        TIER_1_MATCH_TIME = 60;
     });
 
     describe("Time Bank Initialization", function () {
@@ -43,8 +46,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const match = await game.getMatch(tierId, instanceId, 0, 0);
 
             // Both players should have the configured match time
-            expect(match.player1TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
-            expect(match.player2TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
+            expect(match.player1TimeRemaining).to.equal(TIER_0_MATCH_TIME);
+            expect(match.player2TimeRemaining).to.equal(TIER_0_MATCH_TIME);
 
             // lastMoveTimestamp should be set to current block timestamp
             expect(match.lastMoveTimestamp).to.be.gt(0);
@@ -85,9 +88,9 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const isFirstPlayerP1 = firstPlayerAddr === player1.address;
             const firstPlayerTime = isFirstPlayerP1 ? match.player1TimeRemaining : match.player2TimeRemaining;
 
-            // With Fischer increment: (MATCH_TIME_PER_PLAYER - 10 elapsed + 15 increment) = MATCH_TIME_PER_PLAYER + 5
+            // With Fischer increment: (TIER_0_MATCH_TIME - 10 elapsed + 15 increment) = TIER_0_MATCH_TIME + 5
             // Allow 2 second tolerance for block timestamp variations
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER + 5, 2);
+            expect(firstPlayerTime).to.be.closeTo(TIER_0_MATCH_TIME + 5, 2);
         });
 
         it("Should allow multiple moves with cumulative time deduction", async function () {
@@ -111,16 +114,16 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const firstPlayerTime = isFirstPlayerP1 ? match.player1TimeRemaining : match.player2TimeRemaining;
             const secondPlayerTime = isFirstPlayerP1 ? match.player2TimeRemaining : match.player1TimeRemaining;
 
-            // First player: -10 elapsed +15 increment, then -20 elapsed +15 increment = MATCH_TIME_PER_PLAYER
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER, 3);
+            // First player: -10 elapsed +15 increment, then -20 elapsed +15 increment = TIER_0_MATCH_TIME
+            expect(firstPlayerTime).to.be.closeTo(TIER_0_MATCH_TIME, 3);
 
-            // Second player: -15 elapsed +15 increment = MATCH_TIME_PER_PLAYER
-            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER, 2);
+            // Second player: -15 elapsed +15 increment = TIER_0_MATCH_TIME
+            expect(secondPlayerTime).to.be.closeTo(TIER_0_MATCH_TIME, 2);
         });
 
         it("Should NOT allow opponent to claim timeout before time runs out", async function () {
             // Wait less than the configured timeout - still within limit
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER - 10]);
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME - 10]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player tries to claim timeout - should fail
@@ -130,8 +133,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
         });
 
         it("Should allow opponent to claim timeout after time runs out", async function () {
-            // Wait 5 minutes and 1 second (301 seconds) - exceeds 5 minute limit
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
+            // Wait past timeout limit
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout - should succeed
@@ -148,7 +151,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
         it("Should NOT allow player to claim timeout on their own turn", async function () {
             // Wait past timeout
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player (current turn) tries to claim timeout - should fail
@@ -174,13 +177,13 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const secondPlayerTime = isFirstPlayerP1 ? match.player2TimeRemaining : match.player1TimeRemaining;
 
             // Verify time with Fischer increment: first player -30 +15 = -15, second player -45 +15 = -30
-            expect(firstPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 15, 2);
-            expect(secondPlayerTime).to.be.closeTo(MATCH_TIME_PER_PLAYER - 30, 2);
+            expect(firstPlayerTime).to.be.closeTo(TIER_0_MATCH_TIME - 15, 2);
+            expect(secondPlayerTime).to.be.closeTo(TIER_0_MATCH_TIME - 30, 2);
         });
 
         it("Should handle time bank reaching exactly zero", async function () {
-            // Use up exactly 5 minutes
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER]);
+            // Use up exactly the match time
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Opponent can now claim timeout
@@ -197,7 +200,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
             // Now it's second player's turn
             // Wait less than the configured timeout (still has time)
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER - 10]);
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME - 10]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player tries to claim timeout - should fail
@@ -227,8 +230,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
             // Both should still have most of their time (only a few seconds elapsed)
             const match2 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match2.player1TimeRemaining).to.be.gt(MATCH_TIME_PER_PLAYER - 10); // Lost less than 10 seconds
-            expect(match2.player2TimeRemaining).to.be.gt(MATCH_TIME_PER_PLAYER - 10);
+            expect(match2.player1TimeRemaining).to.be.gt(TIER_0_MATCH_TIME - 10); // Lost less than 10 seconds
+            expect(match2.player2TimeRemaining).to.be.gt(TIER_0_MATCH_TIME - 10);
         });
 
         it("Should correctly handle match completion before timeout", async function () {
@@ -254,7 +257,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             expect(finalMatch.common.status).to.equal(2); // MatchStatus.Completed
 
             // Cannot claim timeout on completed match
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -278,10 +281,10 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const sf0 = await game.getMatch(tierId, instanceId, 0, 0);
             const sf1 = await game.getMatch(tierId, instanceId, 0, 1);
 
-            expect(sf0.player1TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
-            expect(sf0.player2TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
-            expect(sf1.player1TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
-            expect(sf1.player2TimeRemaining).to.equal(MATCH_TIME_PER_PLAYER);
+            expect(sf0.player1TimeRemaining).to.equal(TIER_1_MATCH_TIME);
+            expect(sf0.player2TimeRemaining).to.equal(TIER_1_MATCH_TIME);
+            expect(sf1.player1TimeRemaining).to.equal(TIER_1_MATCH_TIME);
+            expect(sf1.player2TimeRemaining).to.equal(TIER_1_MATCH_TIME);
         });
 
         it("Should allow timeout claim in semifinal and winner advances to finals", async function () {
@@ -300,7 +303,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const sf0SecondPlayer = sf0.currentTurn === player1.address ? player2 : player1;
 
             // Wait for timeout in semifinal 0
-            await hre.ethers.provider.send("evm_increaseTime", [MATCH_TIME_PER_PLAYER + 1]);
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_1_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Claim timeout victory in semifinal 0
@@ -341,7 +344,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const timeAfterMove = isFirstPlayerP1 ? match2.player1TimeRemaining : match2.player2TimeRemaining;
 
             // Time: -10 seconds elapsed + 15 seconds Fischer increment = +5 seconds net
-            expect(timeAfterMove).to.be.closeTo(MATCH_TIME_PER_PLAYER + 5, 2);
+            expect(timeAfterMove).to.be.closeTo(TIER_0_MATCH_TIME + 5, 2);
         });
     });
 

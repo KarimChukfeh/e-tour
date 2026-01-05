@@ -190,8 +190,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).forceStartTournament(tierId, instanceId)
             ).to.be.revertedWith("FS");
 
-            // Fast forward past enrollment window (15 minutes for Tier 2)
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // Fast forward past enrollment window (300s for Tier 2)
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start should work now
@@ -573,7 +573,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [601]);
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -589,7 +589,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [601]);
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with only 1 player - they should win immediately
@@ -1478,8 +1478,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Single player enrolls
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            // Fast forward past escalation 2 window (5 min + 10 min = 15 min)
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // Fast forward past escalation 2 window (300s + 60s = 360s)
+            await hre.ethers.provider.send("evm_increaseTime", [361]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const balanceBefore = await hre.ethers.provider.getBalance(player3.address);

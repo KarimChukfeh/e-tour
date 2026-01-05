@@ -112,6 +112,13 @@ contract TicTacChain is ETour_Storage {
         _registerTier1();
         _registerTier2();
 
+        // Set raffle thresholds: [0.2, 0.4, 0.6, 0.8, 1]
+        raffleThresholds.push(0.2 ether);
+        raffleThresholds.push(0.4 ether);
+        raffleThresholds.push(0.6 ether);
+        raffleThresholds.push(0.8 ether);
+        raffleThresholds.push(1.0 ether);
+
         // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 1.0 ether;
 
@@ -120,11 +127,11 @@ contract TicTacChain is ETour_Storage {
 
     function _registerTier0() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 60,
+            matchTimePerPlayer: 120,
             timeIncrementPerMove: 15,
-            matchLevel2Delay: 60,
-            matchLevel3Delay: 60,
-            enrollmentWindow: 60,
+            matchLevel2Delay: 120,
+            matchLevel3Delay: 240,
+            enrollmentWindow: 300,
             enrollmentLevel2Delay: 60
         });
 
@@ -139,8 +146,6 @@ contract TicTacChain is ETour_Storage {
             )
         );
         require(success, "T0");
-
-        raffleThresholds.push(0.1 ether);
     }
 
     function _registerTier1() private {
@@ -154,8 +159,8 @@ contract TicTacChain is ETour_Storage {
         });
 
         uint8[] memory prizes = new uint8[](4);
-        prizes[0] = 70;
-        prizes[1] = 30;
+        prizes[0] = 80;
+        prizes[1] = 20;
         prizes[2] = 0;
         prizes[3] = 0;
 
@@ -166,7 +171,6 @@ contract TicTacChain is ETour_Storage {
             )
         );
         require(success, "T1");
-        raffleThresholds.push(0.2 ether);
     }
 
     function _registerTier2() private {
@@ -181,9 +185,9 @@ contract TicTacChain is ETour_Storage {
 
         uint8[] memory prizes = new uint8[](8);
         prizes[0] = 70;
-        prizes[1] = 20;
-        prizes[2] = 5;
-        prizes[3] = 5;
+        prizes[1] = 30;
+        prizes[2] = 0;
+        prizes[3] = 0;
         prizes[4] = 0;
         prizes[5] = 0;
         prizes[6] = 0;
@@ -196,7 +200,6 @@ contract TicTacChain is ETour_Storage {
             )
         );
         require(success, "T2");
-        raffleThresholds.push(0.4 ether);
     }
 
     /**

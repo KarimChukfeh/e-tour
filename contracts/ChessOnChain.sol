@@ -100,7 +100,17 @@ contract ChessOnChain is ETour_Storage {
         require(tierCount == 0, "AI");
         _registerTier0();
         _registerTier1();
-        raffleThresholdFinal = 1.0 ether;
+
+        // Set raffle thresholds: [0.5, 1, 1.5, 2, 2.5, 3]
+        raffleThresholds.push(0.5 ether);
+        raffleThresholds.push(1.0 ether);
+        raffleThresholds.push(1.5 ether);
+        raffleThresholds.push(2.0 ether);
+        raffleThresholds.push(2.5 ether);
+        raffleThresholds.push(3.0 ether);
+
+        // Set final raffle threshold (used after initial thresholds exhausted)
+        raffleThresholdFinal = 3.0 ether;
     }
 
     function _registerTier0() private {
@@ -123,7 +133,6 @@ contract ChessOnChain is ETour_Storage {
             )
         );
         require(success, "T0");
-        raffleThresholds.push(0.6 ether);
     }
 
     function _registerTier1() private {
@@ -148,7 +157,6 @@ contract ChessOnChain is ETour_Storage {
             )
         );
         require(success, "T1");
-        raffleThresholds.push(1.2 ether);
     }
 
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {

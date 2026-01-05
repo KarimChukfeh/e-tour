@@ -155,8 +155,9 @@ describe("Enrollment Window Reset", function () {
             // Enroll player
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
-            // Fast forward past escalation2Start (420 seconds + 1)
-            await time.increase(421);
+            // Fast forward past escalation2Start (360 seconds + 1)
+            // enrollmentWindow (300) + enrollmentLevel2Delay (60) = 360
+            await time.increase(361);
 
             // Reset should still work (player can keep waiting for others to join)
             await expect(
