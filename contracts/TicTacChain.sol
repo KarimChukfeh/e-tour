@@ -64,9 +64,6 @@ contract TicTacChain is ETour_Storage {
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
-    event PlayerEliminated(address indexed player, uint8 tierId, uint8 instanceId, bool hadActiveMatches);
-    event TournamentCompletedHookCalled(uint8 tierId, uint8 instanceId, uint256 playerCount);
-    event DebugTournamentCompletion(bool enrolledCleared, uint256 enrolledLength, uint256 copyLength);
     event AllInstancesInitialized(address indexed caller, uint8 tierCount);
     event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     // MatchCached event now defined in ETour_Storage
@@ -537,7 +534,6 @@ contract TicTacChain is ETour_Storage {
             require(resetSuccess, "RT");
 
             // Call tournament completion hook
-            emit TournamentCompletedHookCalled(tierId, instanceId, enrolledPlayersCopy.length);
             _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
         }
     }
@@ -1307,13 +1303,7 @@ contract TicTacChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber
     ) internal override {
-        // Check if player has any remaining matches in this tournament
-        bool hasActiveMatch = _playerHasActiveMatchInTournament(player, tierId, instanceId);
-
-        emit PlayerEliminated(player, tierId, instanceId, hasActiveMatch);
-
         // Always remove from active tournaments after losing (player is eliminated)
-        // The check for active matches is only needed for mid-game eliminations
         _removePlayerActiveTournament(player, tierId, instanceId);
     }
 

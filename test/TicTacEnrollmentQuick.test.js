@@ -33,15 +33,7 @@ describe("TicTacChain Enrollment Quick Test", function () {
         const moduleGameCache = await GameCacheModule.deploy();
         await moduleGameCache.waitForDeployment();
 
-        const PlayerTrackingModule = await hre.ethers.getContractFactory("contracts/modules/PlayerTrackingModule.sol:PlayerTrackingModule");
-        const modulePlayerTracking = await PlayerTrackingModule.deploy();
-        await modulePlayerTracking.waitForDeployment();
-
-        const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
-        const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
-        await moduleTicTacToeGame.waitForDeployment();
-
-        // Deploy TicTacChain
+        // Deploy TicTacChain (player tracking and game logic are now built-in)
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
             await moduleCore.getAddress(),
@@ -49,9 +41,7 @@ describe("TicTacChain Enrollment Quick Test", function () {
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
             await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress(),
-            await modulePlayerTracking.getAddress(),
-            await moduleTicTacToeGame.getAddress()
+            await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
 
