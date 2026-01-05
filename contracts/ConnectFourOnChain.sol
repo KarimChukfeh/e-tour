@@ -329,12 +329,13 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "RW");
     }
 
-    
-    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external returns (bool canReset) {
+        // Non-view to allow delegatecall to module with proper storage access
+        (bool success, bytes memory data) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "CR");
+        require(success, "CRE");
         return abi.decode(data, (bool));
     }
 

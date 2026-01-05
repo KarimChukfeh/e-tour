@@ -281,11 +281,12 @@ contract ChessOnChain is ETour_Storage {
         require(success, "RW");
     }
 
-    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external returns (bool) {
+        // Non-view to allow delegatecall to module with proper storage access
+        (bool success, bytes memory data) = MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_CAN_RESET, tierId, instanceId)
         );
-        require(success, "CR");
+        require(success, "CRE");
         return abi.decode(data, (bool));
     }
 

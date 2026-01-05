@@ -355,12 +355,13 @@ contract TicTacChain is ETour_Storage {
 
     /**
      * @dev Check if enrollment window can be reset (single player after timeout)
+     * Note: Non-view to allow delegatecall to module with proper storage access
      */
-    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool canReset) {
-        (bool success, bytes memory data) = MODULE_CORE.staticcall(
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external returns (bool canReset) {
+        (bool success, bytes memory data) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "CR");
+        require(success, "CRE");
         return abi.decode(data, (bool));
     }
 

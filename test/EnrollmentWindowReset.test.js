@@ -50,13 +50,13 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Verify initially cannot reset (window not expired)
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.false;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.false;
 
             // Fast forward past escalation1Start (300 seconds) but before escalation2Start (420 seconds)
             await time.increase(301);
 
             // Verify can reset now
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.true;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.true;
 
             // Get tournament state before reset
             const tournamentBefore = await game.tournaments(TIER_0, instanceId);
@@ -222,19 +222,19 @@ describe("Enrollment Window Reset", function () {
             const instanceId = 8;
 
             // Before enrollment
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.false;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.false;
 
             // After enrollment but before expiry
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.false;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.false;
 
             // After escalation1 - should be true
             await time.increase(301);
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.true;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.true;
 
             // Even after escalation2 - should still be true
             await time.increase(60);
-            expect(await game.connect(player1).canResetEnrollmentWindow(TIER_0, instanceId)).to.be.true;
+            expect(await game.connect(player1).canResetEnrollmentWindow.staticCall(TIER_0, instanceId)).to.be.true;
         });
     });
 
