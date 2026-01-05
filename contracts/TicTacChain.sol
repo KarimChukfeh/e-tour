@@ -227,25 +227,18 @@ contract TicTacChain is ETour_Storage {
      * @dev Enroll in tournament - delegates to Core module
      */
     function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
-        // Check if player was already enrolled before delegatecall
-        bool wasEnrolled = isEnrolled[tierId][instanceId][msg.sender];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TournamentStatus oldStatus = tournament.status;
 
+        // MODULE_CORE handles enrollment and calls _onPlayerEnrolled and _onTournamentStarted internally
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
         );
         require(success, "E");
 
-        // If player wasn't enrolled before but is now, call tracking hook
-        if (!wasEnrolled && isEnrolled[tierId][instanceId][msg.sender]) {
-            _onPlayerEnrolled(tierId, instanceId, msg.sender);
-        }
-
-        // If tournament auto-started (enrollment filled up), initialize round and call hooks
+        // If tournament auto-started (enrollment filled up), initialize round
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
             initializeRound(tierId, instanceId, 0);
-            _onTournamentStarted(tierId, instanceId);
         }
     }
 
@@ -256,15 +249,15 @@ contract TicTacChain is ETour_Storage {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TournamentStatus oldStatus = tournament.status;
 
+        // MODULE_CORE.forceStartTournament calls startTournament which calls _onTournamentStarted internally
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
         );
         require(success, "S");
 
-        // If tournament status changed to InProgress, initialize round and call hook
+        // If tournament status changed to InProgress, initialize round
         if (oldStatus != TournamentStatus.InProgress && tournament.status == TournamentStatus.InProgress) {
             initializeRound(tierId, instanceId, 0);
-            _onTournamentStarted(tierId, instanceId);
         }
     }
 
