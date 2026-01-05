@@ -74,6 +74,9 @@ describe("ChessOnChain Tests", function () {
             await chessRulesModule.getAddress()
         );
         await chess.waitForDeployment();
+
+        // Initialize tiers
+        await chess.initializeAllInstances();
     });
 
     describe("Deployment", function () {
