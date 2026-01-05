@@ -45,13 +45,13 @@ contract ETour_Matches is ETour_Storage {
     function _isMatchActive(bytes32) public view override returns (bool) { return false; }
     function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { return CommonMatchData({
         player1: address(0), player2: address(0), winner: address(0), loser: address(0),
-        status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0, endTime: 0,
+        status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
         tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
     }); }
     function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) {
         return (CommonMatchData({
             player1: address(0), player2: address(0), winner: address(0), loser: address(0),
-            status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0, endTime: 0,
+            status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
             tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
         }), false);
     }
@@ -70,7 +70,6 @@ contract ETour_Matches is ETour_Storage {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
-        round.allMatchesDrew = false;
 
         emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
 
@@ -247,7 +246,6 @@ contract ETour_Matches is ETour_Storage {
                 completeTournament(tierId, instanceId, finalWinner);
             }
         } else if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
-            round.allMatchesDrew = true;
             address[] memory remainingPlayers = getRemainingPlayers(tierId, instanceId, roundNumber);
             emit AllDrawRoundDetected(tierId, instanceId, roundNumber, uint8(remainingPlayers.length));
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
@@ -487,7 +485,6 @@ contract ETour_Matches is ETour_Storage {
         round.totalMatches = newMatchCount;
         round.completedMatches = 0;
         round.drawCount = 0;
-        round.allMatchesDrew = false;
 
         emit RoundInitialized(tierId, instanceId, roundNumber, newMatchCount);
 

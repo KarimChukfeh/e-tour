@@ -1,16 +1,16 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+  "address": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T09:54:02.880Z",
+  "deployedAt": "2026-01-05T10:56:09.402Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "gameCache": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "core": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+    "matches": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+    "prizes": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+    "raffle": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+    "escalation": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "gameCache": "0xc5a5C42992dECbae36851359345FE25997F5C42d"
   },
   "abi": [
     {
@@ -1352,11 +1352,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "endTime",
-              "type": "uint256"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -1460,11 +1455,6 @@
             {
               "internalType": "uint256",
               "name": "lastMoveTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "endTime",
               "type": "uint256"
             },
             {
@@ -1962,45 +1952,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "getCurrentTimeRemaining",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "player1Time",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "player2Time",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "getLeaderboard",
       "outputs": [
@@ -2092,11 +2043,6 @@
                 {
                   "internalType": "uint256",
                   "name": "lastMoveTime",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "endTime",
                   "type": "uint256"
                 },
                 {
@@ -2213,30 +2159,6 @@
           "internalType": "struct ETour_Storage.TournamentRef[]",
           "name": "",
           "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "player",
-          "type": "address"
-        }
-      ],
-      "name": "getPlayerActivityCounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "enrollingCount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "activeCount",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -2427,40 +2349,6 @@
         {
           "internalType": "bool",
           "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "player",
-          "type": "address"
-        },
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        }
-      ],
-      "name": "isPlayerInTournament",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "isEnrolling",
-          "type": "bool"
-        },
-        {
-          "internalType": "bool",
-          "name": "isActive",
           "type": "bool"
         }
       ],
@@ -2895,49 +2783,6 @@
           "internalType": "uint8",
           "name": "drawCount",
           "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "allMatchesDrew",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "sharedCacheKeyToIndex",
-      "outputs": [
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "sharedCacheKeys",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -3074,77 +2919,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        }
-      ],
-      "name": "tierConfigs",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "playerCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "entryFee",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "totalRounds",
-          "type": "uint8"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "matchTimePerPlayer",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "timeIncrementPerMove",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "matchLevel2Delay",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "matchLevel3Delay",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "enrollmentWindow",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "enrollmentLevel2Delay",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ETour_Storage.TimeoutConfig",
-          "name": "timeouts",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "tierCount",
       "outputs": [
@@ -3263,11 +3037,6 @@
           "internalType": "struct ETour_Storage.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
-        },
-        {
-          "internalType": "bool",
-          "name": "hasStartedViaTimeout",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",

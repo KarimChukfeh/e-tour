@@ -243,7 +243,6 @@ contract ChessOnChain is ETour_Storage {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
-        round.allMatchesDrew = false;
 
         emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
 
@@ -723,7 +722,6 @@ contract ChessOnChain is ETour_Storage {
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
             lastMoveTime: matchData.lastMoveTimestamp,
-            endTime: 0,
             tierId: tierId,
             instanceId: instanceId,
             roundNumber: roundNumber,

@@ -1,9 +1,9 @@
 {
   "contractName": "ETour_Core",
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T09:54:02.880Z",
+  "deployedAt": "2026-01-05T10:56:09.402Z",
   "abi": [
     {
       "inputs": [],
@@ -1239,11 +1239,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "endTime",
-              "type": "uint256"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -1347,11 +1342,6 @@
             {
               "internalType": "uint256",
               "name": "lastMoveTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "endTime",
               "type": "uint256"
             },
             {
@@ -2371,49 +2361,6 @@
           "internalType": "uint8",
           "name": "drawCount",
           "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "allMatchesDrew",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "sharedCacheKeyToIndex",
-      "outputs": [
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "sharedCacheKeys",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -2774,11 +2721,6 @@
           "internalType": "struct ETour_Storage.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
-        },
-        {
-          "internalType": "bool",
-          "name": "hasStartedViaTimeout",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",

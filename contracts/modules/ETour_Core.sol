@@ -201,7 +201,6 @@ contract ETour_Core is ETour_Storage {
         require(tournament.enrolledCount >= 1, "Need at least 1 player");
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
-        tournament.hasStartedViaTimeout = true;
 
         emit TournamentForceStarted(tierId, instanceId, msg.sender, tournament.enrolledCount);
         startTournament(tierId, instanceId);

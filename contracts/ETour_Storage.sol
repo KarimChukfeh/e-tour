@@ -100,7 +100,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         bool allDrawResolution;
         uint8 allDrawRound;
         EnrollmentTimeoutState enrollmentTimeout;
-        bool hasStartedViaTimeout;
     }
 
     struct Round {
@@ -108,7 +107,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 completedMatches;
         bool initialized;
         uint8 drawCount;
-        bool allMatchesDrew;
     }
 
     struct PlayerStats {
@@ -163,7 +161,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         // Timing
         uint256 startTime;
         uint256 lastMoveTime;
-        uint256 endTime;        // Only populated for cached matches
 
         // Tournament Context
         uint8 tierId;

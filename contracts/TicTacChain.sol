@@ -211,7 +211,6 @@ contract TicTacChain is ETour_Storage {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
-        round.allMatchesDrew = false;
 
         emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
 
@@ -942,7 +941,6 @@ contract TicTacChain is ETour_Storage {
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
             lastMoveTime: matchData.lastMoveTime,
-            endTime: 0,  // endTime set when match cached
             tierId: tierId,
             instanceId: instanceId,
             roundNumber: roundNumber,
@@ -1016,7 +1014,6 @@ contract TicTacChain is ETour_Storage {
                 isDraw: matchData.isDraw,
                 startTime: matchData.startTime,
                 lastMoveTime: matchData.lastMoveTime,
-                endTime: 0,
                 tierId: tierId,
                 instanceId: instanceId,
                 roundNumber: roundNumber,
@@ -1077,7 +1074,6 @@ contract TicTacChain is ETour_Storage {
                     isDraw: isDraw,
                     startTime: startTime,
                     lastMoveTime: endTime,
-                    endTime: endTime,
                     tierId: tierId,
                     instanceId: instanceId,
                     roundNumber: roundNumber,

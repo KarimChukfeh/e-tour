@@ -207,7 +207,6 @@ contract ConnectFourOnChain is ETour_Storage {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
-        round.allMatchesDrew = false;
 
         emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
 
@@ -925,7 +924,6 @@ contract ConnectFourOnChain is ETour_Storage {
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
             lastMoveTime: matchData.lastMoveTime,
-            endTime: 0,  // endTime set when match cached
             tierId: tierId,
             instanceId: instanceId,
             roundNumber: roundNumber,
@@ -934,7 +932,7 @@ contract ConnectFourOnChain is ETour_Storage {
         });
     }
 
-    
+
     function _getMatchFromCache(
         bytes32 matchId,
         uint8 tierId,
@@ -993,7 +991,6 @@ contract ConnectFourOnChain is ETour_Storage {
                 isDraw: matchData.isDraw,
                 startTime: matchData.startTime,
                 lastMoveTime: matchData.lastMoveTime,
-                endTime: 0,
                 tierId: tierId,
                 instanceId: instanceId,
                 roundNumber: roundNumber,
@@ -1052,7 +1049,6 @@ contract ConnectFourOnChain is ETour_Storage {
                     isDraw: isDraw,
                     startTime: startTime,
                     lastMoveTime: endTime,
-                    endTime: endTime,
                     tierId: tierId,
                     instanceId: instanceId,
                     roundNumber: roundNumber,
@@ -1079,59 +1075,10 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Get tier configuration
-     * Public getter for tier config data
-     */
-    function tierConfigs(uint8 tierId) external view returns (
-        uint8 playerCount,
-        uint8 instanceCount,
-        uint256 entryFee,
-        uint8 totalRounds,
-        TimeoutConfig memory timeouts
-    ) {
-        TierConfig storage config = _tierConfigs[tierId];
-        return (
-            config.playerCount,
-            config.instanceCount,
-            config.entryFee,
-            config.totalRounds,
-            config.timeouts
-        );
-    }
-
-    /**
      * @dev Get player's total earnings across all tournaments
      */
     function getPlayerStats() external view returns (int256 totalEarnings) {
         return playerEarnings[msg.sender];
-    }
-
-    /**
-     * @dev Get real-time time remaining for both players
-     */
-    function getCurrentTimeRemaining(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (uint256 player1Time, uint256 player2Time) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        if (matchData.status != MatchStatus.InProgress) {
-            return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
-        }
-
-        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
-
-        player1Time = matchData.player1TimeRemaining;
-        player2Time = matchData.player2TimeRemaining;
-
-        if (matchData.currentTurn == matchData.player1) {
-            player1Time = (player1Time > elapsed) ? player1Time - elapsed : 0;
-        } else {
-            player2Time = (player2Time > elapsed) ? player2Time - elapsed : 0;
-        }
     }
 
     // ============ Player Tracking View Functions ============
@@ -1148,29 +1095,6 @@ contract ConnectFourOnChain is ETour_Storage {
      */
     function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
         return playerActiveTournaments[player];
-    }
-
-    /**
-     * @dev Get count of player's enrolling and active tournaments
-     */
-    function getPlayerActivityCounts(address player) external view returns (
-        uint256 enrollingCount,
-        uint256 activeCount
-    ) {
-        return (
-            playerEnrollingTournaments[player].length,
-            playerActiveTournaments[player].length
-        );
-    }
-
-    /**
-     * @dev Check if player is in a specific tournament
-     */
-    function isPlayerInTournament(address player, uint8 tierId, uint8 instanceId)
-        external view returns (bool isEnrolling, bool isActive)
-    {
-        isEnrolling = playerEnrollingIndex[player][tierId][instanceId] != 0;
-        isActive = playerActiveIndex[player][tierId][instanceId] != 0;
     }
 
     /**
@@ -1229,118 +1153,85 @@ contract ConnectFourOnChain is ETour_Storage {
     /**
      * @dev Hook: Called when player enrolls in tournament
      */
-    function _onPlayerEnrolled(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal override {
-        _addPlayerEnrollingTournament(player, tierId, instanceId);
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
+        _addPlayerTournament(player, tierId, instanceId, true);
     }
 
     /**
      * @dev Hook: Called when tournament starts
-     * Atomic transition: Move ALL enrolled players from enrolling → active
      */
-    function _onTournamentStarted(
-        uint8 tierId,
-        uint8 instanceId
-    ) internal override {
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
         address[] storage players = enrolledPlayers[tierId][instanceId];
-
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _addPlayerActiveTournament(player, tierId, instanceId);
+            _removePlayerTournament(player, tierId, instanceId, true);
+            _addPlayerTournament(player, tierId, instanceId, false);
         }
     }
 
     /**
      * @dev Hook: Called when player is eliminated from tournament
-     * Only removes if player has NO remaining active matches
      */
-    function _onPlayerEliminatedFromTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 /* roundNumber */
-    ) internal override {
-        // Always remove from active tournaments after losing (player is eliminated)
-        _removePlayerActiveTournament(player, tierId, instanceId);
+    function _onPlayerEliminatedFromTournament(address player, uint8 tierId, uint8 instanceId, uint8) internal override {
+        _removePlayerTournament(player, tierId, instanceId, false);
     }
 
     /**
      * @dev Hook: Called when external player replaces stalled player (L3 escalation)
      */
-    function _onExternalPlayerReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal override {
-        // External player joins mid-tournament, goes directly to active (skip enrolling)
-        _addPlayerActiveTournament(player, tierId, instanceId);
+    function _onExternalPlayerReplacement(uint8 tierId, uint8 instanceId, address player) internal override {
+        _addPlayerTournament(player, tierId, instanceId, false);
     }
 
     /**
      * @dev Hook: Called when tournament completes
-     * Clean up ALL player tracking for this tournament
      */
-    function _onTournamentCompleted(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory players
-    ) public override {
+    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) public override {
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _removePlayerActiveTournament(player, tierId, instanceId);
+            _removePlayerTournament(player, tierId, instanceId, true);
+            _removePlayerTournament(player, tierId, instanceId, false);
         }
     }
 
     // ============ Player Tracking Helper Functions ============
 
-    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
-        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
-        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
-    }
-
-    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
-            playerEnrollingTournaments[player][index] = lastRef;
-            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+    function _addPlayerTournament(address player, uint8 tierId, uint8 instanceId, bool isEnrolling) private {
+        if (isEnrolling) {
+            if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
+            playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
+            playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+        } else {
+            if (playerActiveIndex[player][tierId][instanceId] != 0) return;
+            playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
+            playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
         }
-
-        playerEnrollingTournaments[player].pop();
-        delete playerEnrollingIndex[player][tierId][instanceId];
     }
 
-    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
-        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
-    }
-
-    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerActiveTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
-            playerActiveTournaments[player][index] = lastRef;
-            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+    function _removePlayerTournament(address player, uint8 tierId, uint8 instanceId, bool isEnrolling) private {
+        uint256 indexPlusOne;
+        if (isEnrolling) {
+            indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
+            if (indexPlusOne == 0) return;
+            uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
+            if (indexPlusOne - 1 != lastIndex) {
+                TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
+                playerEnrollingTournaments[player][indexPlusOne - 1] = lastRef;
+                playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+            }
+            playerEnrollingTournaments[player].pop();
+            delete playerEnrollingIndex[player][tierId][instanceId];
+        } else {
+            indexPlusOne = playerActiveIndex[player][tierId][instanceId];
+            if (indexPlusOne == 0) return;
+            uint256 lastIndex = playerActiveTournaments[player].length - 1;
+            if (indexPlusOne - 1 != lastIndex) {
+                TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
+                playerActiveTournaments[player][indexPlusOne - 1] = lastRef;
+                playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+            }
+            playerActiveTournaments[player].pop();
+            delete playerActiveIndex[player][tierId][instanceId];
         }
-
-        playerActiveTournaments[player].pop();
-        delete playerActiveIndex[player][tierId][instanceId];
     }
 }

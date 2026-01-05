@@ -1,16 +1,16 @@
 {
   "contractName": "TicTacChain",
-  "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+  "address": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T09:13:56.424Z",
+  "deployedAt": "2026-01-05T10:56:05.386Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "gameCache": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "core": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+    "matches": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+    "prizes": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+    "raffle": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+    "escalation": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "gameCache": "0xc5a5C42992dECbae36851359345FE25997F5C42d"
   },
   "abi": [
     {
@@ -1346,11 +1346,6 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "endTime",
-              "type": "uint256"
-            },
-            {
               "internalType": "uint8",
               "name": "tierId",
               "type": "uint8"
@@ -1454,11 +1449,6 @@
             {
               "internalType": "uint256",
               "name": "lastMoveTime",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "endTime",
               "type": "uint256"
             },
             {
@@ -2086,11 +2076,6 @@
                 {
                   "internalType": "uint256",
                   "name": "lastMoveTime",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "endTime",
                   "type": "uint256"
                 },
                 {
@@ -2836,49 +2821,6 @@
           "internalType": "uint8",
           "name": "drawCount",
           "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "allMatchesDrew",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "sharedCacheKeyToIndex",
-      "outputs": [
-        {
-          "internalType": "uint16",
-          "name": "",
-          "type": "uint16"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "sharedCacheKeys",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -3204,11 +3146,6 @@
           "internalType": "struct ETour_Storage.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
-        },
-        {
-          "internalType": "bool",
-          "name": "hasStartedViaTimeout",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",

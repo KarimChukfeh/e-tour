@@ -261,7 +261,6 @@ contract ETour_Prizes is ETour_Storage {
         tournament.finalsWasDraw = false;
         tournament.allDrawResolution = false;
         tournament.allDrawRound = NO_ROUND;
-        tournament.hasStartedViaTimeout = false;
 
         tournament.enrollmentTimeout.escalation1Start = 0;
         tournament.enrollmentTimeout.escalation2Start = 0;
@@ -310,7 +309,6 @@ contract ETour_Prizes is ETour_Storage {
             round.completedMatches = 0;
             round.initialized = false;
             round.drawCount = 0;
-            round.allMatchesDrew = false;
 
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
