@@ -1,0 +1,20 @@
+{
+  "network": "localhost",
+  "chainId": "412346",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2026-01-05T00:37:20.876Z",
+  "blockNumber": 216,
+  "modules": {
+    "ETour_Core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ETour_Matches": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "ETour_Prizes": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "ETour_Raffle": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "ETour_Escalation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "GameCacheModule": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "ChessRulesModule": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+    "PlayerTrackingModule": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+  },
+  "contracts": {
+    "ChessOnChain": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
+  }
+}
