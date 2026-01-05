@@ -76,15 +76,9 @@ contract GameCacheModule is ETour_Storage {
         bool isDraw,
         bytes memory boardData
     ) external {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
         uint16 cacheIndex = sharedNextCacheIndex;
 
-        // Clean up old mappings for the entry being overwritten
-        bytes32 oldKey = sharedCacheKeys[cacheIndex];
-        if (oldKey != bytes32(0)) {
-            delete sharedCacheKeyToIndex[oldKey];
-        }
-
+        // Clean up old matchId mapping for the entry being overwritten
         bytes32 oldMatchId = sharedCacheMatchIds[cacheIndex];
         if (oldMatchId != bytes32(0)) {
             delete sharedMatchIdToCacheIndex[oldMatchId];
@@ -107,15 +101,14 @@ contract GameCacheModule is ETour_Storage {
             boardData: boardData
         });
 
-        // Update indexes
-        sharedCacheKeys[cacheIndex] = matchKey;
-        sharedCacheKeyToIndex[matchKey] = cacheIndex;
+        // Update matchId index
         sharedMatchIdToCacheIndex[matchId] = cacheIndex;
         sharedCacheMatchIds[cacheIndex] = matchId;
 
         // Advance circular buffer index
         sharedNextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
 
+        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
         emit MatchCached(matchKey, cacheIndex, player1, player2);
     }
 
@@ -183,18 +176,6 @@ contract GameCacheModule is ETour_Storage {
         return (address(0), address(0), address(0), address(0), 0, 0, false, false, "");
     }
 
-    /**
-     * @dev Get cached match by player addresses
-     * @param player1 First player address
-     * @param player2 Second player address
-     * @return Cached match data
-     */
-    function getCachedMatch(address player1, address player2) external view returns (CachedMatch memory) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = sharedCacheKeyToIndex[matchKey];
-        require(sharedMatchCache[index].exists && sharedCacheKeys[index] == matchKey, "Match not in cache");
-        return sharedMatchCache[index];
-    }
 
     /**
      * @dev Get cached match by array index
@@ -247,15 +228,4 @@ contract GameCacheModule is ETour_Storage {
         return recentMatches;
     }
 
-    /**
-     * @dev Check if match is cached by player addresses
-     * @param player1 First player address
-     * @param player2 Second player address
-     * @return Whether match exists in cache
-     */
-    function isMatchCached(address player1, address player2) external view returns (bool) {
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        uint16 index = sharedCacheKeyToIndex[matchKey];
-        return sharedMatchCache[index].exists && sharedCacheKeys[index] == matchKey;
-    }
 }

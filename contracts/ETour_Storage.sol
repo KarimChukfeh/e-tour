@@ -253,9 +253,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     CachedMatch[1000] public sharedMatchCache;
     uint16 public sharedNextCacheIndex;
 
-    // Lookup indexes for fast retrieval
-    mapping(bytes32 => uint16) public sharedCacheKeyToIndex;      // player pair hash => cache index
-    bytes32[1000] public sharedCacheKeys;                          // cache index => player pair hash
+    // Lookup indexes for fast retrieval (matchId-based only)
     mapping(bytes32 => uint16) public sharedMatchIdToCacheIndex;  // matchId => cache index
     bytes32[1000] public sharedCacheMatchIds;                      // cache index => matchId
 
