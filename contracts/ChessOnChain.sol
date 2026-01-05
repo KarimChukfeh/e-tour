@@ -87,23 +87,6 @@ contract ChessOnChain is ETour_Storage {
 
     // One-time initialization flag
     bool public allInstancesInitialized;
-    
-    /**
-     * @dev Minimal tournament reference for player tracking
-     * Gas-optimized: 2 bytes total (tierId + instanceId)
-     */
-    struct TournamentRef {
-        uint8 tierId;
-        uint8 instanceId;
-    }
-
-    // Track tournaments where player is enrolled but not yet started
-    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
-
-    // Track tournaments where player is actively competing
-    mapping(address => TournamentRef[]) public playerActiveTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
 
     // ============ Game-Specific Events ============
 

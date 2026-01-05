@@ -13,29 +13,9 @@ import "../ETour_Storage.sol";
  * - Provide hooks for lifecycle events (enrollment, start, elimination, completion)
  *
  * Designed to be called via delegatecall from any ETour game contract
+ * All storage is defined in ETour_Storage and accessed via delegatecall
  */
 contract PlayerTrackingModule is ETour_Storage {
-
-    /**
-     * @dev Minimal tournament reference for player tracking
-     * Gas-optimized: 2 bytes total (tierId + instanceId)
-     */
-    struct TournamentRef {
-        uint8 tierId;
-        uint8 instanceId;
-    }
-
-    // ============ Storage Layout Alignment ============
-    // CRITICAL: These storage variables MUST match the game contract's layout exactly
-    // for delegatecall to access the correct storage slots
-
-    // Track tournaments where player is enrolled but not yet started
-    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
-
-    // Track tournaments where player is actively competing
-    mapping(address => TournamentRef[]) public playerActiveTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
 
     // Constructor
     constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}

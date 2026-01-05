@@ -137,6 +137,15 @@ abstract contract ETour_Storage is ReentrancyGuard {
     }
 
     /**
+     * @dev Minimal tournament reference for player tracking
+     * Gas-optimized: 2 bytes total (tierId + instanceId)
+     */
+    struct TournamentRef {
+        uint8 tierId;
+        uint8 instanceId;
+    }
+
+    /**
      * @dev Common match data shared across all game implementations
      * Used by standardized getMatch() function with automatic cache fallback
      */
@@ -202,6 +211,16 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // Match-level timeout tracking for anti-stalling escalation
     mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
+
+    // ============ Player Tracking Module Storage ============
+
+    // Track tournaments where player is enrolled but not yet started
+    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) internal playerEnrollingIndex;
+
+    // Track tournaments where player is actively competing
+    mapping(address => TournamentRef[]) public playerActiveTournaments;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) internal playerActiveIndex;
 
     // ============ Game Cache Module Storage ============
 

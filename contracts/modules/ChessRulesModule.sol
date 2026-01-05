@@ -69,16 +69,6 @@ contract ChessRulesModule is ETour_Storage {
     // Additional ChessOnChain storage (not accessed by this module, but needed for slot alignment)
     mapping(bytes32 => bytes) public moveHistory;
 
-    // Player tracking storage (for slot alignment - not accessed by this module)
-    struct TournamentRef {
-        uint8 tierId;
-        uint8 instanceId;
-    }
-    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
-    mapping(address => TournamentRef[]) public playerActiveTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
-
     // Constructor
     constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
 
