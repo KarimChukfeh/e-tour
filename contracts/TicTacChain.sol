@@ -240,7 +240,16 @@ contract TicTacChain is ETour_Storage {
 
             // Create matches directly - this is the key fix!
             for (uint8 i = 0; i < matchCount; i++) {
-                _createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
+                address player1 = players[i * 2];
+                address player2 = players[i * 2 + 1];
+                _createMatchGame(tierId, instanceId, roundNumber, i, player1, player2);
+
+                // Add players to active match tracking
+                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+                playerActiveMatches[player1].push(matchId);
+                playerMatchIndex[player1][matchId] = playerActiveMatches[player1].length - 1;
+                playerActiveMatches[player2].push(matchId);
+                playerMatchIndex[player2][matchId] = playerActiveMatches[player2].length - 1;
             }
 
             if (walkoverPlayer != address(0)) {
@@ -470,11 +479,13 @@ contract TicTacChain is ETour_Storage {
         address winner,
         bool isDraw
     ) private {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
         // Clear any escalation state
         (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
-                "clearEscalationState(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber
+                "clearEscalationState(bytes32)",
+                matchId
             )
         );
         require(clearSuccess, "CE");

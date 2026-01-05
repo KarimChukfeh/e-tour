@@ -125,7 +125,7 @@ contract ETour_Matches is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Remove match from both players' active match lists
-        (address player1, address player2) = this._getMatchPlayers(matchId);
+        (address player1, address player2) = _getMatchPlayers(matchId);
         removePlayerActiveMatch(player1, matchId);
         removePlayerActiveMatch(player2, matchId);
 
@@ -136,11 +136,8 @@ contract ETour_Matches is ETour_Storage {
             playerStats[winner].matchesWon++;
         }
 
-        // Clear escalation state when match completes - delegate to Escalation module
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
-        );
-        require(clearSuccess, "Clear escalation failed");
+        // Note: Escalation state is cleared by the game contract before calling completeMatch
+        // No need to clear again here to avoid double clearing
 
         emit MatchCompleted(matchId, winner, isDraw);
 
@@ -702,6 +699,11 @@ contract ETour_Matches is ETour_Storage {
      * EXACT COPY from ETour.sol lines 986-997
      */
     function removePlayerActiveMatch(address player, bytes32 matchId) public {
+        // Safety check: if player has no active matches, return early
+        if (playerActiveMatches[player].length == 0) {
+            return;
+        }
+
         uint256 index = playerMatchIndex[player][matchId];
         uint256 lastIndex = playerActiveMatches[player].length - 1;
 
