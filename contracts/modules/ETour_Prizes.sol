@@ -303,16 +303,18 @@ contract ETour_Prizes is ETour_Storage {
             Round storage round = rounds[tierId][instanceId][roundNum];
 
             // IMPORTANT: Calculate matchCount BEFORE resetting round metadata
-            // We need to use delegatecall to MODULE_MATCHES for _getMatchCountForRound
+            // Calculate directly instead of delegatecall (avoids nested delegatecall issue)
             uint8 matchCount;
             if (round.totalMatches > 0) {
                 matchCount = round.totalMatches;
             } else {
-                (bool success, bytes memory data) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSignature("getMatchCountForRound(uint8,uint8,uint8)", tierId, instanceId, roundNum)
-                );
-                require(success, "Get match count failed");
-                matchCount = abi.decode(data, (uint8));
+                // Calculate match count inline (same logic as getMatchCountForRound)
+                if (roundNum == 0) {
+                    matchCount = tournament.enrolledCount / 2;
+                } else {
+                    Round storage prevRound = rounds[tierId][instanceId][roundNum - 1];
+                    matchCount = (prevRound.totalMatches - prevRound.drawCount) / 2;
+                }
             }
 
             // Now reset round metadata

@@ -473,6 +473,10 @@ contract TicTacChain is ETour_Storage {
         );
         require(markSuccess, "MS");
 
+        // Emit timeout victory event
+        address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
+        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
+
         // Complete match with timeout winner
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
     }
@@ -1311,11 +1315,15 @@ contract TicTacChain is ETour_Storage {
     }
 
     function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
-        (bool success, bytes memory data) = MODULE_PRIZES.staticcall(
-            abi.encodeWithSignature("getLeaderboard()")
-        );
-        require(success, "LB");
-        return abi.decode(data, (LeaderboardEntry[]));
+        // Read directly from storage (staticcall won't work - reads wrong storage)
+        LeaderboardEntry[] memory entries = new LeaderboardEntry[](_leaderboardPlayers.length);
+        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
+            entries[i] = LeaderboardEntry({
+                player: _leaderboardPlayers[i],
+                earnings: playerEarnings[_leaderboardPlayers[i]]
+            });
+        }
+        return entries;
     }
 
     // ============ Player Tracking Hooks (Built-in Implementation) ============
