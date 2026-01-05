@@ -1,9 +1,9 @@
 {
   "contractName": "TicTacChain",
-  "address": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+  "address": "0x998abeb3E57409262aE5b751f60747921B33613E",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T10:56:05.386Z",
+  "deployedAt": "2026-01-05T11:39:15.719Z",
   "modules": {
     "core": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
     "matches": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
@@ -1946,45 +1946,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "getCurrentTimeRemaining",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "player1Time",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "player2Time",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "getLeaderboard",
       "outputs": [
@@ -2241,6 +2202,59 @@
           "internalType": "int256",
           "name": "totalEarnings",
           "type": "int256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getRaffleInfo",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "raffleIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isReady",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currentAccumulated",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "threshold",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "reserve",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "raffleAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ownerShare",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "winnerShare",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "eligiblePlayerCount",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -2951,77 +2965,6 @@
           "internalType": "uint16",
           "name": "",
           "type": "uint16"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        }
-      ],
-      "name": "tierConfigs",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "playerCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint256",
-          "name": "entryFee",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "totalRounds",
-          "type": "uint8"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "matchTimePerPlayer",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "timeIncrementPerMove",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "matchLevel2Delay",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "matchLevel3Delay",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "enrollmentWindow",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "enrollmentLevel2Delay",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ETour_Storage.TimeoutConfig",
-          "name": "timeouts",
-          "type": "tuple"
         }
       ],
       "stateMutability": "view",

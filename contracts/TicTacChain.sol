@@ -113,7 +113,7 @@ contract TicTacChain is ETour_Storage {
         _registerTier2();
 
         // Set final raffle threshold (used after initial thresholds exhausted)
-        raffleThresholdFinal = 0.05 ether;
+        raffleThresholdFinal = 1.0 ether;
 
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
@@ -140,7 +140,7 @@ contract TicTacChain is ETour_Storage {
         );
         require(success, "T0");
 
-        raffleThresholds.push(0.01 ether);
+        raffleThresholds.push(0.1 ether);
     }
 
     function _registerTier1() private {
@@ -166,7 +166,7 @@ contract TicTacChain is ETour_Storage {
             )
         );
         require(success, "T1");
-        raffleThresholds.push(0.02 ether);
+        raffleThresholds.push(0.2 ether);
     }
 
     function _registerTier2() private {
@@ -196,7 +196,7 @@ contract TicTacChain is ETour_Storage {
             )
         );
         require(success, "T2");
-        raffleThresholds.push(0.04 ether);
+        raffleThresholds.push(0.4 ether);
     }
 
     /**
@@ -1101,60 +1101,10 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
-     * @dev Get tier configuration
-     * Public getter for tier config data
-     */
-    function tierConfigs(uint8 tierId) external view returns (
-        uint8 playerCount,
-        uint8 instanceCount,
-        uint256 entryFee,
-        uint8 totalRounds,
-        TimeoutConfig memory timeouts
-    ) {
-        TierConfig storage config = _tierConfigs[tierId];
-        return (
-            config.playerCount,
-            config.instanceCount,
-            config.entryFee,
-            config.totalRounds,
-            config.timeouts
-        );
-    }
-
-    /**
      * @dev Get player's total earnings across all tournaments
      */
     function getPlayerStats() external view returns (int256 totalEarnings) {
         return playerEarnings[msg.sender];
-    }
-
-    /**
-     * @dev Get real-time time remaining for both players
-     */
-    function getCurrentTimeRemaining(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (uint256 player1Time, uint256 player2Time) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        if (matchData.status != MatchStatus.InProgress) {
-            return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
-        }
-
-        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
-
-        player1Time = matchData.player1TimeRemaining;
-        player2Time = matchData.player2TimeRemaining;
-
-        // Deduct elapsed time from current player
-        if (matchData.currentTurn == matchData.player1) {
-            player1Time = (player1Time > elapsed) ? player1Time - elapsed : 0;
-        } else {
-            player2Time = (player2Time > elapsed) ? player2Time - elapsed : 0;
-        }
     }
 
     // ============ Player Tracking View Functions ============
@@ -1226,6 +1176,52 @@ contract TicTacChain is ETour_Storage {
             });
         }
         return entries;
+    }
+
+    /**
+     * @dev Get raffle info - calculated locally to read from contract's storage
+     */
+    function getRaffleInfo() external view returns (
+        uint256 raffleIndex,
+        bool isReady,
+        uint256 currentAccumulated,
+        uint256 threshold,
+        uint256 reserve,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 eligiblePlayerCount
+    ) {
+        raffleIndex = currentRaffleIndex;
+        currentAccumulated = accumulatedProtocolShare;
+
+        // Calculate threshold locally (reads from this contract's storage)
+        threshold = _getRaffleThreshold();
+        reserve = (threshold * 10) / 100;  // 10% reserve
+
+        isReady = currentAccumulated >= threshold;
+        raffleAmount = threshold - reserve;
+        ownerShare = (raffleAmount * 20) / 100;
+        winnerShare = (raffleAmount * 80) / 100;
+
+        // Get eligible player count from module
+        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
+            abi.encodeWithSignature("getEligiblePlayerCount()")
+        );
+        eligiblePlayerCount = success ? abi.decode(data, (uint256)) : 0;
+    }
+
+    /**
+     * @dev Get current raffle threshold - reads from contract's storage
+     */
+    function _getRaffleThreshold() internal view returns (uint256) {
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+        return raffleThresholdFinal;
     }
 
     // ============ Player Tracking Hooks (Built-in Implementation) ============

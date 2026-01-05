@@ -1148,6 +1148,52 @@ contract ConnectFourOnChain is ETour_Storage {
         return entries;
     }
 
+    /**
+     * @dev Get raffle info - calculated locally to read from contract's storage
+     */
+    function getRaffleInfo() external view returns (
+        uint256 raffleIndex,
+        bool isReady,
+        uint256 currentAccumulated,
+        uint256 threshold,
+        uint256 reserve,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 eligiblePlayerCount
+    ) {
+        raffleIndex = currentRaffleIndex;
+        currentAccumulated = accumulatedProtocolShare;
+
+        // Calculate threshold locally (reads from this contract's storage)
+        threshold = _getRaffleThreshold();
+        reserve = (threshold * 10) / 100;  // 10% reserve
+
+        isReady = currentAccumulated >= threshold;
+        raffleAmount = threshold - reserve;
+        ownerShare = (raffleAmount * 20) / 100;
+        winnerShare = (raffleAmount * 80) / 100;
+
+        // Get eligible player count from module
+        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
+            abi.encodeWithSignature("getEligiblePlayerCount()")
+        );
+        eligiblePlayerCount = success ? abi.decode(data, (uint256)) : 0;
+    }
+
+    /**
+     * @dev Get current raffle threshold - reads from contract's storage
+     */
+    function _getRaffleThreshold() internal view returns (uint256) {
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+        return raffleThresholdFinal;
+    }
+
     // ============ Player Tracking Hooks (Built-in Implementation) ============
 
     /**
