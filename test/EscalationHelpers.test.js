@@ -15,18 +15,26 @@ describe("Escalation Helper Functions Tests", function() {
     let L2_DELAY;
     let L3_DELAY;
 
-    // Helper to complete a match
+    // Helper to complete a Connect Four match (player 1 wins vertically in column 0)
     async function completeMatch(tierId, instanceId, roundNumber, matchNumber) {
-        const match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-        let currentMatch = match;
-        for (let i = 0; i < 7; i++) {
-            await game.connect(await hre.ethers.getSigner(currentMatch.currentTurn)).makeMove(tierId, instanceId, roundNumber, matchNumber, i % 2);
-            currentMatch = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (currentMatch.common.status === 2) break;
+        let match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+        const p1 = match.currentTurn;
+
+        // Player 1 builds column 0, player 2 builds column 1
+        // P1: col 0 (row 0), P2: col 1 (row 0)
+        // P1: col 0 (row 1), P2: col 1 (row 1)
+        // P1: col 0 (row 2), P2: col 1 (row 2)
+        // P1: col 0 (row 3) - WIN
+        const moves = [0, 1, 0, 1, 0, 1, 0]; // P1 wins with 4 in column 0
+
+        for (const col of moves) {
+            match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            if (match.common.status === 2) break; // Already completed
+            await game.connect(await hre.ethers.getSigner(match.currentTurn)).makeMove(tierId, instanceId, roundNumber, matchNumber, col);
         }
     }
 
-    // Helper to stall a match
+    // Helper to stall a match (make one move then stop)
     async function stallMatch(tierId, instanceId, roundNumber, matchNumber) {
         const match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
         await game.connect(await hre.ethers.getSigner(match.currentTurn)).makeMove(tierId, instanceId, roundNumber, matchNumber, 0);

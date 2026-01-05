@@ -4,7 +4,10 @@
 import { expect } from "chai";
 import hre from "hardhat";
 
-describe("Real-Time Time Remaining Query Tests", function () {
+// NOTE: getCurrentTimeRemaining() was removed from TicTacChain for gas optimization
+// The functionality exists in ChessOnChain. Time remaining can be calculated off-chain
+// using getMatch() data: player[N]TimeRemaining - (block.timestamp - lastMoveTimestamp)
+describe.skip("Real-Time Time Remaining Query Tests (DEPRECATED - getCurrentTimeRemaining removed from TicTacChain)", function () {
     let game;
     let owner, player1, player2;
 

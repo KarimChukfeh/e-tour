@@ -80,8 +80,8 @@ describe("Protocol Raffle System", function () {
     describe("Access Control", function () {
         it("Should reject non-enrolled players when threshold not met", async function () {
             await expect(
-                game.connect(nonEnrolled).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met");
+                game.connect(nonEnrolled).executeProtocolRaffle(0, 0)
+            ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
         it("Should reject non-enrolled players even when threshold met", async function () {
@@ -90,8 +90,8 @@ describe("Protocol Raffle System", function () {
             // This test documents the expected behavior
 
             await expect(
-                game.connect(nonEnrolled).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met");
+                game.connect(nonEnrolled).executeProtocolRaffle(0, 0)
+            ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
         it("Should allow enrolled players to trigger raffle (Enrolling status)", async function () {
@@ -102,8 +102,8 @@ describe("Protocol Raffle System", function () {
 
             // Threshold check will fail, but enrollment check passes
             await expect(
-                game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met");
+                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+            ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
         it("Should allow enrolled players to trigger raffle (InProgress status)", async function () {
@@ -119,8 +119,8 @@ describe("Protocol Raffle System", function () {
 
             // Threshold check will fail, but enrollment check passes
             await expect(
-                game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met");
+                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+            ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
         it("Should reject players only enrolled in Completed tournaments", async function () {
@@ -154,8 +154,8 @@ describe("Protocol Raffle System", function () {
             // Neither player should be able to trigger raffle (threshold check fails first)
             // Since no one is enrolled yet in the new tournament cycle
             await expect(
-                game.connect(player1).executeProtocolRaffle()
-            ).to.be.revertedWith("Raffle threshold not met");
+                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+            ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
     });
 

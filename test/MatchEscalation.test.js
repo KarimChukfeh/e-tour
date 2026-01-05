@@ -13,6 +13,16 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
     let L2_DELAY;
     let L3_DELAY;
 
+    // Helper to compute matchId the same way as the contract
+    function getMatchId(tierId, instanceId, roundNumber, matchNumber) {
+        return hre.ethers.keccak256(
+            hre.ethers.solidityPacked(
+                ["uint8", "uint8", "uint8", "uint8"],
+                [tierId, instanceId, roundNumber, matchNumber]
+            )
+        );
+    }
+
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6] = await hre.ethers.getSigners();
 
@@ -78,11 +88,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Check that match can be marked as stalled (timeout state should exist)
-            const matchId = await game.getMatchId(tierId, instanceId, 0, 0);
+            const matchId = getMatchId(tierId, instanceId, 0, 0);
             const timeoutState = await game.matchTimeouts(matchId);
 
             // After one player runs out of time and it's claimable, escalation should be trackable
-            // This will fail initially since matchTimeouts mapping doesn't exist yet
+            // Timeout state exists even if not explicitly marked as stalled
             expect(timeoutState).to.exist;
         });
 
@@ -161,7 +171,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player (not in tournament) tries to force eliminate
             await expect(
                 game.connect(player5).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Not an advanced player");
+            ).to.be.revertedWith("FE"); // Short error code for force elimination failure
         });
 
         it("Should reject force elimination before escalation window", async function () {
@@ -198,7 +208,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Try to force eliminate immediately (before escalation window)
             await expect(
                 game.connect(advancedPlayer).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Level 2 not active yet");
+            ).to.be.revertedWith("FE"); // Short error code for force elimination failure
         });
     });
 
@@ -260,7 +270,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player tries to claim too early
             await expect(
                 game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Level 3 not active yet");
+            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
         });
 
         it("Should reject replacement claim on non-stalled match", async function () {
@@ -276,7 +286,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // External player tries to claim
             await expect(
                 game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Match not stalled");
+            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
         });
     });
 
@@ -450,7 +460,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Try to claim completed match
             await expect(
                 game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Match not stalled");
+            ).to.be.revertedWith("CR"); // Short error code for claim replacement failure
         });
 
         it("Should clear escalation state after match completion", async function () {
@@ -472,7 +482,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
 
             // Check that escalation state is cleared (isStalled should be false or reset)
-            const matchId = await game.getMatchId(tierId, instanceId, 0, 0);
+            const matchId = getMatchId(tierId, instanceId, 0, 0);
             const timeoutState = await game.matchTimeouts(matchId);
 
             // After normal completion, isStalled should be false (or state reset)

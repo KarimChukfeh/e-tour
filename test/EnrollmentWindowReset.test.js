@@ -49,7 +49,7 @@ describe("Enrollment Window Reset", function () {
             // Verify forceStartTournament now fails (window not expired yet)
             await expect(
                 game.connect(player1).forceStartTournament(TIER_0, instanceId)
-            ).to.be.revertedWith("Enrollment window not expired");
+            ).to.be.revertedWith("FS"); // Short error code for force start failure
         });
     });
 
@@ -68,7 +68,7 @@ describe("Enrollment Window Reset", function () {
             // Try to reset (should fail)
             await expect(
                 game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.be.revertedWith("Not enrolling");
+            ).to.be.revertedWith("RW"); // Short error code for reset window failure
         });
     });
 
@@ -87,7 +87,7 @@ describe("Enrollment Window Reset", function () {
             // Try to reset (should fail - tournament not enrolling anymore)
             await expect(
                 game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.be.revertedWith("Not enrolling");
+            ).to.be.revertedWith("RW"); // Short error code for reset window failure
         });
     });
 
@@ -104,7 +104,7 @@ describe("Enrollment Window Reset", function () {
             // player2 tries to reset (not enrolled)
             await expect(
                 game.connect(player2).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.be.revertedWith("Not enrolled");
+            ).to.be.revertedWith("RW"); // Short error code for reset window failure
         });
     });
 
@@ -118,7 +118,7 @@ describe("Enrollment Window Reset", function () {
             // Try to reset immediately (should fail)
             await expect(
                 game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.be.revertedWith("Enrollment window not expired");
+            ).to.be.revertedWith("RW"); // Short error code for reset window failure
         });
     });
 

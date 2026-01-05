@@ -126,7 +126,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             // Second player tries to claim timeout - should fail
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Opponent has not run out of time");
+            ).to.be.revertedWith("TO"); // Short error code for timeout not reached
         });
 
         it("Should allow opponent to claim timeout after time runs out", async function () {
@@ -154,7 +154,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             // First player (current turn) tries to claim timeout - should fail
             await expect(
                 game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Cannot claim timeout on your own turn");
+            ).to.be.revertedWith("OT"); // Short error code for own turn
         });
 
         it("Should accurately track time after turn switches", async function () {
@@ -203,7 +203,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             // First player tries to claim timeout - should fail
             await expect(
                 game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Opponent has not run out of time");
+            ).to.be.revertedWith("TO"); // Short error code for timeout not reached
         });
     });
 
@@ -259,7 +259,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Match not active");
+            ).to.be.revertedWith("MA"); // Short error code for match not active
         });
     });
 

@@ -7,66 +7,32 @@ import hre from "hardhat";
 describe("TicTacChain - initializeAllInstances()", function () {
     let game;
     let owner;
+    let gameNotInitialized;
 
-    beforeEach(async function () {
+    before(async function () {
         [owner] = await hre.ethers.getSigners();
 
-        // Deploy all ETour modules
-        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
-        const moduleCore = await ETour_Core.deploy();
-        await moduleCore.waitForDeployment();
-
-        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
-        const moduleMatches = await ETour_Matches.deploy();
-        await moduleMatches.waitForDeployment();
-
-        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
-        const modulePrizes = await ETour_Prizes.deploy();
-        await modulePrizes.waitForDeployment();
-
-        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
-        const moduleRaffle = await ETour_Raffle.deploy();
-        await moduleRaffle.waitForDeployment();
-
-        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
-        const moduleEscalation = await ETour_Escalation.deploy();
-        await moduleEscalation.waitForDeployment();
-
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
-        const PlayerTrackingModule = await hre.ethers.getContractFactory("contracts/modules/PlayerTrackingModule.sol:PlayerTrackingModule");
-        const modulePlayerTracking = await PlayerTrackingModule.deploy();
-        await modulePlayerTracking.waitForDeployment();
-
-        const TicTacToeGameModule = await hre.ethers.getContractFactory("contracts/modules/TicTacToeGameModule.sol:TicTacToeGameModule");
-        const moduleTicTacToeGame = await TicTacToeGameModule.deploy();
-        await moduleTicTacToeGame.waitForDeployment();
-
-        // Deploy TicTacChain with all module addresses
+        // Deploy TicTacChain without initializing
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy(
-            await moduleCore.getAddress(),
-            await moduleMatches.getAddress(),
-            await modulePrizes.getAddress(),
-            await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress(),
-            await modulePlayerTracking.getAddress(),
-            await moduleTicTacToeGame.getAddress()
-        );
+        gameNotInitialized = await TicTacChain.deploy();
+        await gameNotInitialized.waitForDeployment();
+    });
+
+    beforeEach(async function () {
+        // Deploy a fresh instance for each test
+        const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
+        game = await TicTacChain.deploy();
         await game.waitForDeployment();
     });
 
     it("Should have 0 tiers before initialization", async function () {
-        const tierCount = await game.tierCount();
+        const tierCount = await gameNotInitialized.tierCount();
         expect(tierCount).to.equal(0);
     });
 
-    it("Should have allInstancesInitialized = false before initialization", async function () {
-        const initialized = await game.allInstancesInitialized();
-        expect(initialized).to.equal(false);
+    // NOTE: allInstancesInitialized was removed for gas optimization
+    it.skip("Should have allInstancesInitialized = false before initialization (DEPRECATED)", async function () {
+        // This function was removed for gas optimization
     });
 
     it("Should initialize all tiers when initializeAllInstances() is called", async function () {
