@@ -1482,3 +1482,4 @@ npx hardhat clean && npx hardhat compile
 Step 4: Deploy Modules + ChessOnChain
 npx hardhat run scripts/deploy-tictacchain-modular.js --network localhost
 npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
+npx hardhat run scripts/deploy-connectfour-modular.js --network localhost

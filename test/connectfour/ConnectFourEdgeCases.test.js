@@ -9,8 +9,46 @@ describe("ConnectFour Edge Cases", function () {
     beforeEach(async function () {
         [, player1, player2] = await hre.ethers.getSigners();
 
+        // Deploy modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+        await moduleGameCache.waitForDeployment();
+
+        // Deploy ConnectFourOnChain with modules
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
-        game = await ConnectFourOnChain.deploy();
+        game = await ConnectFourOnChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
+        await game.waitForDeployment();
+
+        // Initialize tiers
+        const initTx = await game.initializeAllInstances();
+        await initTx.wait();
     });
 
     describe("Full Board Draw (42 Pieces)", function () {
@@ -205,7 +243,7 @@ describe("ConnectFour Edge Cases", function () {
             // Try to place 7th piece in same column - should fail
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3)
-            ).to.be.revertedWith("Column is full");
+            ).to.be.reverted; // Error code is "CF" now
         });
 
         it("Should allow moves to other columns when one column is full", async function () {

@@ -5,10 +5,10 @@ import hre from "hardhat";
  * CONNECTFOUR MAXIMUM CAPACITY GAS ESTIMATION TEST (L2 OPTIMIZED)
  *
  * This test simulates worst-case gas costs under maximum contract capacity:
- * - 224 concurrent players across 4 tiers
- * - 36 active tournament instances
- * - ~158 concurrent matches
- * - Cache near-full (800/1000 slots used)
+ * - 128+ concurrent players across 3 tiers (0, 1, 2)
+ * - 30 active tournament instances
+ * - ~62 concurrent matches
+ * - Modular architecture with packed board optimization
  *
  * Uses realistic L2 gas prices (Arbitrum/Optimism/Base):
  * - Average: 0.03-0.6 Gwei (typically ~0.05 Gwei)
@@ -24,11 +24,10 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
     let owner;
     let players = [];
 
-    // Tier fee configuration
+    // Tier fee configuration (only 3 tiers now: 0, 1, 2)
     const TIER_0_FEE = hre.ethers.parseEther("0.002");
     const TIER_1_FEE = hre.ethers.parseEther("0.004");
     const TIER_2_FEE = hre.ethers.parseEther("0.008");
-    const TIER_3_FEE = hre.ethers.parseEther("0.01");
 
     // Gas tracking data structure
     const gasData = {
@@ -186,14 +185,14 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
 
         // Contract state summary
         console.log("\n## Contract State at Test Time");
-        console.log(`- Total Players Enrolled: 224`);
-        console.log(`- Active Tournament Instances: 36`);
+        console.log(`- Total Players Enrolled: 128`);
+        console.log(`- Active Tournament Instances: 30`);
         console.log(`- Tier 0: 12 instances × 2 players = 24 players`);
         console.log(`- Tier 1: 10 instances × 4 players = 40 players`);
         console.log(`- Tier 2: 8 instances × 8 players = 64 players`);
-        console.log(`- Tier 3: 6 instances × 16 players = 96 players`);
-        console.log(`- Estimated Concurrent Matches: ~158`);
-        console.log(`- Match Cache Utilization: ~800/1000 slots`);
+        console.log(`- Total: 128 players (Tier 3 removed in new architecture)`);
+        console.log(`- Estimated Concurrent Matches: ~62`);
+        console.log(`- Match Cache Utilization: moderate`);
 
         // Sort operations by gas cost
         console.log("\n## Gas Costs by Operation (Top 20 Highest)");
@@ -307,24 +306,60 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
     before(async function () {
         console.log("\n🚀 Initializing ConnectFour Maximum Capacity Gas Test...");
 
-        // Get signers - need 224 players + owner
+        // Get signers - need 150 players + owner (128 for saturation, 22 for scenarios)
         const signers = await hre.ethers.getSigners();
         owner = signers[0];
-        players = signers.slice(1, 225);  // Players 1-224
+        players = signers.slice(1, 151);  // Players 1-150
 
         console.log(`✅ Loaded ${players.length} player accounts`);
 
-        // Deploy contract
+        // Deploy modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+        await moduleGameCache.waitForDeployment();
+
+        // Deploy ConnectFourOnChain with modules
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
-        game = await ConnectFourOnChain.deploy();
+        game = await ConnectFourOnChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
         await game.waitForDeployment();
+
+        // Initialize tiers
+        const initTx = await game.initializeAllInstances();
+        await initTx.wait();
 
         console.log(`✅ ConnectFourOnChain deployed at ${await game.getAddress()}`);
     });
 
     describe("Phase 1: Contract Saturation Setup", function () {
 
-        it("Should saturate contract with 224 players across all tiers", async function () {
+        it("Should saturate contract with 128 players across all tiers", async function () {
             console.log("\n📋 Enrolling players to saturate contract...");
 
             // Tier 0: 12 instances × 2 players = 24 players
@@ -381,27 +416,9 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
             }
             console.log(`  ✅ Tier 2 complete: 64 players enrolled`);
 
-            // Tier 3: 6 instances × 16 players = 96 players
-            // Leave last spot in instance 0 open for auto-start test
-            console.log("\n  Tier 3 (16-player): Enrolling 96 players across 6 instances...");
-            for (let instance = 0; instance < 6; instance++) {
-                const maxPlayers = (instance === 0) ? 15 : 16;  // Leave one spot in instance 0
-                for (let p = 0; p < maxPlayers; p++) {
-                    const playerIndex = 128 + instance * 16 + p;
-                    const player = players[playerIndex];
-                    await measureGas(
-                        game.connect(player).enrollInTournament(3, instance, { value: TIER_3_FEE }),
-                        `Enrollment: Tier 3, Instance ${instance}, Player ${p + 1}`,
-                        player.address
-                    );
-                }
-                console.log(`    ✓ ${instance + 1}/6 instances filled (${maxPlayers}/16 players)`);
-            }
-            console.log(`  ✅ Tier 3 complete: 95 players enrolled (1 spot reserved for auto-start test)`);
-
             console.log("\n✅ CONTRACT SATURATION COMPLETE");
-            console.log(`   Total Players: ${24 + 40 + 64 + 95} / 224 enrolled`);
-            console.log(`   Active Tournaments: 36`);
+            console.log(`   Total Players: ${24 + 40 + 64} = 128 enrolled (Tier 3 removed)`);
+            console.log(`   Active Tournaments: 30`);
         });
     });
 
@@ -410,9 +427,9 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
         it("Scenario 1: Long Game with Multiple Moves", async function () {
             console.log("\n🎮 SCENARIO 1: Long Game (20+ moves)");
 
-            // Use Tier 3 Instance 1 (16-player tournament, fully enrolled, auto-started)
-            // This instance has 16 players and should have 8 matches in Round 0
-            const tierId = 3;
+            // Use Tier 2 Instance 1 (8-player tournament, fully enrolled, auto-started)
+            // This instance has 8 players and should have 4 matches in Round 0
+            const tierId = 2;
             const instanceId = 1;
             const roundNum = 0;
             const matchNum = 0;
@@ -451,14 +468,29 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
         it("Scenario 2: Tournament Auto-Start at Capacity", async function () {
             console.log("\n🚀 SCENARIO 2: Tournament Auto-Start");
 
-            // Fill the last spot in Tier 3, Instance 0 to trigger auto-start
-            const lastPlayerIndex = 128 + 15;  // The 16th player for Tier 3 Instance 0
+            // Use a fresh Tier 2 instance (8-player) - enroll 7 players then the 8th triggers auto-start
+            const tierId = 2;
+            const instanceId = 8; // Use instance 8 (saturation filled 0-7, so 8 is fresh)
+
+            // Enroll 7 players first
+            for (let p = 0; p < 7; p++) {
+                const playerIndex = 128 + p;
+                const player = players[playerIndex];
+                await measureGas(
+                    game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE }),
+                    `Enrollment: Tier 2, Instance ${instanceId}, Player ${p + 1}`,
+                    player.address
+                );
+            }
+
+            // Now enroll the 8th player to trigger auto-start
+            const lastPlayerIndex = 128 + 7;
             const lastPlayer = players[lastPlayerIndex];
 
             console.log(`    Enrolling final player to trigger auto-start...`);
             const gasRecord = await measureGas(
-                game.connect(lastPlayer).enrollInTournament(3, 0, { value: TIER_3_FEE }),
-                "Auto-Start Trigger: Tier 3 enrollment (16th player)",
+                game.connect(lastPlayer).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE }),
+                "Auto-Start Trigger: Tier 2 enrollment (8th player)",
                 lastPlayer.address
             );
 
