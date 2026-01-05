@@ -130,7 +130,7 @@ contract TicTacChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 300,
-            enrollmentLevel2Delay: 60
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](2);
@@ -153,7 +153,7 @@ contract TicTacChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 300,
-            enrollmentLevel2Delay: 600
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](4);
@@ -178,7 +178,7 @@ contract TicTacChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 300,
-            enrollmentLevel2Delay: 600
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](8);

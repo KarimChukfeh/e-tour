@@ -127,7 +127,7 @@ contract ConnectFourOnChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 300,
-            enrollmentLevel2Delay: 600
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](2);
@@ -150,7 +150,7 @@ contract ConnectFourOnChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 600,
-            enrollmentLevel2Delay: 1200
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](4);
@@ -175,7 +175,7 @@ contract ConnectFourOnChain is ETour_Storage {
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
             enrollmentWindow: 900,
-            enrollmentLevel2Delay: 1800
+            enrollmentLevel2Delay: 300
         });
 
         uint8[] memory prizes = new uint8[](8);

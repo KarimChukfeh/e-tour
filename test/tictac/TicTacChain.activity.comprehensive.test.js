@@ -140,7 +140,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
   });
 
   it.skip("should track complete 8-player tournament with escalations", async function () {
-    // SKIPPED: This comprehensive stress test uses extreme time advancements (361+ seconds cumulative)
+    // SKIPPED: This comprehensive stress test uses extreme time advancements (301+ seconds cumulative)
     // that exceed player time banks with Fischer increment. Core activity tracking is tested in other tests.
     const allPlayers = [p1, p2, p3, p4, p5, p6, p7, p8];
     const allPlayersWithExternal = [...allPlayers, external1, external2];
@@ -226,7 +226,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       await ticTacChain.connect(semifinalPlayer).makeMove(TIER_2, INSTANCE_0, 1, 0, 0);
 
       // Wait for L3 escalation window
-      await time.increase(361); // 6 minutes + 1 second - enough for L3 (matchTimePerPlayer 2min + matchLevel3Delay 4min)
+      await time.increase(301); // 5 minutes + 1 second - enough for L3 (matchTimePerPlayer 60s + matchLevel3Delay 240s = 300s)
 
       // External2 replaces both stalled players
       await ticTacChain.connect(external2).claimMatchSlotByReplacement(TIER_2, INSTANCE_0, 1, 0);

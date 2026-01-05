@@ -518,8 +518,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward past escalation2 window (enrollment window + escalation interval)
-            // For Tier 1: 5 minutes enrollment + 10 minutes escalation = 15 minutes
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // For Tier 1: 300s enrollment + 300s escalation = 600s
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const claimerBalanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -547,7 +547,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -1478,8 +1478,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Single player enrolls
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            // Fast forward past escalation 2 window (300s + 60s = 360s)
-            await hre.ethers.provider.send("evm_increaseTime", [361]);
+            // Fast forward past escalation 2 window (300s + 300s = 600s)
+            await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const balanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -1742,8 +1742,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
-            // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // Fast forward past enrollment window (300s)
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with 3 players
@@ -1773,8 +1773,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
-            // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // Fast forward past enrollment window (300s)
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -1800,8 +1800,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
-            // Fast forward past enrollment window
-            await hre.ethers.provider.send("evm_increaseTime", [901]);
+            // Fast forward past enrollment window (300s)
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
