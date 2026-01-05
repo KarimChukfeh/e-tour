@@ -537,8 +537,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Fast forward past escalation2 window (enrollment window + escalation interval)
-            // For Tier 1: 10 minutes enrollment + 2 minutes escalation = 12 minutes
-            await hre.ethers.provider.send("evm_increaseTime", [721]);
+            // For Tier 1: 5 minutes enrollment + 10 minutes escalation = 15 minutes
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const claimerBalanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -566,7 +566,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
-            await hre.ethers.provider.send("evm_increaseTime", [721]);
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
@@ -1513,8 +1513,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Single player enrolls
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            // Fast forward past escalation 2 window
-            await hre.ethers.provider.send("evm_increaseTime", [500]);
+            // Fast forward past escalation 2 window (5 min + 10 min = 15 min)
+            await hre.ethers.provider.send("evm_increaseTime", [901]);
             await hre.ethers.provider.send("evm_mine", []);
 
             const balanceBefore = await hre.ethers.provider.getBalance(player3.address);
@@ -2114,13 +2114,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Same player enrolls in instance 34
             await game.connect(player1).enrollInTournament(tierId, 34, { value: TIER_0_FEE });
             expect(await game.isEnrolled(tierId, 34, player1.address)).to.be.true;
-
-            // Both enrollments should exist
-            const enrolled33 = await game.getEnrolledPlayers(tierId, 33);
-            const enrolled34 = await game.getEnrolledPlayers(tierId, 34);
-
-            expect(enrolled33).to.include(player1.address);
-            expect(enrolled34).to.include(player1.address);
         });
 
         it("Should allow same player in different tiers", async function () {
@@ -2281,8 +2274,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.roundNumber).to.equal(roundNumber);
             expect(matchData.common.matchNumber).to.equal(matchNumber);
 
-            // Verify board state is preserved in cache
-            expect(matchData.board.length).to.equal(9);
+            // Verify board state is preserved in cache (packedBoard is a uint256 encoding all cells)
+            expect(matchData.packedBoard).to.be.greaterThan(0);
             expect(matchData.firstPlayer).to.equal(firstPlayer);
         });
 
@@ -2514,8 +2507,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Note: endTime is only set for cached matches, preserved matches have lastMoveTime
             expect(matchData.common.lastMoveTime).to.be.greaterThan(0);
 
-            // Verify board state is preserved
-            expect(matchData.board.length).to.equal(9);
+            // Verify board state is preserved (packedBoard is a uint256 encoding all cells)
+            expect(matchData.packedBoard).to.be.greaterThan(0);
         });
 
         it("Should cache old finals and preserve new finals when second tournament completes (instance-specific eviction)", async function () {

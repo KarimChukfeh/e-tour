@@ -247,21 +247,9 @@ contract ETour_Prizes is ETour_Storage {
         uint8 finalRound = config.totalRounds - 1;
         bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
 
-        // Check if there's old finals from a previous tournament that needs caching
-        // The finals is from a previous tournament if its winner doesn't match current tournament winner
-        (address finalsWinner, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
-
-        if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
-            // Check if finals winner matches the current tournament winner
-            address currentWinner = tournament.winner;
-
-            // If winners don't match, this finals is from a previous tournament
-            if (finalsWinner != currentWinner) {
-                // Cache the old finals before clearing it
-                this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
-                this._resetMatchGame(finalsMatchId);
-            }
-        }
+        // Note: Finals is NOT reset here - it remains preserved in live storage
+        // for immediate post-tournament queries. It will be reset on first new enrollment
+        // (see ETour_Core.enrollInTournament)
 
         // Continue with other resets
         tournament.currentRound = 0;
@@ -327,7 +315,7 @@ contract ETour_Prizes is ETour_Storage {
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
 
-                // Skip resetting finals match - keep it in live storage
+                // Skip resetting finals - preserved until first new enrollment
                 if (matchId == finalsMatchId) {
                     continue;
                 }

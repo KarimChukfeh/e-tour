@@ -252,6 +252,26 @@ contract ETour_Matches is ETour_Storage {
             emit AllDrawRoundDetected(tierId, instanceId, roundNumber, uint8(remainingPlayers.length));
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
         } else {
+            // Assign rankings to losers based on round (for prize distribution)
+            // Finals loser gets rank 2 (handled in completeTournament)
+            // Semi-finals losers get ranks 3-4, quarters losers get ranks 5-8, etc.
+            uint8 roundsFromEnd = config.totalRounds - roundNumber - 1;
+            if (roundsFromEnd > 0 && roundsFromEnd <= 3) { // Only rank semi (1) and quarters (2) losers
+                uint8 baseRank = uint8(1 + (1 << roundsFromEnd)); // Semi=3, Quarters=5
+                uint8 currentRank = baseRank;
+                for (uint8 i = 0; i < round.totalMatches; i++) {
+                    bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
+                    if (matchStatus == MatchStatus.Completed && !matchIsDraw && matchWinner != address(0)) {
+                        (address p1, address p2) = this._getMatchPlayers(matchId);
+                        address loser = (matchWinner == p1) ? p2 : p1;
+                        if (loser != address(0) && playerRanking[tierId][instanceId][loser] == 0) {
+                            playerRanking[tierId][instanceId][loser] = currentRank++;
+                        }
+                    }
+                }
+            }
+
             tournament.currentRound = roundNumber + 1;
             consolidateScatteredPlayers(tierId, instanceId, roundNumber + 1);
 
@@ -322,12 +342,24 @@ contract ETour_Matches is ETour_Storage {
      */
     function completeTournament(uint8 tierId, uint8 instanceId, address winner) public {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TierConfig storage config = _tierConfigs[tierId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
 
         if (tournament.winner == address(0)) {
             tournament.winner = winner;
             playerRanking[tierId][instanceId][winner] = 1;
+
+            // Assign rank 2 to finals loser (if not a draw)
+            if (!tournament.finalsWasDraw) {
+                uint8 finalRound = config.totalRounds - 1;
+                bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
+                (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalsMatchId);
+                address finalsLoser = (winner == finalPlayer1) ? finalPlayer2 : finalPlayer1;
+                if (finalsLoser != address(0)) {
+                    playerRanking[tierId][instanceId][finalsLoser] = 2;
+                }
+            }
         }
 
         uint256 winnersPot = tournament.prizePool;
@@ -344,12 +376,9 @@ contract ETour_Matches is ETour_Storage {
             playerStats[players[i]].tournamentsPlayed++;
         }
 
-        // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
+        // NOTE: Prize distribution, earnings update, reset, and event emission are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
-
-        // Emit TournamentCompleted event (prize will be 0 since distribution happens later)
-        emit TournamentCompleted(tierId, instanceId, winner, 0, tournament.finalsWasDraw, tournament.coWinner);
     }
 
     /**

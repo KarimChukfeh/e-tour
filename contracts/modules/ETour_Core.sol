@@ -139,6 +139,17 @@ contract ETour_Core is ETour_Storage {
             tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
+
+            // Check if there's an old finals match from previous tournament that needs cleanup
+            uint8 finalRound = config.totalRounds - 1;
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
+            (address finalsWinner, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
+
+            if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
+                // Cache old finals before resetting it
+                this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+                this._resetMatchGame(finalsMatchId);
+            }
         }
 
         require(tournament.status == TournamentStatus.Enrolling, "Tournament not accepting enrollments");
@@ -227,11 +238,9 @@ contract ETour_Core is ETour_Storage {
         emit EnrollmentPoolClaimed(tierId, instanceId, msg.sender, claimAmount);
 
         updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
-        // Call to MODULE_PRIZES for _resetTournamentAfterCompletion via delegatecall
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-        );
-        require(resetSuccess, "Reset failed");
+
+        // NOTE: Tournament reset is handled by game contract after this function returns
+        // (nested delegatecall to MODULE_PRIZES doesn't work)
     }
 
     /**
@@ -326,12 +335,19 @@ contract ETour_Core is ETour_Storage {
             uint256 winnersPot = tournament.prizePool;
             playerPrizes[tierId][instanceId][soloWinner] = winnersPot;
 
-            // Delegate to Prizes module for _sendPrizeWithFallback
-            (bool sentSuccess, bytes memory sentData) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("sendPrizeWithFallback(address,uint256,uint8,uint8)", soloWinner, winnersPot, tierId, instanceId)
-            );
-            require(sentSuccess, "Prize send failed");
-            bool sent = abi.decode(sentData, (bool));
+            // Send prize with fallback (inlined to avoid nested delegatecall)
+            bool sent = false;
+            if (winnersPot > 0) {
+                (bool transferSuccess, ) = payable(soloWinner).call{value: winnersPot}("");
+                if (transferSuccess) {
+                    sent = true;
+                } else {
+                    // If send failed, add amount to accumulated protocol share
+                    accumulatedProtocolShare += winnersPot;
+                    emit PrizeDistributionFailed(tierId, instanceId, soloWinner, winnersPot, 1);
+                    emit PrizeFallbackToContract(soloWinner, winnersPot);
+                }
+            }
 
             playerStats[soloWinner].tournamentsWon++;
             playerStats[soloWinner].tournamentsPlayed++;
@@ -342,17 +358,17 @@ contract ETour_Core is ETour_Storage {
             }
             emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, false, address(0));
 
-            // Delegate to Prizes module for _updatePlayerEarnings
-            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, soloWinner)
-            );
-            require(earningsSuccess, "Update earnings failed");
+            // Update player earnings inline (avoid nested delegatecall)
+            if (winnersPot > 0) {
+                if (!_isOnLeaderboard[soloWinner]) {
+                    _isOnLeaderboard[soloWinner] = true;
+                    _leaderboardPlayers.push(soloWinner);
+                }
+                playerEarnings[soloWinner] += int256(winnersPot);
+            }
 
-            // Delegate to Prizes module for _resetTournamentAfterCompletion
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "Reset failed");
+            // NOTE: Tournament reset is handled by game contract after this function returns
+            // (nested delegatecall to MODULE_PRIZES doesn't work)
             return;
         }
 
@@ -375,11 +391,11 @@ contract ETour_Core is ETour_Storage {
         // Only track the claimer if they receive a claim amount
         // Enrolled players who abandoned don't receive anything, so don't track them
         if (claimAmount > 0) {
-            // Delegate to Prizes module for _trackOnLeaderboard
-            (bool trackSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("trackOnLeaderboard(address)", claimer)
-            );
-            require(trackSuccess, "Track leaderboard failed");
+            // Track on leaderboard directly
+            if (!_isOnLeaderboard[claimer]) {
+                _isOnLeaderboard[claimer] = true;
+                _leaderboardPlayers.push(claimer);
+            }
 
             playerEarnings[claimer] += int256(claimAmount);
         }

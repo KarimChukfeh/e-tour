@@ -311,10 +311,26 @@ contract TicTacChain is ETour_Storage {
         );
         require(success, "FS");
 
-        // If tournament started, call hooks
+        // If tournament started with multiple players
         if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
             _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
+        }
+
+        // If single-player tournament completed immediately
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
+            address winner = tournament.winner;
+            address[] memory singlePlayer = new address[](1);
+            singlePlayer[0] = winner;
+
+            // Reset tournament (modules can't do nested delegatecalls)
+            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            );
+            require(resetSuccess, "RT");
+
+            // Call completion hook
+            _onTournamentCompleted(tierId, instanceId, singlePlayer);
         }
     }
 
@@ -336,6 +352,12 @@ contract TicTacChain is ETour_Storage {
             abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CAE");
+
+        // Reset tournament after claiming abandoned pool (modules can't do nested delegatecalls)
+        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+        require(resetSuccess, "RT");
     }
 
     /**
@@ -543,17 +565,30 @@ contract TicTacChain is ETour_Storage {
             address tournamentWinner = tournament.winner;
             uint256 winnersPot = tournament.prizePool;
 
-            // Distribute prizes to all ranked players
-            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
-            );
-            require(distributeSuccess, "DP");
+            // Check if this is an all-draw scenario
+            if (tournament.allDrawResolution) {
+                // All-draw: distribute equal prizes to all remaining players
+                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                    abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, winnersPot)
+                );
+                require(distributeSuccess, "DP");
+            } else {
+                // Normal completion: distribute prizes based on ranking
+                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                    abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
+                );
+                require(distributeSuccess, "DP");
+            }
 
             // Update earnings for all players with prizes
             (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tournamentWinner)
             );
             require(earningsSuccess, "UE");
+
+            // Emit TournamentCompleted event with actual prize amount
+            uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+            emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
 
             // Reset tournament state
             (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
@@ -748,7 +783,7 @@ contract TicTacChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        if (playerSlot == 1) {
+        if (playerSlot == 0) {
             matchData.player1 = newPlayer;
         } else {
             matchData.player2 = newPlayer;
@@ -916,7 +951,7 @@ contract TicTacChain is ETour_Storage {
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
         Match storage matchData = matches[matchId];
 
-        if (slot == 1) {
+        if (slot == 0) {
             matchData.player1 = player;
         } else {
             matchData.player2 = player;
