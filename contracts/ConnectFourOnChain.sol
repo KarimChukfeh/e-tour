@@ -1134,21 +1134,6 @@ contract ConnectFourOnChain is ETour_Storage {
         }
     }
 
-    function isColumnAvailable(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        uint8 column
-    ) external view returns (bool) {
-        require(column < COLS, "IC");
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        uint8 topCellIndex = _getCellIndex(0, column);
-        return _getCell(matchData.packedBoard, topCellIndex) == 0;
-    }
-
     // ============ Player Tracking View Functions ============
 
     /**

@@ -236,11 +236,7 @@ describe("ConnectFour Edge Cases", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);   // 5th piece
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3); // 6th piece (column now full)
 
-            // Verify column is full
-            const isAvailable = await game.isColumnAvailable(tierId, instanceId, 0, 0, 3);
-            expect(isAvailable).to.be.false;
-
-            // Try to place 7th piece in same column - should fail
+            // Try to place 7th piece in same column - should fail (column full)
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3)
             ).to.be.reverted; // Error code is "CF" now
@@ -264,15 +260,12 @@ describe("ConnectFour Edge Cases", function () {
                 await game.connect(player).makeMove(tierId, instanceId, 0, 0, 0);
             }
 
-            // Column 0 should be full
-            const col0Available = await game.isColumnAvailable(tierId, instanceId, 0, 0, 0);
-            expect(col0Available).to.be.false;
+            // Column 0 should be full - verify by checking move fails
+            await expect(
+                game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0)
+            ).to.be.reverted;
 
-            // Column 1 should still be available
-            const col1Available = await game.isColumnAvailable(tierId, instanceId, 0, 0, 1);
-            expect(col1Available).to.be.true;
-
-            // Should be able to place in column 1
+            // Column 1 should still be available - verify successful move
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1)
             ).to.not.be.reverted;

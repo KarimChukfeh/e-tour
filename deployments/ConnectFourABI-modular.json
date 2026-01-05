@@ -1,9 +1,9 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+  "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T09:13:51.444Z",
+  "deployedAt": "2026-01-05T09:54:02.880Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -1011,32 +1011,6 @@
     },
     {
       "inputs": [],
-      "name": "COLS",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "CONNECT_COUNT",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "MATCH_CACHE_SIZE",
       "outputs": [
         {
@@ -1128,19 +1102,6 @@
     },
     {
       "inputs": [],
-      "name": "NO_COLUMN",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "NO_ROUND",
       "outputs": [
         {
@@ -1186,32 +1147,6 @@
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "ROWS",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "TOTAL_CELLS",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1634,7 +1569,7 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -2210,16 +2145,6 @@
               "type": "address"
             },
             {
-              "internalType": "uint8",
-              "name": "moveCount",
-              "type": "uint8"
-            },
-            {
-              "internalType": "uint8",
-              "name": "lastColumn",
-              "type": "uint8"
-            },
-            {
               "internalType": "uint256",
               "name": "player1TimeRemaining",
               "type": "uint256"
@@ -2483,45 +2408,6 @@
       "inputs": [
         {
           "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "column",
-          "type": "uint8"
-        }
-      ],
-      "name": "isColumnAvailable",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
           "name": "",
           "type": "uint8"
         },
@@ -2717,16 +2603,6 @@
           "internalType": "uint256",
           "name": "player2TimeRemaining",
           "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "moveCount",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "lastColumn",
-          "type": "uint8"
         }
       ],
       "stateMutability": "view",

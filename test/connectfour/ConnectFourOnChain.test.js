@@ -440,19 +440,6 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(match.packedBoard).to.equal(0); // Board initialized empty
         });
 
-        it("Should check column availability", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // All columns should be available initially
-            for (let col = 0; col < 7; col++) {
-                expect(await game.isColumnAvailable(tierId, instanceId, 0, 0, col)).to.be.true;
-            }
-        });
-
         // Removed RW3 compliance test - function may not exist in new architecture
     });
 
@@ -671,8 +658,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should have Connect Four specific functions", async function () {
             expect(game.makeMove).to.exist;
             expect(game.getMatch).to.exist;
-            expect(game.isColumnAvailable).to.exist;
             // getCachedMatch removed in new architecture (uses MODULE_GAME_CACHE)
+            // isColumnAvailable removed for size optimization
         });
     });
 });
