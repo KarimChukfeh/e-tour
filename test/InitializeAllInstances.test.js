@@ -64,7 +64,7 @@ describe("TicTacChain - initializeAllInstances()", function () {
         await tx.wait();
 
         await expect(game.initializeAllInstances())
-            .to.be.revertedWith("I");
+            .to.be.revertedWith("AI");
     });
 
     // NOTE: getTierInfo was removed from TicTacChain for gas optimization

@@ -403,17 +403,22 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
                 totalMatches: round1.totalMatches
             });
 
-            if (round1.initialized && round1.totalMatches > 0) {
-                const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-                console.log("Finals match players:", {
-                    player1: finalsMatch.common.player1,
-                    player2: finalsMatch.common.player2
-                });
-            }
-
             // Tournament should NOT advance to finals because both players from Match 0 were eliminated
             // Only the winner from Match 1 remains, they should win the tournament automatically
             const tournament = await game.tournaments(tierId, instanceId);
+
+            // Only try to get finals match if tournament didn't auto-complete
+            if (round1.initialized && round1.totalMatches > 0 && tournament.status !== 2) {
+                try {
+                    const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
+                    console.log("Finals match players:", {
+                        player1: finalsMatch.common.player1,
+                        player2: finalsMatch.common.player2
+                    });
+                } catch (e) {
+                    console.log("Finals match not created (orphaned winner scenario)");
+                }
+            }
 
             // Check tournament completed and reset (status = Enrolling, winner cleared)
             expect(tournament.status).to.equal(0); // TournamentStatus.Enrolling (after reset)

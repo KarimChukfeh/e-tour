@@ -390,13 +390,22 @@ contract TicTacChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
-        (bool success, ) = MODULE_ESCALATION.delegatecall(
+        (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "forceEliminateStalledMatch(uint8,uint8,uint8,uint8)",
                 tierId, instanceId, roundNumber, matchNumber
             )
         );
-        require(success, "FE");
+        if (!success) {
+            if (returnData.length > 0) {
+                assembly {
+                    let returnDataSize := mload(returnData)
+                    revert(add(32, returnData), returnDataSize)
+                }
+            } else {
+                revert("FE");
+            }
+        }
     }
 
     /**
@@ -408,13 +417,22 @@ contract TicTacChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
-        (bool success, ) = MODULE_ESCALATION.delegatecall(
+        (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)",
                 tierId, instanceId, roundNumber, matchNumber
             )
         );
-        require(success, "CR");
+        if (!success) {
+            if (returnData.length > 0) {
+                assembly {
+                    let returnDataSize := mload(returnData)
+                    revert(add(32, returnData), returnDataSize)
+                }
+            } else {
+                revert("CR");
+            }
+        }
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
@@ -1205,11 +1223,15 @@ contract TicTacChain is ETour_Storage {
         ownerShare = (raffleAmount * 20) / 100;
         winnerShare = (raffleAmount * 80) / 100;
 
-        // Get eligible player count from module
-        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
-            abi.encodeWithSignature("getEligiblePlayerCount()")
-        );
-        eligiblePlayerCount = success ? abi.decode(data, (uint256)) : 0;
+        // Count eligible players (those with enrolling or active tournaments)
+        // This is a simplified count - in production would use a more efficient tracking mechanism
+        eligiblePlayerCount = 0;
+        for (uint8 t = 0; t < tierCount; t++) {
+            for (uint8 i = 0; i < _tierConfigs[t].instanceCount; i++) {
+                address[] storage players = enrolledPlayers[t][i];
+                eligiblePlayerCount += players.length;
+            }
+        }
     }
 
     /**

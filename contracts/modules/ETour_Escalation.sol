@@ -763,6 +763,31 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.winner = lastWinner;
                 tournament.status = TournamentStatus.Completed;
                 playerRanking[tierId][instanceId][lastWinner] = 1;
+
+                // Distribute 100% of prize pool to orphaned winner
+                uint256 prize = tournament.prizePool;
+                playerPrizes[tierId][instanceId][lastWinner] = prize;
+
+                // Update player stats
+                playerStats[lastWinner].tournamentsWon++;
+
+                emit TournamentCompleted(
+                    tierId,
+                    instanceId,
+                    lastWinner,
+                    prize,
+                    false,  // finalsWasDraw
+                    address(0)  // coWinner
+                );
+
+                // Reset tournament state (inline minimal reset)
+                tournament.status = TournamentStatus.Enrolling;
+                tournament.winner = address(0);
+                tournament.enrolledCount = 0;
+                tournament.prizePool = 0;
+
+                // Clear enrolled players
+                delete enrolledPlayers[tierId][instanceId];
             }
         }
     }
