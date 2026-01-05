@@ -467,8 +467,8 @@ contract TicTacChain is ETour_Storage {
         // Mark match as stalled (enables L2/L3 escalation later if needed)
         (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
-                "markMatchStalled(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber
+                "markMatchStalled(bytes32,uint8,uint256)",
+                matchId, tierId, block.timestamp
             )
         );
         require(markSuccess, "MS");
@@ -529,15 +529,29 @@ contract TicTacChain is ETour_Storage {
         }
 
         // Check if tournament completed by looking at status change
-        // MODULE_MATCHES.completeMatch() sets status to Completed and calls prize distribution
-        // But nested delegatecall to MODULE_PRIZES.resetTournamentAfterCompletion() doesn't work
-        // So we call it directly from TicTacChain and trigger the hook
+        // MODULE_MATCHES.completeMatch() sets status to Completed but doesn't distribute prizes
+        // (nested delegatecalls to MODULE_PRIZES don't work since modules have MODULE_PRIZES = address(0))
+        // So we must call prize distribution directly from TicTacChain
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
         if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
-            // Tournament just completed - call reset and hook directly
-            // (prizes already distributed by MODULE_MATCHES.completeTournament)
+            // Tournament just completed - distribute prizes, update earnings, reset, and trigger hook
+            address tournamentWinner = tournament.winner;
+            uint256 winnersPot = tournament.prizePool;
 
+            // Distribute prizes to all ranked players
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+
+            // Update earnings for all players with prizes
+            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tournamentWinner)
+            );
+            require(earningsSuccess, "UE");
+
+            // Reset tournament state
             (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
             );

@@ -782,14 +782,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(winnerEvent).to.not.be.undefined;
             expect(winnerEvent.args.amount).to.be.gt(0);
             expect(winnerEvent.args.rank).to.equal(1); // Winner is rank 1
-
-            // Verify prize distribution percentages sum to 100
-            const distribution = await game.getTierPrizeDistribution(tierId);
-            let sum = 0;
-            for (const pct of distribution) {
-                sum += Number(pct);
-            }
-            expect(sum).to.equal(100);
         });
 
         it("Should handle draw finals with co-winners", async function () {

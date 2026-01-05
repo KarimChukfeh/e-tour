@@ -59,7 +59,7 @@ contract ETour_Prizes is ETour_Storage {
         uint256 amount,
         uint8 tierId,
         uint8 instanceId
-    ) external returns (bool success) {
+    ) public returns (bool success) {
         require(amount > 0, "Amount must be greater than 0");
 
         // Attempt to send the prize once
@@ -108,12 +108,8 @@ contract ETour_Prizes is ETour_Storage {
                     playerPrizes[tierId][instanceId][player] = prizeAmount;
 
                     // Attempt to send prize with fallback to protocol pool if failed
-                    // Call back to this module via delegatecall (from game contract context)
-                    (bool callSuccess, bytes memory data) = MODULE_PRIZES.delegatecall(
-                        abi.encodeWithSignature("sendPrizeWithFallback(address,uint256,uint8,uint8)", player, prizeAmount, tierId, instanceId)
-                    );
-                    require(callSuccess, "Prize send failed");
-                    bool sent = abi.decode(data, (bool));
+                    // Call directly as internal function (no nested delegatecall needed)
+                    bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId);
 
                     // Only emit success event if prize was actually sent
                     if (sent) {
@@ -142,12 +138,8 @@ contract ETour_Prizes is ETour_Storage {
             playerPrizes[tierId][instanceId][player] = prizePerPlayer;
 
             // Attempt to send prize with fallback to protocol pool if failed
-            // Call back to this module via delegatecall (from game contract context)
-            (bool callSuccess, bytes memory data) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("sendPrizeWithFallback(address,uint256,uint8,uint8)", player, prizePerPlayer, tierId, instanceId)
-            );
-            require(callSuccess, "Prize send failed");
-            bool sent = abi.decode(data, (bool));
+            // Call directly as internal function (no nested delegatecall needed)
+            bool sent = sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId);
 
             // Only emit success event if prize was actually sent
             if (sent) {
@@ -216,11 +208,8 @@ contract ETour_Prizes is ETour_Storage {
 
             if (prize > 0) {
                 // Player won a prize - track them and add earnings
-                // Call to MODULE_PRIZES for _trackOnLeaderboard via delegatecall
-                (bool trackSuccess, ) = MODULE_PRIZES.delegatecall(
-                    abi.encodeWithSignature("trackOnLeaderboard(address)", player)
-                );
-                require(trackSuccess, "Track leaderboard failed");
+                // Call directly as internal function (no nested delegatecall needed)
+                trackOnLeaderboard(player);
 
                 playerEarnings[player] += int256(prize);
             }
@@ -234,7 +223,7 @@ contract ETour_Prizes is ETour_Storage {
      * @dev Track player on leaderboard if not already tracked
      * EXACT COPY from ETour.sol lines 2144-2149
      */
-    function trackOnLeaderboard(address player) external {
+    function trackOnLeaderboard(address player) public {
         if (!_isOnLeaderboard[player]) {
             _isOnLeaderboard[player] = true;
             _leaderboardPlayers.push(player);

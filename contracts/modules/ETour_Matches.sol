@@ -344,26 +344,12 @@ contract ETour_Matches is ETour_Storage {
             playerStats[players[i]].tournamentsPlayed++;
         }
 
-        // Delegate to Prizes module for prize distribution
-        (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
-        );
-        require(distributeSuccess, "Prize distribution failed");
+        // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
+        // (TicTacChain) after it detects tournament completion, because nested delegatecalls
+        // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
 
-        uint256 winnerPrize = playerPrizes[tierId][instanceId][winner];
-        emit TournamentCompleted(tierId, instanceId, winner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
-
-        // Delegate to Prizes module for earnings update
-        (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, winner)
-        );
-        require(earningsSuccess, "Update earnings failed");
-
-        // Delegate to Prizes module for reset
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-        );
-        require(resetSuccess, "Reset failed");
+        // Emit TournamentCompleted event (prize will be 0 since distribution happens later)
+        emit TournamentCompleted(tierId, instanceId, winner, 0, tournament.finalsWasDraw, tournament.coWinner);
     }
 
     /**
@@ -391,25 +377,11 @@ contract ETour_Matches is ETour_Storage {
             playerStats[players[i]].tournamentsPlayed++;
         }
 
-        // Delegate to Prizes module for equal prize distribution
-        (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, remainingPlayers, winnersPot)
-        );
-        require(distributeSuccess, "Equal prize distribution failed");
+        // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
+        // (TicTacChain) after it detects tournament completion, because nested delegatecalls
+        // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
 
         emit TournamentCompletedAllDraw(tierId, instanceId, roundNumber, uint8(remainingPlayers.length), prizePerPlayer);
-
-        // Delegate to Prizes module for earnings update
-        (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, address(0))
-        );
-        require(earningsSuccess, "Update earnings failed");
-
-        // Delegate to Prizes module for reset
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-        );
-        require(resetSuccess, "Reset failed");
     }
 
     // ============ Player Consolidation ============
