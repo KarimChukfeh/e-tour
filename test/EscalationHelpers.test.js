@@ -40,12 +40,13 @@ describe("Escalation Helper Functions Tests", function() {
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
 
-        // Read actual timeout configuration from contract
-        const tierConfig = await game.tierConfigs(TIER_ID);
-        MATCH_TIME = Number(tierConfig.timeouts.matchTimePerPlayer);
-        L2_DELAY = Number(tierConfig.timeouts.matchLevel2Delay);
-        L3_DELAY = Number(tierConfig.timeouts.matchLevel3Delay);
+        // Hardcoded timeout values (tierConfigs removed)
+        // Tier 1 (4-player): 60s match time, 60s L2 delay, 120s L3 delay
+        MATCH_TIME = 60;
+        L2_DELAY = 60;
+        L3_DELAY = 120;
     });
 
     describe("isMatchEscL1Available() - Opponent Timeout Claim", function() {

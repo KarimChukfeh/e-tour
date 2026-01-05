@@ -23,10 +23,11 @@ describe("Time Bank System (Chess Clock) Tests", function () {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
 
-        // Read actual timeout config from tier 0
-        const tierConfig = await game.tierConfigs(0);
-        MATCH_TIME_PER_PLAYER = Number(tierConfig.timeouts.matchTimePerPlayer);
+        // Hardcoded timeout values (tierConfigs removed)
+        // Tier 0 (2-player): 60s match time per player
+        MATCH_TIME_PER_PLAYER = 60;
     });
 
     describe("Time Bank Initialization", function () {

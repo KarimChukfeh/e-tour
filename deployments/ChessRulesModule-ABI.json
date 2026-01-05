@@ -1,9 +1,9 @@
 {
   "contractName": "ChessRulesModule",
-  "address": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+  "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T13:04:20.803Z",
+  "deployedAt": "2026-01-05T15:02:24.543Z",
   "abi": [
     {
       "inputs": [],

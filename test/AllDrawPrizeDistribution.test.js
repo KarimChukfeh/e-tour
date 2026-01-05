@@ -13,6 +13,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
+        await game.initializeAllInstances();
     });
 
     describe("Finals Draw Scenarios", function () {

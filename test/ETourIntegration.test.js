@@ -69,26 +69,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(await game.tierCount()).to.equal(3);
         });
 
-        it("Should have correct tier 0 configuration (2-player)", async function () {
-            const tier0 = await game.tierConfigs(0);
-            expect(tier0.playerCount).to.equal(2);
-            expect(tier0.instanceCount).to.equal(100);
-            expect(tier0.entryFee).to.equal(TIER_0_FEE);
-        });
-
-        it("Should have correct tier 1 configuration (4-player)", async function () {
-            const tier1 = await game.tierConfigs(1);
-            expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(50);
-            expect(tier1.entryFee).to.equal(TIER_1_FEE);
-        });
-
-        it("Should have correct tier 2 configuration (8-player)", async function () {
-            const tier2 = await game.tierConfigs(2);
-            expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(25);
-            expect(tier2.entryFee).to.equal(TIER_2_FEE);
-        });
+        // tierConfigs tests removed - tier configuration is now hardcoded in contract
     });
 
     describe("Tournament Enrollment", function () {
@@ -263,7 +244,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject move when not your turn", async function () {
             await expect(
                 game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4)
-            ).to.be.revertedWith("Not your turn");
+            ).to.be.revertedWith("NT");
         });
 
         it("Should reject move to occupied cell", async function () {
@@ -273,19 +254,19 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Try to move to already occupied cell 4
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4)
-            ).to.be.revertedWith("Cell occupied");
+            ).to.be.revertedWith("CO");
         });
 
         it("Should reject invalid cell index", async function () {
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 9)
-            ).to.be.revertedWith("Invalid cell");
+            ).to.be.revertedWith("IC");
         });
 
         it("Should reject move from non-player", async function () {
             await expect(
                 game.connect(player3).makeMove(tierId, instanceId, 0, 0, 4)
-            ).to.be.revertedWith("Not a player");
+            ).to.be.revertedWith("NP");
         });
     });
 
@@ -451,7 +432,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Opponent has not timed out");
+            ).to.be.revertedWith("TO");
         });
 
         it("Should reject timeout claim on your own turn", async function () {
@@ -461,7 +442,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Current turn player cannot claim timeout
             await expect(
                 game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Cannot claim on your own turn");
+            ).to.be.revertedWith("OT");
         });
     });
 
@@ -600,23 +581,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             ).to.be.revertedWith("FS");
         });
 
-        it("Should set hasStartedViaTimeout flag when force started", async function () {
-            const tierId = 1;
-            const instanceId = 0;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-
-            await hre.ethers.provider.send("evm_increaseTime", [601]);
-            await hre.ethers.provider.send("evm_mine", []);
-
-            await expect(
-                game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.emit(game, "TournamentForceStarted");
-
-            const tournament = await game.tournaments(tierId, instanceId);
-            expect(tournament.hasStartedViaTimeout).to.be.true;
-        });
+        // hasStartedViaTimeout field has been removed from the contract
 
         it("Should handle single player force start with immediate win", async function () {
             const tierId = 1;
@@ -1819,7 +1784,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1);
-            expect(tournament.hasStartedViaTimeout).to.be.true;
 
             // With 5 players: 2 matches + 1 walkover
             const round0 = await game.rounds(tierId, instanceId, 0);
@@ -2365,7 +2329,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // This should revert because match never existed (not in active storage or cache)
             await expect(
                 game.getMatch(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("Match not found");
+            ).to.be.revertedWith("MNF");
         });
 
         it("Should return active match data when match is still in progress", async function () {
@@ -2385,7 +2349,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.status).to.equal(1); // InProgress
             expect(matchData.common.winner).to.equal(hre.ethers.ZeroAddress);
             expect(matchData.common.loser).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.endTime).to.equal(0); // No end time for active match
+            // endTime field was removed - startTime is set when match begins
 
             // Make one move
             const firstPlayer = matchData.firstPlayer;

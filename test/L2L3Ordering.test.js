@@ -14,6 +14,7 @@ describe("L2/L3 Ordering Test", function() {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
     });
 
     it("Should ensure L3 is NEVER available before L2", async function() {

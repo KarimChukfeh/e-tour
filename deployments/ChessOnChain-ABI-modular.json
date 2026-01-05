@@ -1,16 +1,16 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+  "address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-05T13:04:20.803Z",
+  "deployedAt": "2026-01-05T15:02:24.543Z",
   "modules": {
-    "core": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-    "matches": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
-    "prizes": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
-    "raffle": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
-    "escalation": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
-    "gameCache": "0xc5a5C42992dECbae36851359345FE25997F5C42d"
+    "core": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "matches": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "prizes": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "raffle": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "escalation": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "gameCache": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
   },
   "abi": [
     {

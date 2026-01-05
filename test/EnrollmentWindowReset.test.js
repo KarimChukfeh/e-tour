@@ -13,6 +13,7 @@ describe("Enrollment Window Reset", function () {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
     });
 
     describe("Test 1: Successful Reset", function () {

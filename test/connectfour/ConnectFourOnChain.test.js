@@ -65,19 +65,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(await game.tierCount()).to.equal(3);
         });
 
-        it("Should have correct tier configurations", async function () {
-            // Tier 0: 2-player
-            const tier0 = await game.tierConfigs(0);
-            expect(tier0.playerCount).to.equal(2);
-            expect(tier0.instanceCount).to.equal(100);
-            expect(tier0.entryFee).to.equal(TIER_0_FEE);
-
-            // Tier 1: 4-player
-            const tier1 = await game.tierConfigs(1);
-            expect(tier1.playerCount).to.equal(4);
-            expect(tier1.instanceCount).to.equal(50);
-            expect(tier1.entryFee).to.equal(TIER_1_FEE);
-        });
+        // tierConfigs function removed - tier configuration is now hardcoded in contract
 
     });
 
@@ -486,12 +474,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             return { winner: firstPlayer, loser: secondPlayer };
         }
 
-        it("Should have correct tier 2 configuration (8-player)", async function () {
-            const tier2 = await game.tierConfigs(TIER_2_ID);
-            expect(tier2.playerCount).to.equal(8);
-            expect(tier2.instanceCount).to.equal(30);
-            expect(tier2.entryFee).to.equal(TIER_2_FEE);
-        });
+        // tierConfigs test removed - function no longer exists
 
         it("Should start 8-player tournament with correct bracket structure", async function () {
             const instanceId = 0;
@@ -646,7 +629,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // View functions
             expect(game.tournaments).to.exist;
             expect(game.rounds).to.exist;
-            expect(game.tierConfigs).to.exist;
+            // tierConfigs removed - tier config is now hardcoded
             expect(game.getTournamentInfo).to.exist;
             expect(game.getRoundInfo).to.exist;
             expect(game.getPlayerStats).to.exist;

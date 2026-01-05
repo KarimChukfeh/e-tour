@@ -65,11 +65,11 @@ hre.ethers.getContractFactory = async function(contractName, ...args) {
       const moduleGameCache = await GameCacheModule.deploy();
       await moduleGameCache.waitForDeployment();
 
-      // Deploy ChessOnChain_Rules module if this is ChessOnChain
+      // Deploy ChessRulesModule if this is ChessOnChain
       let chessRulesAddress = null;
       if (contractName === 'ChessOnChain') {
-        const ChessOnChain_Rules = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ChessOnChain_Rules.sol:ChessOnChain_Rules');
-        const chessRules = await ChessOnChain_Rules.deploy();
+        const ChessRulesModule = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/ChessRulesModule.sol:ChessRulesModule');
+        const chessRules = await ChessRulesModule.deploy();
         await chessRules.waitForDeployment();
         chessRulesAddress = await chessRules.getAddress();
       }

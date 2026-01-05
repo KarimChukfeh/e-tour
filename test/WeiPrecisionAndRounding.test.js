@@ -13,6 +13,7 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
 
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
+        await game.initializeAllInstances();
     });
 
     describe("Wei Rounding in Prize Splits", function () {

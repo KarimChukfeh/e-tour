@@ -52,13 +52,9 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
 
-        // Verify tier configuration
-        const tierConfig = await game.tierConfigs(TIER_ID);
-        expect(tierConfig.playerCount).to.equal(8);
-        expect(tierConfig.timeouts.matchTimePerPlayer).to.equal(120); // Updated to 2 minutes for 15s Fischer increment
-        expect(tierConfig.timeouts.matchLevel2Delay).to.equal(60);
-        expect(tierConfig.timeouts.matchLevel3Delay).to.equal(120);
+        // tierConfigs removed - tier configuration is now hardcoded in contract
     });
 
     describe("8-Player Tournament with Mixed Escalation Scenarios", function() {

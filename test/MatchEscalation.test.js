@@ -19,12 +19,13 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
+        await game.initializeAllInstances();
 
-        // Read actual timeout config from tier 0
-        const tierConfig = await game.tierConfigs(0);
-        MATCH_TIME_PER_PLAYER = Number(tierConfig.timeouts.matchTimePerPlayer);
-        L2_DELAY = Number(tierConfig.timeouts.matchLevel2Delay);
-        L3_DELAY = Number(tierConfig.timeouts.matchLevel3Delay);
+        // Hardcoded timeout values (tierConfigs removed)
+        // Tier 0 (2-player): 60s match time, 60s L2 delay, 120s L3 delay
+        MATCH_TIME_PER_PLAYER = 60;
+        L2_DELAY = 60;
+        L3_DELAY = 120;
     });
 
     describe("Level 1: Normal Timeout Claim (Baseline)", function () {
