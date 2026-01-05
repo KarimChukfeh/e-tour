@@ -68,18 +68,14 @@ describe("TicTacChain Player Activity Tracking", function () {
       expect(enrolling[0].instanceId).to.equal(INSTANCE_0);
 
       // Check activity counts
-      const [enrollingCount, activeCount] = await ticTacChain.getPlayerActivityCounts(player1.address);
-      expect(enrollingCount).to.equal(1);
-      expect(activeCount).to.equal(0);
+      const enrollingTournaments = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
+      const activeTournaments = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      expect(enrollingTournaments.length).to.equal(1);
+      expect(activeTournaments.length).to.equal(0);
 
-      // Check isPlayerInTournament
-      const [isEnrolling, isActive] = await ticTacChain.isPlayerInTournament(
-        player1.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      expect(isEnrolling).to.be.true;
-      expect(isActive).to.be.false;
+      // Check enrollment status
+      const isEnrolled = await ticTacChain.isEnrolled(TIER_0, INSTANCE_0, player1.address);
+      expect(isEnrolled).to.be.true;
     });
 
     it("should track multiple enrollments in different tournaments", async function () {
@@ -109,29 +105,20 @@ describe("TicTacChain Player Activity Tracking", function () {
       });
 
       // Check player1: should be in active, not enrolling
-      const [p1Enrolling, p1Active] = await ticTacChain.isPlayerInTournament(
-        player1.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      expect(p1Enrolling).to.be.false;
-      expect(p1Active).to.be.true;
+      const p1IsEnrolled = await ticTacChain.isEnrolled(TIER_0, INSTANCE_0, player1.address);
+      const p1ActiveList = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      const p1EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
+      expect(p1IsEnrolled).to.be.false; // Not in enrolling status after tournament starts
+      expect(p1ActiveList.length).to.be.greaterThan(0);
+      expect(p1EnrollingList.length).to.equal(0);
 
       // Check player2: should be in active, not enrolling
-      const [p2Enrolling, p2Active] = await ticTacChain.isPlayerInTournament(
-        player2.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      expect(p2Enrolling).to.be.false;
-      expect(p2Active).to.be.true;
-
-      // Check via arrays
-      const p1ActiveList = await ticTacChain.getPlayerActiveTournaments(player1.address);
-      expect(p1ActiveList.length).to.equal(1);
-
-      const p1EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
-      expect(p1EnrollingList.length).to.equal(0);
+      const p2IsEnrolled = await ticTacChain.isEnrolled(TIER_0, INSTANCE_0, player2.address);
+      const p2ActiveList = await ticTacChain.getPlayerActiveTournaments(player2.address);
+      const p2EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player2.address);
+      expect(p2IsEnrolled).to.be.false;
+      expect(p2ActiveList.length).to.be.greaterThan(0);
+      expect(p2EnrollingList.length).to.equal(0);
     });
   });
 
@@ -146,12 +133,8 @@ describe("TicTacChain Player Activity Tracking", function () {
       });
 
       // Verify both in active list
-      let [p1Enrolling, p1Active] = await ticTacChain.isPlayerInTournament(
-        player1.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      expect(p1Active).to.be.true;
+      let p1ActiveList = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      expect(p1ActiveList.length).to.be.greaterThan(0);
 
       // Get match info
       const matchData = await ticTacChain.getMatch(TIER_0, INSTANCE_0, 0, 0);
@@ -171,21 +154,15 @@ describe("TicTacChain Player Activity Tracking", function () {
       await ticTacChain.connect(player).makeMove(TIER_0, INSTANCE_0, 0, 0, 2); // X at 2 - WINS!
 
       // Check that both players are removed from active list (match completed)
-      [p1Enrolling, p1Active] = await ticTacChain.isPlayerInTournament(
-        player1.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      const [p2Enrolling, p2Active] = await ticTacChain.isPlayerInTournament(
-        player2.address,
-        TIER_0,
-        INSTANCE_0
-      );
+      p1ActiveList = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      const p1EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
+      const p2ActiveList = await ticTacChain.getPlayerActiveTournaments(player2.address);
+      const p2EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player2.address);
 
-      expect(p1Active).to.be.false;
-      expect(p2Active).to.be.false;
-      expect(p1Enrolling).to.be.false;
-      expect(p2Enrolling).to.be.false;
+      expect(p1ActiveList.length).to.equal(0);
+      expect(p2ActiveList.length).to.equal(0);
+      expect(p1EnrollingList.length).to.equal(0);
+      expect(p2EnrollingList.length).to.equal(0);
     });
   });
 
@@ -213,30 +190,15 @@ describe("TicTacChain Player Activity Tracking", function () {
       await ticTacChain.connect(player).makeMove(TIER_0, INSTANCE_0, 0, 0, 2); // Win
 
       // Verify all tracking cleared
-      const [p1Enrolling, p1Active] = await ticTacChain.isPlayerInTournament(
-        player1.address,
-        TIER_0,
-        INSTANCE_0
-      );
-      const [p2Enrolling, p2Active] = await ticTacChain.isPlayerInTournament(
-        player2.address,
-        TIER_0,
-        INSTANCE_0
-      );
+      const p1EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
+      const p1ActiveList = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      const p2EnrollingList = await ticTacChain.getPlayerEnrollingTournaments(player2.address);
+      const p2ActiveList = await ticTacChain.getPlayerActiveTournaments(player2.address);
 
-      expect(p1Enrolling).to.be.false;
-      expect(p1Active).to.be.false;
-      expect(p2Enrolling).to.be.false;
-      expect(p2Active).to.be.false;
-
-      // Check counts are zero
-      const [p1EnrollCount, p1ActiveCount] = await ticTacChain.getPlayerActivityCounts(player1.address);
-      const [p2EnrollCount, p2ActiveCount] = await ticTacChain.getPlayerActivityCounts(player2.address);
-
-      expect(p1EnrollCount).to.equal(0);
-      expect(p1ActiveCount).to.equal(0);
-      expect(p2EnrollCount).to.equal(0);
-      expect(p2ActiveCount).to.equal(0);
+      expect(p1EnrollingList.length).to.equal(0);
+      expect(p1ActiveList.length).to.equal(0);
+      expect(p2EnrollingList.length).to.equal(0);
+      expect(p2ActiveList.length).to.equal(0);
     });
   });
 
@@ -258,9 +220,10 @@ describe("TicTacChain Player Activity Tracking", function () {
         value: ENTRY_FEE_TIER_0,
       });
 
-      const [enrollingCount, activeCount] = await ticTacChain.getPlayerActivityCounts(player1.address);
-      expect(enrollingCount).to.equal(2);
-      expect(activeCount).to.equal(0);
+      const enrollingList = await ticTacChain.getPlayerEnrollingTournaments(player1.address);
+      const activeList = await ticTacChain.getPlayerActiveTournaments(player1.address);
+      expect(enrollingList.length).to.equal(2);
+      expect(activeList.length).to.equal(0);
     });
   });
 });
