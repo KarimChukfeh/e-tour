@@ -190,8 +190,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).forceStartTournament(tierId, instanceId)
             ).to.be.revertedWith("FS");
 
-            // Fast forward past enrollment window (300s for Tier 2)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past enrollment window (480s for Tier 2)
+            await hre.ethers.provider.send("evm_increaseTime", [481]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start should work now
@@ -1742,8 +1742,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
-            // Fast forward past enrollment window (300s)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past enrollment window (480s)
+            await hre.ethers.provider.send("evm_increaseTime", [481]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with 3 players
@@ -1773,8 +1773,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
-            // Fast forward past enrollment window (300s)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past enrollment window (480s)
+            await hre.ethers.provider.send("evm_increaseTime", [481]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
@@ -1800,8 +1800,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             }
 
-            // Fast forward past enrollment window (300s)
-            await hre.ethers.provider.send("evm_increaseTime", [301]);
+            // Fast forward past enrollment window (480s)
+            await hre.ethers.provider.send("evm_increaseTime", [481]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start

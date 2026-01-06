@@ -21,16 +21,43 @@ describe("Time Bank System (Chess Clock) Tests", function () {
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
 
+        // Deploy modules first
+        const ETour_Core = await hre.ethers.getContractFactory("ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+
+        // Deploy TicTacChain with module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
         await game.waitForDeployment();
         await game.initializeAllInstances();
 
         // Hardcoded timeout values matching TicTacChain.sol configuration
         // Tier 0 (2-player): 120s match time per player
-        // Tier 1 (4-player): 60s match time per player
+        // Tier 1 (4-player): 120s match time per player
         TIER_0_MATCH_TIME = 120;
-        TIER_1_MATCH_TIME = 60;
+        TIER_1_MATCH_TIME = 120;
     });
 
     describe("Time Bank Initialization", function () {

@@ -61,9 +61,9 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
         // Hardcoded timeout values matching TicTacChain.sol configuration
         // Tier 0 (2-player): 120s match time, 120s L2 delay, 240s L3 delay
-        // Tier 1 (4-player): 60s match time, 120s L2 delay, 240s L3 delay
+        // Tier 1 (4-player): 120s match time, 120s L2 delay, 240s L3 delay
         TIER_0_MATCH_TIME = 120;
-        TIER_1_MATCH_TIME = 60;
+        TIER_1_MATCH_TIME = 120;
         TIER_1_L2_DELAY = 120;
         TIER_1_L3_DELAY = 240;
     });
