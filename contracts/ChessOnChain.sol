@@ -79,23 +79,6 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function _registerTiers() private {
-        // Tier configuration: [playerCount, instanceCount, enrollWindow]
-        uint16[3][2] memory configs = [
-            [2, 100, 600],    // 2-player tiers
-            [4, 50, 1800]     // 4-player tiers
-        ];
-
-        // Entry fees for all 8 tiers (4 two-player, 4 four-player)
-        uint256[8] memory fees;
-        fees[0] = 0.01 ether;   // Tier 0
-        fees[1] = 0.02 ether;   // Tier 1
-        fees[2] = 0.03 ether;   // Tier 2
-        fees[3] = 0.1 ether;    // Tier 3
-        fees[4] = 0.015 ether;  // Tier 4
-        fees[5] = 0.025 ether;  // Tier 5
-        fees[6] = 0.035 ether;  // Tier 6
-        fees[7] = 0.15 ether;   // Tier 7
-
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 600,
             timeIncrementPerMove: 15,
@@ -106,15 +89,23 @@ contract ChessOnChain is ETour_Storage {
         });
 
         for (uint8 i = 0; i < 8; i++) {
-            uint8 configIdx = i < 4 ? 0 : 1;  // 0-3 use 2-player config, 4-7 use 4-player config
-            timeouts.enrollmentWindow = configs[configIdx][2];
+            timeouts.enrollmentWindow = i < 4 ? 600 : 1800;
 
             MODULE_CORE.delegatecall(
                 abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
                     i,                           // tierId
-                    uint8(configs[configIdx][0]), // playerCount
-                    uint8(configs[configIdx][1]), // instanceCount
-                    fees[i],                     // entryFee
+                    i < 4 ? 2 : 4,               // playerCount
+                    i < 4 ? 100 : 50,            // instanceCount
+                    (
+                        i == 0 ? 0.01 ether :
+                        i == 1 ? 0.02 ether :
+                        i == 2 ? 0.03 ether :
+                        i == 3 ? 0.1 ether :
+                        i == 4 ? 0.015 ether :
+                        i == 5 ? 0.025 ether :
+                        i == 6 ? 0.035 ether :
+                                 0.15 ether
+                    ),                          // entryFee                
                     timeouts
                 )
             );
