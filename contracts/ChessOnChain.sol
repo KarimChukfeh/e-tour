@@ -14,28 +14,6 @@ contract ChessOnChain is ETour_Storage {
     uint256 private constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
     uint256 private constant INITIAL_STATE = 63 | (1 << 22);  // 63 = NO_EN_PASSANT, bit 22 = fullMoveNumber=1
 
-    // Precomputed function selectors
-    bytes4 private constant S_RESET = 0x57f7cf71;
-    bytes4 private constant S_COMPLETE = 0x3df1d831;
-    bytes4 private constant S_CACHE = 0xdac3d77e;
-    bytes4 private constant S_ENROLL = 0xe6c455f5;
-    bytes4 private constant S_CLEAR_ESC = 0x7ba49c7e;
-    bytes4 private constant S_FORCE_START = 0xea2b1d73;
-    bytes4 private constant S_RAFFLE = 0x31837a65;
-    bytes4 private constant S_RESET_ENROLL = 0x998c84b4;
-    bytes4 private constant S_DIST_EQUAL = 0xb0a4804e;
-    bytes4 private constant S_DIST = 0x3a652ddd;
-    bytes4 private constant S_UPD_EARN = 0x689bf436;
-    bytes4 private constant S_ELIGIBLE = 0xfee6605e;
-    bytes4 private constant S_CAN_RESET = 0x8c930e96;
-    bytes4 private constant S_CLAIM_POOL = 0x3864cd6b;
-    bytes4 private constant S_MARK_STALLED = 0xa03fa4e2;
-    bytes4 private constant S_FORCE_ELIM = 0x4d9d1611;
-    bytes4 private constant S_REG_TIER = 0x58be2c1d;  // Updated after removing prizes array and Mode
-    bytes4 private constant S_ADV_WIN = 0xb902ec47;
-    bytes4 private constant S_CLAIM_SLOT = 0x367639e2;
-    bytes4 private constant S_ADD_CACHE = 0x3b590b7a;
-
     // ============ Game-Specific Structs ============
 
     struct Match {
@@ -132,7 +110,7 @@ contract ChessOnChain is ETour_Storage {
             timeouts.enrollmentWindow = configs[configIdx][2];
 
             MODULE_CORE.delegatecall(
-                abi.encodeWithSelector(S_REG_TIER,
+                abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
                     i,                           // tierId
                     uint8(configs[configIdx][0]), // playerCount
                     uint8(configs[configIdx][1]), // instanceCount
@@ -189,7 +167,7 @@ contract ChessOnChain is ETour_Storage {
 
             if (walkoverPlayer != address(0)) {
                 (bool success, ) = MODULE_MATCHES.delegatecall(
-                    abi.encodeWithSelector(S_ADV_WIN, tierId, instanceId, roundNumber, matchCount, walkoverPlayer)
+                    abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchCount, walkoverPlayer)
                 );
                 require(success, "AW");
             }
@@ -222,7 +200,7 @@ contract ChessOnChain is ETour_Storage {
         TournamentStatus oldStatus = tournament.status;
 
         (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_ENROLL, tierId, instanceId)
+            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
         );
         require(success, "E");
 
@@ -239,7 +217,7 @@ contract ChessOnChain is ETour_Storage {
         TournamentStatus oldStatus = tournament.status;
 
         (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_FORCE_START, tierId, instanceId)
+            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
         );
         require(success, "FS");
 
@@ -254,7 +232,7 @@ contract ChessOnChain is ETour_Storage {
             singlePlayer[0] = winner;
 
             (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSelector(S_RESET, tierId, instanceId)
+                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
             );
             require(resetSuccess, "RT");
 
@@ -264,14 +242,14 @@ contract ChessOnChain is ETour_Storage {
 
     function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
-            abi.encodeWithSelector(S_RAFFLE, tierId, instanceId)
+            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
         );
         require(success, "ER");
     }
 
     function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_RESET_ENROLL, tierId, instanceId)
+            abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
         require(success, "RW");
     }
@@ -279,7 +257,7 @@ contract ChessOnChain is ETour_Storage {
     function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external returns (bool) {
         // Non-view to allow delegatecall to module with proper storage access
         (bool success, bytes memory data) = MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_CAN_RESET, tierId, instanceId)
+            abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CRE");
         return abi.decode(data, (bool));
@@ -287,26 +265,26 @@ contract ChessOnChain is ETour_Storage {
 
     function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
         (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_CLAIM_POOL, tierId, instanceId)
+            abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CAE");
 
         (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSelector(S_RESET, tierId, instanceId)
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(resetSuccess, "RT");
     }
 
     function forceEliminateStalledMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
         (bool success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSelector(S_FORCE_ELIM, tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature("forceEliminateStalledMatch(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "FE");
     }
 
     function claimMatchSlotByReplacement(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
         (bool success, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSelector(S_CLAIM_SLOT, tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "CR");
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
@@ -374,7 +352,7 @@ contract ChessOnChain is ETour_Storage {
         require(elapsed >= opponentTime, "TO");
 
         (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSelector(S_MARK_STALLED, matchId, tierId, block.timestamp)
+            abi.encodeWithSignature("markMatchStalled(bytes32,uint8,uint256)", matchId, tierId, block.timestamp)
         );
         require(markSuccess, "MS");
 
@@ -389,7 +367,7 @@ contract ChessOnChain is ETour_Storage {
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
 
         (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSelector(S_CLEAR_ESC, matchId)
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
         );
         require(clearSuccess, "CE");
 
@@ -399,7 +377,7 @@ contract ChessOnChain is ETour_Storage {
         }
 
         (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSelector(S_COMPLETE, tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
+            abi.encodeWithSignature("completeMatch(uint8,uint8,uint8,uint8,address,bool)", tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
         );
         require(completeSuccess, "CM");
 
@@ -415,16 +393,16 @@ contract ChessOnChain is ETour_Storage {
             address tw = tournament.winner;
             uint256 pp = tournament.prizePool;
             if (tournament.allDrawResolution) {
-                (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSelector(S_DIST_EQUAL, tierId, instanceId, enrolledPlayersCopy, pp));
+                (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, pp));
                 require(s, "DP");
             } else {
-                (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSelector(S_DIST, tierId, instanceId, pp));
+                (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, pp));
                 require(s, "DP");
             }
-            (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSelector(S_UPD_EARN, tierId, instanceId, tw));
+            (bool s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tw));
             require(s, "UE");
             emit TournamentCompleted(tierId, instanceId, tw, playerPrizes[tierId][instanceId][tw], tournament.finalsWasDraw, tournament.coWinner);
-            (s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSelector(S_RESET, tierId, instanceId));
+            (s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId));
             require(s, "RT");
             _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
         }
@@ -483,7 +461,7 @@ contract ChessOnChain is ETour_Storage {
         bytes memory boardData = abi.encode(matchData.packedBoard, matchData.packedState);
 
         (bool success, ) = MODULE_GAME_CACHE.delegatecall(
-            abi.encodeWithSelector(S_ADD_CACHE,
+            abi.encodeWithSignature("addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
                 matchId, tierId, instanceId, roundNumber, matchNumber,
                 matchData.player1, matchData.player2, matchData.firstPlayer, matchData.winner,
                 matchData.startTime, matchData.isDraw, boardData
@@ -565,7 +543,7 @@ contract ChessOnChain is ETour_Storage {
 
     function _getMatchFromCache(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (CommonMatchData memory data, bool exists) {
         (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSelector(S_CACHE, matchId, tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature("getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
         );
         if (!success) return (data, false);
         (data, exists) = abi.decode(result, (CommonMatchData, bool));
@@ -590,7 +568,7 @@ contract ChessOnChain is ETour_Storage {
         }
 
         (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSelector(S_CACHE, matchId, tierId, instanceId, roundNumber, matchNumber)
+            abi.encodeWithSignature("getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
         );
 
         if (success) {
@@ -663,7 +641,7 @@ contract ChessOnChain is ETour_Storage {
         raffleAmount = threshold - reserve;
         ownerShare = (raffleAmount * 20) / 100;
         winnerShare = (raffleAmount * 80) / 100;
-        (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSelector(S_ELIGIBLE));
+        (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSignature("getEligiblePlayerCount()"));
         eligiblePlayerCount = s ? abi.decode(d, (uint256)) : 0;
     }
 
