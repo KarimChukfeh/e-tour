@@ -122,19 +122,19 @@ contract ChessOnChain is ETour_Storage {
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                0, 2, 100, 0.02 ether, timeouts
+                1, 2, 100, 0.02 ether, timeouts
             )
         );
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                0, 2, 100, 0.03 ether, timeouts
+                2, 2, 100, 0.03 ether, timeouts
             )
         );
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                0, 2, 100, 0.1 ether, timeouts
+                3, 2, 100, 0.1 ether, timeouts
             )
         );
 
@@ -142,25 +142,25 @@ contract ChessOnChain is ETour_Storage {
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.015 ether, timeouts
+                4, 4, 50, 0.015 ether, timeouts
             )
         );
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.025 ether, timeouts
+                5, 4, 50, 0.025 ether, timeouts
             )
         );
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.035 ether, timeouts
+                6, 4, 50, 0.035 ether, timeouts
             )
         );
 
         MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.15 ether, timeouts
+                7, 4, 50, 0.15 ether, timeouts
             )
         );
     }
@@ -591,6 +591,10 @@ contract ChessOnChain is ETour_Storage {
     }
 
     // ============ View Functions ============
+
+    function tierConfigs(uint8 tierId) public view returns (TierConfig memory) {
+        return _tierConfigs[tierId];
+    }
 
     function getMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view returns (ChessMatchData memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
