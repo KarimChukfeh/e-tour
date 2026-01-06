@@ -263,9 +263,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
     });
 
     describe("4-Player Tournament Progression", function () {
-        const tierId = 1;
+        const tierId = 5; // Tier 5 is a 4-player tier
         const instanceId = 0;
-        const entryFee = hre.ethers.parseEther("0.02");
+        const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
 
         it("Should advance winners to finals after round 0 completion", async function () {
             // Enroll 4 players
@@ -426,8 +426,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
         it("Should increment completed matches count for each finished match", async function () {
             const instanceId = 6;
-            const tierId = 1; // 4-player tournament
-            const entryFee = hre.ethers.parseEther("0.02");
+            const tierId = 5; // 4-player tournament (Tier 5)
+            const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
 
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });

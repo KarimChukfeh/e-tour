@@ -708,9 +708,9 @@ describe("ChessOnChain Tests", function () {
     });
 
     describe("4-Player Tournament", function () {
-        const tierId = 1;
+        const tierId = 5; // Tier 5 is a 4-player tier
         const instanceId = 0;
-        const entryFee = hre.ethers.parseEther("0.02");
+        const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
 
         it("Should handle 4-player tournament bracket", async function () {
             // Get fresh signers for this test
