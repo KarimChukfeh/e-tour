@@ -97,34 +97,6 @@ async function main() {
     const abiFile = path.join(deploymentsDir, "TTTABI-modular.json");
     fs.writeFileSync(abiFile, JSON.stringify(fullABI, null, 2));
     console.log("✅ Full ABI compiled and saved:", abiFile);
-
-    // Save individual module ABIs
-    console.log("\nSaving module ABIs...");
-
-    const moduleArtifacts = [
-        { name: "ETour_Core", path: "contracts/modules/ETour_Core.sol:ETour_Core", key: "core" },
-        { name: "ETour_Matches", path: "contracts/modules/ETour_Matches.sol:ETour_Matches", key: "matches" },
-        { name: "ETour_Prizes", path: "contracts/modules/ETour_Prizes.sol:ETour_Prizes", key: "prizes" },
-        { name: "ETour_Raffle", path: "contracts/modules/ETour_Raffle.sol:ETour_Raffle", key: "raffle" },
-        { name: "ETour_Escalation", path: "contracts/modules/ETour_Escalation.sol:ETour_Escalation", key: "escalation" },
-        { name: "GameCacheModule", path: "contracts/modules/GameCacheModule.sol:GameCacheModule", key: "gameCache" }
-    ];
-
-    for (const module of moduleArtifacts) {
-        const artifact = await hre.artifacts.readArtifact(module.path);
-        const moduleABI = {
-            contractName: module.name,
-            address: modules[module.key],
-            network: hre.network.name,
-            chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
-            deployedAt: timestamp,
-            abi: artifact.abi
-        };
-
-        const moduleAbiFile = path.join(deploymentsDir, `${module.name}-ABI.json`);
-        fs.writeFileSync(moduleAbiFile, JSON.stringify(moduleABI, null, 2));
-        console.log(`  ✅ ${module.name} ABI saved:`, moduleAbiFile);
-    }
     console.log("");
     
     // Verification instructions
@@ -169,10 +141,6 @@ async function main() {
     console.log("📁 Deployment Artifacts:");
     console.log("  -", networkFile);
     console.log("  -", abiFile);
-    console.log("  - Module ABIs:");
-    for (const module of moduleArtifacts) {
-        console.log(`    - ${module.name}-ABI.json`);
-    }
     console.log("");
     console.log("🔗 Frontend Integration:");
     console.log("  Update your client app with:");
