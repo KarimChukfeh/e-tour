@@ -97,11 +97,14 @@ contract ChessOnChain is ETour_Storage {
     // ============ Initialization ============
 
     function initializeAllInstances() external nonReentrant {
-        _registerTier0();
-        _registerTier1();
+        _registerTiers();
+
+        raffleThresholds.push(0.5 ether);
+        raffleThresholds.push(1.0 ether);
+        raffleThresholdFinal = 2.0 ether;
     }
 
-    function _registerTier0() private {
+    function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 600,
             timeIncrementPerMove: 15,
@@ -111,35 +114,55 @@ contract ChessOnChain is ETour_Storage {
             enrollmentLevel2Delay: 300
         });
 
-        (bool success, ) = MODULE_CORE.delegatecall(
+        MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
                 0, 2, 100, 0.01 ether, timeouts
             )
         );
 
-        raffleThresholds.push(0.5 ether);
-        require(success, "T0");
-    }
-
-    function _registerTier1() private {
-        TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 600,
-            timeIncrementPerMove: 15,
-            matchLevel2Delay: 180,
-            matchLevel3Delay: 360,
-            enrollmentWindow: 1800,
-            enrollmentLevel2Delay: 300
-        });
-
-        (bool success, ) = MODULE_CORE.delegatecall(
+        MODULE_CORE.delegatecall(
             abi.encodeWithSelector(S_REG_TIER,
-                1, 4, 50, 0.02 ether, timeouts
+                0, 2, 100, 0.02 ether, timeouts
             )
         );
 
-        require(success, "T1");
-        raffleThresholds.push(1.0 ether);
-        raffleThresholdFinal = 2.0 ether;
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                0, 2, 100, 0.03 ether, timeouts
+            )
+        );
+
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                0, 2, 100, 0.1 ether, timeouts
+            )
+        );
+
+        timeouts.enrollmentWindow = 1800;
+
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                1, 4, 50, 0.015 ether, timeouts
+            )
+        );
+
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                1, 4, 50, 0.025 ether, timeouts
+            )
+        );
+
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                1, 4, 50, 0.035 ether, timeouts
+            )
+        );
+
+        MODULE_CORE.delegatecall(
+            abi.encodeWithSelector(S_REG_TIER,
+                1, 4, 50, 0.15 ether, timeouts
+            )
+        );
     }
 
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
