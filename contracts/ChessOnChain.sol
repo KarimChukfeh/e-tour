@@ -245,13 +245,15 @@ contract ChessOnChain is ETour_Storage {
         require(success, "RW");
     }
 
-    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external returns (bool) {
-        // Non-view to allow delegatecall to module with proper storage access
-        (bool success, bytes memory data) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("canResetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "CRE");
-        return abi.decode(data, (bool));
+    /// @dev Check if enrollment window can be reset (single player after timeout)
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool) {
+        TierConfig storage c = _tierConfigs[tierId];
+        if (!c.initialized || instanceId >= c.instanceCount) return false;
+        TournamentInstance storage t = tournaments[tierId][instanceId];
+        return t.status == TournamentStatus.Enrolling &&
+               t.enrolledCount == 1 &&
+               isEnrolled[tierId][instanceId][msg.sender] &&
+               block.timestamp >= t.enrollmentTimeout.escalation1Start;
     }
 
     function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {

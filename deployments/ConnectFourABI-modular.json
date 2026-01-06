@@ -1707,11 +1707,11 @@
       "outputs": [
         {
           "internalType": "bool",
-          "name": "canReset",
+          "name": "",
           "type": "bool"
         }
       ],
-      "stateMutability": "nonpayable",
+      "stateMutability": "view",
       "type": "function"
     },
     {
