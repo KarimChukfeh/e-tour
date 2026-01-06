@@ -98,71 +98,52 @@ contract ChessOnChain is ETour_Storage {
 
     function initializeAllInstances() external nonReentrant {
         _registerTiers();
-
-        raffleThresholds.push(0.5 ether);
-        raffleThresholds.push(1.0 ether);
-        raffleThresholdFinal = 2.0 ether;
     }
 
     function _registerTiers() private {
+        // Tier configuration: [playerCount, instanceCount, enrollWindow]
+        uint16[3][2] memory configs = [
+            [2, 100, 600],    // 2-player tiers
+            [4, 50, 1800]     // 4-player tiers
+        ];
+
+        // Entry fees for all 8 tiers (4 two-player, 4 four-player)
+        uint256[8] memory fees;
+        fees[0] = 0.01 ether;   // Tier 0
+        fees[1] = 0.02 ether;   // Tier 1
+        fees[2] = 0.03 ether;   // Tier 2
+        fees[3] = 0.1 ether;    // Tier 3
+        fees[4] = 0.015 ether;  // Tier 4
+        fees[5] = 0.025 ether;  // Tier 5
+        fees[6] = 0.035 ether;  // Tier 6
+        fees[7] = 0.15 ether;   // Tier 7
+
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 600,
             timeIncrementPerMove: 15,
             matchLevel2Delay: 180,
             matchLevel3Delay: 360,
-            enrollmentWindow: 600,
+            enrollmentWindow: 0,  // Set per tier in loop
             enrollmentLevel2Delay: 300
         });
 
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                0, 2, 100, 0.01 ether, timeouts
-            )
-        );
+        for (uint8 i = 0; i < 8; i++) {
+            uint8 configIdx = i < 4 ? 0 : 1;  // 0-3 use 2-player config, 4-7 use 4-player config
+            timeouts.enrollmentWindow = configs[configIdx][2];
 
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                1, 2, 100, 0.02 ether, timeouts
-            )
-        );
+            MODULE_CORE.delegatecall(
+                abi.encodeWithSelector(S_REG_TIER,
+                    i,                           // tierId
+                    uint8(configs[configIdx][0]), // playerCount
+                    uint8(configs[configIdx][1]), // instanceCount
+                    fees[i],                     // entryFee
+                    timeouts
+                )
+            );
+        }
 
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                2, 2, 100, 0.03 ether, timeouts
-            )
-        );
-
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                3, 2, 100, 0.1 ether, timeouts
-            )
-        );
-
-        timeouts.enrollmentWindow = 1800;
-
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                4, 4, 50, 0.015 ether, timeouts
-            )
-        );
-
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                5, 4, 50, 0.025 ether, timeouts
-            )
-        );
-
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                6, 4, 50, 0.035 ether, timeouts
-            )
-        );
-
-        MODULE_CORE.delegatecall(
-            abi.encodeWithSelector(S_REG_TIER,
-                7, 4, 50, 0.15 ether, timeouts
-            )
-        );
+        raffleThresholds.push(1.0 ether);
+        raffleThresholdFinal = 2.0 ether;
     }
 
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
