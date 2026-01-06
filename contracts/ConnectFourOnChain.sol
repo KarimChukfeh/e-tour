@@ -103,73 +103,34 @@ contract ConnectFourOnChain is ETour_Storage {
      * Can only be called once by anyone (typically by deployer immediately after deployment).
      */
     function initializeAllInstances() external nonReentrant {
-        _registerTier0();
-        _registerTier1();
-        _registerTier2();
+        _registerTiers();
 
+        raffleThresholds.push(0.4 ether);
+        raffleThresholds.push(0.75 ether);
         raffleThresholdFinal = 1 ether;
 
         emit AllInstancesInitialized(msg.sender, tierCount);
     }
 
-    function _registerTier0() private {
+    function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 300,     // 5 minutes per player
-            timeIncrementPerMove: 15,    // 15 seconds Fischer increment
+            matchTimePerPlayer: 120,
+            timeIncrementPerMove: 15,
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
-            enrollmentWindow: 300,
+            enrollmentWindow: 0, // set per tier below
             enrollmentLevel2Delay: 300
         });
 
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
-                0, 2, 100, 0.002 ether, timeouts
-            )
-        );
-        require(success, "T0");
-    }
+        // Tier 0 (different timeout)
+        timeouts.enrollmentWindow = 300;
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.002 ether, timeouts));
 
-    function _registerTier1() private {
-        TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 300,     // 5 minutes per player
-            timeIncrementPerMove: 15,    // 15 seconds Fischer increment
-            matchLevel2Delay: 120,
-            matchLevel3Delay: 240,
-            enrollmentWindow: 600,
-            enrollmentLevel2Delay: 300
-        });
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
-                1, 4, 50, 0.004 ether, timeouts
-            )
-        );
-        require(success, "T1");
-
-        raffleThresholds.push(0.4 ether);
-    }
-
-    function _registerTier2() private {
-        TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 300,     // 5 minutes per player
-            timeIncrementPerMove: 15,    // 15 seconds Fischer increment
-            matchLevel2Delay: 120,
-            matchLevel3Delay: 240,
-            enrollmentWindow: 900,
-            enrollmentLevel2Delay: 300
-        });
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature(
-                "registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
-                2, 8, 30, 0.008 ether, timeouts
-            )
-        );
-        require(success, "T2");
-        raffleThresholds.push(0.75 ether);
+        // Tiers 1 & 2 share timeout
+        timeouts.enrollmentWindow = 600;
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.004 ether, timeouts));
+        timeouts.enrollmentWindow = 900;
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.008 ether, timeouts));
     }
 
     /**
