@@ -120,7 +120,7 @@ contractData.sort((a, b) => b.bytes - a.bytes);
 // Print table
 for (const data of contractData) {
     const statusText = data.bytes > SPURIOUS_DRAGON_LIMIT ? 'OVER LIMIT' : 'OK';
-    console.log(`${data.status}  ${data.name.padEnd(20)} ${data.kb.padStart(7)} KB  ${data.percentage.padStart(5)}%  ${statusText}`);
+    console.log(`${data.status}  ${data.name.padEnd(20)} ${data.bytes.toString().padStart(6)} bytes  ${data.percentage.padStart(5)}%  ${statusText}`);
 }
 
 console.log('');
@@ -153,7 +153,7 @@ moduleData.sort((a, b) => b.bytes - a.bytes);
 // Print module table
 for (const data of moduleData) {
     const statusText = data.bytes > SPURIOUS_DRAGON_LIMIT ? 'OVER LIMIT' : 'OK';
-    console.log(`${data.status}  ${data.name.padEnd(20)} ${data.kb.padStart(7)} KB  ${data.percentage.padStart(5)}%  ${statusText}`);
+    console.log(`${data.status}  ${data.name.padEnd(20)} ${data.bytes.toString().padStart(6)} bytes  ${data.percentage.padStart(5)}%  ${statusText}`);
 }
 
 console.log('');
@@ -164,10 +164,10 @@ console.log('-' .repeat(70));
 const avgGameSize = totalGameSize / contractData.length;
 const avgModuleSize = totalModuleSize / moduleData.length;
 
-console.log(`Total Game Contracts Size:   ${(totalGameSize / 1024).toFixed(2)} KB`);
-console.log(`Average Game Contract Size:  ${(avgGameSize / 1024).toFixed(2)} KB`);
-console.log(`Total Module Size:           ${(totalModuleSize / 1024).toFixed(2)} KB`);
-console.log(`Average Module Size:         ${(avgModuleSize / 1024).toFixed(2)} KB`);
+console.log(`Total Game Contracts Size:   ${totalGameSize} bytes`);
+console.log(`Average Game Contract Size:  ${Math.round(avgGameSize)} bytes`);
+console.log(`Total Module Size:           ${totalModuleSize} bytes`);
+console.log(`Average Module Size:         ${Math.round(avgModuleSize)} bytes`);
 console.log('');
 
 // Calculate savings from modular architecture
@@ -177,8 +177,8 @@ const sharedModuleSavings = totalModuleSize * 2; // If we had 3 separate monolit
 
 console.log('💡  Modular Architecture Benefits:');
 console.log('-' .repeat(70));
-console.log(`Estimated Monolithic Size (per game): ${(monolithicEstimate / 3 / 1024).toFixed(2)} KB`);
-console.log(`Shared Module Code:                   ${(totalModuleSize / 1024).toFixed(2)} KB`);
+console.log(`Estimated Monolithic Size (per game): ${Math.round(monolithicEstimate / 3)} bytes`);
+console.log(`Shared Module Code:                   ${totalModuleSize} bytes`);
 console.log(`Gas Savings (deploying 3 games):     ~${((sharedModuleSavings / monolithicEstimate) * 100).toFixed(1)}%`);
 console.log('');
 
@@ -190,7 +190,7 @@ if (overLimit.length > 0) {
     console.log('-' .repeat(70));
     for (const contract of overLimit) {
         const excess = contract.bytes - SPURIOUS_DRAGON_LIMIT;
-        console.log(`  ${contract.name}: ${(excess / 1024).toFixed(2)} KB over limit`);
+        console.log(`  ${contract.name}: ${excess} bytes over limit`);
     }
     console.log('');
     console.log('💡  Recommendations:');
