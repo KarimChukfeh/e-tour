@@ -315,6 +315,82 @@ contract ConnectFourOnChain is ETour_Storage {
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
     }
 
+    /**
+     * @dev Check if Level 1 escalation is available (opponent timeout claim)
+     */
+    function isMatchEscL1Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL1Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L1");
+        return abi.decode(result, (bool));
+    }
+
+    /**
+     * @dev Check if Level 2 escalation is available (advanced player force eliminate)
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL2Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L2");
+        return abi.decode(result, (bool));
+    }
+
+    /**
+     * @dev Check if Level 3 escalation is available (external player replacement)
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL3Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L3");
+        return abi.decode(result, (bool));
+    }
+
+    /**
+     * @dev Check if a player has advanced in the tournament
+     */
+    function isPlayerInAdvancedRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 stalledRoundNumber,
+        address player
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isPlayerInAdvancedRound(uint8,uint8,uint8,address)",
+                tierId, instanceId, stalledRoundNumber, player
+            )
+        );
+        require(success, "PA");
+        return abi.decode(result, (bool));
+    }
+
     // ============ Game Logic (Connect Four Specific) ============
 
     /**

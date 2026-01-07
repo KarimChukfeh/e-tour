@@ -1,9 +1,9 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+  "address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-07T11:36:48.568Z",
+  "deployedAt": "2026-01-07T12:11:30.993Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -2588,6 +2588,142 @@
         }
       ],
       "name": "isEnrolled",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "isMatchEscL1Available",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "isMatchEscL2Available",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "roundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "matchNumber",
+          "type": "uint8"
+        }
+      ],
+      "name": "isMatchEscL3Available",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "stalledRoundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        }
+      ],
+      "name": "isPlayerInAdvancedRound",
       "outputs": [
         {
           "internalType": "bool",
