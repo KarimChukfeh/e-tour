@@ -26,8 +26,8 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
 
     // Tier fee configuration (only 3 tiers now: 0, 1, 2)
     const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.004");
-    const TIER_2_FEE = hre.ethers.parseEther("0.008");
+    const TIER_1_FEE = hre.ethers.parseEther("0.002");
+    const TIER_2_FEE = hre.ethers.parseEther("0.004");
 
     // Gas tracking data structure
     const gasData = {

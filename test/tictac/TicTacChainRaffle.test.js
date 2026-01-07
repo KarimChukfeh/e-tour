@@ -143,9 +143,9 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             await game.connect(player3).enrollInTournament(tierId, 1, { value: TIER_0_FEE });
             await game.connect(player4).enrollInTournament(tierId, 1, { value: TIER_0_FEE });
 
-            // Protocol share per enrollment: 0.001 * 2.5% = 0.000025 ETH
-            // After 4 enrollments: 0.0001 ETH
-            const expectedAccumulated = hre.ethers.parseEther("0.0001");
+            // Protocol share per enrollment: 0.0003 * 2.5% = 0.0000075 ETH
+            // After 4 enrollments: 0.00003 ETH
+            const expectedAccumulated = hre.ethers.parseEther("0.00003");
             const accumulated = await game.accumulatedProtocolShare();
             expect(accumulated).to.equal(expectedAccumulated);
 

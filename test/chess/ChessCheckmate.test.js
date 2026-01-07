@@ -402,7 +402,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
         it("Should increment completed matches count for each finished match", async function () {
             const instanceId = 6;
             const tierId = 5; // 4-player tournament (Tier 5)
-            const entryFee = hre.ethers.parseEther("0.004"); // Tier 5 entry fee
+            const entryFee = hre.ethers.parseEther("0.009"); // Tier 5 entry fee
 
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
