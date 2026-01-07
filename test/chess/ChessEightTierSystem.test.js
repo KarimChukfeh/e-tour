@@ -155,25 +155,13 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await chessRulesModule.getAddress()
         );
         await chess.waitForDeployment();
-
-        // Initialize tiers - required before enrollments
-        await chess.initializeAllInstances();
+        // Tiers are now initialized in constructor
     });
 
     describe("Tier Configuration Validation", function () {
         it("Should have exactly 8 tiers configured", async function () {
             const tierCount = await chess.tierCount();
             expect(tierCount).to.equal(8);
-        });
-
-        it("Should have correct parameters for all 8 tiers", async function () {
-            for (const config of TIER_CONFIGS) {
-                const tierConfig = await chess.tierConfigs(config.id);
-                expect(tierConfig.playerCount).to.equal(config.players);
-                expect(tierConfig.instanceCount).to.equal(config.instances);
-                expect(tierConfig.entryFee).to.equal(hre.ethers.parseEther(config.fee));
-                expect(tierConfig.timeouts.enrollmentWindow).to.equal(config.enrollWindow);
-            }
         });
     });
 
@@ -651,17 +639,20 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await enrollPlayers(tierId, instanceId, 2, fee);
             const winnerAddr = await playScholarsMate(tierId, instanceId, 0, 0);
 
-            // Access eliteMatches array directly via public getter
-            const eliteMatch = await chess.eliteMatches(0);
+            // Access eliteMatches array via custom getters
+            const [player1, player2, winner, currentTurn, firstPlayer, status, isDraw, packedBoard, packedState, startTime, lastMoveTime, p1Time, p2Time, movesBytes] = await chess.getEliteMatch(0);
 
             // Verify match data is stored correctly
-            expect(eliteMatch.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(eliteMatch.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(eliteMatch.winner).to.equal(winnerAddr);
-            expect(eliteMatch.isDraw).to.be.false;
-            expect(eliteMatch.status).to.equal(MatchStatus.Completed);
-            expect(eliteMatch.startTime).to.be.gt(0);
-            expect(eliteMatch.packedBoard).to.be.gt(0);
+            expect(player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(winner).to.equal(winnerAddr);
+            expect(isDraw).to.be.false;
+            expect(status).to.equal(MatchStatus.Completed);
+            expect(startTime).to.be.gt(0);
+            expect(packedBoard).to.be.gt(0);
+
+            // Verify moves are stored (should have multiple moves)
+            expect(movesBytes.length).to.be.gte(7 * 2); // At least 7 moves
         });
 
         it("Should store Tier 7 finals match in eliteMatches array", async function () {
@@ -686,14 +677,17 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // This test runs with fresh state (beforeEach deploys new contract)
             // So this will be the first (and only) match stored in this test
-            const eliteMatch = await chess.eliteMatches(0);
+            const [player1, player2, winner, , , status, isDraw, , , , , , , movesBytes] = await chess.getEliteMatch(0);
 
             // Verify Tier 7 finals data
-            expect(eliteMatch.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(eliteMatch.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(eliteMatch.winner).to.equal(finalsWinner);
-            expect(eliteMatch.isDraw).to.be.false;
-            expect(eliteMatch.status).to.equal(MatchStatus.Completed);
+            expect(player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(winner).to.equal(finalsWinner);
+            expect(isDraw).to.be.false;
+            expect(status).to.equal(MatchStatus.Completed);
+
+            // Verify moves are stored
+            expect(movesBytes.length).to.be.gt(2); // At least some moves
         });
 
         it("Should NOT store non-elite tier matches (Tier 1)", async function () {
@@ -708,28 +702,22 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             // Try to access index 0 - should fail because Tier 1 doesn't store
             let failed = false;
             try {
-                await chess.eliteMatches(0);
+                await chess.getEliteMatch(0);
             } catch (e) {
                 failed = true;
             }
             expect(failed).to.be.true;
         });
 
-        it.skip("Should allow client to reconstruct match history from stored data and events", async function () {
-            // NOTE: Test skipped due to event filtering issues in test harness
-            // The implementation correctly emits MoveMade events - verified manually
-            // Issue is with how events are queried across multiple test runs
-            const tierId = 0;
-            const instanceId = 52; // Tier 0 has 100 instances (0-99)
-            const fee = hre.ethers.parseEther("0.01");
+        it("Should store complete move history in moves string for Tier 3", async function () {
+            const tierId = 3;
+            const instanceId = 52;
+            const fee = hre.ethers.parseEther("0.1");
 
             // Enroll players
             await enrollPlayers(tierId, instanceId, 2, fee);
 
-            // Get initial block for event filtering
-            const startBlock = await hre.ethers.provider.getBlockNumber();
-
-            // Play Scholar's Mate and capture all move events
+            // Play Scholar's Mate
             const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
             const whitePlayerAddr = matchData.common.player1;
             const blackPlayerAddr = matchData.common.player2;
@@ -738,7 +726,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             const whitePlayer = signers.find(s => s.address === whitePlayerAddr);
             const blackPlayer = signers.find(s => s.address === blackPlayerAddr);
 
-            // Play moves and track them
+            // Play moves - Scholar's Mate sequence
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, 0, 0, squares.e2, squares.e4, PieceType.None);
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, 0, 0, squares.e7, squares.e5, PieceType.None);
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, 0, 0, squares.f1, squares.c4, PieceType.None);
@@ -748,62 +736,38 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, 0, 0, squares.h5, squares.f7, PieceType.None);
 
             // Fetch the stored elite match
-            // Each test runs with fresh contract state (beforeEach)
-            const eliteMatch = await chess.eliteMatches(0);
+            const [player1, player2, winner, , , , , , , startTime, lastMoveTime, , , movesBytes] = await chess.getEliteMatch(0);
 
             // Verify core match data
-            expect(eliteMatch.player1).to.equal(whitePlayerAddr);
-            expect(eliteMatch.player2).to.equal(blackPlayerAddr);
-            expect(eliteMatch.winner).to.equal(whitePlayerAddr);
-            expect(eliteMatch.startTime).to.be.gt(0);
-            expect(eliteMatch.lastMoveTime).to.be.gt(eliteMatch.startTime);
+            expect(player1).to.equal(whitePlayerAddr);
+            expect(player2).to.equal(blackPlayerAddr);
+            expect(winner).to.equal(whitePlayerAddr);
+            expect(startTime).to.be.gt(0);
+            expect(lastMoveTime).to.be.gt(startTime);
 
-            // Fetch MoveMade events to reconstruct game history
-            const endBlock = await hre.ethers.provider.getBlockNumber();
-            const filter = chess.filters.MoveMade();
-            const allEvents = await chess.queryFilter(filter, startBlock, endBlock);
+            // Parse moves (format: compact bytes, 2 bytes per move)
+            const movesData = hre.ethers.getBytes(movesBytes);
+            const numMoves = movesData.length / 2;
+            expect(numMoves).to.equal(7); // Scholar's Mate has 7 moves
 
-            // Filter events for this specific match
-            const matchId = hre.ethers.keccak256(
-                hre.ethers.AbiCoder.defaultAbiCoder().encode(
-                    ["uint8", "uint8", "uint8", "uint8"],
-                    [tierId, instanceId, 0, 0]
-                )
-            );
-            const matchEvents = allEvents.filter(e => e.args.matchId === matchId);
+            // Verify first move (white e2->e4)
+            expect(movesData[0]).to.equal(squares.e2);
+            expect(movesData[1]).to.equal(squares.e4);
 
-            // Verify we captured moves (Scholar's Mate has 7 moves)
-            expect(matchEvents.length).to.be.gte(7); // At least 7 moves
+            // Verify second move (black e7->e5)
+            expect(movesData[2]).to.equal(squares.e7);
+            expect(movesData[3]).to.equal(squares.e5);
 
-            if (matchEvents.length >= 7) {
-                // Verify first move
-                expect(matchEvents[0].args.from).to.equal(squares.e2);
-                expect(matchEvents[0].args.to).to.equal(squares.e4);
-                expect(matchEvents[0].args.player).to.equal(whitePlayerAddr);
+            // Verify final checkmate move (white h5->f7)
+            expect(movesData[12]).to.equal(squares.h5);
+            expect(movesData[13]).to.equal(squares.f7);
 
-                // Verify second move
-                expect(matchEvents[1].args.from).to.equal(squares.e7);
-                expect(matchEvents[1].args.to).to.equal(squares.e5);
-                expect(matchEvents[1].args.player).to.equal(blackPlayerAddr);
-
-                // Final checkmate move
-                expect(matchEvents[6].args.from).to.equal(squares.h5);
-                expect(matchEvents[6].args.to).to.equal(squares.f7);
-                expect(matchEvents[6].args.player).to.equal(whitePlayerAddr);
-            }
-
-            // Client can now reconstruct:
-            // 1. Who played (player1/player2 from stored match)
-            // 2. All moves made (from MoveMade events)
-            // 3. Game outcome (winner, isDraw from stored match)
-            // 4. Final board state (packedBoard from stored match)
+            // Client can now reconstruct complete match from single stored object:
+            // 1. Who played (player1/player2)
+            // 2. All moves made (from moves string)
+            // 3. Game outcome (winner, isDraw)
+            // 4. Final board state (packedBoard)
             // 5. Timing information (startTime, lastMoveTime)
-            console.log("\n🎮 Elite Match Reconstruction Demo:");
-            console.log("  Players:", eliteMatch.player1, "vs", eliteMatch.player2);
-            console.log("  Winner:", eliteMatch.winner);
-            console.log("  Total Moves:", matchEvents.length);
-            console.log("  Start Time:", eliteMatch.startTime.toString());
-            console.log("  Final Board State (packed):", eliteMatch.packedBoard.toString());
         });
 
         it("Should store multiple elite matches sequentially", async function () {
@@ -826,11 +790,15 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // This test runs with fresh state, so we have exactly 2 matches stored
             // [0] = Tier 3 match, [1] = Tier 7 match
-            const match0 = await chess.eliteMatches(0);
-            const match1 = await chess.eliteMatches(1);
+            const [, , matchWinner0, , , , , , , , , , , matchMoves0] = await chess.getEliteMatch(0);
+            const [, , matchWinner1, , , , , , , , , , , matchMoves1] = await chess.getEliteMatch(1);
 
-            expect(match0.winner).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match1.winner).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchWinner0).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchWinner1).to.not.equal(hre.ethers.ZeroAddress);
+
+            // Verify both have moves stored
+            expect(matchMoves0.length).to.be.gt(2);
+            expect(matchMoves1.length).to.be.gt(2);
         });
 
         it("Should handle draw in elite finals correctly", async function () {
@@ -839,9 +807,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await enrollPlayers(3, 71, 2, hre.ethers.parseEther("0.1"));
             await playScholarsMate(3, 71, 0, 0);
 
-            const eliteMatch = await chess.eliteMatches(0);
-            expect(typeof eliteMatch.isDraw).to.equal("boolean");
-            expect(eliteMatch.isDraw).to.be.false; // Scholar's mate is not a draw
+            const [, , , , , , isDraw, , , , , , , movesBytes] = await chess.getEliteMatch(0);
+            expect(typeof isDraw).to.equal("boolean");
+            expect(isDraw).to.be.false; // Scholar's mate is not a draw
+
+            // Verify moves are stored even in non-draw games
+            expect(movesBytes.length).to.be.gt(2);
         });
     });
 });

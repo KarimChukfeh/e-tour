@@ -83,9 +83,7 @@ describe("ChessOnChain Tests", function () {
             await chessRulesModule.getAddress()
         );
         await chess.waitForDeployment();
-
-        // Initialize tiers
-        await chess.initializeAllInstances();
+        // Tiers are now initialized in constructor
     });
 
     describe("Deployment", function () {
@@ -241,12 +239,7 @@ describe("ChessOnChain Tests", function () {
             expect(tournament.enrolledCount).to.equal(1);
 
             // Second player enrolls - should trigger tournament start AND match creation
-            const tx = await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
-
-            // Verify all expected events are emitted
-            await expect(tx).to.emit(chess, "PlayerEnrolled");
-            await expect(tx).to.emit(chess, "TournamentStarted");
-            await expect(tx).to.emit(chess, "RoundInitialized").withArgs(tierId, instanceId, 0, 1); // 1 match for 2 players
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             // Tournament should be InProgress
             tournament = await chess.tournaments(tierId, instanceId);

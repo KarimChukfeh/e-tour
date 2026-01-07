@@ -1,9 +1,9 @@
 {
   "contractName": "TicTacChain",
-  "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+  "address": "0xf953b3A269d80e3eB0F2947630Da976B896A8C5b",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-07T01:03:11.934Z",
+  "deployedAt": "2026-01-07T08:10:26.821Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
