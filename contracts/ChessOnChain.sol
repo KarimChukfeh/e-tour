@@ -46,6 +46,9 @@ contract ChessOnChain is ETour_Storage {
 
     mapping(bytes32 => Match) public matches;
 
+    // Elite tournament match history (Tier 3 and Tier 7 finals)
+    Match[] public eliteMatches;
+
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 from, uint8 to);
@@ -397,6 +400,12 @@ contract ChessOnChain is ETour_Storage {
             emit TournamentCompleted(tierId, instanceId, tw, playerPrizes[tierId][instanceId][tw], tournament.finalsWasDraw, tournament.coWinner);
             (s,) = MODULE_PRIZES.delegatecall(abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId));
             require(s, "RT");
+
+            // Archive elite tournament finals match (Tier 3 or Tier 7)
+            if (tierId == 3 || tierId == 7) {
+                eliteMatches.push(matches[matchId]);
+            }
+
             _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
         }
     }
