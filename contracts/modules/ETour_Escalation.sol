@@ -740,6 +740,13 @@ contract ETour_Escalation is ETour_Storage {
                 (address p1, address p2) = this._getMatchPlayers(finalsMatchId);
                 playerRanking[tierId][instanceId][p1] = 1;
                 playerRanking[tierId][instanceId][p2] = 1;
+            } else if (!isDraw && winner == address(0)) {
+                // Both finalists were eliminated (ML2 double elimination)
+                // Set all-draw resolution to distribute prizes equally to any remaining eligible players
+                tournament.status = TournamentStatus.Completed;
+                tournament.allDrawResolution = true;
+                tournament.allDrawRound = roundNumber;
+                tournament.winner = address(0);
             }
         } else {
             // Non-final round completed - check for orphaned winner scenario
@@ -764,30 +771,12 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.status = TournamentStatus.Completed;
                 playerRanking[tierId][instanceId][lastWinner] = 1;
 
-                // Distribute 100% of prize pool to orphaned winner
-                uint256 prize = tournament.prizePool;
-                playerPrizes[tierId][instanceId][lastWinner] = prize;
-
                 // Update player stats
                 playerStats[lastWinner].tournamentsWon++;
 
-                emit TournamentCompleted(
-                    tierId,
-                    instanceId,
-                    lastWinner,
-                    prize,
-                    false,  // finalsWasDraw
-                    address(0)  // coWinner
-                );
-
-                // Reset tournament state (inline minimal reset)
-                tournament.status = TournamentStatus.Enrolling;
-                tournament.winner = address(0);
-                tournament.enrolledCount = 0;
-                tournament.prizePool = 0;
-
-                // Clear enrolled players
-                delete enrolledPlayers[tierId][instanceId];
+                // NOTE: Prize distribution, earnings update, event emission, and reset
+                // are handled by the game contract (TicTacChain) after detecting completion.
+                // This is the same pattern used by MODULE_MATCHES.completeTournament()
             }
         }
     }

@@ -442,6 +442,7 @@ contract TicTacChain is ETour_Storage {
 
     /**
      * @dev Check if a player has advanced in the tournament
+     * Implementation directly in TicTacChain (not delegated) to avoid staticcall issues
      */
     function isPlayerInAdvancedRound(
         uint8 tierId,
@@ -449,14 +450,57 @@ contract TicTacChain is ETour_Storage {
         uint8 stalledRoundNumber,
         address player
     ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isPlayerInAdvancedRound(uint8,uint8,uint8,address)",
-                tierId, instanceId, stalledRoundNumber, player
-            )
-        );
-        require(success, "PA");
-        return abi.decode(result, (bool));
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                // Check active storage first
+                if (matchData.player1 != address(0)) {
+                    // Match exists in active storage
+                    if (matchData.status == MatchStatus.Completed &&
+                        matchData.winner == player &&
+                        !matchData.isDraw) {
+                        return true;
+                    }
+                } else {
+                    // Match might be cached - check cache
+                    (CommonMatchData memory cachedMatch, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, r, m);
+                    if (exists &&
+                        cachedMatch.status == MatchStatus.Completed &&
+                        cachedMatch.winner == player &&
+                        !cachedMatch.isDraw) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                if (matchData.player1 == player || matchData.player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // ============ Game Logic (Tic-Tac-Toe Specific) ============
@@ -500,6 +544,12 @@ contract TicTacChain is ETour_Storage {
         // Make move: Set cell to player's symbol (1 or 2)
         uint8 symbol = (msg.sender == matchData.player1) ? 1 : 2;
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, symbol);
+
+        // Clear any escalation state since a move was made (match is no longer stalled)
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
+        );
+        require(clearSuccess, "CE");
 
         emit MoveMade(matchId, msg.sender, cellIndex);
 

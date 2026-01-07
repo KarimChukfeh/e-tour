@@ -168,6 +168,86 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             console.log("\n=== TEST COMPLETE ===\n");
         });
 
+        it("Should correctly identify advanced player for ML2 eligibility", async function() {
+            this.timeout(60000);
+
+            console.log("\n=== ADVANCED PLAYER CHECK TEST ===\n");
+
+            // Step 1: Enroll 4 players
+            console.log("Step 1: Enrolling 4 players...");
+            const TIER_4_PLAYER = 1;
+            const TIER_4_FEE = hre.ethers.parseEther("0.0007");
+            const allSigners = await hre.ethers.getSigners();
+            const playerA = players[0];
+            const playerB = players[1];
+            const playerC = outsider;
+            const playerD = allSigners[4];
+
+            await game.connect(playerA).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
+            await game.connect(playerB).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
+            await game.connect(playerC).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
+            await game.connect(playerD).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
+
+            let tournament = await game.getTournamentInfo(TIER_4_PLAYER, INSTANCE_ID);
+            expect(tournament.status).to.equal(1); // InProgress
+            console.log("✓ Tournament started with 4 players");
+            console.log(`  Match 0: ${playerA.address} vs ${playerB.address}`);
+            console.log(`  Match 1: ${playerC.address} vs ${playerD.address}`);
+
+            // Step 2: Complete Match 0 (A wins)
+            console.log("\nStep 2: Completing Match 0 (A vs B)...");
+            let match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+
+            // Play until A wins (3 in a row)
+            await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 0);
+            match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+            await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 3);
+            match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+            await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 1);
+            match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+            await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 4);
+            match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+            await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 2);
+
+            match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
+            expect(match0.common.status).to.equal(2); // Completed
+            const winnerMatch0 = match0.common.winner;
+            console.log(`✓ Match 0 complete, winner: ${winnerMatch0}`);
+
+            // Step 3: Verify winner is advanced to finals
+            console.log("\nStep 3: Checking finals match...");
+            const finalsMatch = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 1, 0);
+            const finalsP1 = finalsMatch.common.player1;
+            const finalsP2 = finalsMatch.common.player2;
+            console.log(`  Finals player1: ${finalsP1}`);
+            console.log(`  Finals player2: ${finalsP2}`);
+
+            // Winner should be in one of the slots
+            const winnerInFinals = (finalsP1 === winnerMatch0 || finalsP2 === winnerMatch0);
+            expect(winnerInFinals).to.be.true;
+            console.log(`✓ Winner ${winnerMatch0} is assigned to finals`);
+
+            // Step 4: Stall Match 1 and check advanced player status
+            console.log("\nStep 4: Stalling Match 1 (C vs D)...");
+            let match1 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 1);
+            await game.connect(await hre.ethers.getSigner(match1.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 0);
+            console.log("✓ Match 1 stalled after first move");
+
+            // Step 5: Check isPlayerInAdvancedRound for winner
+            console.log("\nStep 5: Checking isPlayerInAdvancedRound...");
+            const isAdvanced = await game.isPlayerInAdvancedRound(TIER_4_PLAYER, INSTANCE_ID, 0, winnerMatch0);
+            expect(isAdvanced).to.be.true;
+            console.log(`✓ Winner ${winnerMatch0} correctly identified as advanced player`);
+
+            // Step 6: Verify non-winner is NOT advanced
+            const loserMatch0 = (winnerMatch0 === playerA.address) ? playerB.address : playerA.address;
+            const loserIsAdvanced = await game.isPlayerInAdvancedRound(TIER_4_PLAYER, INSTANCE_ID, 0, loserMatch0);
+            expect(loserIsAdvanced).to.be.false;
+            console.log(`✓ Loser ${loserMatch0} correctly NOT identified as advanced`);
+
+            console.log("\n=== TEST COMPLETE ===\n");
+        });
+
         it.skip("Should also handle ML2 (force eliminate) on finals match properly", async function() {
             // SKIPPED: This test reveals a separate bug in ETour_Escalation._handleRoundCompletion
             // When ML2 double-eliminates both finals players (winner=address(0), isDraw=false),

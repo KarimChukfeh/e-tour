@@ -75,7 +75,7 @@ contract ETour_Raffle is ETour_Storage {
     function _getRaffleThreshold() internal view returns (uint256) {
         // If no raffle thresholds configured, use default
         if (raffleThresholds.length == 0) {
-            return 3 ether;
+            return 1 ether;
         }
 
         // If currentRaffleIndex is within the configured array, use that value

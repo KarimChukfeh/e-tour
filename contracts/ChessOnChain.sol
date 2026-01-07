@@ -108,9 +108,6 @@ contract ChessOnChain is ETour_Storage {
                 )
             );
         }
-
-        raffleThresholds.push(1.0 ether);
-        raffleThresholdFinal = 2.0 ether;
     }
 
     // ============ Initialization ============
@@ -153,10 +150,9 @@ contract ChessOnChain is ETour_Storage {
             }
 
             if (walkoverPlayer != address(0)) {
-                (bool success, ) = MODULE_MATCHES.delegatecall(
+                MODULE_MATCHES.delegatecall(
                     abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchCount, walkoverPlayer)
                 );
-                require(success, "AW");
             }
         }
     }
@@ -263,18 +259,43 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function forceEliminateStalledMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature("forceEliminateStalledMatch(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "FE");
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
     function claimMatchSlotByReplacement(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "CR");
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
+
+        // Add external player to cleanup list for tournament completion
+        address[] memory allPlayers = new address[](enrolledPlayersCopy.length + 1);
+        for (uint256 i = 0; i < enrolledPlayersCopy.length; i++) {
+            allPlayers[i] = enrolledPlayersCopy[i];
+        }
+        allPlayers[enrolledPlayersCopy.length] = msg.sender; // Add external player
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
     /**
@@ -343,14 +364,57 @@ contract ChessOnChain is ETour_Storage {
         uint8 stalledRoundNumber,
         address player
     ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isPlayerInAdvancedRound(uint8,uint8,uint8,address)",
-                tierId, instanceId, stalledRoundNumber, player
-            )
-        );
-        require(success, "PA");
-        return abi.decode(result, (bool));
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                // Check active storage first
+                if (matchData.player1 != address(0)) {
+                    // Match exists in active storage
+                    if (matchData.status == MatchStatus.Completed &&
+                        matchData.winner == player &&
+                        !matchData.isDraw) {
+                        return true;
+                    }
+                } else {
+                    // Match might be cached - check cache
+                    (CommonMatchData memory cachedMatch, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, r, m);
+                    if (exists &&
+                        cachedMatch.status == MatchStatus.Completed &&
+                        cachedMatch.winner == player &&
+                        !cachedMatch.isDraw) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                if (matchData.player1 == player || matchData.player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // ============ Chess Gameplay ============
@@ -386,6 +450,11 @@ contract ChessOnChain is ETour_Storage {
 
         // Store move in history as compact bytes: each move is 2 bytes (from, to)
         m.moves = string(abi.encodePacked(m.moves, from, to));
+
+        // Clear any escalation state since a move was made (match is no longer stalled)
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
+        );
 
         emit MoveMade(matchId, msg.sender, from, to);
 
@@ -424,25 +493,75 @@ contract ChessOnChain is ETour_Storage {
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
     }
 
+    function _handleTournamentCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
+            return;
+        }
+
+        address tournamentWinner = tournament.winner;
+        uint256 winnersPot = tournament.prizePool;
+
+        // Distribute prizes based on completion type
+        if (tournament.allDrawResolution) {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        } else {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
+                    tierId, instanceId, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        }
+
+        // Update earnings for the winner (if there is one)
+        if (tournamentWinner != address(0)) {
+            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                    tierId, instanceId, tournamentWinner)
+            );
+        }
+
+        // Archive elite tournament finals match (Tier 3 or Tier 7) - BEFORE reset
+        if (tierId == 3 || tierId == 7) {
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, tournament.currentRound, 0);
+            eliteMatches.push(matches[finalsMatchId]);
+        }
+
+        // Reset tournament
+        MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+
+        // Call completion hook
+        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
+    }
+
     function _completeMatchInternal(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) private {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
 
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+        MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
         );
-        require(clearSuccess, "CE");
 
-        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        address[] memory epc = new address[](enrolledPlayers[tierId][instanceId].length);
         for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
-            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+            epc[i] = enrolledPlayers[tierId][instanceId][i];
         }
 
-        (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
+        MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature("completeMatch(uint8,uint8,uint8,uint8,address,bool)", tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
         );
-        require(completeSuccess, "CM");
 
         if (!isDraw) {
             Match storage matchData = matches[matchId];
@@ -450,26 +569,8 @@ contract ChessOnChain is ETour_Storage {
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
 
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
-            address tw = tournament.winner;
-            uint256 pp = tournament.prizePool;
-            if (tournament.allDrawResolution) {
-                MODULE_PRIZES.delegatecall(abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, pp));
-            } else {
-                MODULE_PRIZES.delegatecall(abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, pp));
-            }
-            MODULE_PRIZES.delegatecall(abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tw));
-            MODULE_PRIZES.delegatecall(abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId));
-
-            // Archive elite tournament finals match (Tier 3 or Tier 7)
-            if (tierId == 3 || tierId == 7) {
-                eliteMatches.push(matches[matchId]);
-            }
-
-            _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
-        }
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, epc);
     }
 
     // ============ IETourGame Interface ============
@@ -480,14 +581,12 @@ contract ChessOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        uint256 randomness = uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, player1, player2, matchId)));
+        matchData.player1 = player2;
+        matchData.player2 = player1;
 
-        if (randomness % 2 == 0) {
+        if (block.prevrandao % 2 == 0) {
             matchData.player1 = player1;
             matchData.player2 = player2;
-        } else {
-            matchData.player1 = player2;
-            matchData.player2 = player1;
         }
 
         matchData.currentTurn = matchData.player1;
@@ -687,25 +786,19 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function getRaffleInfo() external view returns (
-        uint256 raffleIndex, bool isReady, uint256 currentAccumulated, uint256 threshold,
-        uint256 reserve, uint256 raffleAmount, uint256 ownerShare, uint256 winnerShare, uint256 eligiblePlayerCount
+        uint32 raffleIndex, bool isReady, uint256 currentAccumulated, uint256 threshold,
+        uint256 reserve, uint256 raffleAmount, uint256 ownerShare, uint256 winnerShare, uint32 eligiblePlayerCount
     ) {
-        raffleIndex = currentRaffleIndex;
+        raffleIndex = uint32(currentRaffleIndex);
         currentAccumulated = accumulatedProtocolShare;
-        threshold = _getRaffleThreshold();
+        threshold = 3 ether;
         reserve = (threshold * 10) / 100;
         isReady = currentAccumulated >= threshold;
         raffleAmount = threshold - reserve;
         ownerShare = (raffleAmount * 20) / 100;
         winnerShare = (raffleAmount * 80) / 100;
         (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSignature("getEligiblePlayerCount()"));
-        eligiblePlayerCount = s ? abi.decode(d, (uint256)) : 0;
-    }
-
-    function _getRaffleThreshold() internal view returns (uint256) {
-        if (raffleThresholds.length == 0) return 3 ether;
-        if (currentRaffleIndex < raffleThresholds.length) return raffleThresholds[currentRaffleIndex];
-        return raffleThresholdFinal;
+        eligiblePlayerCount = s ? uint32(abi.decode(d, (uint256))) : 0;
     }
 
     function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {

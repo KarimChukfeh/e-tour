@@ -280,13 +280,19 @@ contract ConnectFourOnChain is ETour_Storage {
         require(resetSuccess, "RT");
     }
 
-    
+
     function forceEliminateStalledMatch(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "forceEliminateStalledMatch(uint8,uint8,uint8,uint8)",
@@ -294,15 +300,24 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success, "FE");
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
-    
+
     function claimMatchSlotByReplacement(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)",
@@ -313,6 +328,16 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
+
+        // Add external player to cleanup list for tournament completion
+        address[] memory allPlayers = new address[](enrolledPlayersCopy.length + 1);
+        for (uint256 i = 0; i < enrolledPlayersCopy.length; i++) {
+            allPlayers[i] = enrolledPlayersCopy[i];
+        }
+        allPlayers[enrolledPlayersCopy.length] = msg.sender; // Add external player
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
     /**
@@ -381,14 +406,57 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 stalledRoundNumber,
         address player
     ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isPlayerInAdvancedRound(uint8,uint8,uint8,address)",
-                tierId, instanceId, stalledRoundNumber, player
-            )
-        );
-        require(success, "PA");
-        return abi.decode(result, (bool));
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                // Check active storage first
+                if (matchData.player1 != address(0)) {
+                    // Match exists in active storage
+                    if (matchData.status == MatchStatus.Completed &&
+                        matchData.winner == player &&
+                        !matchData.isDraw) {
+                        return true;
+                    }
+                } else {
+                    // Match might be cached - check cache
+                    (CommonMatchData memory cachedMatch, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, r, m);
+                    if (exists &&
+                        cachedMatch.status == MatchStatus.Completed &&
+                        cachedMatch.winner == player &&
+                        !cachedMatch.isDraw) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                if (matchData.player1 == player || matchData.player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // ============ Game Logic (Connect Four Specific) ============
@@ -442,6 +510,12 @@ contract ConnectFourOnChain is ETour_Storage {
 
         uint8 cellIndex = _getCellIndex(targetRow, column);
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, piece);
+
+        // Clear any escalation state since a move was made (match is no longer stalled)
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
+        );
+        require(clearSuccess, "CE");
 
         emit MoveMade(matchId, msg.sender, column, targetRow);
 
@@ -502,6 +576,58 @@ contract ConnectFourOnChain is ETour_Storage {
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
     }
 
+    function _handleTournamentCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
+            return;
+        }
+
+        address tournamentWinner = tournament.winner;
+        uint256 winnersPot = tournament.prizePool;
+
+        // Distribute prizes based on completion type
+        if (tournament.allDrawResolution) {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        } else {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
+                    tierId, instanceId, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        }
+
+        // Update earnings for the winner (if there is one)
+        if (tournamentWinner != address(0)) {
+            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                    tierId, instanceId, tournamentWinner)
+            );
+            require(earningsSuccess, "UE");
+        }
+
+        // Emit completion event
+        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
+
+        // Reset tournament
+        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+        require(resetSuccess, "RT");
+
+        // Call completion hook
+        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
+    }
+
     /**
      * @dev Internal match completion handler
      * Coordinates with Escalation and Matches modules
@@ -545,39 +671,8 @@ contract ConnectFourOnChain is ETour_Storage {
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
 
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
-            address tournamentWinner = tournament.winner;
-            uint256 winnersPot = tournament.prizePool;
-
-            if (tournament.allDrawResolution) {
-                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                    abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, winnersPot)
-                );
-                require(distributeSuccess, "DP");
-            } else {
-                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                    abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
-                );
-                require(distributeSuccess, "DP");
-            }
-
-            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tournamentWinner)
-            );
-            require(earningsSuccess, "UE");
-
-            uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
-            emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
-
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
-        }
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
     // ============ Board Helper Functions ============

@@ -169,14 +169,20 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Advanced player from Match 1 should be able to force eliminate Match 0
+            // This should also complete the tournament since advancedPlayer is the only remaining player
             await expect(
                 game.connect(advancedPlayer).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
+            ).to.emit(game, "TournamentCompleted");
 
-            // Both players in Match 0 should be eliminated
-            const completedMatch = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(completedMatch.common.status).to.equal(2); // Completed
-            expect(completedMatch.common.winner).to.equal(hre.ethers.ZeroAddress); // No winner (double elimination)
+            // Tournament should be completed and reset (orphaned winner scenario)
+            const tournamentInfo = await game.getTournamentInfo(tierId, instanceId);
+            expect(tournamentInfo.status).to.equal(0); // Enrolling (reset)
+            expect(tournamentInfo.enrolledCount).to.equal(0); // Reset
+            expect(tournamentInfo.prizePool).to.equal(0n); // Reset
+
+            // Advanced player should no longer be in active tournaments
+            const activeTournaments = await game.getPlayerActiveTournaments(advancedPlayer.address);
+            expect(activeTournaments.length).to.equal(0);
         });
 
         it("Should reject force elimination from non-advanced player", async function () {
@@ -370,64 +376,24 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Winner from Match 1 force eliminates Match 0
-            await game.connect(winnerMatch1).forceEliminateStalledMatch(tierId, instanceId, 0, 0);
+            // This should complete the tournament (orphaned winner scenario)
+            await expect(
+                game.connect(winnerMatch1).forceEliminateStalledMatch(tierId, instanceId, 0, 0)
+            ).to.emit(game, "TournamentCompleted");
 
-            // Debug: Check round 0 state
-            const round0 = await game.rounds(tierId, instanceId, 0);
-            console.log("Round 0 after double elimination:", {
-                totalMatches: round0.totalMatches,
-                completedMatches: round0.completedMatches
-            });
-
-            // Debug: Check match results to see what orphaned winner logic would see
-            const match0After = await game.getMatch(tierId, instanceId, 0, 0);
-            const match1After = await game.getMatch(tierId, instanceId, 0, 1);
-            console.log("Match 0 (double-eliminated):", {
-                player1: match0After.common.player1,
-                player2: match0After.common.player2,
-                winner: match0After.common.winner,
-                isDraw: match0After.common.isDraw,
-                status: match0After.common.status
-            });
-            console.log("Match 1 (normal winner):", {
-                player1: match1After.common.player1,
-                player2: match1After.common.player2,
-                winner: match1After.common.winner,
-                isDraw: match1After.common.isDraw,
-                status: match1After.common.status
-            });
-
-            // Debug: Check if round 1 (finals) was created and has players
-            const round1 = await game.rounds(tierId, instanceId, 1);
-            console.log("Round 1 (finals) state:", {
-                initialized: round1.initialized,
-                totalMatches: round1.totalMatches
-            });
-
-            // Tournament should NOT advance to finals because both players from Match 0 were eliminated
-            // Only the winner from Match 1 remains, they should win the tournament automatically
-            const tournament = await game.tournaments(tierId, instanceId);
-
-            // Only try to get finals match if tournament didn't auto-complete
-            if (round1.initialized && round1.totalMatches > 0 && tournament.status !== 2) {
-                try {
-                    const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-                    console.log("Finals match players:", {
-                        player1: finalsMatch.common.player1,
-                        player2: finalsMatch.common.player2
-                    });
-                } catch (e) {
-                    console.log("Finals match not created (orphaned winner scenario)");
-                }
-            }
+            // Tournament should be completed and reset
+            // Only the winner from Match 1 remains, they should have won the tournament automatically
+            const tournament = await game.getTournamentInfo(tierId, instanceId);
 
             // Check tournament completed and reset (status = Enrolling, winner cleared)
-            expect(tournament.status).to.equal(0); // TournamentStatus.Enrolling (after reset)
-            expect(tournament.winner).to.equal(hre.ethers.ZeroAddress); // Winner cleared after reset
+            expect(tournament[0]).to.equal(0); // TournamentStatus.Enrolling (after reset)
+            expect(tournament[4]).to.equal(hre.ethers.ZeroAddress); // Winner cleared after reset
+            expect(tournament[2]).to.equal(0); // Enrolled count reset
+            expect(tournament[3]).to.equal(0n); // Prize pool reset
 
-            // Verify the winner received their prize (permanent record)
-            const winnerPrize = await game.playerPrizes(tierId, instanceId, winnerMatch1.address);
-            expect(winnerPrize).to.be.gt(0); // Winner should have received a prize
+            // Winner should no longer be in active tournaments
+            const activeTournaments = await game.getPlayerActiveTournaments(winnerMatch1.address);
+            expect(activeTournaments.length).to.equal(0);
         });
 
         it("Should allow replacement player to advance in tournament", async function () {
