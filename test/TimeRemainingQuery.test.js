@@ -22,7 +22,6 @@ describe.skip("Real-Time Time Remaining Query Tests (DEPRECATED - getCurrentTime
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
-        await game.initializeAllInstances();
 
         // Hardcoded timeout values (tierConfigs removed)
         // Tier 0 (2-player): 60s match time per player

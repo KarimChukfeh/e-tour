@@ -53,7 +53,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         await game.waitForDeployment();
 
         // Initialize tiers (moved out of constructor for gas optimization)
-        await game.initializeAllInstances();
     });
 
     describe("Deployment", function () {

@@ -70,7 +70,6 @@ contract ConnectFourOnChain is ETour_Storage {
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 column, uint8 row);
-    event AllInstancesInitialized(address indexed caller, uint8 tierCount);
     event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     // MatchCached event now defined in ETour_Storage
 
@@ -91,26 +90,15 @@ contract ConnectFourOnChain is ETour_Storage {
         _moduleEscalationAddress,
         _moduleGameCacheAddress
     ) {
-        // Tier registration moved to initializeAllInstances() for gas optimization
-    }
-
-    // ============ Initialization ============
-
-    /**
-     * @dev One-time initialization of all tournament instances
-     *
-     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
-     * Can only be called once by anyone (typically by deployer immediately after deployment).
-     */
-    function initializeAllInstances() external nonReentrant {
         _registerTiers();
 
         raffleThresholds.push(0.4 ether);
         raffleThresholds.push(0.75 ether);
         raffleThresholdFinal = 1 ether;
 
-        emit AllInstancesInitialized(msg.sender, tierCount);
     }
+
+    // ============ Initialization ============
 
     function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
@@ -124,13 +112,13 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Tier 0 (different timeout)
         timeouts.enrollmentWindow = 300;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.002 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.001 ether, timeouts));
 
         // Tiers 1 & 2 share timeout
         timeouts.enrollmentWindow = 600;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.004 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.002 ether, timeouts));
         timeouts.enrollmentWindow = 900;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.008 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.004 ether, timeouts));
     }
 
     /**

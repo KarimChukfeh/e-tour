@@ -351,7 +351,6 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
         await game.waitForDeployment();
 
         // Initialize tiers
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
 
         console.log(`✅ ConnectFourOnChain deployed at ${await game.getAddress()}`);

@@ -12,7 +12,6 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
 
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
-        await game.initializeAllInstances();
     });
 
     describe("Tournament Reset State Management", function () {

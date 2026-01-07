@@ -51,7 +51,6 @@ describe.skip("Escalation Helper Functions Tests (DEPRECATED - functions removed
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy();
         await game.waitForDeployment();
-        await game.initializeAllInstances();
 
         // Hardcoded timeout values (tierConfigs removed)
         // Tier 1 (4-player): 60s match time, 60s L2 delay, 120s L3 delay

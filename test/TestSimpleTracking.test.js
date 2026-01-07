@@ -12,7 +12,6 @@ describe("Test Simple Tracking", function () {
         await game.waitForDeployment();
 
         // Initialize
-        await (await game.initializeAllInstances()).wait();
 
         console.log("\n✅ Game deployed and initialized");
         console.log("Game address:", await game.getAddress());

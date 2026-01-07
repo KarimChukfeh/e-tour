@@ -47,7 +47,6 @@ describe("ConnectFour Edge Cases", function () {
         await game.waitForDeployment();
 
         // Initialize tiers
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
     });
 

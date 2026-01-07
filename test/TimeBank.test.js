@@ -51,7 +51,6 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
-        await game.initializeAllInstances();
 
         // Hardcoded timeout values matching TicTacChain.sol configuration
         // Tier 0 (2-player): 120s match time per player

@@ -13,7 +13,6 @@ describe("Test Player Activity Counts", function () {
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
 
-        await (await game.initializeAllInstances()).wait();
 
         console.log("\n✅ Game initialized");
     });

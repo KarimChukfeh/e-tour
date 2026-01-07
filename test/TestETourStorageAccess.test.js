@@ -11,7 +11,6 @@ describe("Test ETour_Storage Access", function () {
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
 
-        await (await game.initializeAllInstances()).wait();
     });
     
     it("Should access tierCount from ETour_Storage", async function () {

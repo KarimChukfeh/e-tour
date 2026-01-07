@@ -86,6 +86,8 @@ contract ChessOnChain is ETour_Storage {
 
         for (uint8 i = 0; i < 8; i++) {
             timeouts.enrollmentWindow = i < 4 ? 600 : 1800;
+            timeouts.matchTimePerPlayer = i == 3 || i == 7 ? 1200 : 600;
+            timeouts.timeIncrementPerMove = i == 3 || i == 7 ? 30 : 15;
 
             MODULE_CORE.delegatecall(
                 abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
@@ -93,13 +95,13 @@ contract ChessOnChain is ETour_Storage {
                     i < 4 ? 2 : 4,               // playerCount
                     i < 4 ? 100 : 50,            // instanceCount
                     (
-                        i == 0 ? 0.01 ether :
-                        i == 1 ? 0.02 ether :
-                        i == 2 ? 0.03 ether :
+                        i == 0 ? 0.003 ether :
+                        i == 1 ? 0.008 ether :
+                        i == 2 ? 0.015 ether :
                         i == 3 ? 0.1 ether :
-                        i == 4 ? 0.015 ether :
-                        i == 5 ? 0.025 ether :
-                        i == 6 ? 0.035 ether :
+                        i == 4 ? 0.004 ether :
+                        i == 5 ? 0.009 ether :
+                        i == 6 ? 0.02 ether :
                                  0.15 ether
                     ),                          // entryFee                
                     timeouts

@@ -1,9 +1,9 @@
 {
   "contractName": "TicTacChain",
-  "address": "0xf953b3A269d80e3eB0F2947630Da976B896A8C5b",
+  "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-07T08:10:26.821Z",
+  "deployedAt": "2026-01-07T10:30:52.624Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -83,25 +83,6 @@
         }
       ],
       "name": "AllDrawRoundDetected",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint8",
-          "name": "tierCount",
-          "type": "uint8"
-        }
-      ],
-      "name": "AllInstancesInitialized",
       "type": "event"
     },
     {
@@ -2341,13 +2322,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "initializeAllInstances",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

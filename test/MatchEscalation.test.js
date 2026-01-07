@@ -57,7 +57,6 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
-        await game.initializeAllInstances();
 
         // Hardcoded timeout values matching TicTacChain.sol configuration
         // Tier 0 (2-player): 120s match time, 120s L2 delay, 240s L3 delay

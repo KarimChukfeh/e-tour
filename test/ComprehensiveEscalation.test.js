@@ -52,7 +52,6 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy();
         await game.waitForDeployment();
-        await game.initializeAllInstances();
 
         // tierConfigs removed - tier configuration is now hardcoded in contract
     });

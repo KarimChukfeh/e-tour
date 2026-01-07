@@ -14,7 +14,6 @@ describe("Protocol Raffle System", function () {
 
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
-        await game.initializeAllInstances();
     });
 
     describe("getRaffleInfo() View Function", function () {

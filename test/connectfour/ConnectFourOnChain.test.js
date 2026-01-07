@@ -52,7 +52,6 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         await game.waitForDeployment();
 
         // Initialize tiers
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
     });
 

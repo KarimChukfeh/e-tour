@@ -47,7 +47,6 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
         await game.waitForDeployment();
 
         // Initialize
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
     });
 

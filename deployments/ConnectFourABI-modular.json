@@ -1,9 +1,9 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x720472c8ce72c2A2D711333e064ABD3E6BbEAdd3",
+  "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-07T08:10:28.828Z",
+  "deployedAt": "2026-01-07T10:31:01.695Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -83,25 +83,6 @@
         }
       ],
       "name": "AllDrawRoundDetected",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint8",
-          "name": "tierCount",
-          "type": "uint8"
-        }
-      ],
-      "name": "AllInstancesInitialized",
       "type": "event"
     },
     {
@@ -2342,13 +2323,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "initializeAllInstances",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

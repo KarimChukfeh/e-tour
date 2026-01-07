@@ -48,7 +48,6 @@ describe("TicTacChain Enrollment Quick Test", function () {
         console.log("\nTicTacChain:", await game.getAddress());
 
         // Initialize
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
         console.log("Initialized\n");
     });

@@ -14,7 +14,6 @@ describe("Test Delegatecall Direct", function () {
         await game.waitForDeployment();
 
         // Initialize
-        const initTx = await game.initializeAllInstances();
         await initTx.wait();
         console.log("TicTacChain deployed and initialized\n");
     });

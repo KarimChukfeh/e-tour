@@ -64,7 +64,6 @@ contract TicTacChain is ETour_Storage {
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
-    event AllInstancesInitialized(address indexed caller, uint8 tierCount);
     event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
     // MatchCached event now defined in ETour_Storage
 
@@ -86,28 +85,6 @@ contract TicTacChain is ETour_Storage {
         _moduleGameCacheAddress
     ) {
         // Tier registration moved to initializeAllInstances() for gas optimization
-    }
-
-    // ============ Initialization ============
-
-    /**
-     * @dev One-time initialization of all tournament instances
-     *
-     * Pre-allocates storage for all tier instances to avoid lazy initialization gas costs.
-     * Can only be called once by anyone (typically by deployer immediately after deployment).
-     *
-     * Gas cost estimate:
-     * - Tier 0: 100 instances × ~20k gas = ~2M gas
-     * - Tier 1: 50 instances × ~20k gas = ~1M gas
-     * - Tier 2: 25 instances × ~20k gas = ~500k gas
-     * Total: ~3.5M gas (fits in 4M block gas limit with room for execution)
-     *
-     * Note: Registration is separate from storage allocation. Modules store configuration,
-     * but tournaments[] mapping needs explicit initialization per instance.
-     */
-    function initializeAllInstances() external nonReentrant {
-        require(tierCount == 0, "AI");
-
         _registerTiers();
 
         // Set raffle thresholds: [0.25, 0.5, 0.75, 1]
@@ -117,9 +94,9 @@ contract TicTacChain is ETour_Storage {
 
         // Set final raffle threshold (used after initial thresholds exhausted)
         raffleThresholdFinal = 1.0 ether;
-
-        emit AllInstancesInitialized(msg.sender, tierCount);
     }
+
+    // ============ Initialization ============
 
     function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
@@ -133,13 +110,13 @@ contract TicTacChain is ETour_Storage {
 
         // Tier 0 (different timeout)
         timeouts.enrollmentWindow = 180;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.001 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.0003 ether, timeouts));
 
         // Tiers 1 & 2 share timeout
         timeouts.enrollmentWindow = 300;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.002 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.0007 ether, timeouts));
         timeouts.enrollmentWindow = 480;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.004 ether, timeouts));
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.00013 ether, timeouts));
     }
 
     /**

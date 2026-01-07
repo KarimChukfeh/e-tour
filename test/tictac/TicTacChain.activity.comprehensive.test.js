@@ -133,7 +133,6 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await ticTacChain.waitForDeployment();
 
     // Initialize
-    const initTx = await ticTacChain.initializeAllInstances();
     await initTx.wait();
 
     storageSnapshots.length = 0;

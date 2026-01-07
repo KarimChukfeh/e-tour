@@ -39,7 +39,6 @@ describe("Enrollment Window Reset", function () {
             await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
-        await game.initializeAllInstances();
     });
 
     describe("Test 1: Successful Reset", function () {

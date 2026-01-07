@@ -13,7 +13,6 @@ describe("Test Getter Call", function () {
         game = await TicTacChain.deploy();
         await game.waitForDeployment();
 
-        await (await game.initializeAllInstances()).wait();
 
         console.log("\n✅ Game initialized");
     });

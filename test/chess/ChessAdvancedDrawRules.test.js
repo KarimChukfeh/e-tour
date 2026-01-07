@@ -22,7 +22,6 @@ describe("Chess Advanced Draw Rules", function () {
 
         const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain");
         chess = await ChessOnChain.deploy();
-        await chess.initializeAllInstances();
     });
 
 

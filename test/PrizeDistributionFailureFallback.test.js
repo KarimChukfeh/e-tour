@@ -13,7 +13,6 @@ describe("Prize Distribution Failure Fallback", function () {
 
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy();
-        await game.initializeAllInstances();
 
         // Deploy a contract that rejects ETH transfers
         const RejectingReceiver = await hre.ethers.getContractFactory("RejectingReceiver");
