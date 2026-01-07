@@ -244,7 +244,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
     describe("4-Player Tournament Progression", function () {
         const tierId = 5; // Tier 5 is a 4-player tier
         const instanceId = 0;
-        const entryFee = hre.ethers.parseEther("0.004"); // Tier 5 entry fee
+        const entryFee = hre.ethers.parseEther("0.009"); // Tier 5 entry fee
 
         it("Should advance winners to finals after round 0 completion", async function () {
             // Enroll 4 players

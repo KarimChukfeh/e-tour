@@ -102,8 +102,9 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         const signers = await hre.ethers.getSigners();
         const waitingPlayer = signers.find(s => s.address === waitingPlayerAddr);
 
-        // Fast forward past timeout (600 seconds)
-        await hre.ethers.provider.send("evm_increaseTime", [601]);
+        // Fast forward past timeout (600s for most tiers, 1200s for Tier 3 & 7)
+        const timeout = (tierId === 3 || tierId === 7) ? 1201 : 601;
+        await hre.ethers.provider.send("evm_increaseTime", [timeout]);
         await hre.ethers.provider.send("evm_mine", []);
 
         await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, roundNum, matchNum);
@@ -400,7 +401,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should complete Tier 4 semi-finals and finals via checkmate", async function () {
             const tierId = 4;
             const instanceId = 10;
-            const fee = hre.ethers.parseEther("0.015");
+            const fee = hre.ethers.parseEther("0.004");
 
             await enrollPlayers(tierId, instanceId, 4, fee);
 
@@ -457,7 +458,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should handle mixed completion methods (timeout + checkmate)", async function () {
             const tierId = 4;
             const instanceId = 11;
-            const fee = hre.ethers.parseEther("0.015");
+            const fee = hre.ethers.parseEther("0.004");
 
             await enrollPlayers(tierId, instanceId, 4, fee);
 
@@ -533,7 +534,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should distribute winner-takes-all correctly in Tier 4", async function () {
             const tierId = 4;
             const instanceId = 20;
-            const fee = hre.ethers.parseEther("0.015");
+            const fee = hre.ethers.parseEther("0.004");
 
             await enrollPlayers(tierId, instanceId, 4, fee);
             const tournament = await chess.tournaments(tierId, instanceId);
@@ -578,7 +579,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // Enroll in Tier 4
             await chess.connect(player).enrollInTournament(4, 0, {
-                value: hre.ethers.parseEther("0.015")
+                value: hre.ethers.parseEther("0.004")
             });
 
             // Enroll in Tier 7
@@ -693,7 +694,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should NOT store non-elite tier matches (Tier 1)", async function () {
             const tierId = 1;
             const instanceId = 50;
-            const fee = hre.ethers.parseEther("0.02");
+            const fee = hre.ethers.parseEther("0.008");
 
             // Complete Tier 1 tournament (non-elite)
             await enrollPlayers(tierId, instanceId, 2, fee);

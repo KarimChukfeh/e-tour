@@ -110,7 +110,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
             await expect(
                 game.connect(player1).enrollInTournament(tierId, instanceId, {
-                    value: hre.ethers.parseEther("0.001")
+                    value: hre.ethers.parseEther("0.0009")
                 })
             ).to.be.reverted; // Incorrect entry fee (error handled by module)
         });
@@ -434,7 +434,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         // Winner-takes-most approach: Only top 2 places receive prizes
 
         const TIER_2_ID = 2;
-        const TIER_2_FEE = hre.ethers.parseEther("0.008");
+        const TIER_2_FEE = hre.ethers.parseEther("0.004");
         let players;
 
         beforeEach(async function () {
