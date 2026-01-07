@@ -8,7 +8,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
   const TIER_2 = 2; // 8-player tier
   const INSTANCE_0 = 0;
-  const ENTRY_FEE_TIER_2 = hre.ethers.parseEther("0.004");
+  const ENTRY_FEE_TIER_2 = hre.ethers.parseEther("0.00013");
 
   // Storage snapshots at each step
   const storageSnapshots = [];
@@ -133,7 +133,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await ticTacChain.waitForDeployment();
 
     // Initialize
-    await initTx.wait();
+    // Tiers are now initialized in constructor
 
     storageSnapshots.length = 0;
   });
@@ -314,7 +314,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     // 4-player tournament (2 semifinals + 1 final)
     const TIER_1 = 1;
     const INSTANCE_0 = 0;
-    const ENTRY_FEE_TIER_1 = hre.ethers.parseEther("0.002");
+    const ENTRY_FEE_TIER_1 = hre.ethers.parseEther("0.0007");
 
     // Enroll 4 players
     await ticTacChain.connect(p1).enrollInTournament(TIER_1, INSTANCE_0, { value: ENTRY_FEE_TIER_1 });

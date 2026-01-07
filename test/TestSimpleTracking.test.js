@@ -17,7 +17,7 @@ describe("Test Simple Tracking", function () {
         console.log("Game address:", await game.getAddress());
 
         // Verify the contract works by enrolling a player
-        const TIER_0_FEE = hre.ethers.parseEther("0.001");
+        const TIER_0_FEE = hre.ethers.parseEther("0.0003");
         await game.connect(player1).enrollInTournament(0, 0, { value: TIER_0_FEE });
 
         // Check enrollment status

@@ -25,7 +25,7 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
     let players = [];
 
     // Tier fee configuration (only 3 tiers now: 0, 1, 2)
-    const TIER_0_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.001");
     const TIER_1_FEE = hre.ethers.parseEther("0.004");
     const TIER_2_FEE = hre.ethers.parseEther("0.008");
 
@@ -351,7 +351,7 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
         await game.waitForDeployment();
 
         // Initialize tiers
-        await initTx.wait();
+        // Tiers are now initialized in constructor
 
         console.log(`✅ ConnectFourOnChain deployed at ${await game.getAddress()}`);
     });

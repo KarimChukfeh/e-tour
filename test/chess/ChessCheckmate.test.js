@@ -85,7 +85,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
         const instanceId = 0;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         it("Should detect Scholar's Mate and mark match as completed", async function () {
             // Enroll players
@@ -196,7 +196,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
         const tierId = 0;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         it("Should complete match after timeout claim", async function () {
             const instanceId = 3;
@@ -244,7 +244,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
     describe("4-Player Tournament Progression", function () {
         const tierId = 5; // Tier 5 is a 4-player tier
         const instanceId = 0;
-        const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
+        const entryFee = hre.ethers.parseEther("0.004"); // Tier 5 entry fee
 
         it("Should advance winners to finals after round 0 completion", async function () {
             // Enroll 4 players
@@ -371,7 +371,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
     describe("Round Completion Logic", function () {
         const tierId = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         it("Should mark round as complete when all matches finish", async function () {
             const instanceId = 5;
@@ -402,7 +402,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
         it("Should increment completed matches count for each finished match", async function () {
             const instanceId = 6;
             const tierId = 5; // 4-player tournament (Tier 5)
-            const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
+            const entryFee = hre.ethers.parseEther("0.004"); // Tier 5 entry fee
 
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });

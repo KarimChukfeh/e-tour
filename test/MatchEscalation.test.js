@@ -5,8 +5,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
     let game;
     let owner, player1, player2, player3, player4, player5, player6;
 
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007");
 
     // Dynamic timeout values (read from tier config)
     let TIER_0_MATCH_TIME;

@@ -5,7 +5,7 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 describe("Enrollment Window Reset", function () {
     let game, player1, player2, player3;
     const TIER_0 = 0;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
     beforeEach(async function () {
         [, player1, player2, player3] = await hre.ethers.getSigners();

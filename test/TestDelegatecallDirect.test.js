@@ -14,12 +14,12 @@ describe("Test Delegatecall Direct", function () {
         await game.waitForDeployment();
 
         // Initialize
-        await initTx.wait();
+        // Tiers are now initialized in constructor
         console.log("TicTacChain deployed and initialized\n");
     });
 
     it("Should test delegatecall behavior via enrollment", async function () {
-        const TIER_0_FEE = hre.ethers.parseEther("0.001");
+        const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
         // Enroll player - this triggers delegatecalls internally
         await game.connect(player1).enrollInTournament(0, 0, { value: TIER_0_FEE });

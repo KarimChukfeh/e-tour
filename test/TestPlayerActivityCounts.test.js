@@ -26,7 +26,7 @@ describe("Test Player Activity Counts", function () {
         expect(isEnrolled).to.be.false;
 
         // Enroll player
-        const TIER_0_FEE = hre.ethers.parseEther("0.001");
+        const TIER_0_FEE = hre.ethers.parseEther("0.0003");
         await game.connect(player1).enrollInTournament(0, 0, { value: TIER_0_FEE });
 
         // Check enrollment

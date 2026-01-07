@@ -8,8 +8,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
     let game;
     let owner, player1, player2, player3, player4;
 
-    const TIER_0_FEE = hre.ethers.parseEther("0.002");
-    const TIER_1_FEE = hre.ethers.parseEther("0.004");
+    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_1_FEE = hre.ethers.parseEther("0.002");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
@@ -50,9 +50,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await moduleGameCache.getAddress()
         );
         await game.waitForDeployment();
-
-        // Initialize tiers
-        await initTx.wait();
+        // Tiers are now initialized in constructor
     });
 
     describe("Deployment and Tier Configuration", function () {

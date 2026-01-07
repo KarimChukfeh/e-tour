@@ -102,7 +102,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 0;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         beforeEach(async function () {
             // Enroll two players to start a tournament
@@ -208,7 +208,7 @@ describe("ChessOnChain Tests", function () {
         it("Should allow a basic game to start", async function () {
             const tierId = 0;
             const instanceId = 1;  // Use different instance
-            const entryFee = hre.ethers.parseEther("0.01");
+            const entryFee = hre.ethers.parseEther("0.003");
 
             // Enroll players
             await expect(chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee }))
@@ -228,7 +228,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 10;  // Fresh instance for this test
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         it("Should start match immediately after 2 players enroll in 1v1 duel", async function () {
             // First player enrolls - tournament should still be in Enrolling state
@@ -358,7 +358,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 2;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         // Additional squares for promotion test
         const promoSquares = {
@@ -492,7 +492,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 3;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         // Square indices for castling
         const sq = {
@@ -551,7 +551,7 @@ describe("ChessOnChain Tests", function () {
         const tierId = 0;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         it("Should allow timeout claim after timeout period", async function () {
             const instanceId = 6; // Unique instance ID
@@ -615,7 +615,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 7;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         beforeEach(async function () {
             await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
@@ -648,7 +648,7 @@ describe("ChessOnChain Tests", function () {
         const instanceId = 8;
         const roundNumber = 0;
         const matchNumber = 0;
-        const entryFee = hre.ethers.parseEther("0.01");
+        const entryFee = hre.ethers.parseEther("0.003");
 
         // Squares for Scholar's Mate
         const sq = {
@@ -703,7 +703,7 @@ describe("ChessOnChain Tests", function () {
     describe("4-Player Tournament", function () {
         const tierId = 5; // Tier 5 is a 4-player tier
         const instanceId = 0;
-        const entryFee = hre.ethers.parseEther("0.025"); // Tier 5 entry fee
+        const entryFee = hre.ethers.parseEther("0.004"); // Tier 5 entry fee
 
         it("Should handle 4-player tournament bracket", async function () {
             // Get fresh signers for this test

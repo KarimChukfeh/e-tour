@@ -34,13 +34,13 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
     // Tier configurations
     const TIER_CONFIGS = [
-        { id: 0, players: 2, instances: 100, fee: "0.01", enrollWindow: 600 },
-        { id: 1, players: 2, instances: 100, fee: "0.02", enrollWindow: 600 },
-        { id: 2, players: 2, instances: 100, fee: "0.03", enrollWindow: 600 },
+        { id: 0, players: 2, instances: 100, fee: "0.003", enrollWindow: 600 },
+        { id: 1, players: 2, instances: 100, fee: "0.008", enrollWindow: 600 },
+        { id: 2, players: 2, instances: 100, fee: "0.015", enrollWindow: 600 },
         { id: 3, players: 2, instances: 100, fee: "0.1", enrollWindow: 600 },
-        { id: 4, players: 4, instances: 50, fee: "0.015", enrollWindow: 1800 },
-        { id: 5, players: 4, instances: 50, fee: "0.025", enrollWindow: 1800 },
-        { id: 6, players: 4, instances: 50, fee: "0.035", enrollWindow: 1800 },
+        { id: 4, players: 4, instances: 50, fee: "0.004", enrollWindow: 1800 },
+        { id: 5, players: 4, instances: 50, fee: "0.009", enrollWindow: 1800 },
+        { id: 6, players: 4, instances: 50, fee: "0.02", enrollWindow: 1800 },
         { id: 7, players: 4, instances: 50, fee: "0.15", enrollWindow: 1800 },
     ];
 
@@ -225,7 +225,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should reject incorrect entry fee", async function () {
                 const instanceId = 1;
-                const wrongFee = hre.ethers.parseEther("0.01");
+                const wrongFee = hre.ethers.parseEther("0.003");
                 await expect(
                     chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: wrongFee })
                 ).to.be.reverted;
@@ -309,7 +309,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should reject incorrect entry fee", async function () {
                 const instanceId = 1;
-                const wrongFee = hre.ethers.parseEther("0.01");
+                const wrongFee = hre.ethers.parseEther("0.003");
                 await expect(
                     chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: wrongFee })
                 ).to.be.reverted;
@@ -344,7 +344,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should complete Tier 0 tournament via checkmate", async function () {
             const tierId = 0;
             const instanceId = 10;
-            const fee = hre.ethers.parseEther("0.01");
+            const fee = hre.ethers.parseEther("0.003");
 
             await enrollPlayers(tierId, instanceId, 2, fee);
 
@@ -372,7 +372,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should complete Tier 0 tournament via timeout", async function () {
             const tierId = 0;
             const instanceId = 11;
-            const fee = hre.ethers.parseEther("0.01");
+            const fee = hre.ethers.parseEther("0.003");
 
             await enrollPlayers(tierId, instanceId, 2, fee);
 
@@ -503,7 +503,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
         it("Should distribute winner-takes-all correctly in Tier 0", async function () {
             const tierId = 0;
             const instanceId = 20;
-            const fee = hre.ethers.parseEther("0.01");
+            const fee = hre.ethers.parseEther("0.003");
 
             const players = await enrollPlayers(tierId, instanceId, 2, fee);
             const tournament = await chess.tournaments(tierId, instanceId);
@@ -573,7 +573,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // Enroll in Tier 0
             await chess.connect(player).enrollInTournament(0, 0, {
-                value: hre.ethers.parseEther("0.01")
+                value: hre.ethers.parseEther("0.003")
             });
 
             // Enroll in Tier 4
@@ -594,7 +594,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
         it("Should track prizes independently per tier", async function () {
             // Complete tournament in Tier 0
-            await enrollPlayers(0, 30, 2, hre.ethers.parseEther("0.01"));
+            await enrollPlayers(0, 30, 2, hre.ethers.parseEther("0.003"));
             const winner_t0 = await playScholarsMate(0, 30, 0, 0);
             const prize_t0 = await chess.playerPrizes(0, 30, winner_t0);
 
@@ -616,12 +616,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // Enroll in Tier 0, instance 0
             await chess.connect(player).enrollInTournament(0, 40, {
-                value: hre.ethers.parseEther("0.01")
+                value: hre.ethers.parseEther("0.003")
             });
 
             // Enroll in Tier 0, instance 1
             await chess.connect(player).enrollInTournament(0, 41, {
-                value: hre.ethers.parseEther("0.01")
+                value: hre.ethers.parseEther("0.003")
             });
 
             expect(await chess.isEnrolled(0, 40, player.address)).to.be.true;

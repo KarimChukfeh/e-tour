@@ -4,8 +4,8 @@ import { expect } from "chai";
 describe("Protocol Raffle System", function () {
     let game;
     let owner, player1, player2, player3, player4, nonEnrolled;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007");
     const THREE_ETH = hre.ethers.parseEther("3");
     const ONE_ETH = hre.ethers.parseEther("1");
 

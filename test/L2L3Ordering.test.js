@@ -8,7 +8,7 @@ describe.skip("L2/L3 Ordering Test (DEPRECATED - tierConfigs removed)", function
     let game, players;
     const TIER_ID = 0;
     const INSTANCE_ID = 0;
-    const TIER_FEE = hre.ethers.parseEther("0.001");
+    const TIER_FEE = hre.ethers.parseEther("0.0003");
 
     beforeEach(async function() {
         const signers = await hre.ethers.getSigners();

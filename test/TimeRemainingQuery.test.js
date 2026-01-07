@@ -11,7 +11,7 @@ describe.skip("Real-Time Time Remaining Query Tests (DEPRECATED - getCurrentTime
     let game;
     let owner, player1, player2;
 
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
     // Dynamic timeout values (read from tier config)
     let MATCH_TIME_PER_PLAYER;

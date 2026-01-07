@@ -4,7 +4,7 @@ import { expect } from "chai";
 describe("ConnectFour Edge Cases", function () {
     let game;
     let player1, player2;
-    const TIER_0_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.001");
 
     beforeEach(async function () {
         [, player1, player2] = await hre.ethers.getSigners();
@@ -47,7 +47,7 @@ describe("ConnectFour Edge Cases", function () {
         await game.waitForDeployment();
 
         // Initialize tiers
-        await initTx.wait();
+        // Tiers are now initialized in constructor
     });
 
     describe("Full Board Draw (42 Pieces)", function () {

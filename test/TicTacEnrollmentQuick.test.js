@@ -48,12 +48,12 @@ describe("TicTacChain Enrollment Quick Test", function () {
         console.log("\nTicTacChain:", await game.getAddress());
 
         // Initialize
-        await initTx.wait();
+        // Tiers are now initialized in constructor
         console.log("Initialized\n");
     });
 
     it("Should enroll player1", async function () {
-        const entryFee = hre.ethers.parseEther("0.001");
+        const entryFee = hre.ethers.parseEther("0.0003");
         const tx = await game.connect(player1).enrollInTournament(0, 0, { value: entryFee, gasLimit: 500000 });
         const receipt = await tx.wait();
         console.log("✅ Player1 enrolled! Gas:", receipt.gasUsed.toString());
@@ -61,7 +61,7 @@ describe("TicTacChain Enrollment Quick Test", function () {
     });
 
     it("Should enroll player2 and start", async function () {
-        const entryFee = hre.ethers.parseEther("0.001");
+        const entryFee = hre.ethers.parseEther("0.0003");
         const tx = await game.connect(player2).enrollInTournament(0, 0, { value: entryFee, gasLimit: 5000000 });
         const receipt = await tx.wait();
         console.log("✅ Player2 enrolled! Gas:", receipt.gasUsed.toString());

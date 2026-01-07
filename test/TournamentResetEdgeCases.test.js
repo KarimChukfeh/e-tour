@@ -4,8 +4,8 @@ import { expect } from "chai";
 describe("Tournament Reset and Enrollment Edge Cases", function () {
     let game;
     let owner, player1, player2, player3, player4, player5;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5] = await hre.ethers.getSigners();

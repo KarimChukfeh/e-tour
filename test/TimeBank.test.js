@@ -8,8 +8,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
     let game;
     let owner, player1, player2, player3, player4;
 
-    const TIER_0_FEE = hre.ethers.parseEther("0.001"); // 2-player tier
-    const TIER_1_FEE = hre.ethers.parseEther("0.002"); // 4-player tier
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003"); // 2-player tier
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007"); // 4-player tier
 
     // Time constants
     const TEN_SECONDS = 10;

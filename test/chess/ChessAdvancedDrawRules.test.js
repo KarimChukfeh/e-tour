@@ -4,7 +4,7 @@ import { expect } from "chai";
 describe("Chess Advanced Draw Rules", function () {
     let chess;
     let whitePlayer, blackPlayer;
-    const ENTRY_FEE = hre.ethers.parseEther("0.01"); // Chess uses 0.01 ETH for tier 0
+    const ENTRY_FEE = hre.ethers.parseEther("0.003"); // Chess uses 0.01 ETH for tier 0
 
     // PieceType enum values matching the contract
     const PieceType = {

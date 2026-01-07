@@ -4,7 +4,7 @@ import { expect } from "chai";
 describe("TicTacChain Progressive Raffle Thresholds", function () {
     let game;
     let owner, player1, player2, player3, player4;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
@@ -47,7 +47,7 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
         await game.waitForDeployment();
 
         // Initialize
-        await initTx.wait();
+        // Tiers are now initialized in constructor
     });
 
     describe("Progressive Threshold Configuration", function () {

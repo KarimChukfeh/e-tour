@@ -6,7 +6,7 @@ describe("Prize Distribution Failure Fallback", function () {
     let owner, player1, player2, player3, player4;
     let rejectingContract;
     let playerProxy;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
@@ -215,7 +215,7 @@ describe("Prize Distribution Failure Fallback", function () {
 
             const tierId = 1; // 4-player tier
             const instanceId = 0;
-            const TIER_1_FEE = hre.ethers.parseEther("0.002");
+            const TIER_1_FEE = hre.ethers.parseEther("0.0007");
 
             // Enroll 4 players
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
