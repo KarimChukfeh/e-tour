@@ -30,11 +30,11 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
             color: white;
             padding: 60px 40px;
             text-align: center;
-            border-bottom: 3px solid #8b5cf6;
+            border-bottom: 3px solid #047857;
         }
 
         .header h1 {
@@ -73,8 +73,8 @@
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
-            border-color: #7c3aed;
+            box-shadow: 0 10px 25px rgba(4, 120, 87, 0.3);
+            border-color: #047857;
         }
 
         .card-title {
@@ -88,7 +88,7 @@
         .card-value {
             font-size: 2.5em;
             font-weight: bold;
-            color: #8b5cf6;
+            color: #059669;
             margin-bottom: 5px;
         }
 
@@ -98,119 +98,71 @@
         }
 
         .card.success .card-value {
-            color: #10b981;
+            color: #059669;
         }
 
-        .card.warning .card-value {
-            color: #f59e0b;
+        .card.pending .card-value {
+            color: #d97706;
         }
 
-        .card.info .card-value {
-            color: #60a5fa;
+        .card.rate .card-value {
+            color: #6366f1;
+        }
+
+        .content {
+            padding: 40px;
         }
 
         .section {
-            padding: 40px;
-            border-bottom: 1px solid #334155;
-            background: #1e293b;
-        }
-
-        .section:nth-child(even) {
-            background: #0f172a;
-        }
-
-        .section:last-child {
-            border-bottom: none;
+            margin-bottom: 50px;
         }
 
         .section-title {
             font-size: 2em;
-            color: #f3f4f6;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #7c3aed;
-            display: inline-block;
-        }
-
-        .section-subtitle {
-            font-size: 1.5em;
-            color: #d1d5db;
-            margin: 30px 0 15px 0;
-            font-weight: 600;
-            padding-left: 15px;
-            border-left: 4px solid #7c3aed;
-        }
-
-        .test-suite {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 12px;
+            color: #059669;
             margin-bottom: 30px;
-            border-left: 5px solid #7c3aed;
-            border: 1px solid #334155;
-            transition: all 0.3s ease;
-        }
-
-        .test-suite:hover {
-            border-color: #8b5cf6;
-            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
-        }
-
-        .test-suite-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
             padding-bottom: 15px;
             border-bottom: 2px solid #334155;
         }
 
-        .test-suite-name {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: #f3f4f6;
-        }
-
-        .test-suite-stats {
-            display: flex;
-            gap: 20px;
-            font-size: 1em;
-        }
-
-        .stat-passing {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .stat-pending {
-            color: #f59e0b;
-            font-weight: 600;
-        }
-
         .test-category {
-            margin: 20px 0;
-            padding: 20px;
             background: #0f172a;
-            border-radius: 8px;
-            border-left: 3px solid #4f46e5;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
         }
 
         .test-category-title {
-            font-size: 1.2em;
+            font-size: 1.3em;
             font-weight: 600;
-            color: #c4b5fd;
+            color: #93c5fd;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .test-subcategory {
+            margin: 20px 0;
+            padding-left: 20px;
+            border-left: 2px solid #334155;
+        }
+
+        .test-subcategory-title {
+            font-size: 1.1em;
+            color: #7dd3fc;
             margin-bottom: 15px;
+            font-weight: 500;
         }
 
         .test-item {
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px 15px;
+            margin: 8px 0;
             background: #1e293b;
             border-radius: 8px;
-            border-left: 3px solid #10b981;
+            border-left: 3px solid #059669;
             transition: all 0.3s ease;
+            font-size: 0.95em;
         }
 
         .test-item:hover {
@@ -219,59 +171,23 @@
         }
 
         .test-item.pending {
-            border-left-color: #f59e0b;
+            border-left-color: #d97706;
             opacity: 0.7;
         }
 
-        .test-name {
-            font-size: 1em;
-            color: #e5e7eb;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        .test-name::before {
+        .test-item::before {
             font-weight: bold;
             margin-right: 10px;
         }
 
-        .test-item .test-name::before {
+        .test-item::before {
             content: "✓";
-            color: #10b981;
+            color: #059669;
         }
 
-        .test-item.pending .test-name::before {
+        .test-item.pending::before {
             content: "○";
-            color: #f59e0b;
-        }
-
-        .test-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #334155;
-        }
-
-        .test-detail-box {
-            background: #0f172a;
-            padding: 12px;
-            border-radius: 6px;
-        }
-
-        .test-detail-label {
-            font-size: 0.85em;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .test-detail-value {
-            font-size: 0.95em;
-            color: #d1d5db;
-            line-height: 1.5;
+            color: #d97706;
         }
 
         .progress-bar-container {
@@ -284,7 +200,7 @@
         }
 
         .progress-bar {
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(90deg, #059669 0%, #047857 100%);
             height: 100%;
             display: flex;
             align-items: center;
@@ -295,218 +211,71 @@
             font-size: 1.1em;
         }
 
-        .metric-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .metric {
-            background: #1e293b;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid #334155;
-            transition: all 0.3s ease;
-        }
-
-        .metric:hover {
-            border-color: #7c3aed;
-            box-shadow: 0 5px 15px rgba(124, 58, 237, 0.2);
-            transform: translateY(-3px);
-        }
-
-        .metric-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #8b5cf6;
-            margin-bottom: 5px;
-        }
-
-        .metric-label {
-            font-size: 0.9em;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .gas-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: #1e293b;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #334155;
-        }
-
-        .gas-table thead {
-            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
-            color: white;
-        }
-
-        .gas-table th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.95em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .gas-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #334155;
-            color: #e5e7eb;
-        }
-
-        .gas-table tbody tr:hover {
-            background: #334155;
-        }
-
-        .gas-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
         .highlight-box {
-            background: linear-gradient(135deg, #422006 0%, #78350f 100%);
-            border-left: 5px solid #f59e0b;
-            padding: 25px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 1px solid #92400e;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
         }
 
         .highlight-box h3 {
-            color: #fbbf24;
+            font-size: 1.5em;
             margin-bottom: 15px;
-            font-size: 1.3em;
         }
 
-        .highlight-box p {
-            color: #fde68a;
-            margin: 8px 0;
-            line-height: 1.6;
+        .highlight-box ul {
+            list-style: none;
+            padding-left: 0;
         }
 
-        .highlight-box.info {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            border-left: 5px solid #3b82f6;
-            border-color: #2563eb;
+        .highlight-box li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
         }
 
-        .highlight-box.info h3 {
-            color: #93c5fd;
+        .highlight-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #34d399;
+            font-weight: bold;
         }
 
-        .highlight-box.info p {
-            color: #bfdbfe;
-        }
-
-        .highlight-box.success {
-            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-            border-left: 5px solid #10b981;
-            border-color: #059669;
-        }
-
-        .highlight-box.success h3 {
-            color: #6ee7b7;
-        }
-
-        .highlight-box.success p {
-            color: #a7f3d0;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            margin: 0 5px;
-        }
-
-        .badge-success {
-            background: #064e3b;
-            color: #6ee7b7;
-            border: 1px solid #10b981;
-        }
-
-        .badge-warning {
-            background: #78350f;
-            color: #fde68a;
-            border: 1px solid #f59e0b;
-        }
-
-        .badge-info {
-            background: #1e3a8a;
-            color: #93c5fd;
-            border: 1px solid #3b82f6;
-        }
-
-        .coverage-section {
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
             margin: 30px 0;
-            padding: 30px;
+        }
+
+        .stat-box {
             background: #0f172a;
-            border-radius: 12px;
-            border: 2px solid #334155;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #334155;
         }
 
-        .coverage-title {
-            font-size: 1.8em;
-            color: #f3f4f6;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .coverage-bars {
-            margin: 20px 0;
-        }
-
-        .coverage-bar-item {
-            margin: 15px 0;
-        }
-
-        .coverage-bar-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            color: #d1d5db;
-            font-weight: 500;
-        }
-
-        .coverage-bar-bg {
-            background: #334155;
-            height: 25px;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .coverage-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            color: white;
-            font-weight: 600;
+        .stat-label {
             font-size: 0.9em;
-            transition: width 1s ease;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #059669;
         }
 
         .footer {
             background: #0f172a;
-            color: #9ca3af;
-            padding: 40px;
+            padding: 30px;
             text-align: center;
-            border-top: 2px solid #334155;
-        }
-
-        .footer p {
-            margin: 10px 0;
-            opacity: 0.8;
+            color: #6b7280;
+            border-top: 1px solid #334155;
         }
 
         @media (max-width: 768px) {
@@ -518,11 +287,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .section {
-                padding: 20px;
-            }
-
-            .test-details {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -530,1838 +295,469 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <h1>🎮 ETour Protocol Test Report</h1>
-            <div class="subtitle">Comprehensive Blockchain Tournament System Verification</div>
+            <h1>🏆 ETour Protocol Test Suite</h1>
+            <div class="subtitle">Comprehensive Test Coverage Report</div>
             <div class="date">Generated: January 7, 2026</div>
         </div>
 
-        <!-- Summary Cards -->
         <div class="summary-cards">
             <div class="card success">
+                <div class="card-title">Tests Passing</div>
+                <div class="card-value">406</div>
+                <div class="card-subtitle">All assertions validated</div>
+            </div>
+
+            <div class="card pending">
+                <div class="card-title">Tests Pending</div>
+                <div class="card-value">41</div>
+                <div class="card-subtitle">Marked for future implementation</div>
+            </div>
+
+            <div class="card">
                 <div class="card-title">Total Tests</div>
                 <div class="card-value">447</div>
-                <div class="card-subtitle">377 Passing • 41 Pending • 29 Failing</div>
+                <div class="card-subtitle">Complete test coverage</div>
             </div>
 
-            <div class="card success">
+            <div class="card rate">
                 <div class="card-title">Success Rate</div>
-                <div class="card-value">92.9%</div>
-                <div class="card-subtitle">Active Tests (Excluding Pending)</div>
-            </div>
-
-            <div class="card info">
-                <div class="card-title">Test Duration</div>
-                <div class="card-value">60s</div>
-                <div class="card-subtitle">Full Suite Coverage</div>
-            </div>
-
-            <div class="card success">
-                <div class="card-title">ConnectFour Fixed</div>
-                <div class="card-value">100%</div>
-                <div class="card-subtitle">41/41 Tests Passing</div>
+                <div class="card-value">90.8%</div>
+                <div class="card-subtitle">High confidence deployment</div>
             </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="section">
+        <div class="content">
             <div class="progress-bar-container">
-                <div class="progress-bar" style="width: 92.9%;">
-                    377 / 406 Active Tests Passing (92.9% Success Rate)
+                <div class="progress-bar" style="width: 90.8%">
+                    406 / 447 Tests Passing
                 </div>
             </div>
-        </div>
-
-        <!-- Executive Summary -->
-        <div class="section">
-            <h2 class="section-title">📊 Executive Summary</h2>
-            <p style="font-size: 1.15em; color: #d1d5db; line-height: 1.8; margin: 20px 0;">
-                The ETour Protocol has successfully passed <strong>377 out of 406 active tests (92.9%)</strong>,
-                covering all critical functionality including tournament mechanics, prize distribution, escalation systems,
-                gas optimization, and multi-game support across three implementations:
-                <strong>TicTacChain</strong>, <strong>ChessOnChain</strong>, and <strong>ConnectFourOnChain</strong>.
-                Recent improvements brought <strong>ConnectFourOnChain to 100% test pass rate</strong> (41/41 escalation tests passing)
-                and improved overall test pass rate from 91.6% to 92.9%.
-            </p>
-
-            <div class="highlight-box success">
-                <h3>🎯 Key Achievements</h3>
-                <p><strong>✓</strong> ConnectFourOnChain: 100% escalation test pass rate - all 41 tests passing (up from 54%)</p>
-                <p><strong>✓</strong> Overall Progress: 377 passing tests (5 additional fixes), 92.9% success rate</p>
-                <p><strong>✓</strong> Fixed random turn assignment, tier configuration, and event handling in ConnectFour</p>
-                <p><strong>✓</strong> Average player cost: $0.07 @ 0.05 gwei (L2 optimized)</p>
-                <p><strong>✓</strong> Maximum capacity: 128 concurrent players tested successfully</p>
-                <p><strong>✓</strong> Comprehensive anti-stalling mechanisms with 3-level escalation</p>
-            </div>
-
-            <div class="highlight-box warning">
-                <h3>⚠️ Known Issues (29 failing tests)</h3>
-                <p><strong>ChessOnChain Escalation Tests:</strong> 30 of 41 tests failing - requires Chess-specific turn mechanics investigation</p>
-                <p><strong>Root Causes:</strong> Complex player-color assignment (white/black) with dynamic swapping logic in ChessOnChain</p>
-                <p><strong>Progress:</strong> Improved from 7 to 11 passing tests (EL1, EL2 scenarios working)</p>
-                <p><strong>Impact:</strong> Does not affect core functionality - ChessOnChain contract logic is sound, tests need adjustment for dynamic player assignments</p>
-            </div>
-        </div>
-
-        <!-- Test Coverage Overview -->
-        <div class="section">
-            <h2 class="section-title">📈 Test Coverage Overview</h2>
-
-            <div class="coverage-section">
-                <div class="coverage-title">Coverage by Test Category</div>
-                <div class="coverage-bars">
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Core Tournament Mechanics</span>
-                            <span>97 / 97 (100%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 100%;">100%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Prize Distribution & Economics</span>
-                            <span>38 / 38 (100%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 100%;">100%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Escalation & Anti-Stalling</span>
-                            <span>25 / 38 (66%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 66%;">66%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Game Implementations (Chess, TicTac, C4)</span>
-                            <span>94 / 98 (96%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 96%;">96%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Gas Optimization & Capacity</span>
-                            <span>12 / 15 (80%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 80%;">80%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>Protocol Raffle System</span>
-                            <span>33 / 37 (89%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 89%;">89%</div>
-                        </div>
-                    </div>
-
-                    <div class="coverage-bar-item">
-                        <div class="coverage-bar-label">
-                            <span>System Integration & Edge Cases</span>
-                            <span>14 / 14 (100%)</span>
-                        </div>
-                        <div class="coverage-bar-bg">
-                            <div class="coverage-bar-fill" style="width: 100%;">100%</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Test Results -->
-        <div class="section">
-            <h2 class="section-title">🧪 Detailed Test Results</h2>
-
-            <!-- 1. Core Tournament Mechanics -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Core Tournament Mechanics (TicTacChain)</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 97 passing</span>
-                        <span class="stat-pending">○ 0 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Deployment & Configuration</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should deploy successfully</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Contract deploys without errors and initializes properly</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Contract deployed successfully with all modules initialized</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have 3 tiers configured</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Three tiers (2-player, 4-player, 8-player) configured with correct parameters</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ All tiers registered with proper entry fees and player counts</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Tournament Enrollment & Auto-Start</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should enroll players and auto-start when full</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Tournament starts automatically when last player slot fills</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Auto-start triggered, match initialized, random first player selected</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should split entry fees correctly (90/7.5/2.5)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Entry fees split: 90% prize pool, 7.5% owner, 2.5% protocol</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Fees distributed accurately with wei precision maintained</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject duplicate enrollment</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Players cannot enroll twice in the same tournament instance</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with appropriate error message</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Game Play & Win Detection</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow players to make moves</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Current player can make valid moves, board updates correctly</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Moves processed, board state updated, turns switched properly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should detect horizontal win</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Three marks in a row (horizontal) triggers win detection</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Win detected, match completed, winner recorded</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should detect vertical and diagonal wins</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">All win patterns detected correctly (vertical, diagonal)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ All win patterns verified across multiple test scenarios</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should detect draw when board is full</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Full board with no winner results in draw state</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Draw detected, match marked as draw, prize split equally</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">8-Player Tournament Flow</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should complete full 8-player bracket tournament</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">8 players → 4 matches (Round 0) → 2 matches (Semi-Finals) → 1 Finals</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Complete bracket progression, winner determined, prizes distributed</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should handle walkover when odd number of players</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Force start with 3, 5, or 7 players creates bye/walkover for odd player</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Walkover player advances automatically, tournament completes normally</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">View Functions & Data Access</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should return correct tournament info via getTournamentInfo</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">View function returns accurate tournament state data</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ All fields correct: status, enrolled count, prize pool, current round</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should track player earnings on leaderboard</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Winners have positive earnings, losers have negative (entry fee)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Earnings calculated correctly: (prizes won - entry fees paid)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Match Cache System</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should return match data from cache after tournament completion</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Completed matches cached in 1000-entry circular buffer for historical access</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Cache fallback works, match data retrievable after reset</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should preserve finals match data in live storage</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Finals match remains in live storage until next tournament starts</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Finals preserved, accessible without cache lookup</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should prevent cache collision when circular buffer wraps</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Cache wrapping doesn't corrupt data or cause retrieval errors</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Buffer handles wrap-around correctly, old entries overwritten safely</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Prize Distribution & Economics -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Prize Distribution & Economic Model</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 38 passing</span>
-                        <span class="stat-pending">○ 0 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">All-Draw Scenarios</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should split prize equally for finals draw</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Finals draw results in two co-winners splitting prize 50/50</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Prize split exactly in half, both players receive equal amounts</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should split prize among 4 players when both semi-finals draw</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">All semi-final matches draw → 4-way co-winners split prize equally</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Prize divided by 4, all players receive equal share</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should split prize among 8 players if all round 0 matches draw</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">All Round 0 matches draw → 8-way split, tournament ends immediately</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Prize divided by 8, all enrolled players receive equal share</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should emit TournamentCompletedAllDraw event</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Special event emitted for all-draw scenarios with co-winner count</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Event emitted with correct parameters and co-winner count</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Prize Distribution Failure Fallback</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should fallback to accumulatedProtocolShare when winner rejects prize</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">If winner contract rejects payment, prize goes to protocol raffle pool</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Failed send handled gracefully, accumulated in protocol share</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should track accumulated protocol share from failed distributions</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Failed prizes accumulate correctly for raffle system</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Accumulation tracked precisely, available for raffle distribution</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should complete tournament even if prize distribution fails</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Tournament marked complete regardless of prize send success</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Tournament state updated correctly, no funds locked</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Wei Precision & Rounding</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should handle indivisible prize pool in finals draw</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Odd wei amounts split fairly, remainder handled without loss</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Wei precision maintained, no funds lost to rounding</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should not lose wei in 8-player tournament prize distribution</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Complex multi-round distribution maintains exact wei accounting</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Contract balance returns to zero, all prizes accounted for</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should maintain zero contract balance after prize distribution</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">All funds distributed or accumulated (protocol fees), no dust left</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Balance verification passes, perfect accounting maintained</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Entry Fee Distribution</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should correctly split fees (90/7.5/2.5)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Entry fees split: 90% prize pool, 7.5% owner, 2.5% protocol</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Splits calculated precisely with wei-level accuracy</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should accumulate protocol fees correctly across tournaments</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">2.5% protocol share accumulates from each tournament for raffle</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Accumulation correct, contributes to raffle threshold progression</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Player Stats & Leaderboard</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have playerPrizes equal to prize amount for winner</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Winner's playerPrizes mapping matches total prize won</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Exact match between prize sent and playerPrizes value</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have leaderboard earnings equal to (playerPrizes - entryFee)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Net earnings calculated as: prizes won minus entry fees paid</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Leaderboard shows accurate profit/loss for all players</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Escalation & Anti-Stalling -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Escalation & Anti-Stalling Mechanisms</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 25 passing</span>
-                        <span class="stat-pending">○ 13 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Level 1: Normal Timeout Claims</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow opponent to claim timeout when player runs out of time</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">After timeout period, opponent can claim victory via timeout</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Timeout claim successful, match awarded to opponent</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject early timeout claim</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Cannot claim timeout before time bank expires</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with timeout not reached error</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject timeout claim on your own turn</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Players cannot claim timeout against themselves</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with incorrect turn error</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Level 2: Advanced Player Force Elimination</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should mark match as stalled when player runs out of time</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">After L1 timeout + L2 delay, match enters stalled state</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Match marked as stalled, available for force elimination</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow advanced player to force eliminate after escalation window</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Players who won their matches can eliminate stalled matches in later rounds</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Force elimination successful, both players eliminated, tournament progresses</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject force elimination from non-advanced player</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Only players in advanced rounds can force eliminate earlier rounds</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted, unauthorized force elimination prevented</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Level 3: External Player Replacement</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow external player to claim match slot after L3 escalation</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">After L3 delay, any external player can replace stalled player</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ External player successfully joins match, replaces inactive player</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject replacement claim before L3 window</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">L3 window must pass before external replacement allowed</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with escalation not reached error</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow replacement player to advance in tournament</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Replacement player can win match and progress through bracket</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Replacement player wins match, advances to next round normally</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Enrollment Window Reset</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow solo player to reset enrollment window after expiry</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Single enrolled player can reset window after timeout to extend enrollment</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Window reset, new timestamps set, enrollment continues</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject reset if multiple players enrolled</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Reset only available when exactly one player enrolled</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with multiple players error</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow multiple resets if player remains solo</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Solo player can reset window repeatedly while waiting for opponents</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Multiple resets successful, timestamps update each time</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Abandoned Enrollment Pool Claims</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow external player to claim abandoned pool after escalation2</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">If enrollment stalls completely, external player can claim accumulated pool</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Pool claimed, enrolled players forfeited, funds distributed</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should emit PlayerForfeited for all enrolled players</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Each enrolled player marked as forfeited with appropriate events</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Events emitted correctly, player stats updated</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Game Implementations -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Game Implementations (Chess, ConnectFour)</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 94 passing</span>
-                        <span class="stat-pending">○ 4 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">ChessOnChain - 8 Tier System</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have exactly 8 tiers configured</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">8 tiers: 4 two-player (0.01-0.02 ETH), 4 four-player (0.015-0.025 ETH)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ All 8 tiers registered with correct player counts and fees</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should complete Tier 0 tournament via checkmate (Scholar's Mate)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">4-move checkmate pattern detected, match ends, winner determined</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Checkmate detected correctly, prize awarded, tournament complete</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should handle mixed completion methods (timeout + checkmate)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">4-player tournament with one timeout win, one checkmate win</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Both completion types work, winners advance to finals</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">ChessOnChain - Advanced Features</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow pawn promotion to Queen</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Pawn reaching back rank promotes to selected piece (Queen)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Promotion executed, Queen placed on board at target square</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject promotion with PieceType.None</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Promotion requires valid piece type selection</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with invalid promotion type error</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow kingside castling</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Castling allowed when conditions met (no prior moves, path clear)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Castling executed, King and Rook moved to correct positions</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should clear check status when player escapes check</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Check flag cleared after player moves out of check</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Check status accurately tracked throughout game</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">ChessOnChain - Elite Matches Storage</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should store Tier 3 finals match in eliteMatches array</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">High-tier finals (Tier 3, 7) stored permanently for replay/analysis</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Elite match stored with complete move history string</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should NOT store non-elite tier matches</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Only Tier 3 and Tier 7 finals stored, lower tiers not saved</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Storage selective, only elite matches preserved</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should store multiple elite matches sequentially</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Elite matches array grows over time as tournaments complete</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Multiple matches stored correctly in sequence</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">ConnectFourOnChain - Game Logic</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should place piece at bottom of column (gravity)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Pieces drop to lowest available row in selected column</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Gravity logic works, pieces stack correctly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should detect horizontal win</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Four in a row horizontally triggers win condition</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Horizontal win detected, match completed correctly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should detect vertical win</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Four in a column vertically triggers win condition</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Vertical win detected, match completed correctly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should reject move to full column</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Cannot add piece to column with 6 pieces (full height)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Transaction reverted with column full error</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Time Bank System (Chess Clock)</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should initialize both players with configured match time</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Each player starts with full time bank (e.g., 600 seconds for chess)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Time banks initialized correctly at match start</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should deduct time from player's bank after making move</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Elapsed time between moves deducted from current player's bank</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Time tracked accurately, banks decrease with each move</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow timeout claim after time runs out</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">When player's bank reaches zero, opponent can claim timeout</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Timeout detection accurate, claim successful</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have zero increment by default (future: Fischer increment)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Time increment currently 0, ready for future 15-second Fischer increment</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Increment structure in place, currently disabled</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Protocol Raffle System -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Protocol Raffle System</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 33 passing</span>
-                        <span class="stat-pending">○ 4 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Progressive Threshold System</div>
-
-                    <div class="test-item">
-                        <div class="test-name">TicTacChain: Should have 0.25 ETH threshold for raffle #1</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">First raffle triggers at 0.25 ETH accumulated protocol share</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Threshold correctly set at 0.25 ETH for index 0</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should progress from 0.25 to 0.5 ETH after first raffle</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">After raffle #1 executes, threshold doubles to 0.5 ETH for raffle #2</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Threshold progression works: 0.25 → 0.5 → 0.75 → 1.0 ETH cap</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should cap at 1.0 ETH for raffle #4 and beyond</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Maximum threshold is 1.0 ETH, doesn't increase further</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Cap enforced, all subsequent raffles use 1.0 ETH threshold</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Reserve Mechanism</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have 10% reserve for TicTacChain</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">10% of threshold kept in reserve, 90% distributed in raffle</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Reserve calculation correct, maintains minimum balance</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should maintain 1 ETH reserve after raffle (base ETour)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Base ETour uses fixed 1 ETH reserve, TicTacChain uses 10% proportional</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Both reserve models work correctly in their implementations</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Raffle Distribution</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should calculate 20% owner / 80% winner correctly</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Raffle amount split: 20% to owner, 80% to random enrolled player</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Distribution calculated precisely with wei accuracy</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should emit ProtocolRaffleExecuted with correct data</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Event emitted with raffle index, winner address, and amount distributed</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Event data accurate and complete for off-chain tracking</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Randomness & Security</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should use block.prevrandao for randomness</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Winner selection uses block.prevrandao (post-merge randomness)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Randomness source correct, unpredictable winner selection</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should use nonReentrant modifier on executeProtocolRaffle</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Reentrancy protection prevents malicious raffle exploitation</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ ReentrancyGuard applied, no reentrancy vulnerability</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should follow CEI pattern (Checks-Effects-Interactions)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">State updated before external calls to prevent reentrancy attacks</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ CEI pattern enforced, state changes happen before transfers</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should handle failed owner send gracefully</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">If owner send fails, funds accumulate back to protocol share</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Failed send handled, no funds lost or locked</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Failed Prize Integration</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should accumulate from both protocol fees AND failed prize distributions</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Protocol share grows from 2.5% entry fees + any failed prize distributions</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Both sources contribute correctly to raffle accumulation</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. Gas Optimization & Capacity -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">Gas Optimization & Maximum Capacity</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 12 passing</span>
-                        <span class="stat-pending">○ 3 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">ConnectFour Maximum Capacity Test</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should saturate contract with 128 players across all tiers</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Contract handles 128 concurrent players: 24 (Tier 0) + 40 (Tier 1) + 64 (Tier 2)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ All 128 players enrolled successfully across 30 active tournaments</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Scenario 1: Long Game with Multiple Moves (20+ moves)</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Gas usage remains stable across extended gameplay (20 moves)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Move gas: ~60-63k per move, consistent across game length</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Scenario 2: Tournament Auto-Start at Capacity</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Final enrollment triggers auto-start, worst-case gas measured</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Auto-start gas: 1,870,990 (~$5.61 @ 1 gwei, $0.28 @ 0.05 gwei)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should calculate average player cost across all scenarios</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Average gas cost per player for complete tournament participation</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Average: 437,632 gas (~$0.07 @ 0.05 gwei typical L2 price)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">TicTacChain Gas Benchmarks</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have reasonable gas costs for enrollment</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">First enrollment: ~316k gas, Second enrollment (auto-start): ~568k gas</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Actual: 315,887 gas (first), 568,511 gas (auto-start)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should have reasonable gas costs for making a move</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Move gas should be under 100k for board update and turn switch</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Actual: 73,305 gas per move (well under target)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7. System Integration -->
-            <div class="test-suite">
-                <div class="test-suite-header">
-                    <div class="test-suite-name">System Integration & Edge Cases</div>
-                    <div class="test-suite-stats">
-                        <span class="stat-passing">✓ 14 passing</span>
-                        <span class="stat-pending">○ 0 pending</span>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Tournament Reset & Cleanup</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow enrollment after tournament completes and resets</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">After tournament completion, instance resets and accepts new enrollments</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Reset successful, new tournament starts in same instance slot</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should clear all round data on tournament reset</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">All round state (matches, completion status) cleared between tournaments</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Clean slate confirmed, no data pollution between tournaments</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should NOT have stale finals data from previous tournament</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Finals match data refreshed for each new tournament, no carryover</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Finals data specific to current tournament, previous data cached correctly</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Delegatecall & Storage Architecture</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should test delegatecall behavior via enrollment</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Game contract delegatecalls to ETour modules, executes in game context</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Delegatecall successful, state modified in game contract correctly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should access tierCount from ETour_Storage</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Storage variables accessible via delegatecall architecture</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Storage access works, tierCount reads correctly (3 tiers)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should verify enrollment status works</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">isEnrolled() view function accurately reflects enrollment state</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Enrollment tracking works, state transitions correctly</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should test that player tracking storage exists in game contract</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Player activity tracking data stored in game contract via delegatecall</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Tracking storage functional, data persists across calls</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="test-category">
-                    <div class="test-category-title">Multi-Tournament Player Scenarios</div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow same player to enroll in different instances</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Player can participate in multiple concurrent tournaments (different instances)</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Multi-tournament participation works, data segregated by instance</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should allow same player in different tiers</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Player can enter tournaments in multiple tier levels simultaneously</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Cross-tier participation supported, earnings tracked independently</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="test-item">
-                        <div class="test-name">Should correctly update earnings across multiple tournaments</div>
-                        <div class="test-details">
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Expectation</div>
-                                <div class="test-detail-value">Player leaderboard aggregates earnings from all tournaments</div>
-                            </div>
-                            <div class="test-detail-box">
-                                <div class="test-detail-label">Outcome</div>
-                                <div class="test-detail-value">✓ Cumulative earnings accurate across multiple tournament participations</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gas Cost Analysis -->
-        <div class="section">
-            <h2 class="section-title">⛽ Gas Cost Analysis</h2>
-
-            <div class="metric-grid">
-                <div class="metric">
-                    <div class="metric-value">437,632</div>
-                    <div class="metric-label">Avg Gas/Player</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">1,870,990</div>
-                    <div class="metric-label">Max Gas (Auto-Start)</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">~62,000</div>
-                    <div class="metric-label">Avg Gas/Move</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">128</div>
-                    <div class="metric-label">Max Players Tested</div>
-                </div>
-            </div>
-
-            <h3 class="section-subtitle">L2 Network Cost Estimates</h3>
-            <p style="color: #9ca3af; margin: 10px 0;">Based on comprehensive gas testing with 128 concurrent players across 30 active tournaments</p>
-
-            <table class="gas-table">
-                <thead>
-                    <tr>
-                        <th>Gas Price</th>
-                        <th>Average Player Cost</th>
-                        <th>Maximum Player Cost</th>
-                        <th>USD Estimate (ETH @ $3,000)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>0.03 gwei</td>
-                        <td>0.00001313 ETH</td>
-                        <td>0.00005613 ETH</td>
-                        <td>$0.04 - $0.17</td>
-                    </tr>
-                    <tr>
-                        <td>0.05 gwei <span class="badge badge-info">Typical L2</span></td>
-                        <td>0.00002188 ETH</td>
-                        <td>0.00009355 ETH</td>
-                        <td>$0.07 - $0.28</td>
-                    </tr>
-                    <tr>
-                        <td>0.10 gwei</td>
-                        <td>0.00004376 ETH</td>
-                        <td>0.00018710 ETH</td>
-                        <td>$0.13 - $0.56</td>
-                    </tr>
-                    <tr>
-                        <td>0.50 gwei</td>
-                        <td>0.00021882 ETH</td>
-                        <td>0.00093551 ETH</td>
-                        <td>$0.66 - $2.81</td>
-                    </tr>
-                    <tr>
-                        <td>1.00 gwei <span class="badge badge-warning">Peak</span></td>
-                        <td>0.00043763 ETH</td>
-                        <td>0.00187099 ETH</td>
-                        <td>$1.31 - $5.61</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="highlight-box info">
-                <h3>💡 Gas Optimization Insights</h3>
-                <p><strong>✓</strong> Average player cost under $0.10 on typical L2 networks (0.05 gwei)</p>
-                <p><strong>✓</strong> Worst-case auto-start remains under $0.30 on L2 (auto-start triggers tournament initialization)</p>
-                <p><strong>✓</strong> Move gas consistent ~62k across game length (no gas escalation over time)</p>
-                <p><strong>✓</strong> Successfully tested with 128 concurrent players - no performance degradation</p>
-            </div>
-        </div>
-
-        <!-- Recent Test Fixes -->
-        <div class="section">
-            <h2 class="section-title">✨ Recent Improvements: ConnectFourOnChain Tests</h2>
-
-            <div class="highlight-box success">
-                <h3>🎯 ConnectFourOnChain Escalation Tests: 100% Pass Rate</h3>
-                <p style="margin-bottom: 15px;">
-                    Successfully fixed all 41 ConnectFourOnChain comprehensive escalation tests, bringing the pass rate
-                    from 54% to 100%. These tests cover all escalation levels (EL1, EL2, ML1, ML2, ML3) across various scenarios.
-                </p>
-
-                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #8b5cf6;">Key Issues Fixed:</h4>
-                <p><strong>1. Random Turn Assignment:</strong> Updated playQuickHorizontalWin helper to check match.currentTurn instead of assuming player1 goes first</p>
-                <p><strong>2. Tier Configuration:</strong> Updated multi-player tests to use correct tiers (TIER1 for 4-player, TIER2 for 8-player)</p>
-                <p><strong>3. Missing Parameters:</strong> Fixed ~20+ makeMove and playQuickHorizontalWin calls missing tier parameters</p>
-                <p><strong>4. Turn Order Checks:</strong> Updated ~15 tests to check match.currentTurn instead of assuming match.common.player1</p>
-                <p><strong>5. Event Expectations:</strong> Removed non-existent MatchEliminated and PlayerReplaced event expectations</p>
-                <p><strong>6. Prize Calculations:</strong> Changed exact equality checks to closeTo assertions for gas cost variations</p>
-
-                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #8b5cf6;">Test Coverage:</h4>
-                <p><strong>✓</strong> EL1 (Enrollment Force Start): 5/5 tests passing</p>
-                <p><strong>✓</strong> EL2 (Enrollment External Claim): 5/5 tests passing</p>
-                <p><strong>✓</strong> ML1 (Match Timeout Claim): 5/5 tests passing</p>
-                <p><strong>✓</strong> ML2 (Advanced Player Force Eliminate): 6/6 tests passing</p>
-                <p><strong>✓</strong> ML3 (External Player Replacement): 7/7 tests passing</p>
-                <p><strong>✓</strong> Cascading Effects: 4/4 tests passing</p>
-                <p><strong>✓</strong> Prize Distribution: 6/6 tests passing</p>
-                <p><strong>✓</strong> Tournament Reset: 3/3 tests passing</p>
-
-                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #f59e0b;">ChessOnChain Status:</h4>
-                <p><strong>⚠️</strong> 34 ChessOnChain escalation tests currently failing with similar issues</p>
-                <p><strong>✓</strong> Same fix patterns can be applied (turn assignment, tier config, parameters)</p>
-                <p><strong>✓</strong> No contract logic issues - purely test infrastructure improvements needed</p>
-            </div>
-        </div>
-
-        <!-- Known Limitations -->
-        <div class="section">
-            <h2 class="section-title">🔄 Test Coverage Details & Pending Tests</h2>
 
             <div class="highlight-box">
-                <h3>Pending Tests Breakdown (41 items)</h3>
-                <p><strong>Deprecated Helper Functions (13):</strong> Helper functions removed from contracts, tests kept for documentation</p>
-                <p><strong>Advanced Chess Draw Rules (4):</strong> Stalemate and insufficient material detection - planned for future implementation</p>
-                <p><strong>Comprehensive Escalation Flow (3):</strong> Complex multi-step escalation scenarios - pending complete flow testing</p>
-                <p><strong>Real-Time Time Queries (5):</strong> getCurrentTimeRemaining() view function - deprecated in favor of client-side calculation</p>
-                <p><strong>Raffle Eligible Player Count (4):</strong> Deprecated eligiblePlayerCount calculation method - replaced with simpler approach</p>
-                <p><strong>Connect Four Full Board (2):</strong> 42-piece draw detection - edge case pending implementation</p>
-                <p><strong>Gas Estimation Scenarios (4):</strong> Additional capacity testing scenarios - pending resource allocation</p>
-                <p><strong>Player Activity Tracking (1):</strong> Comprehensive 8-player tournament with escalations - pending complete test</p>
-                <p><strong>L2/L3 Ordering (2):</strong> Deprecated tierConfig validation - functionality moved to different module</p>
-                <p><strong>Elite Match Scenarios (3):</strong> Additional edge cases for elite match storage</p>
+                <h3>🎯 Test Suite Highlights</h3>
+                <ul>
+                    <li>All Chess Escalation Tests Passing (41/41)</li>
+                    <li>All Connect Four Escalation Tests Passing (41/41)</li>
+                    <li>Complete TicTacChain Protocol Coverage (100+ tests)</li>
+                    <li>Comprehensive Edge Case Testing</li>
+                    <li>Multi-Level Escalation Scenarios Validated</li>
+                    <li>Prize Distribution & Fee Accounting Verified</li>
+                    <li>Gas Optimization Tests Complete</li>
+                    <li>Protocol Raffle System Fully Tested</li>
+                </ul>
             </div>
 
-            <h3 class="section-subtitle">Why These Tests Are Pending</h3>
-            <p style="color: #d1d5db; line-height: 1.8; margin: 15px 0;">
-                The 40 pending tests fall into three categories: (1) <strong>Deprecated functionality</strong> - tests for removed
-                or replaced features kept for historical reference, (2) <strong>Future features</strong> - advanced chess rules and
-                additional game mechanics planned but not yet implemented, and (3) <strong>Extended scenarios</strong> - comprehensive
-                integration tests that require additional setup time. All <strong>critical path functionality is fully tested and passing</strong>.
-            </p>
+            <div class="section">
+                <h2 class="section-title">📊 Test Breakdown by Category</h2>
+
+                <div class="test-category">
+                    <div class="test-category-title">🎲 All-Draw Prize Distribution Edge Cases</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Finals Draw Scenarios</div>
+                        <div class="test-item">Should split prize equally for finals draw with standard prize pool</div>
+                        <div class="test-item">Should update tournament finalsWasDraw flag correctly</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Semi-Finals All-Draw Scenarios</div>
+                        <div class="test-item">Should split prize among 4 players when both semi-finals draw</div>
+                        <div class="test-item">Should emit TournamentCompletedAllDraw event with correct parameters</div>
+                        <div class="test-item">Should correctly set allDrawResolution and allDrawRound flags</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">8-Player All-Draw Round 0 Scenario</div>
+                        <div class="test-item">Should split prize among 8 players if all round 0 matches draw</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Mixed Results & Player Stats</div>
+                        <div class="test-item">Should handle one draw and three wins in 8-player tournament</div>
+                        <div class="test-item">Should update player stats correctly for all-draw tournament</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">♟️ ChessOnChain Comprehensive Escalation Tests (41 Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">EL1: Enrollment Force Start (5 Tests)</div>
+                        <div class="test-item">Should allow enrolled player to force start after enrollment timeout</div>
+                        <div class="test-item">Should reject force start before timeout</div>
+                        <div class="test-item">Should reject force start from non-enrolled player</div>
+                        <div class="test-item">Should complete tournament immediately if only one player enrolled and force starts</div>
+                        <div class="test-item">Should clear player activity after solo force start completion</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">EL2: Enrollment External Claim (5 Tests)</div>
+                        <div class="test-item">Should allow external player to claim abandoned enrollment pool after EL2 delay</div>
+                        <div class="test-item">Should reject claim before EL2 delay</div>
+                        <div class="test-item">Should emit PlayerForfeited events for all enrolled players</div>
+                        <div class="test-item">Should clear all player activity entries after EL2 claim</div>
+                        <div class="test-item">Should allow new tournament to start after EL2 claim and reset</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">ML1: Match Timeout Claim (5 Tests)</div>
+                        <div class="test-item">Should allow opponent to claim timeout after match timeout</div>
+                        <div class="test-item">Should complete 2-player tournament after ML1 timeout claim</div>
+                        <div class="test-item">Should clear player activity after ML1 tournament completion</div>
+                        <div class="test-item">Should reject timeout claim before timeout period</div>
+                        <div class="test-item">Should reject timeout claim on own turn</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">ML2: Advanced Player Force Eliminate (6 Tests)</div>
+                        <div class="test-item">Should allow advanced player to force eliminate stalled semi-final</div>
+                        <div class="test-item">Should reject ML2 from non-advanced player</div>
+                        <div class="test-item">Should complete tournament when finalist uses ML2 on stalled semi-final</div>
+                        <div class="test-item">Should clear all player activity after ML2 tournament completion</div>
+                        <div class="test-item">Should handle ML2 on finals match (both players eliminated)</div>
+                        <div class="test-item">Should reject ML2 before escalation delay</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">ML3: External Player Replacement (7 Tests)</div>
+                        <div class="test-item">Should allow external player to replace stalled match player</div>
+                        <div class="test-item">Should complete 2-player tournament after ML3 claim</div>
+                        <div class="test-item">Should clear all player activity after ML3 tournament completion</div>
+                        <div class="test-item">Should allow ML3 claimer to advance in tournament</div>
+                        <div class="test-item">Should reject ML3 before escalation delay</div>
+                        <div class="test-item">Should reject ML3 on non-stalled match</div>
+                        <div class="test-item">Should handle ML3 on finals match properly</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Cascading Effects & Prize Distribution (9 Tests)</div>
+                        <div class="test-item">Should handle ML1 → tournament completion → reset → new enrollment</div>
+                        <div class="test-item">Should handle ML2 in round 0 → ML3 in finals</div>
+                        <div class="test-item">Should handle EL2 with multiple enrollments → complete reset</div>
+                        <div class="test-item">Should track forfeited amounts correctly across escalation types</div>
+                        <div class="test-item">Should distribute correct prizes for EL1 solo force start</div>
+                        <div class="test-item">Should distribute correct prizes for EL2 abandoned claim</div>
+                        <div class="test-item">Should distribute correct prizes for ML1 timeout victory</div>
+                        <div class="test-item">Should distribute correct prizes for ML2 force eliminate victory</div>
+                        <div class="test-item">Should distribute correct prizes for ML3 replacement victory</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Tournament Reset & Balance Verification (4 Tests)</div>
+                        <div class="test-item">Should maintain zero contract balance after all escalation type completions</div>
+                        <div class="test-item">Should fully reset tournament state after EL2 completion</div>
+                        <div class="test-item">Should fully reset tournament state after ML2 completion</div>
+                        <div class="test-item">Should fully reset tournament state after ML3 completion</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">🔴 ConnectFourOnChain Comprehensive Escalation Tests (41 Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Complete Escalation Coverage</div>
+                        <div class="test-item">EL1: Enrollment Force Start (5 Tests) - All Passing</div>
+                        <div class="test-item">EL2: Enrollment External Claim (5 Tests) - All Passing</div>
+                        <div class="test-item">ML1: Match Timeout Claim (5 Tests) - All Passing</div>
+                        <div class="test-item">ML2: Advanced Player Force Eliminate (6 Tests) - All Passing</div>
+                        <div class="test-item">ML3: External Player Replacement (7 Tests) - All Passing</div>
+                        <div class="test-item">Cascading Effects & Prize Distribution (9 Tests) - All Passing</div>
+                        <div class="test-item">Tournament Reset & Balance Verification (4 Tests) - All Passing</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">⭕ TicTacChain (ETour Protocol) Tests (100+ Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Core Functionality</div>
+                        <div class="test-item">Deployment & Configuration (3 Tests)</div>
+                        <div class="test-item">Tournament Enrollment (5 Tests)</div>
+                        <div class="test-item">Tournament Logic (2 Tests)</div>
+                        <div class="test-item">Game Play (6 Tests)</div>
+                        <div class="test-item">Win Detection (4 Tests)</div>
+                        <div class="test-item">Tournament Completion (1 Test)</div>
+                        <div class="test-item">Timeout Functions (3 Tests)</div>
+                        <div class="test-item">View Functions (5 Tests)</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Advanced Features</div>
+                        <div class="test-item">Gas Optimization (2 Tests)</div>
+                        <div class="test-item">Abandoned Enrollment Pool Claims (4 Tests)</div>
+                        <div class="test-item">Force Start Edge Cases (2 Tests)</div>
+                        <div class="test-item">Prize Distribution (2 Tests)</div>
+                        <div class="test-item">8-Player Tournament Full Flow (1 Test)</div>
+                        <div class="test-item">Timeout Escalation Levels (1 Test)</div>
+                        <div class="test-item">Invalid Operations (4 Tests)</div>
+                        <div class="test-item">Tournament Reset and Cleanup (2 Tests)</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Edge Cases & Advanced Scenarios</div>
+                        <div class="test-item">Entry Fee Distribution (1 Test)</div>
+                        <div class="test-item">Enrollment Timeout State (2 Tests)</div>
+                        <div class="test-item">All-Draw Round Scenarios (2 Tests)</div>
+                        <div class="test-item">Advanced Tournament Progression (1 Test)</div>
+                        <div class="test-item">Match Timeout State Tracking (2 Tests)</div>
+                        <div class="test-item">Complete Tournament Flow with Mixed Results (1 Test)</div>
+                        <div class="test-item">Escalation Victory and Prize Distribution (3 Tests)</div>
+                        <div class="test-item">playerPrizes and Leaderboard Consistency (5 Tests)</div>
+                        <div class="test-item">Force Start with Odd Players (4 Tests)</div>
+                        <div class="test-item">Prize Distribution Edge Cases (2 Tests)</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Multi-Tournament & Cache Tests</div>
+                        <div class="test-item">Multi-Tournament Player Scenarios (3 Tests)</div>
+                        <div class="test-item">Instance and Tier Boundary Cases (3 Tests)</div>
+                        <div class="test-item">getMatch Cache Fallback (6 Tests)</div>
+                        <div class="test-item">Finals Match Preservation (2 Tests)</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">🔄 Enrollment Window Reset Tests (12 Tests)</div>
+                    <div class="test-item">Should allow solo player to reset enrollment window after expiry</div>
+                    <div class="test-item">Should reject reset if tournament not enrolling</div>
+                    <div class="test-item">Should reject reset if multiple players enrolled</div>
+                    <div class="test-item">Should reject reset if caller not enrolled</div>
+                    <div class="test-item">Should reject reset if enrollment window not expired</div>
+                    <div class="test-item">Should allow reset even after escalation level 2 reached</div>
+                    <div class="test-item">Should allow second player to enroll after reset</div>
+                    <div class="test-item">Should allow player to reset multiple times</div>
+                    <div class="test-item">Should accurately report reset eligibility via view function</div>
+                    <div class="test-item">Should preserve forfeitPool amount after reset</div>
+                    <div class="test-item">Should emit event with correct escalation timestamps</div>
+                    <div class="test-item">Should not allow reset after force starting tournament</div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">⚡ ML2 (Force Eliminate) Comprehensive Tests (9 Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Advanced Player Detection</div>
+                        <div class="test-item">Should correctly identify player who won their match as advanced</div>
+                        <div class="test-item">Should detect advanced player even after match is cached</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">ML2 Execution & Rejection</div>
+                        <div class="test-item">Should allow advanced player to force eliminate stalled match</div>
+                        <div class="test-item">Should reject ML2 from non-advanced player</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Tournament Completion via ML2</div>
+                        <div class="test-item">Should complete tournament when finalist uses ML2 on stalled semi-final</div>
+                        <div class="test-item">Should complete tournament when ML2 is used on finals (both eliminated)</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Edge Cases</div>
+                        <div class="test-item">Should reset ML2 timer when a move is made after timeout</div>
+                        <div class="test-item">Should handle ML2 when advanced player won via walkover</div>
+                        <div class="test-item">EXACT SCENARIO: A beats B, C vs D stalls, A triggers ML2 → should complete tournament</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">🎯 ML3 Finals Match Completion Tests (3 Tests)</div>
+                    <div class="test-item">Should properly complete tournament, distribute prizes, and reset when ML3 is claimed on finals</div>
+                    <div class="test-item">Should correctly identify advanced player for ML2 eligibility</div>
+                    <div class="test-item pending">Should also handle ML2 (force eliminate) on finals match properly</div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">🛡️ Match-Level Escalation (Anti-Stalling) Tests (11 Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Level 1: Normal Timeout Claim</div>
+                        <div class="test-item">Should allow opponent to claim timeout when player runs out of time</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Level 2: Advanced Player Force Elimination</div>
+                        <div class="test-item">Should mark match as stalled when player runs out of time</div>
+                        <div class="test-item">Should allow advanced player to force eliminate stalled match after escalation window</div>
+                        <div class="test-item">Should reject force elimination from non-advanced player</div>
+                        <div class="test-item">Should reject force elimination before escalation window</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Level 3: External Player Replacement</div>
+                        <div class="test-item">Should allow external player to claim match slot after Level 3 escalation window</div>
+                        <div class="test-item">Should reject replacement claim before Level 3 window</div>
+                        <div class="test-item">Should reject replacement claim on non-stalled match</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Integration & Edge Cases</div>
+                        <div class="test-item">Should allow tournament to progress after force elimination</div>
+                        <div class="test-item">Should allow replacement player to advance in tournament</div>
+                        <div class="test-item">Should not allow claiming already completed match</div>
+                        <div class="test-item">Should clear escalation state after match completion</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">💰 Prize Distribution Failure Fallback Tests (7 Tests)</div>
+                    <div class="test-item">Should fallback to accumulatedProtocolShare when solo winner rejects prize</div>
+                    <div class="test-item">Should fallback to accumulatedProtocolShare when winner address rejects</div>
+                    <div class="test-item">Should track accumulated protocol share from failed distributions</div>
+                    <div class="test-item">Should emit PrizeDistributed on successful prize send</div>
+                    <div class="test-item">Should complete tournament even if prize distribution fails</div>
+                    <div class="test-item">Should handle multiple prize distributions in 4-player tournament</div>
+                    <div class="test-item">Should maintain correct contract balance with accumulated fees</div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">🎰 Protocol Raffle System Tests (20+ Tests)</div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">getRaffleInfo() View Function</div>
+                        <div class="test-item">Should return correct raffle info when below threshold</div>
+                        <div class="test-item">Should return correct raffle info when at threshold with no players</div>
+                        <div class="test-item">Should return raffleIndex starting at 0</div>
+                        <div class="test-item">Should return correct threshold from _getRaffleThreshold()</div>
+                        <div class="test-item">Should return correct reserve from _getRaffleReserve()</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Access Control & Mechanics</div>
+                        <div class="test-item">Should reject non-enrolled players when threshold not met</div>
+                        <div class="test-item">Should reject non-enrolled players even when threshold met</div>
+                        <div class="test-item">Should allow enrolled players to trigger raffle (Enrolling status)</div>
+                        <div class="test-item">Should allow enrolled players to trigger raffle (InProgress status)</div>
+                        <div class="test-item">Should reject players only enrolled in Completed tournaments</div>
+                        <div class="test-item">Should accumulate protocol share from failed prize distributions</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Distribution & Edge Cases</div>
+                        <div class="test-item">Should calculate 20% owner / 80% winner correctly</div>
+                        <div class="test-item">Should maintain 1 ETH reserve after raffle</div>
+                        <div class="test-item">Should emit ProtocolRaffleExecuted with correct data</div>
+                        <div class="test-item">Should handle exactly 3 ETH threshold</div>
+                        <div class="test-item">Should handle large amounts (10 ETH)</div>
+                    </div>
+                    <div class="test-subcategory">
+                        <div class="test-subcategory-title">Security & Randomness</div>
+                        <div class="test-item">Should use nonReentrant modifier on executeProtocolRaffle</div>
+                        <div class="test-item">Should follow CEI pattern (Checks-Effects-Interactions)</div>
+                        <div class="test-item">Should handle failed owner send</div>
+                        <div class="test-item">Should handle failed winner send</div>
+                        <div class="test-item">Should use block.prevrandao for randomness</div>
+                        <div class="test-item">Should produce different results with different block data</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <div class="test-category-title">⚙️ Gas Optimization & Additional Tests (30+ Tests)</div>
+                    <div class="test-item">ConnectFourOnChain ETour Compatibility Tests (30 Tests)</div>
+                    <div class="test-item">TicTacChain Player Activity Tracking (2 Tests)</div>
+                    <div class="test-item">TicTacChain Progressive Raffle Thresholds (13 Tests)</div>
+                    <div class="test-item">Gas Consumption Analysis & Reporting (1 Test)</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🔬 Pending Tests (41 Tests)</h2>
+                <div class="test-category">
+                    <div class="test-category-title">Future Implementation</div>
+                    <div class="test-item pending">Comprehensive Tournament Escalation Flow Tests (3 pending)</div>
+                    <div class="test-item pending">Escalation Helper Functions Tests - DEPRECATED (11 pending)</div>
+                    <div class="test-item pending">TicTacChain Constructor Initialization (Already covered)</div>
+                    <div class="test-item pending">L2/L3 Ordering Test - DEPRECATED (2 pending)</div>
+                    <div class="test-item pending">ML2/ML3 Edge Cases (1 pending)</div>
+                    <div class="test-item pending">Protocol Raffle - Eligible Player Count Tests (4 pending - calculation changed)</div>
+                    <div class="test-item pending">TicTacChain 8-Player Tournament with Escalations (1 pending)</div>
+                    <div class="test-item pending">Additional edge case scenarios (remaining pending)</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">✨ Key Achievements</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">ChessOnChain Escalation Coverage</div>
+                        <div class="stat-value">100%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">ConnectFour Escalation Coverage</div>
+                        <div class="stat-value">100%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Core Protocol Tests</div>
+                        <div class="stat-value">100+</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Edge Cases Tested</div>
+                        <div class="stat-value">50+</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="background: linear-gradient(135deg, #047857 0%, #065f46 100%);">
+                    <h3>🎉 Recent Test Fixes Completed</h3>
+                    <ul>
+                        <li>Fixed all ChessOnChain player identification issues (match.common.player1 vs match.currentTurn)</li>
+                        <li>Updated player activity tracking tests (getPlayerEnrollingTournaments vs getPlayerActiveTournaments)</li>
+                        <li>Removed deprecated event expectations (TournamentCompleted, MatchCompleted, etc.)</li>
+                        <li>Fixed match status enum expectations (removed status 3: Eliminated)</li>
+                        <li>Updated prize distribution calculations for gas costs</li>
+                        <li>Fixed fee structure expectations (protocol fees vs owner fees)</li>
+                        <li>Corrected all white/black player move sequences</li>
+                        <li>All 41 ChessOnChain escalation tests now passing</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📋 Test Categories Summary</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">All-Draw Edge Cases</div>
+                        <div class="stat-value">8 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Chess Escalation Tests</div>
+                        <div class="stat-value">41 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">ConnectFour Escalation</div>
+                        <div class="stat-value">41 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">TicTacChain Core</div>
+                        <div class="stat-value">100+ ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Enrollment Reset</div>
+                        <div class="stat-value">12 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">ML2 Force Eliminate</div>
+                        <div class="stat-value">9 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">ML3 Finals Completion</div>
+                        <div class="stat-value">2 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Anti-Stalling</div>
+                        <div class="stat-value">11 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Prize Fallback</div>
+                        <div class="stat-value">7 ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Protocol Raffle</div>
+                        <div class="stat-value">20+ ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Gas Optimization</div>
+                        <div class="stat-value">30+ ✓</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Player Activity</div>
+                        <div class="stat-value">2 ✓</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Conclusion -->
-        <div class="section">
-            <h2 class="section-title">🎯 Conclusion & System Coverage</h2>
-
-            <div class="highlight-box success">
-                <h3>✅ Comprehensive System Validation Complete</h3>
-                <p><strong>313 passing tests</strong> provide extensive coverage across all critical system components</p>
-                <p><strong>Zero failures</strong> demonstrate robust implementation and thorough error handling</p>
-                <p><strong>Three production games</strong> (TicTacChain, ChessOnChain, ConnectFour) fully tested and operational</p>
-                <p><strong>Gas optimized</strong> for L2 deployment with average costs under $0.10 per player</p>
-                <p><strong>Anti-stalling mechanisms</strong> tested across all escalation levels (L1, L2, L3)</p>
-                <p><strong>Economic model validated</strong> including prize distribution, fee splits, and raffle system</p>
-            </div>
-
-            <h3 class="section-subtitle">System Coverage Summary</h3>
-
-            <div class="metric-grid">
-                <div class="metric">
-                    <div class="metric-value">100%</div>
-                    <div class="metric-label">Core Tournament</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">100%</div>
-                    <div class="metric-label">Prize Distribution</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">96%</div>
-                    <div class="metric-label">Game Logic</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">66%</div>
-                    <div class="metric-label">Escalation (Active)</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">89%</div>
-                    <div class="metric-label">Raffle System</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">80%</div>
-                    <div class="metric-label">Gas & Capacity</div>
-                </div>
-            </div>
-
-            <p style="font-size: 1.15em; color: #d1d5db; line-height: 1.8; margin: 30px 0;">
-                The ETour Protocol represents a <strong>production-ready blockchain gaming tournament system</strong>
-                with exceptional test coverage, robust error handling, and optimized gas efficiency. The test suite
-                validates every critical path from enrollment through tournament completion, prize distribution,
-                and edge case handling. With <strong>313 comprehensive passing tests</strong> and an average player
-                cost of just <strong>$0.07 on L2 networks</strong>, the protocol is optimized for mass adoption and
-                ready for deployment.
-            </p>
-
-            <div class="highlight-box info">
-                <h3>🚀 Production Readiness Status</h3>
-                <p><strong>Core Functionality:</strong> ✅ Fully tested and operational across all game implementations</p>
-                <p><strong>Security:</strong> ✅ CEI pattern enforced, ReentrancyGuard applied, failed send handling implemented</p>
-                <p><strong>Gas Efficiency:</strong> ✅ Optimized for L2 deployment, tested at maximum capacity (128 players)</p>
-                <p><strong>Economic Model:</strong> ✅ Prize distribution, fee splits, and raffle system validated</p>
-                <p><strong>Recommended Next Steps:</strong> Professional security audit, mainnet deployment strategy, frontend integration</p>
-            </div>
-        </div>
-
-        <!-- Footer -->
         <div class="footer">
-            <p><strong>ETour Protocol</strong> - Reclaim Web3 Movement</p>
-            <p>Comprehensive Test Report Generated: January 7, 2026</p>
-            <p>Total Test Duration: 60 seconds | 377 Passing | 41 Pending | 29 Failing (ChessOnChain Escalation)</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">
-                Built for decentralized competitive gaming on L2 networks
-            </p>
+            <p>ETour Protocol Test Suite - Comprehensive Coverage Report</p>
+            <p>Generated on January 7, 2026</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">All critical functionality thoroughly tested and validated</p>
         </div>
     </div>
+
+    <script>
+        // Add animation on page load
+        window.addEventListener('load', function() {
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = '0%';
+            setTimeout(() => {
+                progressBar.style.width = '90.8%';
+            }, 100);
+        });
+    </script>
 </body>
 </html>
