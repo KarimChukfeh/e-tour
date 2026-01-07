@@ -309,6 +309,12 @@ contract TicTacChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
+        // Save enrolled players before delegatecall (in case tournament completes and resets)
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "forceEliminateStalledMatch(uint8,uint8,uint8,uint8)",
@@ -325,6 +331,10 @@ contract TicTacChain is ETour_Storage {
                 revert("FE");
             }
         }
+
+        // Check if tournament completed and handle prize distribution/reset
+        // (can happen if this was a finals match or creates orphaned winner)
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
     /**
@@ -336,6 +346,12 @@ contract TicTacChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external nonReentrant {
+        // Save enrolled players before delegatecall (in case tournament completes and resets)
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)",
@@ -355,6 +371,16 @@ contract TicTacChain is ETour_Storage {
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
+
+        // Check if tournament completed and handle prize distribution/reset
+        // (can happen if this was a finals match)
+        // Note: External player was added during delegatecall, so include them in cleanup
+        address[] memory allPlayers = new address[](enrolledPlayersCopy.length + 1);
+        for (uint256 i = 0; i < enrolledPlayersCopy.length; i++) {
+            allPlayers[i] = enrolledPlayersCopy[i];
+        }
+        allPlayers[enrolledPlayersCopy.length] = msg.sender; // Add external player
+        _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
     /**
@@ -588,51 +614,11 @@ contract TicTacChain is ETour_Storage {
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
 
-        // Check if tournament completed by looking at status change
+        // Check if tournament completed and handle prize distribution/reset
         // MODULE_MATCHES.completeMatch() sets status to Completed but doesn't distribute prizes
         // (nested delegatecalls to MODULE_PRIZES don't work since modules have MODULE_PRIZES = address(0))
         // So we must call prize distribution directly from TicTacChain
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        if (tournament.status == TournamentStatus.Completed && enrolledPlayersCopy.length > 0) {
-            // Tournament just completed - distribute prizes, update earnings, reset, and trigger hook
-            address tournamentWinner = tournament.winner;
-            uint256 winnersPot = tournament.prizePool;
-
-            // Check if this is an all-draw scenario
-            if (tournament.allDrawResolution) {
-                // All-draw: distribute equal prizes to all remaining players
-                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                    abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)", tierId, instanceId, enrolledPlayersCopy, winnersPot)
-                );
-                require(distributeSuccess, "DP");
-            } else {
-                // Normal completion: distribute prizes based on ranking
-                (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                    abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)", tierId, instanceId, winnersPot)
-                );
-                require(distributeSuccess, "DP");
-            }
-
-            // Update earnings for all players with prizes
-            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)", tierId, instanceId, tournamentWinner)
-            );
-            require(earningsSuccess, "UE");
-
-            // Emit TournamentCompleted event with actual prize amount
-            uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
-            emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
-
-            // Reset tournament state
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            // Call tournament completion hook
-            _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
-        }
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
     // ============ Board Helper Functions ============
@@ -1119,6 +1105,65 @@ contract TicTacChain is ETour_Storage {
      */
     function getPlayerStats() external view returns (int256 totalEarnings) {
         return playerEarnings[msg.sender];
+    }
+
+    /**
+     * @dev Handle tournament completion: distribute prizes, update earnings, emit event, reset
+     * Called after tournament status is set to Completed by modules
+     */
+    function _handleTournamentCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Only proceed if tournament is actually completed
+        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
+            return;
+        }
+
+        address tournamentWinner = tournament.winner;
+        uint256 winnersPot = tournament.prizePool;
+
+        // Distribute prizes based on completion type
+        if (tournament.allDrawResolution) {
+            // All-draw: distribute equal prizes to all remaining players
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        } else {
+            // Normal completion: distribute prizes based on ranking
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
+                    tierId, instanceId, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        }
+
+        // Update earnings for all players with prizes
+        (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                tierId, instanceId, tournamentWinner)
+        );
+        require(earningsSuccess, "UE");
+
+        // Emit TournamentCompleted event with actual prize amount
+        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
+            tournament.finalsWasDraw, tournament.coWinner);
+
+        // Reset tournament state
+        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
+                tierId, instanceId)
+        );
+        require(resetSuccess, "RT");
+
+        // Call tournament completion hook
+        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
     }
 
     // ============ Player Tracking View Functions ============
