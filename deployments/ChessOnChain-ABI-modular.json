@@ -1,9 +1,9 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+  "address": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-07T17:27:03.091Z",
+  "deployedAt": "2026-01-07T22:59:02.199Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",

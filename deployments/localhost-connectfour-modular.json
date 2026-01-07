@@ -2,8 +2,8 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-01-07T17:27:04.111Z",
-  "blockNumber": 4165,
+  "timestamp": "2026-01-07T22:59:03.255Z",
+  "blockNumber": 23041,
   "modules": {
     "ETour_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETour_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -13,6 +13,6 @@
     "GameCacheModule": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "contracts": {
-    "ConnectFourOnChain": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07"
+    "ConnectFourOnChain": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823"
   }
 }
