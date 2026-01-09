@@ -31,7 +31,7 @@ contract ETour_Matches is ETour_Storage {
     constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Empty implementations for module deployment) ============
-    // During delegatecall, TicTacChain_Refactored's implementations are used instead
+    // During delegatecall, game contract's implementations are called via this.function()
     function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override {}
     function _resetMatchGame(bytes32) public override {}
     function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { return (address(0), false, MatchStatus.NotStarted); }
@@ -124,7 +124,7 @@ contract ETour_Matches is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Remove match from both players' active match lists
-        (address player1, address player2) = _getMatchPlayers(matchId);
+        (address player1, address player2) = this._getMatchPlayers(matchId);
         removePlayerActiveMatch(player1, matchId);
         removePlayerActiveMatch(player2, matchId);
 

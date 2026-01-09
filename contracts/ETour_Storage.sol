@@ -348,6 +348,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Create a new match in game-specific storage
      * Called by Matches module when initializing matches
+     * PUBLIC for module delegatecall access
      */
     function _createMatchGame(
         uint8 tierId,
@@ -361,18 +362,21 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Reset match game state
      * Called when match needs to be reset
+     * PUBLIC for module delegatecall access
      */
     function _resetMatchGame(bytes32 matchId) public virtual;
 
     /**
      * @dev Get match result from game-specific storage
      * Called by Matches module to check if match is complete
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _getMatchResult(bytes32 matchId) public view virtual returns (address winner, bool isDraw, MatchStatus status);
 
     /**
      * @dev Add match to game-specific cache
      * Called by Prizes module after match completion for historical preservation
+     * PUBLIC for module delegatecall access
      */
     function _addToMatchCacheGame(
         uint8 tierId,
@@ -384,48 +388,56 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Get match players from game-specific storage
      * Called by modules to retrieve player addresses
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _getMatchPlayers(bytes32 matchId) public view virtual returns (address player1, address player2);
 
     /**
      * @dev Set player in match slot
      * Called by Escalation module when replacing players
+     * PUBLIC for module delegatecall access
      */
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual;
 
     /**
      * @dev Initialize match for play
      * Called by Matches module after players are assigned
+     * PUBLIC for module delegatecall access
      */
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public virtual;
 
     /**
      * @dev Complete match with result
      * Called by Matches module to mark match as complete
+     * PUBLIC for module delegatecall access
      */
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public virtual;
 
     /**
      * @dev Get time increment per move
      * Called by Escalation module for timeout calculations
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _getTimeIncrement() public view virtual returns (uint256);
 
     /**
      * @dev Check if current player has timed out
      * Called by Escalation module to detect stalled matches
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view virtual returns (bool);
 
     /**
      * @dev Check if match is active
      * Called by modules to verify match state
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _isMatchActive(bytes32 matchId) public view virtual returns (bool);
 
     /**
      * @dev Get active match data
      * Called by modules to retrieve match information
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _getActiveMatchData(
         bytes32 matchId,
@@ -438,6 +450,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Get match data from cache
      * Called by modules to retrieve historical match data
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
      */
     function _getMatchFromCache(
         bytes32 matchId,
@@ -490,5 +503,5 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 tierId,
         uint8 instanceId,
         address[] memory players
-    ) public virtual {}
+    ) internal virtual {}
 }

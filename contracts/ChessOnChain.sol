@@ -632,7 +632,7 @@ contract ChessOnChain is ETour_Storage {
         return matchData.player1 != address(0) && matchData.status != MatchStatus.Completed;
     }
 
-    function _completeMatchWithResult(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) public {
+    function _completeMatchWithResult(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
         matchData.status = MatchStatus.Completed;
@@ -855,7 +855,7 @@ contract ChessOnChain is ETour_Storage {
         _addActive(player, tierId, instanceId);
     }
 
-    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) public override {
+    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) internal override {
         for (uint256 i = 0; i < players.length; i++) {
             _removeEnrolling(players[i], tierId, instanceId);
             _removeActive(players[i], tierId, instanceId);

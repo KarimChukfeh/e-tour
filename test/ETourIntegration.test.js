@@ -126,7 +126,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
                 game.connect(player1).enrollInTournament(tierId, instanceId, {
                     value: hre.ethers.parseEther("0.0005") // Wrong fee
                 })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Incorrect entry fee");
         });
 
         it("Should reject duplicate enrollment", async function () {
@@ -137,13 +137,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             await expect(
                 game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Already enrolled");
         });
 
         it("Should reject invalid tier", async function () {
             await expect(
                 game.connect(player1).enrollInTournament(99, 0, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Invalid tier");
         });
     });
 
@@ -864,7 +864,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         it("Should reject invalid instance ID", async function () {
             await expect(
                 game.connect(player1).enrollInTournament(0, 100, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Invalid instance");
         });
 
         it("Should reject enrollment in full tournament", async function () {
@@ -878,7 +878,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Third player should be rejected
             await expect(
                 game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Tournament not accepting enrollments");
         });
 
         it("Should reject force start when tournament already in progress", async function () {
@@ -2145,14 +2145,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Try to enroll in instance 100 (out of bounds)
             await expect(
                 game.connect(player1).enrollInTournament(tierId, 100, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Invalid instance");
         });
 
         it("Should reject enrollment in non-existent tier", async function () {
             // Tier 3 doesn't exist in TicTacChain (only 0, 1, 2)
             await expect(
                 game.connect(player1).enrollInTournament(3, 0, { value: TIER_0_FEE })
-            ).to.be.revertedWith("E");
+            ).to.be.revertedWith("Invalid tier");
         });
 
         it("Should handle enrollment at exact tier boundaries", async function () {

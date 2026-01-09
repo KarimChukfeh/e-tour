@@ -1483,3 +1483,59 @@ Step 4: Deploy Modules + ChessOnChain
 npx hardhat run scripts/deploy-tictacchain-modular.js --network localhost
 npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
 npx hardhat run scripts/deploy-connectfour-modular.js --network localhost
+
+
+
+------
+
+
+CRITICAL - Fix Immediately:
+
+  1. 7 Public Functions Should Be Internal ⚠️
+    - _createMatchGame (line 759)
+    - _completeMatchWithResult (lines 815, 962)
+    - _addToMatchCacheGame (line 837)
+    - _resetMatchGame (line 881)
+    - _setMatchPlayer (line 917)
+    - _initializeMatchForPlay (line 930)
+    - _onTournamentCompleted (line 1422)
+    - Anyone can call these to steal prizes or break tournaments
+  2. Free Time After Timeout Bug (line 556-559)
+    - Player times out → gets set to 0 seconds → THEN gets +15 second increment
+    - Should reject move instead of giving free time
+
+  HIGH Priority:
+
+  3. Weak Randomness (lines 143, 781)
+    - Using block.prevrandao for walkover/starting player
+    - Validators can manipulate for high-value tournaments
+    - Use Chainlink VRF instead
+  4. No Entry Fee Validation in TicTacChain.sol
+    - Trust MODULE_CORE to validate msg.value
+    - If module has bug, players could enroll for free
+  5. Race Condition: Move vs Timeout Claim
+    - Both check status == InProgress without locking
+    - Could double-complete matches
+  6. Module Trust is Absolute
+    - Delegatecall gives modules full control over ALL storage
+    - One bug in any module = entire contract compromised
+    - Must audit modules with same rigor
+
+  MEDIUM Priority:
+
+  7. No Prize Distribution Validation
+    - Trusts MODULE_PRIZES to distribute correctly
+    - No check that sum equals prize pool
+    - Could trap funds if module has rounding errors
+  8. Raffle Gas Limit DoS (line 1338-1346)
+    - Nested loops over all tiers/instances
+    - Could exceed gas limit at scale
+  9. Tournament State Copied Before Delegatecall (line 313-316)
+    - Manual array copying before state-modifying delegatecall
+    - Copy could become stale if delegatecall modifies array
+    - Risk of duplicate/missing prize distributions
+
+  ---
+  📝 Bottom Line:
+
+  Your contract would be exploited immediately by AI agents like those in the article. The public function issue alone allows complete prize theft. Fix items 1-2 before any deployment.

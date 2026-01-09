@@ -110,13 +110,16 @@ contract TicTacChain is ETour_Storage {
 
         // Tier 0 (different timeout)
         timeouts.enrollmentWindow = 180;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.0003 ether, timeouts));
+        (bool success0, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.0003 ether, timeouts));
+        require(success0, "Failed to register tier 0");
 
         // Tiers 1 & 2 share timeout
         timeouts.enrollmentWindow = 300;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.0007 ether, timeouts));
+        (bool success1, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.0007 ether, timeouts));
+        require(success1, "Failed to register tier 1");
         timeouts.enrollmentWindow = 480;
-        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.00013 ether, timeouts));
+        (bool success2, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.00013 ether, timeouts));
+        require(success2, "Failed to register tier 2");
     }
 
     /**
@@ -203,10 +206,18 @@ contract TicTacChain is ETour_Storage {
         // Note: MODULE_CORE calls _onPlayerEnrolled/_onTournamentStarted internally,
         // but those are empty stubs in the module's bytecode.
         // We must call the real hooks here after the delegatecall.
-        (bool success, ) = MODULE_CORE.delegatecall(
+        (bool success, bytes memory returnData) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "E");
+        if (!success) {
+            if (returnData.length > 0) {
+                assembly {
+                    revert(add(32, returnData), mload(returnData))
+                }
+            } else {
+                revert("Enrollment delegatecall failed");
+            }
+        }
 
         // Call player enrolled hook (always call, module checks if already enrolled)
         _onPlayerEnrolled(tierId, instanceId, msg.sender);
@@ -819,7 +830,7 @@ contract TicTacChain is ETour_Storage {
         uint8 matchNumber,
         address winner,
         bool isDraw
-    ) public {
+    ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
@@ -1423,7 +1434,7 @@ contract TicTacChain is ETour_Storage {
         uint8 tierId,
         uint8 instanceId,
         address[] memory players
-    ) public override {
+    ) internal override {
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             _removePlayerEnrollingTournament(player, tierId, instanceId);

@@ -882,7 +882,7 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 matchNumber,
         address winner,
         bool isDraw
-    ) public {
+    ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
@@ -1354,7 +1354,7 @@ contract ConnectFourOnChain is ETour_Storage {
     /**
      * @dev Hook: Called when tournament completes
      */
-    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) public override {
+    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) internal override {
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             _removePlayerTournament(player, tierId, instanceId, true);

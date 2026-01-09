@@ -125,6 +125,7 @@ contract ETour_Core is ETour_Storage {
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
 
+            
             // Check if there's an old finals match from previous tournament that needs cleanup
             uint8 finalRound = config.totalRounds - 1;
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
@@ -161,7 +162,7 @@ contract ETour_Core is ETour_Storage {
         tournament.prizePool += participantsShare;
 
         emit PlayerEnrolled(tierId, instanceId, msg.sender, tournament.enrolledCount);
-        _onPlayerEnrolled(tierId, instanceId, msg.sender);
+        // Note: _onPlayerEnrolled hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == config.playerCount) {
             startTournament(tierId, instanceId);
@@ -308,7 +309,7 @@ contract ETour_Core is ETour_Storage {
         tournament.currentRound = 0;
 
         emit TournamentStarted(tierId, instanceId, tournament.enrolledCount);
-        _onTournamentStarted(tierId, instanceId);
+        // Note: _onTournamentStarted hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
