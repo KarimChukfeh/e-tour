@@ -301,6 +301,18 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "FE");
 
+        // Check if round is complete before consolidating
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        if (round.completedMatches == round.totalMatches) {
+            // Consolidate next round if ML2 left odd number of winners
+            MODULE_MATCHES.delegatecall(
+                abi.encodeWithSignature(
+                    "consolidateAndStartOddRound(uint8,uint8,uint8)",
+                    tierId, instanceId, roundNumber
+                )
+            );
+        }
+
         // Check if tournament completed and handle prize distribution/reset
         _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
@@ -328,6 +340,18 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
+
+        // Check if round is complete before consolidating
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        if (round.completedMatches == round.totalMatches) {
+            // Consolidate next round if ML3 left odd number of winners
+            MODULE_MATCHES.delegatecall(
+                abi.encodeWithSignature(
+                    "consolidateAndStartOddRound(uint8,uint8,uint8)",
+                    tierId, instanceId, roundNumber
+                )
+            );
+        }
 
         // Add external player to cleanup list for tournament completion
         address[] memory allPlayers = new address[](enrolledPlayersCopy.length + 1);

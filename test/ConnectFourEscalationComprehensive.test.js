@@ -758,31 +758,20 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       await connectFour.connect(advancedSigner).forceEliminateStalledMatch(TIER2, INSTANCE_ID, 0, 3);
 
-      // Complete one semi-final
+      // After ML2, consolidation creates only 1 semi-final (3 winners -> 1 match + 1 walkover)
+      const [totalMatches] = await connectFour.getRoundInfo(TIER2, INSTANCE_ID, 1);
+      expect(totalMatches).to.equal(1); // Consolidation should create only 1 match
+
+      // Complete the single semi-final
       const semi0 = await connectFour.getMatch(TIER2, INSTANCE_ID, 1, 0);
       const sw1 = allPlayers.find(p => p.address === semi0.common.player1);
       const sl1 = allPlayers.find(p => p.address === semi0.common.player2);
       await playQuickHorizontalWin(sw1, sl1, 1, 0, TIER2);
 
-      // Stall other semi-final - use ML3
-      const semi1 = await connectFour.getMatch(TIER2, INSTANCE_ID, 1, 1);
-      const sp = allPlayers.find(p => p.address === semi1.currentTurn) || player5;
-
-      // Try to make a move if match is still active
-      try {
-        await makeMove(sp, 0, 1, 1, TIER2);
-        await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
-
-        const outsider2 = additionalPlayers[9];
-        await connectFour.connect(outsider2).claimMatchSlotByReplacement(TIER2, INSTANCE_ID, 1, 1);
-
-        // Verify outsider2 is in finals
-        const finals = await connectFour.getMatch(TIER2, INSTANCE_ID, 2, 0);
-        expect([finals.common.player1, finals.common.player2]).to.include(outsider2.address);
-      } catch (error) {
-        // If match is already completed, test still demonstrates ML2 escalation worked
-        expect(error.message).to.include("MA");
-      }
+      // Verify finals exists with the winner and the walkover player
+      const finals = await connectFour.getMatch(TIER2, INSTANCE_ID, 2, 0);
+      expect(finals.common.player1).to.not.equal(ethers.ZeroAddress);
+      expect(finals.common.player2).to.not.equal(ethers.ZeroAddress);
     });
 
     it("Should handle EL2 with multiple enrollments -> complete reset", async function () {

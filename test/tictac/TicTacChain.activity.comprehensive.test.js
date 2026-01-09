@@ -23,8 +23,6 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     for (const player of players) {
       const enrolling = await ticTacChain.getPlayerEnrollingTournaments(player.address);
       const active = await ticTacChain.getPlayerActiveTournaments(player.address);
-      const [enrollingCount, activeCount] = await ticTacChain.getPlayerActivityCounts(player.address);
-      const activeMatches = await ticTacChain.getPlayerActiveMatches(player.address);
 
       snapshot.players[player.address] = {
         name: player === p1 ? "P1" : player === p2 ? "P2" : player === p3 ? "P3" :
@@ -32,9 +30,8 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
                player === p7 ? "P7" : player === p8 ? "P8" : player === external1 ? "EXT1" : "EXT2",
         enrolling: enrolling.map(t => ({ tierId: t.tierId, instanceId: t.instanceId })),
         active: active.map(t => ({ tierId: t.tierId, instanceId: t.instanceId })),
-        enrollingCount: Number(enrollingCount),
-        activeCount: Number(activeCount),
-        activeMatchesCount: activeMatches.length,
+        enrollingCount: enrolling.length,
+        activeCount: active.length,
       };
     }
 
@@ -45,7 +42,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
   function printSnapshot(snapshot) {
     console.log(`\n=== ${snapshot.label} ===`);
     for (const [addr, data] of Object.entries(snapshot.players)) {
-      console.log(`${data.name}: enrolling=${data.enrollingCount}, active=${data.activeCount}, matches=${data.activeMatchesCount}`);
+      console.log(`${data.name}: enrolling=${data.enrollingCount}, active=${data.activeCount}`);
     }
   }
 
@@ -138,7 +135,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     storageSnapshots.length = 0;
   });
 
-  it.skip("should track complete 8-player tournament with escalations", async function () {
+  it("should track complete 8-player tournament with escalations", async function () {
     // SKIPPED: This comprehensive stress test uses extreme time advancements (301+ seconds cumulative)
     // that exceed player time banks with Fischer increment. Core activity tracking is tested in other tests.
     const allPlayers = [p1, p2, p3, p4, p5, p6, p7, p8];
@@ -225,7 +222,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       await ticTacChain.connect(semifinalPlayer).makeMove(TIER_2, INSTANCE_0, 1, 0, 0);
 
       // Wait for L3 escalation window
-      await time.increase(301); // 5 minutes + 1 second - enough for L3 (matchTimePerPlayer 60s + matchLevel3Delay 240s = 300s)
+      await time.increase(481); 
 
       // External2 replaces both stalled players
       await ticTacChain.connect(external2).claimMatchSlotByReplacement(TIER_2, INSTANCE_0, 1, 0);
@@ -274,9 +271,10 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
     // Verify final state - all players should have empty tracking
     for (const player of allPlayersWithExternal) {
-      const [enrollingCount, activeCount] = await ticTacChain.getPlayerActivityCounts(player.address);
-      expect(enrollingCount).to.equal(0, `${player.address} should have 0 enrolling tournaments`);
-      expect(activeCount).to.equal(0, `${player.address} should have 0 active tournaments`);
+      const enrolling = await ticTacChain.getPlayerEnrollingTournaments(player.address);
+      const active = await ticTacChain.getPlayerActiveTournaments(player.address);
+      expect(enrolling.length).to.equal(0, `${player.address} should have 0 enrolling tournaments`);
+      expect(active.length).to.equal(0, `${player.address} should have 0 active tournaments`);
     }
 
     // Export snapshots for HTML visualization (convert BigInts to strings)

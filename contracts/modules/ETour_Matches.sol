@@ -523,6 +523,92 @@ contract ETour_Matches is ETour_Storage {
         }
     }
 
+    /**
+     * @dev Consolidate and start next round when odd number of winners after ML2/ML3
+     * Called after escalation events that may leave odd number of advancing players
+     */
+    function consolidateAndStartOddRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 completedRound
+    ) public {
+        Round storage completedRoundStruct = rounds[tierId][instanceId][completedRound];
+        if (!completedRoundStruct.initialized) {
+            return;
+        }
+
+        // Count winners from completed round
+        uint8 winnersCount = 0;
+        address[] memory winners = new address[](completedRoundStruct.totalMatches * 2);
+
+        for (uint8 i = 0; i < completedRoundStruct.totalMatches; i++) {
+            bytes32 matchId = _getMatchId(tierId, instanceId, completedRound, i);
+            (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+
+            if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
+                winners[winnersCount++] = winner;
+            }
+        }
+
+        // If no winners or even number, nothing to consolidate
+        if (winnersCount == 0 || winnersCount % 2 == 0) {
+            return;
+        }
+
+        // Odd number of winners - need to consolidate next round
+        uint8 nextRound = completedRound + 1;
+        Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
+
+        // Calculate proper match count: (winnersCount - 1) / 2
+        uint8 properMatchCount = (winnersCount - 1) / 2;
+
+        if (!nextRoundStruct.initialized) {
+            // Initialize next round with correct match count
+            nextRoundStruct.initialized = true;
+            nextRoundStruct.totalMatches = properMatchCount;
+            nextRoundStruct.completedMatches = 0;
+            nextRoundStruct.drawCount = 0;
+
+            emit RoundInitialized(tierId, instanceId, nextRound, properMatchCount);
+
+            // Select random walkover
+            uint256 randomness = uint256(keccak256(abi.encodePacked(
+                block.prevrandao,
+                block.timestamp,
+                tierId,
+                instanceId,
+                nextRound,
+                winnersCount
+            )));
+
+            uint8 walkoverIndex = uint8(randomness % winnersCount);
+            address walkoverPlayer = winners[walkoverIndex];
+
+            // Remove walkover player from winners array
+            winners[walkoverIndex] = winners[winnersCount - 1];
+            winnersCount--;
+
+            // Create matches for remaining players
+            for (uint8 i = 0; i < properMatchCount; i++) {
+                address p1 = winners[i * 2];
+                address p2 = winners[i * 2 + 1];
+                this._createMatchGame(tierId, instanceId, nextRound, i, p1, p2);
+            }
+
+            // Advance walkover player to round after next
+            TierConfig storage config = _tierConfigs[tierId];
+            if (nextRound < config.totalRounds - 1) {
+                advanceWinner(tierId, instanceId, nextRound, properMatchCount, walkoverPlayer);
+            }
+
+            emit PlayerAutoAdvancedWalkover(tierId, instanceId, nextRound, walkoverPlayer);
+        } else {
+            // Next round already initialized (possibly with wrong match count)
+            // Use existing consolidateScatteredPlayers to fix it
+            consolidateScatteredPlayers(tierId, instanceId, nextRound);
+        }
+    }
+
     // ============ Orphaned Winner Handling ============
 
     /**
