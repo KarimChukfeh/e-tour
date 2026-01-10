@@ -501,6 +501,8 @@ contract ChessOnChain is ETour_Storage {
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
         } else if (gameEnd == 2) { // stalemate
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (gameEnd == 3) { // fifty-move rule
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else if (gameEnd == 4) { // insufficient material
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else {
