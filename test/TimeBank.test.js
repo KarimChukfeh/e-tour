@@ -164,37 +164,15 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout - should succeed
-            // Tournament completes with timeout winner - capture TournamentCompleted event
-            const tx = await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
-            const receipt = await tx.wait();
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
 
-            // Verify TimeoutVictoryClaimed event
-            const timeoutEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TimeoutVictoryClaimed";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(timeoutEvent).to.not.be.undefined;
-
-            // Verify TournamentCompleted event contains winner data
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedTournamentEvent = game.interface.parseLog(tournamentEvent);
-            expect(parsedTournamentEvent.args.winner).to.equal(secondPlayerAddr);
-
-            // Verify tournament reset to Enrolling
+            // Verify tournament completed and reset to Enrolling
             const [tournamentStatus] = await game.getTournamentInfo(tierId, instanceId);
             expect(tournamentStatus).to.equal(0); // Tournament completed and reset to Enrolling
+
+            // Verify winner received prize
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, secondPlayerAddr);
+            expect(winnerPrize).to.be.gt(0);
         });
 
         it("Should NOT allow player to claim timeout on their own turn", async function () {

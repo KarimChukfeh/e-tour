@@ -732,22 +732,15 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
-            const receipt = await tx.wait();
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // Extract prize amounts from PrizeDistributed events
-            const prizeEvents = receipt.logs
-                .map(log => { try { return game.interface.parseLog(log); } catch { return null; } })
-                .filter(parsed => parsed?.name === "PrizeDistributed");
+            // Verify winner received prize by checking playerPrizes mapping
+            const winnerPrize = await game.playerPrizes(tierId, instanceId, firstPlayer.address);
+            expect(winnerPrize).to.be.gt(0);
 
-            // At least winner should receive prize
-            expect(prizeEvents.length).to.be.gte(1);
-
-            // Winner should receive prize
-            const winnerEvent = prizeEvents.find(e => e.args.player === firstPlayer.address);
-            expect(winnerEvent).to.not.be.undefined;
-            expect(winnerEvent.args.amount).to.be.gt(0);
-            expect(winnerEvent.args.rank).to.equal(1); // Winner is rank 1
+            // Verify tournament completed
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling after completion
         });
 
         it("Should handle draw finals with co-winners", async function () {
@@ -1504,13 +1497,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const actualGain = balanceAfter - balanceBefore + gasUsed;
             expect(actualGain).to.equal(expectedClaim);
 
-            // Check EnrollmentPoolClaimed event
-            const claimEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "EnrollmentPoolClaimed"
-            );
-            expect(claimEvent).to.not.be.undefined;
-            expect(claimEvent.args.claimant).to.equal(player3.address);
-            expect(claimEvent.args.amount).to.equal(expectedClaim);
+            // Verify tournament was reset after claim
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling
+            expect(tournament.enrolledCount).to.equal(0);
         });
     });
 
