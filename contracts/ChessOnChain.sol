@@ -48,6 +48,11 @@ contract ChessOnChain is ETour_Storage {
 
     mapping(bytes32 => Match) public matches;
 
+    // Threefold repetition tracking: matchId -> positionHash -> occurrenceCount
+    // Position hash incorporates gameNonce to invalidate counts on match reset
+    mapping(bytes32 => mapping(bytes32 => uint8)) private _positionCounts;
+    mapping(bytes32 => uint256) private _gameNonce;
+
     // Elite tournament match history (Tier 3 and Tier 7 finals)
     Match[] public eliteMatches;
 
@@ -176,6 +181,13 @@ contract ChessOnChain is ETour_Storage {
         return piece >= 7 && piece <= 12;
     }
 
+    /// @dev Compute position hash for threefold repetition detection
+    /// Includes: board state, castling rights, en passant square, side to move, and game nonce
+    function _computePositionHash(uint256 board, uint256 state, bool isWhiteTurn, uint256 nonce) private pure returns (bytes32) {
+        // Extract position-relevant state: bits 0-11 (en passant + castling flags)
+        uint256 positionState = state & 0xFFF;
+        return keccak256(abi.encodePacked(board, positionState, isWhiteTurn, nonce));
+    }
 
     // ============ Public ETour Function Wrappers ============
 
@@ -488,6 +500,10 @@ contract ChessOnChain is ETour_Storage {
         // Store move in history as compact bytes: each move is 2 bytes (from, to)
         m.moves = string(abi.encodePacked(m.moves, from, to));
 
+        // Track position for threefold repetition (position after move, opponent's turn)
+        bytes32 positionHash = _computePositionHash(newBoard, newState, !isWhite, _gameNonce[matchId]);
+        uint8 positionCount = ++_positionCounts[matchId][positionHash];
+
         // Clear any escalation state since a move was made (match is no longer stalled) - inlined
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         timeout.isStalled = false;
@@ -504,6 +520,8 @@ contract ChessOnChain is ETour_Storage {
         } else if (gameEnd == 3) { // fifty-move rule
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else if (gameEnd == 4) { // insufficient material
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (positionCount >= 3) { // threefold repetition
             _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else {
             m.currentTurn = isWhite ? m.player2 : m.player1;
@@ -652,6 +670,10 @@ contract ChessOnChain is ETour_Storage {
 
         matchData.player1TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         matchData.player2TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+
+        // Record initial position for threefold repetition tracking (white to move)
+        bytes32 initialPositionHash = _computePositionHash(INITIAL_BOARD, INITIAL_STATE, true, _gameNonce[matchId]);
+        _positionCounts[matchId][initialPositionHash] = 1;
     }
 
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
@@ -677,6 +699,8 @@ contract ChessOnChain is ETour_Storage {
         m.packedBoard = 0; m.packedState = 0;
         m.startTime = 0; m.lastMoveTime = 0;
         m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
+        // Increment nonce to invalidate any stale position counts
+        ++_gameNonce[matchId];
     }
 
     function _getMatchResult(bytes32 matchId) public view override returns (address, bool, MatchStatus) {
@@ -712,6 +736,11 @@ contract ChessOnChain is ETour_Storage {
 
         m.player1TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
         m.player2TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+
+        // Increment game nonce to invalidate previous position counts, then record initial position
+        uint256 nonce = ++_gameNonce[matchId];
+        bytes32 initialPositionHash = _computePositionHash(INITIAL_BOARD, INITIAL_STATE, true, nonce);
+        _positionCounts[matchId][initialPositionHash] = 1;
     }
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
