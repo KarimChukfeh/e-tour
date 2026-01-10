@@ -9,10 +9,10 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
 
     const TIER_ID = 2; // 8-player tier (good balance for testing)
     const INSTANCE_ID = 0;
-    const TIER_FEE = hre.ethers.parseEther("0.008");
+    const TIER_FEE = hre.ethers.parseEther("0.004"); // Correct fee for Tier 2
     const MATCH_TIME = 120; // 2 minutes per player (updated for 15s Fischer increment)
-    const L2_DELAY = 60; // 1 minute
-    const L3_DELAY = 120; // 2 minutes (cumulative)
+    const L2_DELAY = 120; // 2 minutes (matchLevel2Delay from contract)
+    const L3_DELAY = 240; // 4 minutes (matchLevel3Delay from contract)
 
     // Helper to complete a match quickly (vertical win in Connect Four)
     async function completeMatch(tierId, instanceId, roundNumber, matchNumber) {
@@ -49,8 +49,41 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
         players = signers.slice(1, 9); // 8 players
         outsiders = signers.slice(9, 12); // 3 outsiders
 
+        // Deploy modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
+        const moduleGameCache = await GameCacheModule.deploy();
+        await moduleGameCache.waitForDeployment();
+
+        // Deploy ConnectFourOnChain with modules
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
-        game = await ConnectFourOnChain.deploy();
+        game = await ConnectFourOnChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress(),
+            await moduleGameCache.getAddress()
+        );
         await game.waitForDeployment();
 
         // tierConfigs removed - tier configuration is now hardcoded in contract
@@ -58,9 +91,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
 
     describe("8-Player Tournament with Mixed Escalation Scenarios", function() {
 
-        it.skip("Should handle tournament with normal wins, L2 eliminations, and L3 replacements", async function() {
-            // SKIPPED: This comprehensive stress test uses extreme time advancements (842+ seconds cumulative)
-            // that exceed player time banks. Core escalation functionality is tested in EscalationHelpers.test.js
+        it("Should handle tournament with normal wins, L2 eliminations, and L3 replacements", async function() {
             this.timeout(180000);
 
             console.log("\n=== COMPREHENSIVE ESCALATION TEST ===\n");
@@ -92,7 +123,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Verify outsider cannot use L2
             await expect(
                 game.connect(outsiders[0]).forceEliminateStalledMatch(TIER_ID, INSTANCE_ID, 0, 1)
-            ).to.be.revertedWith("Not an advanced player");
+            ).to.be.revertedWith("FE"); // FE = Force Eliminate failed (wraps "Not an advanced player")
             console.log("✓ Outsider correctly blocked from L2");
 
             // Advanced player force eliminates
@@ -113,7 +144,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Verify advanced player CANNOT claim L3
             await expect(
                 game.connect(await hre.ethers.getSigner(advancedPlayer)).claimMatchSlotByReplacement(TIER_ID, INSTANCE_ID, 0, 2)
-            ).to.be.revertedWith("Advanced players cannot claim L3");
+            ).to.be.revertedWith("CR"); // CR = Claim Replacement failed (wraps "Advanced players cannot claim L3")
             console.log("✓ Advanced player correctly blocked from L3");
 
             // Outsider claims
@@ -176,9 +207,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             console.log("✓ Bracket advancement handles mixed completion types");
         });
 
-        it.skip("Should verify eliminated player can claim L3 in their own round", async function() {
-            // SKIPPED: This test involves time advancements that exceed time banks.
-            // Core L3 claiming functionality is tested in EscalationHelpers.test.js
+        it("Should verify eliminated player can claim L3 in their own round", async function() {
             this.timeout(120000);
 
             console.log("\n=== Testing Eliminated Player L3 Access ===\n");
@@ -203,7 +232,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Winner is advanced and should be blocked from L3
             await expect(
                 game.connect(await hre.ethers.getSigner(winner)).claimMatchSlotByReplacement(TIER_ID, INSTANCE_ID, 0, 1)
-            ).to.be.revertedWith("Advanced players cannot claim L3");
+            ).to.be.revertedWith("CR"); // CR = Claim Replacement failed (wraps "Advanced players cannot claim L3")
             console.log("✓ Advanced player (winner) blocked from L3");
 
             // Loser is eliminated but NOT advanced, so can claim L3
@@ -215,9 +244,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             console.log("\n✅ Eliminated players CAN claim L3 (they're not advanced)");
         });
 
-        it.skip("Should handle complex bracket with multiple escalation types", async function() {
-            // SKIPPED: This test involves cumulative time advancements that exceed time banks.
-            // Core escalation functionality is tested in EscalationHelpers.test.js
+        it("Should handle complex bracket with multiple escalation types", async function() {
             this.timeout(120000);
 
             console.log("\n=== Complex Bracket Test ===\n");

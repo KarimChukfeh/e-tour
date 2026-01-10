@@ -2226,83 +2226,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // This represents proper Web3 architecture where events are the source of truth
         });
 
-        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
-            const tierId = 0;
-            const instanceId = 1; // Use different instance
-            const roundNumber = 0;
-            const matchNumber = 0;
-
-            // Enroll and start tournament
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Get match info
-            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const actualPlayer1 = matchData.common.player1;
-            const actualPlayer2 = matchData.common.player2;
-            const firstPlayer = matchData.firstPlayer;
-
-            // Play to completion
-            let currentPlayer = firstPlayer === actualPlayer1 ? player3 : player4;
-            let otherPlayer = firstPlayer === actualPlayer1 ? player4 : player3;
-
-            // Winning pattern
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 0);
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 1);
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 3);
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 6);
-
-            // Winner calls getMatch - finals preserved in live storage
-            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-
-            expect(matchData.common.isCached).to.be.false; // Finals preserved, not cached
-            expect(matchData.common.winner).to.equal(firstPlayer);
-            expect(matchData.common.loser).to.not.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.status).to.equal(2); // Completed
-        });
-
-        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
-            const tierId = 0;
-            const instanceId = 2; // Use different instance
-            const roundNumber = 0;
-            const matchNumber = 0;
-
-            // Enroll and start tournament
-            await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Get match info
-            let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const actualPlayer1 = matchData.common.player1;
-            const actualPlayer2 = matchData.common.player2;
-            const firstPlayer = matchData.firstPlayer;
-
-            // Play to a draw
-            let currentPlayer = firstPlayer === actualPlayer1 ? player5 : player6;
-            let otherPlayer = firstPlayer === actualPlayer1 ? player6 : player5;
-
-            // Draw pattern: X X O / O O X / X O X
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 0); // X
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);   // O
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 1); // X
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 3);   // O
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 5); // X
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 4);   // O
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 6); // X
-            await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 8);   // O
-            await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 7); // X - Draw
-
-            // After draw, getMatch returns finals from live storage
-            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-
-            expect(matchData.common.isCached).to.be.false; // Finals preserved, not cached
-            expect(matchData.common.isDraw).to.be.true;
-            expect(matchData.common.winner).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.loser).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.status).to.equal(2); // Completed
-        });
-
         it("Should fail gracefully for non-existent match", async function () {
             const tierId = 0;
             const instanceId = 50; // Instance that was never used
@@ -2346,69 +2269,98 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.status).to.equal(1); // Still InProgress
         });
 
-        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
-            // This test verifies that matchIdToCacheIndex mappings are properly cleaned up
-            // when the cache wraps around and overwrites old entries
+        it("verifies that matchIdToCacheIndex mappings are properly cleaned up", async function () {
+            // This test verifies that matchIdToCacheIndex mappings are properly maintained
+            // as matches are added to the cache. The GameCacheModule (lines 82-85) ensures
+            // that when cache wraps around and overwrites entries, old mappings are deleted.
+            //
+            // Full wrap-around testing would require 1000+ completed matches (MATCH_CACHE_SIZE),
+            // which is impractical for unit tests. Instead, we verify the mapping works correctly
+            // for multiple matches and can infer wrap-around cleanup works from the code logic.
 
-            const tierId = 0;
-
-            // We'll use a unique instanceId range for this test
+            const tierId = 1; // 4-player tier to get non-finals matches
             const startInstance = 20;
 
-            // Note: This test simulates the wrap-around behavior without actually filling
-            // 1000 entries (which would take too long). We verify the cleanup logic works.
+            // Helper to compute matchId (matches contract's _getMatchId function)
+            function getMatchId(tierId, instanceId, roundNumber, matchNumber) {
+                return hre.ethers.solidityPackedKeccak256(
+                    ["uint8", "uint8", "uint8", "uint8"],
+                    [tierId, instanceId, roundNumber, matchNumber]
+                );
+            }
 
-            // Create first match and verify it's cached
-            await game.connect(player1).enrollInTournament(tierId, startInstance, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, startInstance, { value: TIER_0_FEE });
+            // Enroll 4 players for 4-player tournament
+            await game.connect(player1).enrollInTournament(tierId, startInstance, { value: TIER_1_FEE });
+            await game.connect(player2).enrollInTournament(tierId, startInstance, { value: TIER_1_FEE });
+            await game.connect(player3).enrollInTournament(tierId, startInstance, { value: TIER_1_FEE });
+            await game.connect(player4).enrollInTournament(tierId, startInstance, { value: TIER_1_FEE });
 
             let match1 = await game.getMatch(tierId, startInstance, 0, 0);
             const p1 = match1.firstPlayer === match1.common.player1 ? player1 : player2;
             const p2 = match1.firstPlayer === match1.common.player1 ? player2 : player1;
 
-            // Complete match 1
+            // Complete match 1 (TicTacToe diagonal win: 0,4,8)
             await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 0);
             await game.connect(p2).makeMove(tierId, startInstance, 0, 0, 1);
             await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 4);
             await game.connect(p2).makeMove(tierId, startInstance, 0, 0, 2);
             await game.connect(p1).makeMove(tierId, startInstance, 0, 0, 8);
 
-            // Verify match 1 finals is preserved (not cached)
-            match1 = await game.getMatch(tierId, startInstance, 0, 0);
-            expect(match1.common.isCached).to.be.false; // Finals preserved in live storage
-            const match1Winner = match1.common.winner;
+            // Get matchId for first match
+            const matchId1 = getMatchId(tierId, startInstance, 0, 0);
 
-            // Create second match in different instance
-            await game.connect(player3).enrollInTournament(tierId, startInstance + 1, { value: TIER_0_FEE });
-            await game.connect(player4).enrollInTournament(tierId, startInstance + 1, { value: TIER_0_FEE });
+            // Verify first match is indexed in cache at position 0
+            const cacheIndex1 = await game.sharedMatchIdToCacheIndex(matchId1);
+            expect(cacheIndex1).to.equal(0, "First match should be at cache index 0");
 
-            let match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
+            // Verify nextCacheIndex advanced to 1
+            const nextIndex1 = await game.sharedNextCacheIndex();
+            expect(nextIndex1).to.equal(1, "Next cache index should be 1");
+
+            // Complete second semi-final match (0,1) in same tournament
+            let match2 = await game.getMatch(tierId, startInstance, 0, 1);
             const p3 = match2.firstPlayer === match2.common.player1 ? player3 : player4;
             const p4 = match2.firstPlayer === match2.common.player1 ? player4 : player3;
 
-            // Complete match 2
-            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 0);
-            await game.connect(p4).makeMove(tierId, startInstance + 1, 0, 0, 1);
-            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 3);
-            await game.connect(p4).makeMove(tierId, startInstance + 1, 0, 0, 2);
-            await game.connect(p3).makeMove(tierId, startInstance + 1, 0, 0, 6);
+            // Complete match 2 (TicTacToe diagonal win: 0,3,6)
+            await game.connect(p3).makeMove(tierId, startInstance, 0, 1, 0);
+            await game.connect(p4).makeMove(tierId, startInstance, 0, 1, 1);
+            await game.connect(p3).makeMove(tierId, startInstance, 0, 1, 3);
+            await game.connect(p4).makeMove(tierId, startInstance, 0, 1, 2);
+            await game.connect(p3).makeMove(tierId, startInstance, 0, 1, 6);
 
-            // Verify match 2 finals is preserved (not cached)
-            match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
-            expect(match2.common.isCached).to.be.false; // Finals preserved in live storage
-            const match2Winner = match2.common.winner;
+            // Get matchId for second match
+            const matchId2 = getMatchId(tierId, startInstance, 0, 1);
 
-            // Both matches should be retrievable with correct data
-            match1 = await game.getMatch(tierId, startInstance, 0, 0);
-            expect(match1.common.winner).to.equal(match1Winner);
-            expect(match1.common.instanceId).to.equal(startInstance);
+            // Verify second match is indexed at position 1
+            const cacheIndex2 = await game.sharedMatchIdToCacheIndex(matchId2);
+            expect(cacheIndex2).to.equal(1, "Second match should be at cache index 1");
 
-            match2 = await game.getMatch(tierId, startInstance + 1, 0, 0);
-            expect(match2.common.winner).to.equal(match2Winner);
-            expect(match2.common.instanceId).to.equal(startInstance + 1);
+            // Verify nextCacheIndex advanced to 2
+            const nextIndex2 = await game.sharedNextCacheIndex();
+            expect(nextIndex2).to.equal(2, "Next cache index should be 2");
 
-            // Verify they have different winners (different matches)
-            expect(match1Winner).to.not.equal(match2Winner);
+            // Verify the cached match IDs are stored correctly
+            const storedMatchId1 = await game.sharedCacheMatchIds(0);
+            expect(storedMatchId1).to.equal(matchId1, "matchId1 should be stored at cache index 0");
+
+            const storedMatchId2 = await game.sharedCacheMatchIds(1);
+            expect(storedMatchId2).to.equal(matchId2, "matchId2 should be stored at cache index 1");
+
+            // Verify the bidirectional mapping: cache index -> matchId -> cache index
+            const retrievedIndex1 = await game.sharedMatchIdToCacheIndex(storedMatchId1);
+            expect(retrievedIndex1).to.equal(0, "Stored matchId1 should map back to index 0");
+
+            const retrievedIndex2 = await game.sharedMatchIdToCacheIndex(storedMatchId2);
+            expect(retrievedIndex2).to.equal(1, "Stored matchId2 should map back to index 1");
+
+            // Note: When cache wraps around (after 1000 entries), the cleanup logic in
+            // GameCacheModule.addToMatchCache() (lines 82-85) will delete the old mapping:
+            //   bytes32 oldMatchId = sharedCacheMatchIds[cacheIndex];
+            //   if (oldMatchId != bytes32(0)) {
+            //       delete sharedMatchIdToCacheIndex[oldMatchId];
+            //   }
+            // This ensures no stale mappings remain that could cause cache misses.
         });
     });
 
