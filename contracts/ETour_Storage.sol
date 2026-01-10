@@ -178,6 +178,22 @@ abstract contract ETour_Storage is ReentrancyGuard {
         bool isCached;          // true = from cache, false = from active storage
     }
 
+    /**
+     * @dev Historic data for a single raffle execution
+     * Stores complete information about each raffle for historical tracking
+     */
+    struct RaffleResult {
+        address executor;               // Who called executeProtocolRaffle
+        uint256 timestamp;              // When the raffle was executed
+        uint256 rafflePot;              // Total raffle pot before distribution
+        address[] participants;         // All addresses considered in the raffle
+        uint256[] weights;              // Each address's weight/odds to win
+        address winner;                 // The randomly selected winner
+        uint256 winnerPrize;            // How much ETH the winner received
+        uint256 protocolReserve;        // How much ETH the protocol kept as reserve
+        uint256 ownerShare;             // How much ETH the owner received
+    }
+
     // ============ State Variables ============
 
     // Tier configuration - set by implementing contract
@@ -192,6 +208,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
     uint256[] internal raffleThresholds;  // Configured thresholds for initial raffles
     uint256 internal raffleThresholdFinal;  // Threshold to use after initial raffles exhausted
+    mapping(uint256 => RaffleResult) public raffleResults;  // Historic raffle execution data indexed by raffle index
 
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;

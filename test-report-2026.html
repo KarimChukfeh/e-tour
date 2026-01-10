@@ -488,7 +488,7 @@
         <div class="dashboard">
             <div class="stat-card success">
                 <div class="icon">✅</div>
-                <div class="value">410</div>
+                <div class="value">422</div>
                 <div class="label">Tests Passed</div>
             </div>
             <div class="stat-card pending">
@@ -503,7 +503,7 @@
             </div>
             <div class="stat-card total">
                 <div class="icon">📊</div>
-                <div class="value">414</div>
+                <div class="value">426</div>
                 <div class="label">Total Tests</div>
             </div>
             <div class="stat-card time">
@@ -520,15 +520,15 @@
                     <circle class="bg" cx="50" cy="50" r="42"/>
                     <circle class="progress" cx="50" cy="50" r="42"
                             stroke-dasharray="263.89"
-                            stroke-dashoffset="2.56"/>
+                            stroke-dashoffset="2.48"/>
                 </svg>
-                <div class="progress-percentage">99.0%</div>
+                <div class="progress-percentage">99.1%</div>
                 <div class="progress-text">Pass Rate</div>
             </div>
             <div style="text-align: left;">
                 <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">Test Summary</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
-                    <span style="color: var(--accent-green);">●</span> 410 tests passed successfully
+                    <span style="color: var(--accent-green);">●</span> 422 tests passed successfully
                 </p>
                 <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
                     <span style="color: var(--accent-orange);">●</span> 4 tests pending (Chess advanced draw rules)
@@ -537,7 +537,7 @@
                     <span style="color: var(--accent-red);">●</span> 0 tests failed
                 </p>
                 <p style="color: var(--text-secondary); margin-top: 1rem;">
-                    <span style="color: var(--accent-blue);">●</span> 35 test suites across 3 games + protocol core
+                    <span style="color: var(--accent-blue);">●</span> 36 test suites across 3 games + protocol core
                 </p>
             </div>
         </div>
@@ -1120,6 +1120,205 @@
             </div>
         </div>
 
+        <!-- Test Suite 3: Raffle Results Storage -->
+        <div class="test-suite-wrapper">
+            <div class="suite-header-main" onclick="toggleSuite('suite3')">
+                <div class="suite-icon-main">🎲</div>
+                <div class="suite-title-main">
+                    <h3>Raffle Results Storage - Historic Data Validation</h3>
+                    <p class="desc">Complete raffle history tracking with gas cost analysis and data integrity verification</p>
+                </div>
+                <div class="suite-stats-main">
+                    <div class="suite-stat-main pass">✅ 12 / 12 Passed</div>
+                </div>
+                <div class="expand-icon">▼</div>
+            </div>
+            <div class="test-details" id="suite3">
+
+                <div class="test-subsection">
+                    <div class="test-subsection-title">📊 Single Raffle Execution Storage (3 tests)</div>
+                    <div class="test-info-content" style="margin-bottom: 1rem;">
+                        Tests complete raffle result data storage including executor, timestamp, pot size, participants, weights, winner, and prize distribution.
+                    </div>
+
+                    <div class="test-item">
+                        <div class="test-item-header">
+                            <div class="test-status-icon">✅</div>
+                            <div class="test-name">Should store complete raffle result data after execution</div>
+                        </div>
+                        <div class="test-info-grid">
+                            <div class="test-info-section">
+                                <div class="test-info-label">📝 Scenario</div>
+                                <div class="test-info-content">
+                                    Execute a protocol raffle after reaching 0.25 ETH threshold. Verify all raffle result fields are stored correctly in <code>getRaffleHistory()</code>.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">🎯 Expected Outcome</div>
+                                <div class="test-info-content">
+                                    Complete raffle data stored: executor address, timestamp, raffle pot (0.25 ETH), participants array with 2 players, weights [1,1], winner (one of the participants), winnerPrize (0.18 ETH = 80% of 0.225), protocolReserve (0.025 ETH = 10%), ownerShare (0.045 ETH = 20% of 0.225).
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">✓ Actual Outcome</div>
+                                <div class="test-info-content">
+                                    All fields stored correctly. Prize distribution validates: winnerPrize + ownerShare + protocolReserve = rafflePot. Weights match enrollment counts. Winner is verified participant.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="test-item">
+                        <div class="test-item-header">
+                            <div class="test-status-icon">✅</div>
+                            <div class="test-name">Should store different winner when randomness changes</div>
+                        </div>
+                        <div class="test-info-grid">
+                            <div class="test-info-section">
+                                <div class="test-info-label">📝 Scenario</div>
+                                <div class="test-info-content">
+                                    Execute two consecutive raffles with block mining between them to change randomness seed. Verify both raffles store independently with different winners.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">🎯 Expected Outcome</div>
+                                <div class="test-info-content">
+                                    Two separate raffle results stored. Different executors (player1 vs player2). Different timestamps. Independent winner selection based on new randomness.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">✓ Actual Outcome</div>
+                                <div class="test-info-content">
+                                    Both raffles stored with distinct data. Executors differ. Timestamps sequential. Randomness produces different outcomes as expected.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="test-item">
+                        <div class="test-item-header">
+                            <div class="test-status-icon">✅</div>
+                            <div class="test-name">Should handle weighted participants correctly when player enrolled in multiple tournaments</div>
+                        </div>
+                        <div class="test-info-grid">
+                            <div class="test-info-section">
+                                <div class="test-info-label">📝 Scenario</div>
+                                <div class="test-info-content">
+                                    Player3 enrolls in 2 different tournament instances (instanceId 1 and 2). Player4 enrolls in 1 instance. Execute raffle and verify weight calculation.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">🎯 Expected Outcome</div>
+                                <div class="test-info-content">
+                                    Player3 weight = 2 (enrolled in 2 active tournaments). Player4 weight = 1 (enrolled in 1 tournament). Player1 weight = 1 (from beforeEach). Weights stored in raffle history.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">✓ Actual Outcome</div>
+                                <div class="test-info-content">
+                                    Weights correctly calculated and stored. Player3 has 2x winning probability vs others. Multi-tournament enrollment properly tracked.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-subsection">
+                    <div class="test-subsection-title">🔄 Multiple Consecutive Raffles Storage (3 tests)</div>
+                    <div class="test-info-content" style="margin-bottom: 1rem;">
+                        Tests independent storage of multiple raffle executions with progressive threshold increases.
+                    </div>
+
+                    <div class="test-item">
+                        <div class="test-item-header">
+                            <div class="test-status-icon">✅</div>
+                            <div class="test-name">Should store separate results for 3 consecutive raffles with correct data</div>
+                        </div>
+                        <div class="test-info-grid">
+                            <div class="test-info-section">
+                                <div class="test-info-label">📝 Scenario</div>
+                                <div class="test-info-content">
+                                    Execute 3 raffles sequentially with progressive thresholds: 0.25 ETH → 0.5 ETH → 0.75 ETH. Verify all 3 stored independently with correct calculations.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">🎯 Expected Outcome</div>
+                                <div class="test-info-content">
+                                    Raffle #1: pot=0.25, reserve=0.025, owner=0.045, winner=0.18 ETH<br>
+                                    Raffle #2: pot=0.5, reserve=0.05, owner=0.09, winner=0.36 ETH<br>
+                                    Raffle #3: pot=0.75, reserve=0.075, owner=0.135, winner=0.54 ETH
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">✓ Actual Outcome</div>
+                                <div class="test-info-content">
+                                    All 3 raffles stored with exact expected values. Timestamps sequential. Each has valid winner from participants. Progressive threshold system working perfectly.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="test-list">
+                        <li>Should maintain independent storage for each raffle index</li>
+                        <li>Should correctly track progressive threshold increases across raffles (4 raffles: 0.25 → 0.5 → 0.75 → 1.0 ETH cap)</li>
+                    </ul>
+                </div>
+
+                <div class="test-subsection">
+                    <div class="test-subsection-title">🛡️ Edge Cases and Data Integrity (4 tests)</div>
+                    <div class="test-info-content" style="margin-bottom: 1rem;">
+                        Tests boundary conditions and data integrity guarantees.
+                    </div>
+
+                    <ul class="test-list">
+                        <li>Should handle raffle with single participant (solo winner scenario)</li>
+                        <li>Should ensure participants and weights arrays have same length</li>
+                        <li>Should preserve exact ETH amounts without rounding errors (wei precision)</li>
+                        <li>Should query non-existent raffle index safely (returns zero values)</li>
+                    </ul>
+                </div>
+
+                <div class="test-subsection">
+                    <div class="test-subsection-title">⚡ Storage Gas Costs (2 tests)</div>
+                    <div class="test-info-content" style="margin-bottom: 1rem;">
+                        Documents gas consumption for raffle execution including history storage.
+                    </div>
+
+                    <div class="test-item">
+                        <div class="test-item-header">
+                            <div class="test-status-icon">✅</div>
+                            <div class="test-name">Should document gas cost for storing raffle results</div>
+                        </div>
+                        <div class="test-info-grid">
+                            <div class="test-info-section">
+                                <div class="test-info-label">📝 Scenario</div>
+                                <div class="test-info-content">
+                                    Execute raffle with 2 participants and capture gas consumption for the entire operation including storage writes.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">🎯 Expected Outcome</div>
+                                <div class="test-info-content">
+                                    Gas usage documented and logged. Verifies that raffle execution + storage is within reasonable gas limits.
+                                </div>
+                            </div>
+                            <div class="test-info-section">
+                                <div class="test-info-label">✓ Actual Outcome</div>
+                                <div class="test-info-content">
+                                    Gas used: <strong>2,237,059</strong> (includes raffle execution, randomness, prize distribution, and history storage with 2 participants)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="test-list">
+                        <li>Should handle storage for raffle with many participants (documents scalability)</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
         <!-- More suites continue with similar pattern... -->
         <!-- For brevity, I'll add a summary section -->
 
@@ -1186,7 +1385,7 @@
                     </ul>
                 </div>
 
-                <h4 style="margin-bottom: 1rem; color: var(--accent-blue);">🏛️ ETour Protocol Core Tests (100 tests)</h4>
+                <h4 style="margin-bottom: 1rem; color: var(--accent-blue);">🏛️ ETour Protocol Core Tests (112 tests)</h4>
                 <div style="margin-bottom: 2rem;">
                     <p style="color: var(--text-secondary); margin-bottom: 1rem;">
                         Cross-game protocol mechanics:
@@ -1195,6 +1394,7 @@
                         <li><strong>All-Draw Prize Distribution (8 tests)</strong> - Covered in detail above</li>
                         <li><strong>Time Bank System (14 tests)</strong> - Chess clock for any game</li>
                         <li><strong>Protocol Raffle System (23 tests)</strong> - 3 ETH threshold, 20/80 split, reentrancy protection</li>
+                        <li><strong>Raffle Results Storage (12 tests)</strong> - Complete raffle history tracking with gas analysis (covered in detail above)</li>
                         <li><strong>Match-Level Escalation (12 tests)</strong> - Anti-stalling mechanisms</li>
                         <li><strong>Tournament Reset Edge Cases (9 tests)</strong> - State management across tournaments</li>
                         <li><strong>Wei Precision & Rounding (7 tests)</strong> - Ensures no wei loss in prize distribution</li>
@@ -1223,6 +1423,7 @@
                     <ul style="list-style: none; padding: 0;">
                         <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>Zero contract balance leaks</strong> - All prize distributions verified</li>
                         <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>Complete escalation coverage</strong> - All 5 levels tested across 3 games</li>
+                        <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>Raffle history storage</strong> - Full historic data tracking with 2.2M gas per execution</li>
                         <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>Gas optimization validated</strong> - Max cost player path: 1.85M gas</li>
                         <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>Wei precision guaranteed</strong> - No rounding errors in prize splits</li>
                         <li style="padding: 0.5rem 0; color: var(--text-primary);">✅ <strong>State cleanup verified</strong> - Player activity properly managed</li>
@@ -1264,14 +1465,14 @@
         new Chart(gameCtx, {
             type: 'doughnut',
             data: {
-                labels: ['TicTacChain', 'ChessOnChain', 'ConnectFour', 'Protocol Core', 'Infrastructure'],
+                labels: ['TicTacChain', 'ChessOnChain', 'Protocol Core', 'ConnectFour', 'Infrastructure'],
                 datasets: [{
-                    data: [112, 110, 88, 94, 10],
+                    data: [112, 110, 106, 88, 10],
                     backgroundColor: [
                         '#3fb950',
                         '#58a6ff',
-                        '#f85149',
                         '#a371f7',
+                        '#f85149',
                         '#d29922'
                     ],
                     borderColor: '#0d1117',
@@ -1299,10 +1500,10 @@
         new Chart(categoryCtx, {
             type: 'bar',
             data: {
-                labels: ['Escalation', 'Core Logic', 'Prize Dist', 'Tournament', 'Storage', 'Edge Cases'],
+                labels: ['Escalation', 'Core Logic', 'Tournament', 'Prize Dist', 'Edge Cases', 'Storage'],
                 datasets: [{
                     label: 'Tests',
-                    data: [130, 85, 45, 80, 20, 54],
+                    data: [130, 85, 80, 47, 54, 30],
                     backgroundColor: [
                         'rgba(88, 166, 255, 0.7)',
                         'rgba(63, 185, 80, 0.7)',

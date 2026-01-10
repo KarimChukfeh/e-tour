@@ -106,6 +106,7 @@ contract ChessOnChain is ETour_Storage {
                 )
             );
         }
+        raffleThresholds.push(0.05 ether);  // Raffle #1
     }
 
     // ============ Initialization ============
@@ -226,6 +227,21 @@ contract ChessOnChain is ETour_Storage {
             abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
         );
         require(success, "ER");
+    }
+
+    /**
+     * @dev Get all historic raffle results - reads from local storage
+     * Returns array of all raffles executed (index 1 to currentRaffleIndex)
+     */
+    function getRaffleHistory() external view returns (RaffleResult[] memory) {
+        uint256 count = currentRaffleIndex;
+        RaffleResult[] memory history = new RaffleResult[](count);
+
+        for (uint256 i = 1; i <= count; i++) {
+            history[i - 1] = raffleResults[i];
+        }
+
+        return history;
     }
 
     function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
@@ -767,7 +783,7 @@ contract ChessOnChain is ETour_Storage {
     ) {
         raffleIndex = uint32(currentRaffleIndex);
         currentAccumulated = accumulatedProtocolShare;
-        threshold = 3 ether;
+        threshold = _getRaffleThreshold();
         reserve = (threshold * 10) / 100;
         isReady = currentAccumulated >= threshold;
         raffleAmount = threshold - reserve;
@@ -775,6 +791,19 @@ contract ChessOnChain is ETour_Storage {
         winnerShare = (raffleAmount * 80) / 100;
         (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSignature("getEligiblePlayerCount()"));
         eligiblePlayerCount = s ? uint32(abi.decode(d, (uint256))) : 0;
+    }
+
+    /**
+     * @dev Get current raffle threshold - reads from contract's storage
+     */
+    function _getRaffleThreshold() internal view returns (uint256) {
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+        return raffleThresholdFinal;
     }
 
     function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {

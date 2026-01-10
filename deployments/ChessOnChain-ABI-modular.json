@@ -1,9 +1,9 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+  "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-10T17:06:35.857Z",
+  "deployedAt": "2026-01-10T20:08:55.785Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -1421,6 +1421,66 @@
     },
     {
       "inputs": [],
+      "name": "getRaffleHistory",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rafflePot",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address[]",
+              "name": "participants",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "weights",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "address",
+              "name": "winner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "winnerPrize",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "protocolReserve",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "ownerShare",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ETour_Storage.RaffleResult[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "getRaffleInfo",
       "outputs": [
         {
@@ -2128,6 +2188,55 @@
         {
           "internalType": "uint256",
           "name": "matchesPlayed",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "raffleResults",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "executor",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rafflePot",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "winnerPrize",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "protocolReserve",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ownerShare",
           "type": "uint256"
         }
       ],

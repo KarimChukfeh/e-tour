@@ -105,10 +105,11 @@ contract TicTacChain is ETour_Storage {
 
         // Initialize progressive raffle thresholds for TicTacChain
         // Lower thresholds than base ETour to make raffles more accessible
-        raffleThresholds.push(0.25 ether);  // Raffle #1
-        raffleThresholds.push(0.5 ether);   // Raffle #2
-        raffleThresholds.push(0.75 ether);  // Raffle #3
-        raffleThresholdFinal = 1.0 ether;   // Raffle #4+
+        raffleThresholds.push(0.05 ether);  // Raffle #1
+        raffleThresholds.push(0.25 ether);  // Raffle #2
+        raffleThresholds.push(0.5 ether);   // Raffle #3
+        raffleThresholds.push(0.75 ether);  // Raffle #4
+        raffleThresholdFinal = 1.0 ether;   // Raffle #5+
     }
 
     /**
@@ -257,6 +258,21 @@ contract TicTacChain is ETour_Storage {
             abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
         );
         require(success, "ER");
+    }
+
+    /**
+     * @dev Get all historic raffle results - reads from local storage
+     * Returns array of all raffles executed (index 1 to currentRaffleIndex)
+     */
+    function getRaffleHistory() external view returns (RaffleResult[] memory) {
+        uint256 count = currentRaffleIndex;
+        RaffleResult[] memory history = new RaffleResult[](count);
+
+        for (uint256 i = 1; i <= count; i++) {
+            history[i - 1] = raffleResults[i];
+        }
+
+        return history;
     }
 
     /**

@@ -388,8 +388,10 @@ contract ETour_Raffle is ETour_Storage {
     /**
      * @dev Executes protocol raffle when accumulated fees exceed threshold
      * EXACT COPY from ETour.sol lines 743-827
+     * Note: tierId and instanceId params added for compatibility with game contract delegatecalls,
+     * but not used in logic since eligibility is checked across all active tournaments
      */
-    function executeProtocolRaffle()
+    function executeProtocolRaffle(uint8, uint8)
         external
         returns (
             address winner,
@@ -410,12 +412,13 @@ contract ETour_Raffle is ETour_Storage {
             "Only enrolled players can trigger raffle"
         );
 
-        // EFFECT 1: Increment raffle index
-        currentRaffleIndex++;
-
-        // EFFECT 2: Calculate raffle amount (use configured reserve)
-        uint256 reserve = _getRaffleReserve();
+        // EFFECT 1: Calculate raffle amount BEFORE incrementing index
+        // (reserve must use current threshold, not next threshold)
+        uint256 reserve = (threshold * 10) / 100;  // 10% of current threshold
         uint256 raffleAmount = accumulatedProtocolShare - reserve;
+
+        // EFFECT 2: Increment raffle index
+        currentRaffleIndex++;
         ownerAmount = (raffleAmount * 20) / 100;  // 20%
         winnerAmount = (raffleAmount * 80) / 100; // 80%
 
@@ -463,6 +466,19 @@ contract ETour_Raffle is ETour_Storage {
             winnerEnrollmentCount
         );
 
+        // EFFECT 7: Store historic raffle result
+        raffleResults[currentRaffleIndex] = RaffleResult({
+            executor: msg.sender,
+            timestamp: block.timestamp,
+            rafflePot: raffleAmount + reserve,
+            participants: players,
+            weights: weights,
+            winner: winner,
+            winnerPrize: winnerAmount,
+            protocolReserve: reserve,
+            ownerShare: ownerAmount
+        });
+
         // INTERACTION 1: Send to owner
         (bool ownerSent, ) = payable(owner).call{value: ownerAmount}("");
         require(ownerSent, "Failed to send owner share");
@@ -475,6 +491,39 @@ contract ETour_Raffle is ETour_Storage {
     }
 
     // ============ Raffle Info Getters ============
+
+    /**
+     * @dev Returns complete raffle result data for a specific raffle index
+     * Needed because public mapping can't return dynamic arrays
+     */
+    function getRaffleResult(uint256 raffleIndex)
+        external
+        view
+        returns (
+            address executor,
+            uint256 timestamp,
+            uint256 rafflePot,
+            address[] memory participants,
+            uint256[] memory weights,
+            address winner,
+            uint256 winnerPrize,
+            uint256 protocolReserve,
+            uint256 ownerShare
+        )
+    {
+        RaffleResult storage result = raffleResults[raffleIndex];
+        return (
+            result.executor,
+            result.timestamp,
+            result.rafflePot,
+            result.participants,
+            result.weights,
+            result.winner,
+            result.winnerPrize,
+            result.protocolReserve,
+            result.ownerShare
+        );
+    }
 
     /**
      * @dev Returns detailed raffle state information for client display
