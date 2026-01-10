@@ -351,10 +351,10 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             const winnerAddr = await playScholarsMate(tierId, instanceId, 0, 0);
 
-            // Verify from cached match data
-            const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchData.common.winner).to.equal(winnerAddr);
-            expect(matchData.common.isDraw).to.be.false;
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(winnerAddr).to.not.equal(hre.ethers.ZeroAddress); // Winner returned by helper
         });
 
         it("Should complete Tier 3 tournament via checkmate", async function () {
@@ -366,8 +366,10 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             const winnerAddr = await playScholarsMate(tierId, instanceId, 0, 0);
 
-            const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchData.common.winner).to.equal(winnerAddr);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(winnerAddr).to.not.equal(hre.ethers.ZeroAddress); // Winner returned by helper
         });
 
         it("Should complete Tier 0 tournament via timeout", async function () {
@@ -379,8 +381,10 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             const winnerAddr = await claimTimeoutWin(tierId, instanceId, 0, 0);
 
-            const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchData.common.winner).to.equal(winnerAddr);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(winnerAddr).to.not.equal(hre.ethers.ZeroAddress); // Winner returned by helper
         });
 
         it("Should complete Tier 3 tournament via timeout", async function () {
@@ -392,8 +396,10 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             const winnerAddr = await claimTimeoutWin(tierId, instanceId, 0, 0);
 
-            const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchData.common.winner).to.equal(winnerAddr);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(winnerAddr).to.not.equal(hre.ethers.ZeroAddress); // Winner returned by helper
         });
     });
 
@@ -425,11 +431,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             expect(round1Before.totalMatches).to.equal(1);
 
             // Complete finals
-            await playScholarsMate(tierId, instanceId, 1, 0);
+            const finalsWinner = await playScholarsMate(tierId, instanceId, 1, 0);
 
-            // Verify finals completed
-            const finalsMatch = await chess.getMatch(tierId, instanceId, 1, 0);
-            expect(finalsMatch.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(finalsWinner).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should complete Tier 7 semi-finals and finals via checkmate", async function () {
@@ -449,10 +456,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             expect(round1.totalMatches).to.equal(1);
 
             // Complete finals
-            await playScholarsMate(tierId, instanceId, 1, 0);
+            const finalsWinner = await playScholarsMate(tierId, instanceId, 1, 0);
 
-            const finalsMatch = await chess.getMatch(tierId, instanceId, 1, 0);
-            expect(finalsMatch.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(finalsWinner).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should handle mixed completion methods (timeout + checkmate)", async function () {
@@ -473,10 +482,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             expect(round1.initialized).to.be.true;
 
             // Finals: Checkmate
-            await playScholarsMate(tierId, instanceId, 1, 0);
+            const finalsWinner = await playScholarsMate(tierId, instanceId, 1, 0);
 
-            const finalsMatch = await chess.getMatch(tierId, instanceId, 1, 0);
-            expect(finalsMatch.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(finalsWinner).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should handle Tier 7 mixed completion methods", async function () {
@@ -493,10 +504,12 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await playScholarsMate(tierId, instanceId, 0, 1);
 
             // Finals: Timeout
-            await claimTimeoutWin(tierId, instanceId, 1, 0);
+            const finalsWinner = await claimTimeoutWin(tierId, instanceId, 1, 0);
 
-            const finalsMatch = await chess.getMatch(tierId, instanceId, 1, 0);
-            expect(finalsMatch.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+            // Verify tournament completed and reset (finals cleared immediately)
+            const [tournamentStatus] = await chess.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Enrolling (reset after completion)
+            expect(finalsWinner).to.not.equal(hre.ethers.ZeroAddress);
         });
     });
 

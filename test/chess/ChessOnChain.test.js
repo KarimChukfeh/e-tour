@@ -691,12 +691,22 @@ describe("ChessOnChain Tests", function () {
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, g8, nf6, PieceType.None);
 
             // 7. Qh5xf7# (CHECKMATE!)
-            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
+            const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Verify game ended - match should be completed with white as winner
-            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(2); // Completed
-            expect(matchData.common.winner).to.equal(whitePlayer.address);
+            // Verify tournament completed via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
+            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin
         });
     });
 

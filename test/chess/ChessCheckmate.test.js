@@ -115,14 +115,23 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.d1, sq.h5, PieceType.None);
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g8, sq.f6, PieceType.None);
 
-            // Checkmate move
-            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
+            // Checkmate move (completes 2-player tournament)
+            const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Verify match data (may come from cache after tournament reset)
-            const matchInfo = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            // After tournament completion, match may be cached - check winner instead of status
-            expect(matchInfo.common.winner).to.equal(whitePlayer.address);
-            expect(matchInfo.common.isDraw).to.be.false;
+            // Verify winner via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
+            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin
         });
 
         it("Should detect Back Rank Mate", async function () {
@@ -184,11 +193,21 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.d1, sq.h5, PieceType.None);
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.g8, sq.f6, PieceType.None);
 
-            await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
+            const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Verify match completed
-            const matchInfo = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchInfo.common.winner).to.equal(whitePlayer.address);
+            // Verify winner via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
         });
     });
 
@@ -212,13 +231,23 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            // Claim timeout win
-            await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber);
+            // Claim timeout win (completes 2-player tournament)
+            const tx = await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber);
 
-            // Verify match data (may come from cache after tournament reset)
-            const matchInfo = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchInfo.common.winner).to.equal(waitingPlayer.address);
-            expect(matchInfo.common.isDraw).to.be.false;
+            // Verify winner via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(waitingPlayer.address);
+            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin (includes timeout)
         });
 
         it("Should update player stats after timeout victory", async function () {
@@ -233,11 +262,21 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber);
+            const tx = await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber);
 
-            // Verify winner via match data
-            const matchInfo = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchInfo.common.winner).to.equal(waitingPlayer.address);
+            // Verify winner via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(waitingPlayer.address);
         });
     });
 
@@ -361,11 +400,21 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            await chess.connect(finalsWaiting).claimTimeoutWin(tierId, instanceId, 1, 0);
+            const tx = await chess.connect(finalsWaiting).claimTimeoutWin(tierId, instanceId, 1, 0);
 
-            // Verify finals match data preserved
-            const finalsMatchFinal = await chess.getMatch(tierId, instanceId, 1, 0);
-            expect(finalsMatchFinal.common.winner).to.equal(finalsWaiting.address);
+            // Verify winner via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(finalsWaiting.address);
         });
     });
 
@@ -392,11 +441,21 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
-            await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+            const tx = await chess.connect(waitingPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
 
-            // Verify tournament completed by checking match winner
-            const matchInfo = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(matchInfo.common.winner).to.equal(waitingPlayer.address);
+            // Verify tournament completed via TournamentCompleted event (finals cleared immediately)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = chess.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = chess.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(waitingPlayer.address);
         });
 
         it("Should increment completed matches count for each finished match", async function () {
