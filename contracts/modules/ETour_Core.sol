@@ -30,13 +30,12 @@ contract ETour_Core is ETour_Storage {
     // Constructor - modules need to set module addresses even though they're stateless
     // This is a bit of a hack - modules inherit ETour_Storage for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
     function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
     function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
     function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _addToMatchCacheGame(uint8, uint8, uint8, uint8) public override { revert("Module: Use IETourGame"); }
     function _getMatchPlayers(bytes32) public view override returns (address, address) { revert("Module: Use IETourGame"); }
     function _setMatchPlayer(bytes32, uint8, address) public override { revert("Module: Use IETourGame"); }
     function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
@@ -45,7 +44,6 @@ contract ETour_Core is ETour_Storage {
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
-    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) { revert("Module: Use IETourGame"); }
 
     // ============ Tier Configuration ============
 

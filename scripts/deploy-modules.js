@@ -61,9 +61,6 @@ export async function getOrDeployModules(forceDeploy = false) {
             console.log("  ETour_Prizes:     ", existing.prizes);
             console.log("  ETour_Raffle:     ", existing.raffle);
             console.log("  ETour_Escalation: ", existing.escalation);
-            console.log("  GameCacheModule:  ", existing.gameCache);
-            console.log("  PlayerTrackingModule: ", existing.playerTracking);
-            console.log("  TicTacToeGameModule: ", existing.ticTacToeGame || "Not deployed");
             console.log("");
             return existing;
         }
@@ -127,16 +124,8 @@ export async function deployModules() {
     const moduleEscalationAddress = await moduleEscalation.getAddress();
     console.log("✅ ETour_Escalation deployed to:", moduleEscalationAddress);
 
-    // Deploy GameCacheModule
-    console.log("Deploying GameCacheModule...");
-    const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-    const moduleGameCache = await GameCacheModule.deploy();
-    await moduleGameCache.waitForDeployment();
-    const moduleGameCacheAddress = await moduleGameCache.getAddress();
-    console.log("✅ GameCacheModule deployed to:", moduleGameCacheAddress);
-
     console.log("");
-    console.log("✅ All 6 core modules deployed successfully!");
+    console.log("✅ All 5 core modules deployed successfully!");
     console.log("   (Player tracking is built-in, game logic is integrated)");
     console.log("");
 
@@ -145,8 +134,7 @@ export async function deployModules() {
         matches: moduleMatchesAddress,
         prizes: modulePrizesAddress,
         raffle: moduleRaffleAddress,
-        escalation: moduleEscalationAddress,
-        gameCache: moduleGameCacheAddress
+        escalation: moduleEscalationAddress
     };
 }
 
@@ -164,9 +152,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             console.log("ETour_Prizes:     ", addresses.prizes);
             console.log("ETour_Raffle:     ", addresses.raffle);
             console.log("ETour_Escalation: ", addresses.escalation);
-            console.log("GameCacheModule:  ", addresses.gameCache);
-            console.log("PlayerTrackingModule: ", addresses.playerTracking);
-            console.log("TicTacToeGameModule: ", addresses.ticTacToeGame);
             console.log("");
             if (forceDeploy) {
                 console.log("⚠️  Forced new deployment (--force flag used)");

@@ -72,15 +72,13 @@ contract TicTacChain is ETour_Storage {
         address _moduleMatchesAddress,
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
-        address _moduleEscalationAddress,
-        address _moduleGameCacheAddress
+        address _moduleEscalationAddress
     ) ETour_Storage(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
         _moduleRaffleAddress,
-        _moduleEscalationAddress,
-        _moduleGameCacheAddress
+        _moduleEscalationAddress
     ) {
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 120,
@@ -484,23 +482,11 @@ contract TicTacChain is ETour_Storage {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
                 Match storage matchData = matches[matchId];
 
-                // Check active storage first
-                if (matchData.player1 != address(0)) {
-                    // Match exists in active storage
-                    if (matchData.status == MatchStatus.Completed &&
-                        matchData.winner == player &&
-                        !matchData.isDraw) {
-                        return true;
-                    }
-                } else {
-                    // Match might be cached - check cache
-                    (CommonMatchData memory cachedMatch, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, r, m);
-                    if (exists &&
-                        cachedMatch.status == MatchStatus.Completed &&
-                        cachedMatch.winner == player &&
-                        !cachedMatch.isDraw) {
-                        return true;
-                    }
+                // Check active storage
+                if (matchData.status == MatchStatus.Completed &&
+                    matchData.winner == player &&
+                    !matchData.isDraw) {
+                    return true;
                 }
             }
         }
@@ -819,44 +805,6 @@ contract TicTacChain is ETour_Storage {
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
-
-        // Cache match before clearing
-        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
-    }
-
-    /**
-     * @dev Add match to cache - delegates to GameCacheModule
-     */
-    function _addToMatchCacheGame(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public override {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        // Encode board as bytes for generic cache storage
-        bytes memory boardData = abi.encode(matchData.packedBoard);
-
-        (bool success, ) = MODULE_GAME_CACHE.delegatecall(
-            abi.encodeWithSignature(
-                "addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
-                matchId,
-                tierId,
-                instanceId,
-                roundNumber,
-                matchNumber,
-                matchData.player1,
-                matchData.player2,
-                matchData.firstPlayer,
-                matchData.winner,
-                matchData.startTime,
-                matchData.isDraw,
-                boardData
-            )
-        );
-        require(success, "CF");
     }
 
     /**
@@ -1016,42 +964,10 @@ contract TicTacChain is ETour_Storage {
         });
     }
 
-    /**
-     * @dev Get match from cache - delegates to GameCacheModule
-     */
-    function _getMatchFromCache(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view override returns (CommonMatchData memory data, bool exists) {
-        // Static call to GameCacheModule (read-only)
-        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSignature(
-                "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
-                matchId,
-                tierId,
-                instanceId,
-                roundNumber,
-                matchNumber
-            )
-        );
-
-        if (!success) {
-            return (data, false);
-        }
-
-        // Decode result
-        (data, exists) = abi.decode(result, (CommonMatchData, bool));
-        return (data, exists);
-    }
-
     // ============ View Functions ============
 
     /**
-     * @dev Get complete match data with automatic cache fallback
-     * CRITICAL: Uses staticcall for cache reads so function can be view
+     * @dev Get complete match data
      */
     function getMatch(
         uint8 tierId,
@@ -1099,72 +1015,9 @@ contract TicTacChain is ETour_Storage {
             return fullData;
         }
 
-        // Try cache (use staticcall to keep function view)
-        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSignature(
-                "getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)",
-                matchId,
-                tierId,
-                instanceId,
-                roundNumber,
-                matchNumber
-            )
-        );
-
-        if (success) {
-            (
-                address player1,
-                address player2,
-                address firstPlayer,
-                address winner,
-                uint256 startTime,
-                uint256 endTime,
-                bool isDraw,
-                bool exists,
-                bytes memory boardData
-            ) = abi.decode(result, (address, address, address, address, uint256, uint256, bool, bool, bytes));
-
-            if (exists) {
-                TicTacToeMatchData memory fullData;
-
-                address loser = address(0);
-                if (!isDraw && winner != address(0)) {
-                    loser = (winner == player1) ? player2 : player1;
-                }
-
-                fullData.common = CommonMatchData({
-                    player1: player1,
-                    player2: player2,
-                    winner: winner,
-                    loser: loser,
-                    status: MatchStatus.Completed,
-                    isDraw: isDraw,
-                    startTime: startTime,
-                    lastMoveTime: endTime,
-                    tierId: tierId,
-                    instanceId: instanceId,
-                    roundNumber: roundNumber,
-                    matchNumber: matchNumber,
-                    isCached: true
-                });
-
-                // Decode board data
-                if (boardData.length > 0) {
-                    fullData.packedBoard = abi.decode(boardData, (uint256));
-                } else {
-                    fullData.packedBoard = 0;
-                }
-                fullData.currentTurn = address(0);  // Completed matches have no current turn
-                fullData.firstPlayer = firstPlayer;
-                fullData.player1TimeRemaining = 0;
-                fullData.player2TimeRemaining = 0;
-                fullData.lastMoveTimestamp = 0;
-
-                return fullData;
-            }
-        }
-
-        revert("MNF");
+        // Match not found in active storage - return empty data
+        TicTacToeMatchData memory emptyData;
+        return emptyData;
     }
 
     /**

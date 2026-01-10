@@ -57,10 +57,6 @@ describe("Chess Checkmate & Match Completion Tests", function () {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         const ChessRulesModule = await hre.ethers.getContractFactory("ChessRulesModule");
         const chessRulesModule = await ChessRulesModule.deploy();
         await chessRulesModule.waitForDeployment();
@@ -73,7 +69,6 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
             await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress(),
             await chessRulesModule.getAddress()
         );
         await chess.waitForDeployment();

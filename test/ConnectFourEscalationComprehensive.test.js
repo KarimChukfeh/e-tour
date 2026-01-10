@@ -51,10 +51,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
     const moduleEscalation = await ETour_Escalation.deploy();
     await moduleEscalation.waitForDeployment();
 
-    const GameCacheModule = await ethers.getContractFactory("GameCacheModule");
-    const moduleGameCache = await GameCacheModule.deploy();
-    await moduleGameCache.waitForDeployment();
-
     // Deploy ConnectFourOnChain
     const ConnectFourOnChain = await ethers.getContractFactory("ConnectFourOnChain");
     connectFour = await ConnectFourOnChain.deploy(
@@ -62,8 +58,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await moduleMatches.getAddress(),
       await modulePrizes.getAddress(),
       await moduleRaffle.getAddress(),
-      await moduleEscalation.getAddress(),
-      await moduleGameCache.getAddress()
+      await moduleEscalation.getAddress()
     );
     await connectFour.waitForDeployment();
   });

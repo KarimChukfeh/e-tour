@@ -63,15 +63,13 @@ contract ChessOnChain is ETour_Storage {
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
         address _moduleEscalationAddress,
-        address _moduleGameCacheAddress,
         address _moduleChessRulesAddress
     ) ETour_Storage(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
         _moduleRaffleAddress,
-        _moduleEscalationAddress,
-        _moduleGameCacheAddress
+        _moduleEscalationAddress
     ) {
         CHESS_RULES = IChessRules(_moduleChessRulesAddress);
 
@@ -400,23 +398,11 @@ contract ChessOnChain is ETour_Storage {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
                 Match storage matchData = matches[matchId];
 
-                // Check active storage first
-                if (matchData.player1 != address(0)) {
-                    // Match exists in active storage
-                    if (matchData.status == MatchStatus.Completed &&
-                        matchData.winner == player &&
-                        !matchData.isDraw) {
-                        return true;
-                    }
-                } else {
-                    // Match might be cached - check cache
-                    (CommonMatchData memory cachedMatch, bool exists) = _getMatchFromCache(matchId, tierId, instanceId, r, m);
-                    if (exists &&
-                        cachedMatch.status == MatchStatus.Completed &&
-                        cachedMatch.winner == player &&
-                        !cachedMatch.isDraw) {
-                        return true;
-                    }
+                // Check active storage
+                if (matchData.status == MatchStatus.Completed &&
+                    matchData.winner == player &&
+                    !matchData.isDraw) {
+                    return true;
                 }
             }
         }
@@ -647,24 +633,6 @@ contract ChessOnChain is ETour_Storage {
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
-
-        _addToMatchCacheGame(tierId, instanceId, roundNumber, matchNumber);
-    }
-
-    function _addToMatchCacheGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public override {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
-
-        bytes memory boardData = abi.encode(matchData.packedBoard, matchData.packedState);
-
-        (bool success, ) = MODULE_GAME_CACHE.delegatecall(
-            abi.encodeWithSignature("addToMatchCache(bytes32,uint8,uint8,uint8,uint8,address,address,address,address,uint256,bool,bytes)",
-                matchId, tierId, instanceId, roundNumber, matchNumber,
-                matchData.player1, matchData.player2, matchData.firstPlayer, matchData.winner,
-                matchData.startTime, matchData.isDraw, boardData
-            )
-        );
-        require(success, "CF");
     }
 
     function _getTimeIncrement() public pure override returns (uint256) { return 15; }
@@ -734,15 +702,6 @@ contract ChessOnChain is ETour_Storage {
         address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
         return CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false);
     }
-    
-
-    function _getMatchFromCache(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (CommonMatchData memory data, bool exists) {
-        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSignature("getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
-        );
-        if (!success) return (data, false);
-        (data, exists) = abi.decode(result, (CommonMatchData, bool));
-    }
 
     // ============ View Functions ============
 
@@ -758,23 +717,9 @@ contract ChessOnChain is ETour_Storage {
             );
         }
 
-        (bool success, bytes memory result) = MODULE_GAME_CACHE.staticcall(
-            abi.encodeWithSignature("getMatchFromCacheByMatchId(bytes32,uint8,uint8,uint8,uint8)", matchId, tierId, instanceId, roundNumber, matchNumber)
-        );
-
-        if (success) {
-            (address p1, address p2, address fp, address w, uint256 st, uint256 et, bool isDraw, bool exists, bytes memory bd) =
-                abi.decode(result, (address, address, address, address, uint256, uint256, bool, bool, bytes));
-            if (exists) {
-                address loser = (!isDraw && w != address(0)) ? (w == p1 ? p2 : p1) : address(0);
-                uint256 board; uint256 state;
-                if (bd.length > 0) (board, state) = abi.decode(bd, (uint256, uint256));
-                return ChessMatchData(
-                    CommonMatchData(p1, p2, w, loser, MatchStatus.Completed, isDraw, st, et, tierId, instanceId, roundNumber, matchNumber, true),
-                    board, state, address(0), fp, 0, 0
-                );
-            }
-        }
+        // Match not found - return empty data
+        ChessMatchData memory emptyData;
+        return emptyData;
     }
 
     function getBoard(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external view returns (uint8[64] memory board) {

@@ -26,17 +26,13 @@ describe("Enrollment Window Reset", function () {
         const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
         const moduleEscalation = await ETour_Escalation.deploy();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
             await moduleCore.getAddress(),
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
     });

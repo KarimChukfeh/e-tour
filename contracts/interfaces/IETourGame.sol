@@ -54,20 +54,6 @@ interface IETourGame {
     );
 
     /**
-     * @dev Add match to game-specific cache for historical preservation
-     * @param tierId Tournament tier
-     * @param instanceId Instance within tier
-     * @param roundNumber Round number
-     * @param matchNumber Match number within round
-     */
-    function _addToMatchCacheGame(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external;
-
-    /**
      * @dev Get match players from game-specific storage
      * @param matchId Match identifier
      * @return player1 First player address
@@ -137,22 +123,4 @@ interface IETourGame {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (ETour_Storage.CommonMatchData memory);
-
-    /**
-     * @dev Get match data from game-specific cache
-     * @param matchId Match identifier
-     * @param tierId Tournament tier
-     * @param instanceId Instance within tier
-     * @param roundNumber Round number
-     * @param matchNumber Match number within round
-     * @return data Common match data with isCached = true
-     * @return exists False if not in cache or context doesn't match
-     */
-    function _getMatchFromCache(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external returns (ETour_Storage.CommonMatchData memory data, bool exists);
 }

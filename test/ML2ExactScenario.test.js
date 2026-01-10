@@ -39,18 +39,13 @@ describe("ML2 Exact User Scenario", function() {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         const TicTacChain = await hre.ethers.getContractFactory("contracts/TicTacChain.sol:TicTacChain");
         game = await TicTacChain.deploy(
             await moduleCore.getAddress(),
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
     });

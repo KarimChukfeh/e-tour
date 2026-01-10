@@ -42,18 +42,13 @@ describe("Finals Data Persistence Bug (TDD)", function () {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
             await moduleCore.getAddress(),
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
     });
@@ -92,37 +87,22 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             // NEW ARCHITECTURE: Finals cleared immediately on reset
             console.log("\nNEW CYCLE: Verifying finals cleared immediately...");
 
-            // Finals should be cleared immediately (no vulnerability window)
-            try {
-                const staleFinals = await game.getMatch(tierId, instanceId, 0, 0);
-                console.log(`❌ UNEXPECTED: Finals data still exists!`);
-                console.log(`  - player1: ${staleFinals.common.player1}`);
-                expect.fail("Finals should be cleared immediately on reset!");
-            } catch (e) {
-                if (e.message.includes("MNF")) {
-                    console.log(`✓ FINALS CLEARED IMMEDIATELY ON RESET`);
-                    console.log(`  - No stale data window`);
-                    console.log(`  - Historical data available via events`);
-                } else {
-                    throw e;
-                }
-            }
+            // Finals should be cleared immediately (returns empty data)
+            const staleFinals = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
+            console.log(`✓ FINALS CLEARED IMMEDIATELY ON RESET`);
+            console.log(`  - No stale data window`);
+            console.log(`  - Historical data available via events`);
 
             // First enrollment in new cycle
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             console.log("✓ Player3 enrolled in new cycle");
 
-            // Finals should still be cleared
-            try {
-                await game.getMatch(tierId, instanceId, 0, 0);
-                expect.fail("Finals should remain cleared");
-            } catch (e) {
-                if (e.message.includes("MNF")) {
-                    console.log(`✓ Finals remain cleared (as expected)`);
-                } else {
-                    throw e;
-                }
-            }
+            // Finals should still be cleared (empty data until new match starts)
+            const clearedFinals = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            console.log(`✓ Finals remain cleared (as expected)`)
 
             console.log("\n=== TEST COMPLETE ===\n");
         });
@@ -192,39 +172,23 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             // NEW ARCHITECTURE: Finals cleared immediately on reset (no waiting for enrollment)
             console.log("\nNEW CYCLE: Verifying immediate finals clearing...");
 
-            // Finals should be cleared immediately after reset
-            try {
-                const staleFinals = await game.getMatch(tierId, instanceId, 1, 0);
-                console.log(`❌ UNEXPECTED: Finals data still exists after reset!`);
-                console.log(`  - player1: ${staleFinals.common.player1}`);
-                console.log(`  - winner: ${staleFinals.common.winner}`);
-                expect.fail("Finals should be cleared immediately on reset!");
-            } catch (e) {
-                if (e.message.includes("MNF")) {
-                    console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY`);
-                    console.log(`  - winner=0x0 case handled properly`);
-                    console.log(`  - No stale data vulnerability`);
-                } else {
-                    throw e;
-                }
-            }
+            // Finals should be cleared immediately after reset (returns empty data)
+            const staleFinals = await game.getMatch(tierId, instanceId, 1, 0);
+            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
+            console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY`);
+            console.log(`  - winner=0x0 case handled properly`);
+            console.log(`  - No stale data vulnerability`);
 
             // Enroll new player for Cycle 2
             const newPlayer1 = attacker;
             await game.connect(newPlayer1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
             console.log("✓ First enrollment in new cycle");
 
-            // Finals should still be cleared
-            try {
-                await game.getMatch(tierId, instanceId, 1, 0);
-                expect.fail("Finals should remain cleared");
-            } catch (e) {
-                if (e.message.includes("MNF")) {
-                    console.log(`✓ Finals remain cleared (as expected)`);
-                } else {
-                    throw e;
-                }
-            }
+            // Finals should still be cleared (empty data)
+            const clearedFinals = await game.getMatch(tierId, instanceId, 1, 0);
+            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            console.log(`✓ Finals remain cleared (as expected)`)
 
             console.log("\n=== TEST COMPLETE ===\n");
         });

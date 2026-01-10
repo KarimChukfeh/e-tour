@@ -61,10 +61,6 @@ hre.ethers.getContractFactory = async function(contractName, ...args) {
       const moduleEscalation = await ETour_Escalation.deploy();
       await moduleEscalation.waitForDeployment();
 
-      const GameCacheModule = await originalGetContractFactory.call(hre.ethers, 'contracts/modules/GameCacheModule.sol:GameCacheModule');
-      const moduleGameCache = await GameCacheModule.deploy();
-      await moduleGameCache.waitForDeployment();
-
       // Deploy ChessRulesModule if this is ChessOnChain
       let chessRulesAddress = null;
       if (contractName === 'ChessOnChain') {
@@ -80,8 +76,7 @@ hre.ethers.getContractFactory = async function(contractName, ...args) {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleRaffle.getAddress(),
-        await moduleEscalation.getAddress(),
-        await moduleGameCache.getAddress()
+        await moduleEscalation.getAddress()
       ];
 
       // Add ChessRules address for ChessOnChain

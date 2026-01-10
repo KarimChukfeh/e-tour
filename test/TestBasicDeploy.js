@@ -31,11 +31,6 @@ describe("Basic Deployment Test", function() {
         await moduleEscalation.waitForDeployment();
         console.log("Escalation deployed");
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-        console.log("GameCache deployed");
-
         console.log("\nDeploying TicTacChain...");
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         const game = await TicTacChain.deploy(
@@ -43,8 +38,7 @@ describe("Basic Deployment Test", function() {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
         console.log("TicTacChain deployed");

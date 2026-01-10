@@ -43,10 +43,6 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         // Deploy TicTacChain
         const TicTacChain = await hre.ethers.getContractFactory("contracts/TicTacChain.sol:TicTacChain");
         game = await TicTacChain.deploy(
@@ -54,8 +50,7 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
     });

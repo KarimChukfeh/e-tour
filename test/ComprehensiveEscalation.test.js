@@ -70,10 +70,6 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         // Deploy ConnectFourOnChain with modules
         const ConnectFourOnChain = await hre.ethers.getContractFactory("ConnectFourOnChain");
         game = await ConnectFourOnChain.deploy(
@@ -81,8 +77,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
 

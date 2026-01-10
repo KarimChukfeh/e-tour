@@ -113,10 +113,6 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     const moduleEscalation = await ETour_Escalation.deploy();
     await moduleEscalation.waitForDeployment();
 
-    const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-    const moduleGameCache = await GameCacheModule.deploy();
-    await moduleGameCache.waitForDeployment();
-
     // Deploy TicTacChain (game logic is built-in, no separate game module)
     const TicTacChain = await hre.ethers.getContractFactory("contracts/TicTacChain.sol:TicTacChain");
     ticTacChain = await TicTacChain.deploy(
@@ -124,8 +120,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       await moduleMatches.getAddress(),
       await modulePrizes.getAddress(),
       await moduleRaffle.getAddress(),
-      await moduleEscalation.getAddress(),
-      await moduleGameCache.getAddress()
+      await moduleEscalation.getAddress()
     );
     await ticTacChain.waitForDeployment();
 

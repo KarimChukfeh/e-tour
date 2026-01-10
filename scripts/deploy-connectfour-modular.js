@@ -29,8 +29,7 @@ async function main() {
         modules.matches,
         modules.prizes,
         modules.raffle,
-        modules.escalation,
-        modules.gameCache
+        modules.escalation
     );
     await connectFourOnChain.waitForDeployment();
     const connectFourOnChainAddress = await connectFourOnChain.getAddress();
@@ -63,8 +62,7 @@ async function main() {
             ETour_Matches: modules.matches,
             ETour_Prizes: modules.prizes,
             ETour_Raffle: modules.raffle,
-            ETour_Escalation: modules.escalation,
-            GameCacheModule: modules.gameCache
+            ETour_Escalation: modules.escalation
         },
         contracts: {
             ConnectFourOnChain: connectFourOnChainAddress
@@ -110,10 +108,9 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.prizes}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.raffle}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
-    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.gameCache}`);
     console.log("");
     console.log("# Verify ConnectFourOnChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${connectFourOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${connectFourOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation}`);
     console.log("");
 
     // Final summary
@@ -132,7 +129,6 @@ async function main() {
     console.log("  ETour_Prizes:        ", modules.prizes);
     console.log("  ETour_Raffle:        ", modules.raffle);
     console.log("  ETour_Escalation:    ", modules.escalation);
-    console.log("  GameCacheModule:     ", modules.gameCache);
     console.log("");
     console.log("📍 Contract Address:");
     console.log("  ConnectFourOnChain:", connectFourOnChainAddress);

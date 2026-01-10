@@ -33,10 +33,6 @@ describe("Protocol Raffle System", function () {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         // Deploy TicTacChain (player tracking and game logic are now built-in)
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
@@ -44,8 +40,7 @@ describe("Protocol Raffle System", function () {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
     });

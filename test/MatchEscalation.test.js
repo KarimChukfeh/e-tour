@@ -43,9 +43,6 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
         const ETour_Escalation = await hre.ethers.getContractFactory("ETour_Escalation");
         const moduleEscalation = await ETour_Escalation.deploy();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-
         // Deploy TicTacChain with module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
@@ -53,8 +50,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
 

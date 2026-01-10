@@ -56,7 +56,6 @@ async function main() {
     console.log("   Prizes:         ", modules.prizes);
     console.log("   Raffle:         ", modules.raffle);
     console.log("   Escalation:     ", modules.escalation);
-    console.log("   GameCache:      ", modules.gameCache);
     console.log("   ChessRules:     ", chessRulesModuleAddress);
     const chessOnChain = await ChessOnChain.deploy(
         modules.core,
@@ -64,7 +63,6 @@ async function main() {
         modules.prizes,
         modules.raffle,
         modules.escalation,
-        modules.gameCache,
         chessRulesModuleAddress,
     );
     await chessOnChain.waitForDeployment();
@@ -99,9 +97,7 @@ async function main() {
             ETour_Prizes: modules.prizes,
             ETour_Raffle: modules.raffle,
             ETour_Escalation: modules.escalation,
-            GameCacheModule: modules.gameCache,
-            ChessRulesModule: chessRulesModuleAddress,
-            PlayerTrackingModule: modules.playerTracking  // Shared module
+            ChessRulesModule: chessRulesModuleAddress
         },
         contracts: {
             ChessOnChain: chessOnChainAddress
@@ -152,12 +148,10 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.prizes}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.raffle}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
-    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.gameCache}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${chessRulesModuleAddress}`);
-    console.log(`npx hardhat verify --network ${hre.network.name} ${modules.playerTracking}`);
     console.log("");
     console.log("# Verify ChessOnChain:");
-    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${modules.gameCache} ${chessRulesModuleAddress} ${modules.playerTracking}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${chessRulesModuleAddress}`);
     console.log("");
 
     // Final summary
@@ -176,9 +170,7 @@ async function main() {
     console.log("  ETour_Prizes:             ", modules.prizes);
     console.log("  ETour_Raffle:             ", modules.raffle);
     console.log("  ETour_Escalation:         ", modules.escalation);
-    console.log("  GameCacheModule:          ", modules.gameCache);
     console.log("  ChessRulesModule:         ", chessRulesModuleAddress, "(game-specific)");
-    console.log("  PlayerTrackingModule:     ", modules.playerTracking, "(shared)");
     console.log("");
     console.log("📍 Contract Address:");
     console.log("  ChessOnChain:", chessOnChainAddress);

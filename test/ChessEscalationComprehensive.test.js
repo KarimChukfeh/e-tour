@@ -46,10 +46,6 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
     const moduleEscalation = await ETour_Escalation.deploy();
     await moduleEscalation.waitForDeployment();
 
-    const GameCacheModule = await ethers.getContractFactory("GameCacheModule");
-    const moduleGameCache = await GameCacheModule.deploy();
-    await moduleGameCache.waitForDeployment();
-
     const ChessRulesModule = await ethers.getContractFactory("ChessRulesModule");
     const chessRulesModule = await ChessRulesModule.deploy();
     await chessRulesModule.waitForDeployment();
@@ -62,7 +58,6 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await modulePrizes.getAddress(),
       await moduleRaffle.getAddress(),
       await moduleEscalation.getAddress(),
-      await moduleGameCache.getAddress(),
       await chessRulesModule.getAddress()
     );
     await chess.waitForDeployment();
@@ -353,8 +348,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       await time.increase(MATCH_TIMEOUT + 1);
 
+      // Get the actual current turn player from match data
+      const match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
+      const currentPlayer = match.currentTurn === player1.address ? player1 : player2;
+
       await expect(
-        chess.connect(player1).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0)
+        chess.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0)
       ).to.be.revertedWith("OT");
     });
   });

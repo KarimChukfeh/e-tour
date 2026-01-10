@@ -28,14 +28,13 @@ import "../interfaces/IETourGame.sol";
 contract ETour_Matches is ETour_Storage {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Empty implementations for module deployment) ============
     // During delegatecall, game contract's implementations are called via this.function()
     function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override {}
     function _resetMatchGame(bytes32) public override {}
     function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { return (address(0), false, MatchStatus.NotStarted); }
-    function _addToMatchCacheGame(uint8, uint8, uint8, uint8) public override {}
     function _getMatchPlayers(bytes32) public view override returns (address, address) { return (address(0), address(0)); }
     function _setMatchPlayer(bytes32, uint8, address) public override {}
     function _initializeMatchForPlay(bytes32, uint8) public override {}
@@ -48,13 +47,6 @@ contract ETour_Matches is ETour_Storage {
         status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
         tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
     }); }
-    function _getMatchFromCache(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory, bool) {
-        return (CommonMatchData({
-            player1: address(0), player2: address(0), winner: address(0), loser: address(0),
-            status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
-            tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
-        }), false);
-    }
 
     // ============ Round Initialization ============
 

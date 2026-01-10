@@ -36,10 +36,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
         const moduleEscalation = await ETour_Escalation.deploy();
         await moduleEscalation.waitForDeployment();
 
-        const GameCacheModule = await hre.ethers.getContractFactory("contracts/modules/GameCacheModule.sol:GameCacheModule");
-        const moduleGameCache = await GameCacheModule.deploy();
-        await moduleGameCache.waitForDeployment();
-
         // Deploy TicTacChain (player tracking and game logic are now built-in)
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
         game = await TicTacChain.deploy(
@@ -47,8 +43,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleRaffle.getAddress(),
-            await moduleEscalation.getAddress(),
-            await moduleGameCache.getAddress()
+            await moduleEscalation.getAddress()
         );
         await game.waitForDeployment();
 
@@ -2217,25 +2212,25 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
 
-            // Verify finals match is cleared (not accessible via getMatch)
-            await expect(
-                game.getMatch(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("MNF"); // Match Not Found - finals cleared
+            // Verify finals match is cleared (returns empty data after tournament completion)
+            const clearedMatchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(clearedMatchData.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedMatchData.common.player2).to.equal(hre.ethers.ZeroAddress);
 
             // Historical data verification should use events (MatchCompleted, TournamentCompleted)
             // This represents proper Web3 architecture where events are the source of truth
         });
 
-        it("Should fail gracefully for non-existent match", async function () {
+        it("Should return empty data for non-existent match", async function () {
             const tierId = 0;
             const instanceId = 50; // Instance that was never used
             const roundNumber = 0;
             const matchNumber = 0;
 
-            // This should revert because match never existed (not in active storage or cache)
-            await expect(
-                game.getMatch(tierId, instanceId, roundNumber, matchNumber)
-            ).to.be.revertedWith("MNF");
+            // Returns empty data when match doesn't exist
+            const matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            expect(matchData.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.common.player2).to.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should return active match data when match is still in progress", async function () {
@@ -2269,14 +2264,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.status).to.equal(1); // Still InProgress
         });
 
-        it("verifies that matchIdToCacheIndex mappings are properly cleaned up", async function () {
-            // This test verifies that matchIdToCacheIndex mappings are properly maintained
-            // as matches are added to the cache. The GameCacheModule (lines 82-85) ensures
-            // that when cache wraps around and overwrites entries, old mappings are deleted.
-            //
-            // Full wrap-around testing would require 1000+ completed matches (MATCH_CACHE_SIZE),
-            // which is impractical for unit tests. Instead, we verify the mapping works correctly
-            // for multiple matches and can infer wrap-around cleanup works from the code logic.
+        it.skip("REMOVED: Cache system has been removed - historical data via events", async function () {
+            // This test was for the match cache system which has been removed.
+            // Historical match data is now accessed via events (MatchCompleted, TournamentCompleted)
+            // rather than cached storage. This is the proper Web3 architecture.
 
             const tierId = 1; // 4-player tier to get non-finals matches
             const startInstance = 20;
