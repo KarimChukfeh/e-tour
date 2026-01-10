@@ -84,42 +84,35 @@ contract TicTacChain is ETour_Storage {
         _moduleEscalationAddress,
         _moduleGameCacheAddress
     ) {
-        // Tier registration moved to initializeAllInstances() for gas optimization
-        _registerTiers();
-
-        // Set raffle thresholds: [0.25, 0.5, 0.75, 1]
-        raffleThresholds.push(0.25 ether);
-        raffleThresholds.push(0.5 ether);
-        raffleThresholds.push(0.75 ether);
-
-        // Set final raffle threshold (used after initial thresholds exhausted)
-        raffleThresholdFinal = 1.0 ether;
-    }
-
-    // ============ Initialization ============
-
-    function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
             matchTimePerPlayer: 120,
             timeIncrementPerMove: 15,
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
-            enrollmentWindow: 0, // set per tier below
+            enrollmentWindow: 0,
             enrollmentLevel2Delay: 300
         });
 
-        // Tier 0 (different timeout)
-        timeouts.enrollmentWindow = 180;
-        (bool success0, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.0003 ether, timeouts));
-        require(success0, "Failed to register tier 0");
+        // Register tiers 0-2 in loop (saves bytecode vs individual calls)
+        for (uint8 i = 0; i < 3; i++) {
+            timeouts.enrollmentWindow = i == 0 ? 180 : (i == 1 ? 300 : 480);
+            MODULE_CORE.delegatecall(
+                abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                    i,
+                    i == 0 ? 2 : (i == 1 ? 4 : 8),
+                    i == 0 ? 100 : (i == 1 ? 50 : 25),
+                    (i == 0 ? 0.0003 ether : (i == 1 ? 0.0007 ether : 0.00013 ether)),
+                    timeouts
+                )
+            );
+        }
 
-        // Tiers 1 & 2 share timeout
-        timeouts.enrollmentWindow = 300;
-        (bool success1, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.0007 ether, timeouts));
-        require(success1, "Failed to register tier 1");
-        timeouts.enrollmentWindow = 480;
-        (bool success2, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.00013 ether, timeouts));
-        require(success2, "Failed to register tier 2");
+        // Initialize progressive raffle thresholds for TicTacChain
+        // Lower thresholds than base ETour to make raffles more accessible
+        raffleThresholds.push(0.25 ether);  // Raffle #1
+        raffleThresholds.push(0.5 ether);   // Raffle #2
+        raffleThresholds.push(0.75 ether);  // Raffle #3
+        raffleThresholdFinal = 1.0 ether;   // Raffle #4+
     }
 
     /**
@@ -580,11 +573,12 @@ contract TicTacChain is ETour_Storage {
         uint8 symbol = (msg.sender == matchData.player1) ? 1 : 2;
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, symbol);
 
-        // Clear any escalation state since a move was made (match is no longer stalled)
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
-        );
-        require(clearSuccess, "CE");
+        // Clear any escalation state since a move was made (match is no longer stalled) - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
 
         emit MoveMade(matchId, msg.sender, cellIndex);
 
@@ -665,14 +659,12 @@ contract TicTacChain is ETour_Storage {
         // Mark match as complete in game-specific storage and cache it
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
 
-        // Clear any escalation state
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature(
-                "clearEscalationState(bytes32)",
-                matchId
-            )
-        );
-        require(clearSuccess, "CE");
+        // Clear any escalation state - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
 
         // Save enrolled players before delegatecall (in case tournament completes and resets)
         address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
