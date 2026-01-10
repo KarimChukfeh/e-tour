@@ -122,7 +122,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(infoBefore.raffleIndex).to.equal(0);
 
             // Execute raffle
-            const tx = await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            const tx = await game.connect(player1).executeProtocolRaffle();
             const receipt = await tx.wait();
             const block = await hre.ethers.provider.getBlock(receipt.blockNumber);
 
@@ -176,7 +176,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Execute first raffle
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             const result1 = await getRaffleResult(1);
 
@@ -187,7 +187,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Mine a few blocks to change block data for different randomness
             await hre.network.provider.send("hardhat_mine", ["0x5"]); // Mine 5 blocks
 
-            await game.connect(player2).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player2).executeProtocolRaffle();
             const result2 = await getRaffleResult(2);
 
             // Results should exist and be different
@@ -219,7 +219,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Set threshold and execute
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
-            await game.connect(player3).executeProtocolRaffle(tierId, instanceId1);
+            await game.connect(player3).executeProtocolRaffle();
 
             const result = await getRaffleResult(1);
 
@@ -257,7 +257,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const threshold1 = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold1);
 
-            const tx1 = await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            const tx1 = await game.connect(player1).executeProtocolRaffle();
             const receipt1 = await tx1.wait();
             const block1 = await hre.ethers.provider.getBlock(receipt1.blockNumber);
 
@@ -270,7 +270,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const threshold2 = hre.ethers.parseEther("0.5");
             await setAccumulatedProtocolShare(threshold2);
 
-            const tx2 = await game.connect(player2).executeProtocolRaffle(tierId, instanceId);
+            const tx2 = await game.connect(player2).executeProtocolRaffle();
             const receipt2 = await tx2.wait();
             const block2 = await hre.ethers.provider.getBlock(receipt2.blockNumber);
 
@@ -283,7 +283,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const threshold3 = hre.ethers.parseEther("0.75");
             await setAccumulatedProtocolShare(threshold3);
 
-            const tx3 = await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            const tx3 = await game.connect(player1).executeProtocolRaffle();
             const receipt3 = await tx3.wait();
             const block3 = await hre.ethers.provider.getBlock(receipt3.blockNumber);
 
@@ -348,12 +348,12 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Execute 2 raffles
             const threshold1 = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold1);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             await hre.network.provider.send("hardhat_mine", ["0x3"]);
             const threshold2 = hre.ethers.parseEther("0.5");
             await setAccumulatedProtocolShare(threshold2);
-            await game.connect(player2).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player2).executeProtocolRaffle();
 
             // Retrieve both results
             const result1 = await getRaffleResult(1);
@@ -382,25 +382,25 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Raffle #1: 0.25 ETH threshold
             const threshold1 = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold1);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             // Raffle #2: 0.5 ETH threshold
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
             const threshold2 = hre.ethers.parseEther("0.5");
             await setAccumulatedProtocolShare(threshold2);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             // Raffle #3: 0.75 ETH threshold
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
             const threshold3 = hre.ethers.parseEther("0.75");
             await setAccumulatedProtocolShare(threshold3);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             // Raffle #4: 1.0 ETH threshold (capped)
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
             const threshold4 = hre.ethers.parseEther("1.0");
             await setAccumulatedProtocolShare(threshold4);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             // Retrieve all results
             const result1 = await getRaffleResult(1);
@@ -450,7 +450,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             // Execute raffle
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
-            await game.connect(player5).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player5).executeProtocolRaffle();
 
             const result = await getRaffleResult(1);
 
@@ -468,7 +468,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
 
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             const result = await getRaffleResult(1);
 
@@ -483,7 +483,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
 
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
-            await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            await game.connect(player1).executeProtocolRaffle();
 
             const result = await getRaffleResult(1);
 
@@ -515,7 +515,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
 
-            const tx = await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            const tx = await game.connect(player1).executeProtocolRaffle();
             const receipt = await tx.wait();
 
             // Document gas used (includes execution + storage)
@@ -533,7 +533,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const threshold = hre.ethers.parseEther("0.25");
             await setAccumulatedProtocolShare(threshold);
 
-            const tx = await game.connect(player1).executeProtocolRaffle(tierId, instanceId);
+            const tx = await game.connect(player1).executeProtocolRaffle();
             const receipt = await tx.wait();
 
             const result = await getRaffleResult(1);

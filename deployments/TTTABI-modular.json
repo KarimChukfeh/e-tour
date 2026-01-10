@@ -1,9 +1,9 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+  "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-10T20:04:52.744Z",
+  "deployedAt": "2026-01-10T21:22:00.063Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -868,18 +868,7 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        }
-      ],
+      "inputs": [],
       "name": "executeProtocolRaffle",
       "outputs": [],
       "stateMutability": "nonpayable",

@@ -88,6 +88,7 @@ contract ConnectFourOnChain is ETour_Storage {
     ) {
         _registerTiers();
 
+        raffleThresholds.push(0.02 ether);
         raffleThresholds.push(0.05 ether);
         raffleThresholds.push(0.4 ether);
         raffleThresholds.push(0.75 ether);
@@ -233,9 +234,9 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
 
-    function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
+    function executeProtocolRaffle() external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
-            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
+            abi.encodeWithSignature("executeProtocolRaffle()")
         );
         require(success, "ER");
     }

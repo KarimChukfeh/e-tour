@@ -105,11 +105,13 @@ contract TicTacChain is ETour_Storage {
 
         // Initialize progressive raffle thresholds for TicTacChain
         // Lower thresholds than base ETour to make raffles more accessible
-        raffleThresholds.push(0.05 ether);  // Raffle #1
-        raffleThresholds.push(0.25 ether);  // Raffle #2
-        raffleThresholds.push(0.5 ether);   // Raffle #3
-        raffleThresholds.push(0.75 ether);  // Raffle #4
-        raffleThresholdFinal = 1.0 ether;   // Raffle #5+
+        raffleThresholds.push(0.005 ether);  // Raffle #1
+        raffleThresholds.push(0.02 ether);  // Raffle #2
+        raffleThresholds.push(0.05 ether);  // Raffle #3
+        raffleThresholds.push(0.25 ether);  // Raffle #4
+        raffleThresholds.push(0.5 ether);   // Raffle #5
+        raffleThresholds.push(0.75 ether);  // Raffle #6
+        raffleThresholdFinal = 1.0 ether;   // Raffle #7+
     }
 
     /**
@@ -253,9 +255,9 @@ contract TicTacChain is ETour_Storage {
     /**
      * @dev Execute protocol raffle - delegates to Raffle module
      */
-    function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
+    function executeProtocolRaffle() external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
-            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
+            abi.encodeWithSignature("executeProtocolRaffle()")
         );
         require(success, "ER");
     }

@@ -106,7 +106,8 @@ contract ChessOnChain is ETour_Storage {
                 )
             );
         }
-        raffleThresholds.push(0.05 ether);  // Raffle #1
+        raffleThresholds.push(0.02 ether);  // Raffle #1
+        raffleThresholds.push(0.05 ether);  // Raffle #2
     }
 
     // ============ Initialization ============
@@ -222,9 +223,9 @@ contract ChessOnChain is ETour_Storage {
         }
     }
 
-    function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
+    function executeProtocolRaffle() external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
-            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
+            abi.encodeWithSignature("executeProtocolRaffle()")
         );
         require(success, "ER");
     }

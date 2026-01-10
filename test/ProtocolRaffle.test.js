@@ -110,7 +110,7 @@ describe("Protocol Raffle System", function () {
     describe("Access Control", function () {
         it("Should reject non-enrolled players when threshold not met", async function () {
             await expect(
-                game.connect(nonEnrolled).executeProtocolRaffle(0, 0)
+                game.connect(nonEnrolled).executeProtocolRaffle()
             ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
@@ -120,7 +120,7 @@ describe("Protocol Raffle System", function () {
             // This test documents the expected behavior
 
             await expect(
-                game.connect(nonEnrolled).executeProtocolRaffle(0, 0)
+                game.connect(nonEnrolled).executeProtocolRaffle()
             ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
@@ -132,7 +132,7 @@ describe("Protocol Raffle System", function () {
 
             // Threshold check will fail, but enrollment check passes
             await expect(
-                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+                game.connect(player1).executeProtocolRaffle()
             ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
@@ -149,7 +149,7 @@ describe("Protocol Raffle System", function () {
 
             // Threshold check will fail, but enrollment check passes
             await expect(
-                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+                game.connect(player1).executeProtocolRaffle()
             ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
 
@@ -184,7 +184,7 @@ describe("Protocol Raffle System", function () {
             // Neither player should be able to trigger raffle (threshold check fails first)
             // Since no one is enrolled yet in the new tournament cycle
             await expect(
-                game.connect(player1).executeProtocolRaffle(tierId, instanceId)
+                game.connect(player1).executeProtocolRaffle()
             ).to.be.revertedWith("ER"); // Short error code for execute raffle failure
         });
     });

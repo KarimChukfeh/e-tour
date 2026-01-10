@@ -387,11 +387,9 @@ contract ETour_Raffle is ETour_Storage {
 
     /**
      * @dev Executes protocol raffle when accumulated fees exceed threshold
-     * EXACT COPY from ETour.sol lines 743-827
-     * Note: tierId and instanceId params added for compatibility with game contract delegatecalls,
-     * but not used in logic since eligibility is checked across all active tournaments
+     * Only requires that the caller is enrolled in any active tournament
      */
-    function executeProtocolRaffle(uint8, uint8)
+    function executeProtocolRaffle()
         external
         returns (
             address winner,
