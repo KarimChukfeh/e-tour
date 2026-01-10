@@ -559,7 +559,7 @@ contract ChessOnChain is ETour_Storage {
         // Emit TournamentCompleted event with actual prize amount
         uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
         emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
-            tournament.finalsWasDraw, tournament.coWinner);
+            tournament.completionReason, enrolledPlayersCopy);
 
         // Archive elite tournament finals match (Tier 3 or Tier 7) - BEFORE reset
         if (tierId == 3 || tierId == 7) {

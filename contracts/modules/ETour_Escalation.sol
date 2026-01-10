@@ -728,13 +728,22 @@ contract ETour_Escalation is ETour_Storage {
 
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             if (!isDraw && winner != address(0)) {
-                // Normal winner
+                // Check if this was an escalation-based win
+                MatchTimeoutState storage finalsTimeout = matchTimeouts[finalsMatchId];
+                if (finalsTimeout.activeEscalation == EscalationLevel.Escalation3_ExternalPlayers) {
+                    // ML3 replacement win
+                    tournament.completionReason = TournamentCompletionReason.EscalationML3;
+                } else {
+                    // Normal winner (including ML1/timeout)
+                    tournament.completionReason = TournamentCompletionReason.NormalWin;
+                }
                 tournament.winner = winner;
                 tournament.status = TournamentStatus.Completed;
                 playerRanking[tierId][instanceId][winner] = 1;
             } else if (isDraw) {
                 // Draw in finals
                 tournament.finalsWasDraw = true;
+                tournament.completionReason = TournamentCompletionReason.FinalsDrawn;
                 tournament.status = TournamentStatus.Completed;
 
                 (address p1, address p2) = this._getMatchPlayers(finalsMatchId);
@@ -747,6 +756,7 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.allDrawResolution = true;
                 tournament.allDrawRound = roundNumber;
                 tournament.winner = address(0);
+                tournament.completionReason = TournamentCompletionReason.EscalationML2;
             }
         } else {
             // Non-final round completed - check for orphaned winner scenario
@@ -769,6 +779,7 @@ contract ETour_Escalation is ETour_Storage {
                 TournamentInstance storage tournament = tournaments[tierId][instanceId];
                 tournament.winner = lastWinner;
                 tournament.status = TournamentStatus.Completed;
+                tournament.completionReason = TournamentCompletionReason.NormalWin;
                 playerRanking[tierId][instanceId][lastWinner] = 1;
 
                 // Update player stats

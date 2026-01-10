@@ -640,7 +640,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Emit completion event
         uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
-        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.finalsWasDraw, tournament.coWinner);
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize, tournament.completionReason, enrolledPlayersCopy);
 
         // Reset tournament
         (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(

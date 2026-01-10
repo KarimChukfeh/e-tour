@@ -54,6 +54,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
         Escalation3_ExternalPlayers
     }
 
+    enum TournamentCompletionReason {
+        NormalWin,              // Normal finals win (including ML1/timeout)
+        FinalsDrawn,            // Finals match ended in a draw
+        AllDrawScenario,        // All matches in a round resulted in draws
+        EscalationML2,          // ML2 (advanced players) force eliminated finals
+        EscalationML3           // ML3 (external player) replaced finals players
+    }
+
     // ============ Configuration Structs ============
 
     /**
@@ -93,10 +101,10 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint256 prizePool;
         uint256 startTime;
         address winner;
-        address coWinner;
         bool finalsWasDraw;
         bool allDrawResolution;
         uint8 allDrawRound;
+        TournamentCompletionReason completionReason;
         EnrollmentTimeoutState enrollmentTimeout;
     }
 
@@ -265,7 +273,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw);
     event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
     event RoundCompleted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber);
-    event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, bool finalsWasDraw, address coWinner);
+    event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, TournamentCompletionReason completionReason, address[] enrolledPlayers);
     event AllDrawRoundDetected(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 remainingPlayers);
     event TournamentCompletedAllDraw(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 sharedWinnerCount, uint256 prizePerWinner);
     event TournamentReset(uint8 indexed tierId, uint8 indexed instanceId);

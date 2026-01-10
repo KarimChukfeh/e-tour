@@ -237,12 +237,13 @@ contract ETour_Matches is ETour_Storage {
 
             if (finalIsDraw) {
                 tournament.finalsWasDraw = true;
+                tournament.completionReason = TournamentCompletionReason.FinalsDrawn;
                 tournament.winner = finalPlayer1;
-                tournament.coWinner = finalPlayer2;
                 playerRanking[tierId][instanceId][finalPlayer1] = 1;
                 playerRanking[tierId][instanceId][finalPlayer2] = 1;
                 completeTournament(tierId, instanceId, finalPlayer1);
             } else {
+                tournament.completionReason = TournamentCompletionReason.NormalWin;
                 completeTournament(tierId, instanceId, finalWinner);
             }
         } else if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
@@ -364,8 +365,12 @@ contract ETour_Matches is ETour_Storage {
         address[] storage players = enrolledPlayers[tierId][instanceId];
 
         if (tournament.finalsWasDraw) {
-            playerStats[tournament.winner].tournamentsWon++;
-            playerStats[tournament.coWinner].tournamentsWon++;
+            // Get both finalists from the finals match
+            TierConfig storage config = _tierConfigs[tierId];
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, config.totalRounds - 1, 0);
+            (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalsMatchId);
+            playerStats[finalPlayer1].tournamentsWon++;
+            playerStats[finalPlayer2].tournamentsWon++;
         } else {
             playerStats[winner].tournamentsWon++;
         }
@@ -395,6 +400,7 @@ contract ETour_Matches is ETour_Storage {
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);
+        tournament.completionReason = TournamentCompletionReason.AllDrawScenario;
 
         uint256 winnersPot = tournament.prizePool;
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
