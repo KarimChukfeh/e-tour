@@ -88,7 +88,8 @@ contract ConnectFourOnChain is ETour_Storage {
     ) {
         _registerTiers();
 
-        raffleThresholds.push(0.02 ether);
+        raffleThresholds.push(0.001 ether);
+        raffleThresholds.push(0.01 ether);
         raffleThresholds.push(0.05 ether);
         raffleThresholds.push(0.4 ether);
         raffleThresholds.push(0.75 ether);

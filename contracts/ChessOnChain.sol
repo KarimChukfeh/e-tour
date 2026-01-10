@@ -106,8 +106,9 @@ contract ChessOnChain is ETour_Storage {
                 )
             );
         }
-        raffleThresholds.push(0.02 ether);  // Raffle #1
-        raffleThresholds.push(0.05 ether);  // Raffle #2
+        raffleThresholds.push(0.005 ether);  // Raffle #1
+        raffleThresholds.push(0.02 ether);  // Raffle #2
+        raffleThresholds.push(0.05 ether);  // Raffle #3
     }
 
     // ============ Initialization ============

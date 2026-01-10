@@ -105,6 +105,7 @@ contract TicTacChain is ETour_Storage {
 
         // Initialize progressive raffle thresholds for TicTacChain
         // Lower thresholds than base ETour to make raffles more accessible
+        raffleThresholds.push(0.001 ether);
         raffleThresholds.push(0.005 ether);  // Raffle #1
         raffleThresholds.push(0.02 ether);  // Raffle #2
         raffleThresholds.push(0.05 ether);  // Raffle #3
