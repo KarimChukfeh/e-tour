@@ -53,12 +53,13 @@ abstract contract ETour_Storage is ReentrancyGuard {
         Escalation3_ExternalPlayers
     }
 
-    enum TournamentCompletionReason {
-        NormalWin,              // Normal finals win (including ML1/timeout)
-        FinalsDrawn,            // Finals match ended in a draw
-        AllDrawScenario,        // All matches in a round resulted in draws
-        EscalationML2,          // ML2 (advanced players) force eliminated finals
-        EscalationML3           // ML3 (external player) replaced finals players
+    enum CompletionReason {
+        NormalWin,              // 0: Normal gameplay win
+        Timeout,                // 1: Win by opponent timeout (ML1)
+        Draw,                   // 2: Match/finals ended in a draw
+        ForceElimination,       // 3: ML2 - Advanced players force eliminated both players
+        Replacement,            // 4: ML3 - External player replaced stalled players
+        AllDrawScenario         // 5: All matches in a round resulted in draws (tournament only)
     }
 
     // ============ Configuration Structs ============
@@ -103,7 +104,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         bool finalsWasDraw;
         bool allDrawResolution;
         uint8 allDrawRound;
-        TournamentCompletionReason completionReason;
+        CompletionReason completionReason;
         EnrollmentTimeoutState enrollmentTimeout;
     }
 
@@ -226,8 +227,8 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // ============ Events ============
 
-    event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw);
-    event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, TournamentCompletionReason completionReason, address[] enrolledPlayers);
+    event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw, CompletionReason reason);
+    event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, CompletionReason reason, address[] enrolledPlayers);
     event ProtocolRaffleExecuted(
         uint256 indexed raffleIndex,
         address indexed winner,

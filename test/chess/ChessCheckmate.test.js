@@ -126,7 +126,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             expect(tournamentEvent).to.not.be.undefined;
             const parsedEvent = chess.interface.parseLog(tournamentEvent);
             expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
-            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin
+            expect(parsedEvent.args.reason).to.equal(0); // NormalWin
         });
 
         it("Should detect Back Rank Mate", async function () {
@@ -242,7 +242,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             expect(tournamentEvent).to.not.be.undefined;
             const parsedEvent = chess.interface.parseLog(tournamentEvent);
             expect(parsedEvent.args.winner).to.equal(waitingPlayer.address);
-            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin (includes timeout)
+            expect(parsedEvent.args.reason).to.equal(0); // NormalWin (includes timeout)
         });
 
         it("Should update player stats after timeout victory", async function () {

@@ -282,7 +282,7 @@ contract ETour_Core is ETour_Storage {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Completed;
-            tournament.completionReason = TournamentCompletionReason.NormalWin;
+            tournament.completionReason = CompletionReason.NormalWin;
             playerRanking[tierId][instanceId][soloWinner] = 1;
 
             uint256 winnersPot = tournament.prizePool;
@@ -306,7 +306,7 @@ contract ETour_Core is ETour_Storage {
             // Create enrolled players array for event
             address[] memory singlePlayerArray = new address[](1);
             singlePlayerArray[0] = soloWinner;
-            emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, TournamentCompletionReason.NormalWin, singlePlayerArray);
+            emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, CompletionReason.NormalWin, singlePlayerArray);
 
             // Update player earnings inline (avoid nested delegatecall)
             if (winnersPot > 0) {

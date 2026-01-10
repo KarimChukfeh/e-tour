@@ -268,6 +268,10 @@ contract ChessOnChain is ETour_Storage {
         );
         require(success, "FE");
 
+        // Emit MatchCompleted event from game contract (double elimination = no winner)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination);
+
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (round.completedMatches == round.totalMatches) {
@@ -295,6 +299,11 @@ contract ChessOnChain is ETour_Storage {
             abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
         );
         require(success, "CR");
+
+        // Emit MatchCompleted event from game contract (replacement player wins)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement);
+
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
 
         // Check if round is complete before consolidating
@@ -471,11 +480,11 @@ contract ChessOnChain is ETour_Storage {
         emit MoveMade(matchId, msg.sender, from, to);
 
         if (gameEnd == 1) { // checkmate
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
         } else if (gameEnd == 2) { // stalemate
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else if (gameEnd == 4) { // insufficient material
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
         } else {
             m.currentTurn = isWhite ? m.player2 : m.player1;
         }
@@ -501,7 +510,7 @@ contract ChessOnChain is ETour_Storage {
         require(markSuccess, "MS");
 
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
     }
 
     function _handleTournamentCompletion(
@@ -561,7 +570,7 @@ contract ChessOnChain is ETour_Storage {
         _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
     }
 
-    function _completeMatchInternal(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) private {
+    function _completeMatchInternal(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw, CompletionReason reason) private {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
@@ -581,6 +590,9 @@ contract ChessOnChain is ETour_Storage {
         MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature("completeMatch(uint8,uint8,uint8,uint8,address,bool)", tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
         );
+
+        // Emit MatchCompleted event from game contract
+        emit MatchCompleted(matchId, winner, isDraw, reason);
 
         if (!isDraw) {
             Match storage matchData = matches[matchId];

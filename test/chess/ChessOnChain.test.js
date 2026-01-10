@@ -701,7 +701,7 @@ describe("ChessOnChain Tests", function () {
             expect(tournamentEvent).to.not.be.undefined;
             const parsedEvent = chess.interface.parseLog(tournamentEvent);
             expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
-            expect(parsedEvent.args.completionReason).to.equal(0); // NormalWin
+            expect(parsedEvent.args.reason).to.equal(0); // NormalWin
         });
     });
 

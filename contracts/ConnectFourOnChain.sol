@@ -293,6 +293,10 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "FE");
 
+        // Emit MatchCompleted event from game contract (double elimination = no winner)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination);
+
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (round.completedMatches == round.totalMatches) {
@@ -329,6 +333,10 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(success, "CR");
+
+        // Emit MatchCompleted event from game contract (replacement player wins)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement);
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
@@ -526,13 +534,13 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Check for win
         if (_checkWin(matchData.packedBoard, piece, targetRow, column)) {
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
             return;
         }
 
         // Check for draw (board full)
         if (_isBoardFull(matchData.packedBoard)) {
-            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
             return;
         }
 
@@ -577,7 +585,7 @@ contract ConnectFourOnChain is ETour_Storage {
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
 
         // Complete match with timeout winner
-        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
     }
 
     function _handleTournamentCompletion(
@@ -642,7 +650,8 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner,
-        bool isDraw
+        bool isDraw,
+        CompletionReason reason
     ) private {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
@@ -668,6 +677,9 @@ contract ConnectFourOnChain is ETour_Storage {
             )
         );
         require(completeSuccess, "CM");
+
+        // Emit MatchCompleted event from game contract
+        emit MatchCompleted(matchId, winner, isDraw, reason);
 
         if (!isDraw) {
             Match storage matchData = matches[matchId];

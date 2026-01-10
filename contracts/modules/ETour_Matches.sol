@@ -126,7 +126,7 @@ contract ETour_Matches is ETour_Storage {
         // Note: Escalation state is cleared by the game contract before calling completeMatch
         // No need to clear again here to avoid double clearing
 
-        emit MatchCompleted(matchId, winner, isDraw);
+        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         if (!isDraw) {
             TierConfig storage config = _tierConfigs[tierId];
@@ -221,13 +221,13 @@ contract ETour_Matches is ETour_Storage {
 
             if (finalIsDraw) {
                 tournament.finalsWasDraw = true;
-                tournament.completionReason = TournamentCompletionReason.FinalsDrawn;
+                tournament.completionReason = CompletionReason.Draw;
                 tournament.winner = finalPlayer1;
                 playerRanking[tierId][instanceId][finalPlayer1] = 1;
                 playerRanking[tierId][instanceId][finalPlayer2] = 1;
                 completeTournament(tierId, instanceId, finalPlayer1);
             } else {
-                tournament.completionReason = TournamentCompletionReason.NormalWin;
+                tournament.completionReason = CompletionReason.NormalWin;
                 completeTournament(tierId, instanceId, finalWinner);
             }
         } else if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
@@ -383,7 +383,7 @@ contract ETour_Matches is ETour_Storage {
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);
-        tournament.completionReason = TournamentCompletionReason.AllDrawScenario;
+        tournament.completionReason = CompletionReason.AllDrawScenario;
 
         uint256 winnersPot = tournament.prizePool;
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
@@ -397,7 +397,7 @@ contract ETour_Matches is ETour_Storage {
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
 
-        emit TournamentCompleted(tierId, instanceId, address(0), winnersPot, TournamentCompletionReason.AllDrawScenario, players);
+        emit TournamentCompleted(tierId, instanceId, address(0), winnersPot, CompletionReason.AllDrawScenario, players);
     }
 
     // ============ Player Consolidation ============

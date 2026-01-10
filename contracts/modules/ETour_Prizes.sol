@@ -225,7 +225,7 @@ contract ETour_Prizes is ETour_Storage {
         tournament.finalsWasDraw = false;
         tournament.allDrawResolution = false;
         tournament.allDrawRound = NO_ROUND;
-        tournament.completionReason = TournamentCompletionReason.NormalWin;
+        tournament.completionReason = CompletionReason.NormalWin;
 
         tournament.enrollmentTimeout.escalation1Start = 0;
         tournament.enrollmentTimeout.escalation2Start = 0;

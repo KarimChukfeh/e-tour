@@ -214,7 +214,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             const parsedEvent = game.interface.parseLog(tournamentEvent);
             expect(parsedEvent.args.winner).to.equal(hre.ethers.ZeroAddress); // All-draw has no single winner
             expect(parsedEvent.args.prizeAmount).to.equal(prizePool); // Total prize pool
-            expect(parsedEvent.args.completionReason).to.equal(2); // AllDrawScenario
+            expect(parsedEvent.args.reason).to.equal(5); // AllDrawScenario
             expect(parsedEvent.args.enrolledPlayers.length).to.equal(4); // All 4 players
         });
 

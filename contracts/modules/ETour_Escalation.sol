@@ -414,7 +414,7 @@ contract ETour_Escalation is ETour_Storage {
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
 
-        emit MatchCompleted(matchId, address(0), false);
+        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         // Clear escalation state
         _clearEscalationState(matchId);
@@ -471,7 +471,7 @@ contract ETour_Escalation is ETour_Storage {
         playerStats[replacementPlayer].matchesPlayed++;
         playerStats[replacementPlayer].matchesWon++;
 
-        emit MatchCompleted(matchId, replacementPlayer, false);
+        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         // Clear escalation state
         _clearEscalationState(matchId);
@@ -753,10 +753,10 @@ contract ETour_Escalation is ETour_Storage {
                 MatchTimeoutState storage finalsTimeout = matchTimeouts[finalsMatchId];
                 if (finalsTimeout.activeEscalation == EscalationLevel.Escalation3_ExternalPlayers) {
                     // ML3 replacement win
-                    tournament.completionReason = TournamentCompletionReason.EscalationML3;
+                    tournament.completionReason = CompletionReason.Replacement;
                 } else {
                     // Normal winner (including ML1/timeout)
-                    tournament.completionReason = TournamentCompletionReason.NormalWin;
+                    tournament.completionReason = CompletionReason.NormalWin;
                 }
                 tournament.winner = winner;
                 tournament.status = TournamentStatus.Completed;
@@ -764,7 +764,7 @@ contract ETour_Escalation is ETour_Storage {
             } else if (isDraw) {
                 // Draw in finals
                 tournament.finalsWasDraw = true;
-                tournament.completionReason = TournamentCompletionReason.FinalsDrawn;
+                tournament.completionReason = CompletionReason.Draw;
                 tournament.status = TournamentStatus.Completed;
 
                 (address p1, address p2) = this._getMatchPlayers(finalsMatchId);
@@ -777,7 +777,7 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.allDrawResolution = true;
                 tournament.allDrawRound = roundNumber;
                 tournament.winner = address(0);
-                tournament.completionReason = TournamentCompletionReason.EscalationML2;
+                tournament.completionReason = CompletionReason.ForceElimination;
             }
         } else {
             // Non-final round completed - check for orphaned winner scenario
@@ -800,7 +800,7 @@ contract ETour_Escalation is ETour_Storage {
                 TournamentInstance storage tournament = tournaments[tierId][instanceId];
                 tournament.winner = lastWinner;
                 tournament.status = TournamentStatus.Completed;
-                tournament.completionReason = TournamentCompletionReason.NormalWin;
+                tournament.completionReason = CompletionReason.NormalWin;
                 playerRanking[tierId][instanceId][lastWinner] = 1;
 
                 // Update player stats
