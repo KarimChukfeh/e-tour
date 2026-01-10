@@ -219,6 +219,10 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external {
+        // SECURITY: Verify tournament is active before allowing escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        require(tournament.status == TournamentStatus.InProgress, "Tournament not in progress");
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check and mark match as stalled if it qualifies
@@ -251,6 +255,10 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external {
+        // SECURITY: Verify tournament is active before allowing escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        require(tournament.status == TournamentStatus.InProgress, "Tournament not in progress");
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check and mark match as stalled if it qualifies
@@ -549,6 +557,12 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (bool available) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check if match is active
@@ -576,6 +590,12 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (bool available) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check if match is active
@@ -619,6 +639,12 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (bool available) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Check if match is active

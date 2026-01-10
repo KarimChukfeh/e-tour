@@ -458,9 +458,11 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Try to claim completed match
+            // SECURITY FIX: Now correctly fails with "Tournament not in progress"
+            // because tournament has completed and reset to Enrolling status
             await expect(
                 game.connect(player3).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("Match not stalled");
+            ).to.be.revertedWith("Tournament not in progress");
         });
 
         it("Should clear escalation state after match completion", async function () {

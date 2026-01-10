@@ -125,15 +125,23 @@ contract ETour_Core is ETour_Storage {
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
 
-            
-            // Check if there's an old finals match from previous tournament that needs cleanup
+
+            // SECURITY: Unconditionally clear old finals match from previous tournament cycle
+            // This prevents stale match data from persisting across cycles, which could allow:
+            // 1. Finals with no winner (ML2 double-elimination) to persist
+            // 2. Incomplete finals (InProgress) to remain accessible
+            // 3. Cross-cycle matchId collisions causing data pollution
             uint8 finalRound = config.totalRounds - 1;
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
-            (address finalsWinner, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
+            (address player1, address player2) = this._getMatchPlayers(finalsMatchId);
 
-            if (finalsStatus == MatchStatus.Completed && finalsWinner != address(0)) {
-                // Cache old finals before resetting it
-                this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+            // Clear finals if ANY match data exists (regardless of status/winner)
+            if (player1 != address(0) || player2 != address(0)) {
+                // Cache old finals before resetting it (if completed)
+                (, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
+                if (finalsStatus == MatchStatus.Completed) {
+                    this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
+                }
                 this._resetMatchGame(finalsMatchId);
             }
         }
