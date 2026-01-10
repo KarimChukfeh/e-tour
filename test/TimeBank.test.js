@@ -235,9 +235,11 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Opponent can now claim timeout
-            await expect(
-                game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed");
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Verify tournament completed
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling after completion
         });
 
         it("Should NOT allow timeout claim while opponent still has time", async function () {

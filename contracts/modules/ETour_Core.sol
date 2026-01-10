@@ -77,8 +77,6 @@ contract ETour_Core is ETour_Storage {
         if (tierId >= tierCount) {
             tierCount = tierId + 1;
         }
-
-        emit TierRegistered(tierId, playerCount, instanceCount, entryFee);
     }
 
     /**
@@ -116,7 +114,6 @@ contract ETour_Core is ETour_Storage {
 
         // Lazy initialization on first enrollment
         if (tournament.enrolledCount == 0 && tournament.status == TournamentStatus.Enrolling) {
-            emit TournamentInitialized(tierId, instanceId);
             tournament.tierId = tierId;
             tournament.instanceId = instanceId;
 
@@ -138,18 +135,15 @@ contract ETour_Core is ETour_Storage {
 
         (bool ownerSuccess, ) = payable(owner).call{value: ownerShare}("");
         require(ownerSuccess, "Owner fee transfer failed");
-        emit OwnerFeePaid(owner, ownerShare);
 
         // Add protocol share to accumulated pool for raffle system
         accumulatedProtocolShare += protocolShare;
-        emit ProtocolFeePaid(address(this), protocolShare);
 
         enrolledPlayers[tierId][instanceId].push(msg.sender);
         isEnrolled[tierId][instanceId][msg.sender] = true;
         tournament.enrolledCount++;
         tournament.prizePool += participantsShare;
 
-        emit PlayerEnrolled(tierId, instanceId, msg.sender, tournament.enrolledCount);
         // Note: _onPlayerEnrolled hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == config.playerCount) {
@@ -176,7 +170,6 @@ contract ETour_Core is ETour_Storage {
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
 
-        emit TournamentForceStarted(tierId, instanceId, msg.sender, tournament.enrolledCount);
         startTournament(tierId, instanceId);
     }
 
@@ -202,13 +195,10 @@ contract ETour_Core is ETour_Storage {
 
         for (uint256 i = 0; i < tournament.enrolledCount; i++) {
             address player = enrolledPlayers[tierId][instanceId][i];
-            emit PlayerForfeited(tierId, instanceId, player, config.entryFee, "Enrollment abandoned");
         }
 
         (bool success, ) = payable(msg.sender).call{value: claimAmount}("");
         require(success, "Transfer failed");
-
-        emit EnrollmentPoolClaimed(tierId, instanceId, msg.sender, claimAmount);
 
         updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
 
@@ -248,14 +238,6 @@ contract ETour_Core is ETour_Storage {
         tournament.enrollmentTimeout.escalation2Start =
             tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
-
-        emit EnrollmentWindowReset(
-            tierId,
-            instanceId,
-            msg.sender,
-            tournament.enrollmentTimeout.escalation1Start,
-            tournament.enrollmentTimeout.escalation2Start
-        );
     }
 
     /**
@@ -296,7 +278,6 @@ contract ETour_Core is ETour_Storage {
         tournament.startTime = block.timestamp;
         tournament.currentRound = 0;
 
-        emit TournamentStarted(tierId, instanceId, tournament.enrolledCount);
         // Note: _onTournamentStarted hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == 1) {
@@ -318,18 +299,11 @@ contract ETour_Core is ETour_Storage {
                 } else {
                     // If send failed, add amount to accumulated protocol share
                     accumulatedProtocolShare += winnersPot;
-                    emit PrizeDistributionFailed(tierId, instanceId, soloWinner, winnersPot, 1);
-                    emit PrizeFallbackToContract(soloWinner, winnersPot);
                 }
             }
 
             playerStats[soloWinner].tournamentsWon++;
             playerStats[soloWinner].tournamentsPlayed++;
-
-            // Only emit success event if prize was actually sent
-            if (sent) {
-                emit PrizeDistributed(tierId, instanceId, soloWinner, 1, winnersPot);
-            }
 
             // Create enrolled players array for event
             address[] memory singlePlayerArray = new address[](1);
@@ -377,8 +351,6 @@ contract ETour_Core is ETour_Storage {
 
             playerEarnings[claimer] += int256(claimAmount);
         }
-
-        emit TournamentCached(tierId, instanceId, address(0));
     }
 
     // ============ Configuration Getters ============

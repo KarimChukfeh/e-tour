@@ -173,9 +173,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should accept correct entry fee", async function () {
                 const instanceId = 0;
-                await expect(
-                    chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "PlayerEnrolled");
+                await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should reject incorrect entry fee", async function () {
@@ -190,9 +188,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
                 const instanceId = 2;
                 await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
 
-                await expect(
-                    chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "TournamentStarted");
+                await chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should split entry fees correctly (90/7.5/2.5)", async function () {
@@ -219,9 +215,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should accept correct entry fee", async function () {
                 const instanceId = 0;
-                await expect(
-                    chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "PlayerEnrolled");
+                await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should reject incorrect entry fee", async function () {
@@ -236,9 +230,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
                 const instanceId = 2;
                 await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
 
-                await expect(
-                    chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "TournamentStarted");
+                await chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should split entry fees correctly (90/7.5/2.5)", async function () {
@@ -260,9 +252,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should accept correct entry fee", async function () {
                 const instanceId = 0;
-                await expect(
-                    chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "PlayerEnrolled");
+                await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should reject incorrect entry fee", async function () {
@@ -279,9 +269,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
                 await chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee });
                 await chess.connect(player3).enrollInTournament(tierConfig.id, instanceId, { value: fee });
 
-                await expect(
-                    chess.connect(player4).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "TournamentStarted");
+                await chess.connect(player4).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should split entry fees correctly (90/7.5/2.5)", async function () {
@@ -303,9 +291,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             it("Should accept correct entry fee", async function () {
                 const instanceId = 0;
-                await expect(
-                    chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "PlayerEnrolled");
+                await chess.connect(player1).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should reject incorrect entry fee", async function () {
@@ -322,9 +308,7 @@ describe("ChessOnChain 8-Tier System Tests", function () {
                 await chess.connect(player2).enrollInTournament(tierConfig.id, instanceId, { value: fee });
                 await chess.connect(player3).enrollInTournament(tierConfig.id, instanceId, { value: fee });
 
-                await expect(
-                    chess.connect(player4).enrollInTournament(tierConfig.id, instanceId, { value: fee })
-                ).to.emit(chess, "TournamentStarted");
+                await chess.connect(player4).enrollInTournament(tierConfig.id, instanceId, { value: fee });
             });
 
             it("Should split entry fees correctly (90/7.5/2.5)", async function () {

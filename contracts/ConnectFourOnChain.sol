@@ -70,8 +70,6 @@ contract ConnectFourOnChain is ETour_Storage {
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 column, uint8 row);
-    event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
-    // MatchCached event now defined in ETour_Storage
 
     // ============ Constructor ============
 
@@ -134,8 +132,6 @@ contract ConnectFourOnChain is ETour_Storage {
         round.initialized = true;
         round.drawCount = 0;
 
-        emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
-
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
@@ -155,8 +151,6 @@ contract ConnectFourOnChain is ETour_Storage {
                 address lastPlayer = players[tournament.enrolledCount - 1];
                 players[walkoverIndex] = lastPlayer;
                 players[tournament.enrolledCount - 1] = walkoverPlayer;
-
-                emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
             }
 
             for (uint8 i = 0; i < matchCount; i++) {
@@ -594,7 +588,6 @@ contract ConnectFourOnChain is ETour_Storage {
         require(markSuccess, "MS");
 
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
         // Complete match with timeout winner
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
@@ -863,11 +856,9 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
 
         matchData.packedBoard = 0;
-
-        emit MatchCreated(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
 
-    
+
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
         Match storage matchData = matches[matchId];
         return matchData.player1 != address(0) &&

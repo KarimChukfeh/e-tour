@@ -71,9 +71,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            await expect(game.connect(player1).enrollInTournament(tierId, instanceId, {
+            await game.connect(player1).enrollInTournament(tierId, instanceId, {
                 value: TIER_0_FEE
-            })).to.emit(game, "PlayerEnrolled");
+            });
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.enrolledCount).to.equal(1);
@@ -85,9 +85,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
-            await expect(game.connect(player2).enrollInTournament(tierId, instanceId, {
+            await game.connect(player2).enrollInTournament(tierId, instanceId, {
                 value: TIER_0_FEE
-            })).to.emit(game, "TournamentStarted");
+            });
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1); // InProgress
@@ -398,9 +398,11 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [301]); // 5 min + 1 sec
             await hre.ethers.provider.send("evm_mine", []);
 
-            await expect(
-                game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed");
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Verify tournament completed (finals cleared immediately)
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling
         });
 
         it("Should reject early timeout claim", async function () {

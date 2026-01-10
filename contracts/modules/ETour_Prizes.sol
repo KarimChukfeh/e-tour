@@ -72,9 +72,6 @@ contract ETour_Prizes is ETour_Storage {
         // If send failed, add amount to accumulated protocol share
         accumulatedProtocolShare += amount;
 
-        emit PrizeDistributionFailed(tierId, instanceId, recipient, amount, 1);
-        emit PrizeFallbackToContract(recipient, amount);
-
         return false; // Indicate fallback occurred
     }
 
@@ -110,11 +107,6 @@ contract ETour_Prizes is ETour_Storage {
                     // Attempt to send prize with fallback to protocol pool if failed
                     // Call directly as internal function (no nested delegatecall needed)
                     bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId);
-
-                    // Only emit success event if prize was actually sent
-                    if (sent) {
-                        emit PrizeDistributed(tierId, instanceId, player, ranking, prizeAmount);
-                    }
                 }
             }
         }
@@ -140,11 +132,6 @@ contract ETour_Prizes is ETour_Storage {
             // Attempt to send prize with fallback to protocol pool if failed
             // Call directly as internal function (no nested delegatecall needed)
             bool sent = sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId);
-
-            // Only emit success event if prize was actually sent
-            if (sent) {
-                emit PrizeDistributed(tierId, instanceId, player, 1, prizePerPlayer);
-            }
         }
     }
 
@@ -205,8 +192,6 @@ contract ETour_Prizes is ETour_Storage {
             }
             // Players with no prize are not tracked unless already on leaderboard
         }
-
-        emit TournamentCached(tierId, instanceId, winner);
     }
 
     /**
@@ -312,8 +297,6 @@ contract ETour_Prizes is ETour_Storage {
                 this._resetMatchGame(matchId);
             }
         }
-
-        emit TournamentReset(tierId, instanceId);
     }
 
     // ============ Leaderboard Getters ============

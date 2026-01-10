@@ -62,10 +62,7 @@ describe("Enrollment Window Reset", function () {
             const oldEscalation1Start = tournamentBefore.enrollmentTimeout.escalation1Start;
 
             // Reset the window
-            const tx = await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
-
-            // Verify event emitted
-            await expect(tx).to.emit(game, "EnrollmentWindowReset");
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Verify new escalation windows set
             const tournamentAfter = await game.tournaments(TIER_0, instanceId);
@@ -159,9 +156,7 @@ describe("Enrollment Window Reset", function () {
             await time.increase(601);
 
             // Reset should still work (player can keep waiting for others to join)
-            await expect(
-                game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.emit(game, "EnrollmentWindowReset");
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Verify new escalation windows set
             const tournament = await game.tournaments(TIER_0, instanceId);
@@ -181,9 +176,7 @@ describe("Enrollment Window Reset", function () {
             await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Second player should be able to enroll
-            await expect(
-                game.connect(player2).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE })
-            ).to.emit(game, "TournamentStarted");
+            await game.connect(player2).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
             // Tournament should have started
             const tournament = await game.tournaments(TIER_0, instanceId);
@@ -200,20 +193,19 @@ describe("Enrollment Window Reset", function () {
 
             // First reset
             await time.increase(301);
-            await expect(
-                game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.emit(game, "EnrollmentWindowReset");
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Second reset
             await time.increase(301);
-            await expect(
-                game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId)
-            ).to.emit(game, "EnrollmentWindowReset");
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
             // Third reset
             await time.increase(301);
-            const tx = await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
-            await expect(tx).to.emit(game, "EnrollmentWindowReset");
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
+
+            // Verify all resets succeeded by checking tournament state
+            const tournament = await game.tournaments(TIER_0, instanceId);
+            expect(tournament.status).to.equal(0); // Still enrolling
         });
     });
 
@@ -259,37 +251,27 @@ describe("Enrollment Window Reset", function () {
         });
     });
 
-    describe("Test 11: Reset Event Contains Correct Data", function () {
-        it("Should emit event with correct escalation timestamps", async function () {
+    describe("Test 11: Reset Updates Escalation Timestamps", function () {
+        it("Should update escalation timestamps correctly on reset", async function () {
             const instanceId = 10;
 
             // Enroll player
             await game.connect(player1).enrollInTournament(TIER_0, instanceId, { value: TIER_0_FEE });
 
+            // Get initial escalation timestamps
+            const tournamentBefore = await game.tournaments(TIER_0, instanceId);
+            const oldEscalation1Start = tournamentBefore.enrollmentTimeout.escalation1Start;
+            const oldEscalation2Start = tournamentBefore.enrollmentTimeout.escalation2Start;
+
             // Fast forward and reset
             await time.increase(301);
-            const tx = await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
+            await game.connect(player1).resetEnrollmentWindow(TIER_0, instanceId);
 
-            // Get receipt and find event
-            const receipt = await tx.wait();
-            const event = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed && parsed.name === "EnrollmentWindowReset";
-                } catch (e) {
-                    return false;
-                }
-            });
-
-            expect(event).to.not.be.undefined;
-
-            // Parse the event
-            const parsed = game.interface.parseLog(event);
-            expect(parsed.args.tierId).to.equal(TIER_0);
-            expect(parsed.args.instanceId).to.equal(instanceId);
-            expect(parsed.args.player).to.equal(player1.address);
-            expect(parsed.args.newEscalation1Start).to.be.greaterThan(0);
-            expect(parsed.args.newEscalation2Start).to.be.greaterThan(parsed.args.newEscalation1Start);
+            // Verify escalation timestamps were updated
+            const tournamentAfter = await game.tournaments(TIER_0, instanceId);
+            expect(tournamentAfter.enrollmentTimeout.escalation1Start).to.be.greaterThan(oldEscalation1Start);
+            expect(tournamentAfter.enrollmentTimeout.escalation2Start).to.be.greaterThan(oldEscalation2Start);
+            expect(tournamentAfter.enrollmentTimeout.escalation2Start).to.be.greaterThan(tournamentAfter.enrollmentTimeout.escalation1Start);
         });
     });
 

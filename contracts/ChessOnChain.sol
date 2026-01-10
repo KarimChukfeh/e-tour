@@ -515,7 +515,6 @@ contract ChessOnChain is ETour_Storage {
         require(markSuccess, "MS");
 
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
     }
 

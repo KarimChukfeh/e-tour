@@ -77,18 +77,18 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const instanceId = 0;
 
             // Enroll first player
-            await expect(game.connect(player1).enrollInTournament(tierId, instanceId, {
+            await game.connect(player1).enrollInTournament(tierId, instanceId, {
                 value: TIER_0_FEE
-            })).to.emit(game, "PlayerEnrolled");
+            });
 
             // Check tournament is still enrolling
             let tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling
 
             // Enroll second player - should auto-start
-            await expect(game.connect(player2).enrollInTournament(tierId, instanceId, {
+            await game.connect(player2).enrollInTournament(tierId, instanceId, {
                 value: TIER_0_FEE
-            })).to.emit(game, "TournamentStarted");
+            });
 
             // Check tournament has started
             tournament = await game.tournaments(tierId, instanceId);
@@ -423,9 +423,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Non-current-turn player can claim timeout
-            await expect(
-                game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed");
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Verify tournament completed
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling after completion
         });
 
         it("Should reject early timeout claim", async function () {
@@ -524,9 +526,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const claimerBalanceBefore = await hre.ethers.provider.getBalance(player3.address);
 
             // External player claims the pool
-            await expect(
-                game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId)
-            ).to.emit(game, "EnrollmentPoolClaimed");
+            await game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId);
 
             const claimerBalanceAfter = await hre.ethers.provider.getBalance(player3.address);
 
@@ -539,7 +539,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(tournamentAfter.enrolledCount).to.equal(0);
         });
 
-        it("Should emit PlayerForfeited for all enrolled players", async function () {
+        it("Should forfeit all enrolled players when pool is claimed", async function () {
             const tierId = 1;
             const instanceId = 0;
 
@@ -549,10 +549,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            await expect(
-                game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId)
-            ).to.emit(game, "PlayerForfeited")
-             .and.to.emit(game, "TournamentCached");
+            await game.connect(player3).claimAbandonedEnrollmentPool(tierId, instanceId);
+
+            // Verify tournament was reset
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling
+            expect(tournament.enrolledCount).to.equal(0);
         });
 
         it("Should reject claim when no enrollment pool exists", async function () {
@@ -950,9 +952,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Should be able to re-enroll
-            await expect(
-                game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.emit(game, "PlayerEnrolled");
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Verify player is enrolled
+            const tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.enrolledCount).to.equal(1);
         });
     });
 
@@ -1329,9 +1333,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player should be able to claim timeout win (second player didn't move)
-            await expect(
-                game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed");
+            await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Verify tournament completed
+            const tournamentAfterTimeout = await game.tournaments(tierId, instanceId);
+            expect(tournamentAfterTimeout.status).to.equal(0); // Reset to Enrolling after completion
         });
     });
 
@@ -1459,11 +1465,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [121]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            // Claim timeout win - should emit TimeoutVictoryClaimed
-            await expect(
-                game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed")
-              .withArgs(tierId, instanceId, 0, 0, firstPlayer.address, secondPlayer.address);
+            // Claim timeout win
+            await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Verify tournament completed
+            const tournamentFinal = await game.tournaments(tierId, instanceId);
+            expect(tournamentFinal.status).to.equal(0); // Reset to Enrolling after completion
 
             // Timeout loser won't appear on leaderboard (no prizes won)
             const leaderboard = await game.getLeaderboard();
@@ -1748,9 +1755,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with 3 players
-            await expect(
-                game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.emit(game, "TournamentForceStarted");
+            await game.connect(player1).forceStartTournament(tierId, instanceId);
 
             // Tournament should be in progress
             const tournament = await game.tournaments(tierId, instanceId);
@@ -1779,9 +1784,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
-            await expect(
-                game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.emit(game, "TournamentForceStarted");
+            await game.connect(player1).forceStartTournament(tierId, instanceId);
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1);
@@ -1806,9 +1809,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start
-            await expect(
-                game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.emit(game, "TournamentForceStarted");
+            await game.connect(player1).forceStartTournament(tierId, instanceId);
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1);

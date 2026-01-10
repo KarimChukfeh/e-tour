@@ -211,11 +211,9 @@ describe("ChessOnChain Tests", function () {
             const entryFee = hre.ethers.parseEther("0.003");
 
             // Enroll players
-            await expect(chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee }))
-                .to.emit(chess, "PlayerEnrolled");
+            await chess.connect(player1).enrollInTournament(tierId, instanceId, { value: entryFee });
 
-            await expect(chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee }))
-                .to.emit(chess, "TournamentStarted");
+            await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             // Tournament should be in progress
             const tournament = await chess.tournaments(tierId, instanceId);
@@ -567,9 +565,11 @@ describe("ChessOnChain Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            await expect(
-                chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber)
-            ).to.emit(chess, "TimeoutVictoryClaimed");
+            await chess.connect(blackPlayer).claimTimeoutWin(tierId, instanceId, roundNumber, matchNumber);
+
+            // Verify tournament completed
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling after completion
         });
 
         it("Should reject early timeout claim", async function () {

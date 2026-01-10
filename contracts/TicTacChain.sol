@@ -64,8 +64,6 @@ contract TicTacChain is ETour_Storage {
     // ============ Events ============
 
     event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
-    event MatchCreated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
-    // MatchCached event now defined in ETour_Storage
 
     // ============ Constructor ============
 
@@ -128,8 +126,6 @@ contract TicTacChain is ETour_Storage {
         round.initialized = true;
         round.drawCount = 0;
 
-        emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
-
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
@@ -149,8 +145,6 @@ contract TicTacChain is ETour_Storage {
                 address lastPlayer = players[tournament.enrolledCount - 1];
                 players[walkoverIndex] = lastPlayer;
                 players[tournament.enrolledCount - 1] = walkoverPlayer;
-
-                emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
             }
 
             // Create matches directly - this is the key fix!
@@ -634,9 +628,7 @@ contract TicTacChain is ETour_Storage {
         );
         require(markSuccess, "MS");
 
-        // Emit timeout victory event
         address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
 
         // Complete match with timeout winner
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
@@ -798,8 +790,6 @@ contract TicTacChain is ETour_Storage {
 
         // Clear board
         matchData.packedBoard = 0;
-
-        emit MatchCreated(tierId, instanceId, roundNumber, matchNumber, player1, player2);
     }
 
     /**

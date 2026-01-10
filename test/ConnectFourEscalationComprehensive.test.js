@@ -216,8 +216,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const balanceBefore = await ethers.provider.getBalance(outsider.address);
 
-      await expect(connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID))
-        .to.emit(connectFour, "EnrollmentPoolClaimed");
+      await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);
 
       const [statusAfter, , enrolledCountAfter] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(statusAfter).to.equal(0); // Reset
@@ -238,19 +237,18 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       ).to.be.revertedWith("CAE");
     });
 
-    it("Should emit PlayerForfeited events for all enrolled players", async function () {
+    it("Should forfeit all enrolled players when pool is claimed", async function () {
       // Use just 1 player to avoid auto-start
       await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       await time.increase(ENROLLMENT_TIMEOUT + ENROLLMENT_ESC_L2 + 1);
 
-      const tx = await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);
-      const receipt = await tx.wait();
+      await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);
 
-      const forfeitEvents = receipt.logs
-        .filter(log => log.fragment && log.fragment.name === "PlayerForfeited");
-
-      expect(forfeitEvents.length).to.equal(1);
+      // Verify tournament was reset
+      const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(status).to.equal(0); // Enrolling
+      expect(enrolledCount).to.equal(0);
     });
 
     it("Should clear all player activity entries after EL2 claim", async function () {
@@ -273,8 +271,11 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);
 
       // Should be able to enroll in new tournament
-      await expect(connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE }))
-        .to.emit(connectFour, "PlayerEnrolled");
+      await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
+
+      // Verify enrollment succeeded
+      const [, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(enrolledCount).to.equal(1);
     });
   });
 

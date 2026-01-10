@@ -107,9 +107,6 @@ contract GameCacheModule is ETour_Storage {
 
         // Advance circular buffer index
         sharedNextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
-
-        bytes32 matchKey = keccak256(abi.encodePacked(player1, player2));
-        emit MatchCached(matchKey, cacheIndex, player1, player2);
     }
 
     /**

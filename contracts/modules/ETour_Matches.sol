@@ -71,8 +71,6 @@ contract ETour_Matches is ETour_Storage {
         round.initialized = true;
         round.drawCount = 0;
 
-        emit RoundInitialized(tierId, instanceId, roundNumber, matchCount);
-
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
@@ -92,8 +90,6 @@ contract ETour_Matches is ETour_Storage {
                 address lastPlayer = players[tournament.enrolledCount - 1];
                 players[walkoverIndex] = lastPlayer;
                 players[tournament.enrolledCount - 1] = walkoverPlayer;
-
-                emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
             }
 
             for (uint8 i = 0; i < matchCount; i++) {
@@ -209,8 +205,6 @@ contract ETour_Matches is ETour_Storage {
 
             addPlayerActiveMatch(p1, nextMatchId);
             addPlayerActiveMatch(p2, nextMatchId);
-
-            emit MatchStarted(tierId, instanceId, nextRound, nextMatchNumber, p1, p2);
         }
     }
 
@@ -224,8 +218,6 @@ contract ETour_Matches is ETour_Storage {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
-
-        emit RoundCompleted(tierId, instanceId, roundNumber);
 
         bool isActualFinals = (roundNumber == config.totalRounds - 1) ||
                              (roundNumber > 0 && round.totalMatches == 1 && round.completedMatches == 1);
@@ -248,7 +240,6 @@ contract ETour_Matches is ETour_Storage {
             }
         } else if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
             address[] memory remainingPlayers = getRemainingPlayers(tierId, instanceId, roundNumber);
-            emit AllDrawRoundDetected(tierId, instanceId, roundNumber, uint8(remainingPlayers.length));
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
         } else {
             // Assign rankings to losers based on round (for prize distribution)
@@ -492,8 +483,6 @@ contract ETour_Matches is ETour_Storage {
         round.completedMatches = 0;
         round.drawCount = 0;
 
-        emit RoundInitialized(tierId, instanceId, roundNumber, newMatchCount);
-
         address walkoverPlayer = address(0);
         if (hasWalkover == 1) {
             uint256 randomness = uint256(keccak256(abi.encodePacked(
@@ -510,8 +499,6 @@ contract ETour_Matches is ETour_Storage {
 
             playersInRound[walkoverIndex] = playersInRound[playerCount - 1];
             playerCount--;
-
-            emit PlayerAutoAdvancedWalkover(tierId, instanceId, roundNumber, walkoverPlayer);
         }
 
         // Create new matches with consolidated players
@@ -520,7 +507,6 @@ contract ETour_Matches is ETour_Storage {
             address p2 = playersInRound[i * 2 + 1];
 
             this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
-            emit PlayersConsolidated(tierId, instanceId, roundNumber, p1, p2);
         }
 
         // Advance walkover player if exists
@@ -575,8 +561,6 @@ contract ETour_Matches is ETour_Storage {
             nextRoundStruct.completedMatches = 0;
             nextRoundStruct.drawCount = 0;
 
-            emit RoundInitialized(tierId, instanceId, nextRound, properMatchCount);
-
             // Select random walkover
             uint256 randomness = uint256(keccak256(abi.encodePacked(
                 block.prevrandao,
@@ -606,8 +590,6 @@ contract ETour_Matches is ETour_Storage {
             if (nextRound < config.totalRounds - 1) {
                 advanceWinner(tierId, instanceId, nextRound, properMatchCount, walkoverPlayer);
             }
-
-            emit PlayerAutoAdvancedWalkover(tierId, instanceId, nextRound, walkoverPlayer);
         } else {
             // Next round already initialized (possibly with wrong match count)
             // Use existing consolidateScatteredPlayers to fix it

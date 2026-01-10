@@ -262,31 +262,8 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // ============ Events ============
 
-    event TierRegistered(uint8 indexed tierId, uint8 playerCount, uint8 instanceCount, uint256 entryFee);
-    event TournamentInitialized(uint8 indexed tierId, uint8 indexed instanceId);
-    event PlayerEnrolled(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 enrolledCount);
-    event TournamentStarted(uint8 indexed tierId, uint8 indexed instanceId, uint8 playerCount);
-    event PlayerAutoAdvancedWalkover(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, address indexed player);
-    event RoundInitialized(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchCount);
-    event MatchStarted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2);
-    event PlayersConsolidated(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, address player1, address player2);
     event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw);
-    event MatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
-    event RoundCompleted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber);
     event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, TournamentCompletionReason completionReason, address[] enrolledPlayers);
-    event AllDrawRoundDetected(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 remainingPlayers);
-    event TournamentReset(uint8 indexed tierId, uint8 indexed instanceId);
-    event OwnerFeePaid(address indexed owner, uint256 amount);
-    event ProtocolFeePaid(address indexed recipient, uint256 amount);
-    event PrizeDistributed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint8 rank, uint256 amount);
-    event PrizeDistributionFailed(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, uint8 attemptsMade);
-    event PrizeFallbackToContract(address indexed player, uint256 amount);
-    event TournamentCached(uint8 indexed tierId, uint8 indexed instanceId, address winner);
-    event TournamentForceStarted(uint8 indexed tierId, uint8 indexed instanceId, address indexed starter, uint8 playerCount);
-    event EnrollmentPoolClaimed(uint8 indexed tierId, uint8 indexed instanceId, address indexed claimant, uint256 amount);
-    event EnrollmentWindowReset(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 newEscalation1Start, uint256 newEscalation2Start);
-    event TimeoutVictoryClaimed(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNum, uint8 matchNum, address indexed winner, address loser);
-    event PlayerForfeited(uint8 indexed tierId, uint8 indexed instanceId, address indexed player, uint256 amount, string reason);
     event ProtocolRaffleExecuted(
         uint256 indexed raffleIndex,
         address indexed winner,

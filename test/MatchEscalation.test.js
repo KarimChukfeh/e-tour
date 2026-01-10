@@ -86,9 +86,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout - this completes match and tournament
-            await expect(
-                game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed");
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
 
             // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
             // Verify tournament completed by checking status
