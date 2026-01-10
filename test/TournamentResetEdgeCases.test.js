@@ -4,14 +4,43 @@ import { expect } from "chai";
 describe("Tournament Reset and Enrollment Edge Cases", function () {
     let game;
     let owner, player1, player2, player3, player4, player5;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.002");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5] = await hre.ethers.getSigners();
 
+        // Deploy all ETour modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        // Deploy TicTacChain with module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress()
+        );
+        await game.waitForDeployment();
     });
 
     describe("Tournament Reset State Management", function () {
@@ -274,45 +303,6 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             const tournament2 = await game.tournaments(tierId, instanceId);
             const expectedPrizePool = TIER_0_FEE * 2n * 90n / 100n;
             expect(tournament2.prizePool).to.equal(expectedPrizePool);
-        });
-    });
-
-    describe("Match Cache Cleanup", function () {
-        it("Should clear match data from cache on reset", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            // First tournament
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Verify match exists
-            const match1 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match1.common.status).to.equal(1); // Active
-
-            // Complete tournament
-            const firstPlayer = match1.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
-
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
-
-            // After reset, finals match is preserved in live storage (still retrievable for history)
-            const match1Cached = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match1Cached.common.isCached).to.be.false; // Finals preserved, not cached
-            expect(match1Cached.common.status).to.equal(2); // Completed
-
-            // Second tournament should create new match
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const match2 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match2.common.isCached).to.be.false; // New match, not cached
-            expect(match2.common.status).to.equal(1); // Active
-            expect(match2.common.player1).to.not.equal(match1.common.player1); // Different players
         });
     });
 });

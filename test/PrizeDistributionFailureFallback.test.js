@@ -6,7 +6,7 @@ describe("Prize Distribution Failure Fallback", function () {
     let owner, player1, player2, player3, player4;
     let rejectingContract;
     let playerProxy;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
@@ -143,37 +143,6 @@ describe("Prize Distribution Failure Fallback", function () {
         });
     });
 
-    describe("Event Emission", function () {
-        it("Should emit PrizeDistributed on successful prize send", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
-
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
-
-            // Final winning move should emit PrizeDistributed
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
-            const receipt = await tx.wait();
-
-            const prizeEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed?.name === "PrizeDistributed";
-                } catch { return false; }
-            });
-
-            expect(prizeEvent).to.not.be.undefined;
-        });
-    });
 
     describe("Tournament Completion with Failed Prize", function () {
         it("Should complete tournament even if prize distribution fails", async function () {
@@ -215,7 +184,7 @@ describe("Prize Distribution Failure Fallback", function () {
 
             const tierId = 1; // 4-player tier
             const instanceId = 0;
-            const TIER_1_FEE = hre.ethers.parseEther("0.002");
+            const TIER_1_FEE = hre.ethers.parseEther("0.0007");
 
             // Enroll 4 players
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });

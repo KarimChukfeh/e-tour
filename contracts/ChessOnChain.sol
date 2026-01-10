@@ -1,1845 +1,848 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETour.sol";
+import "./ETour_Storage.sol";
 
-/**
- * @title ChessOnChain
- * @dev Professional chess game implementing ETour tournament protocol
- * Chess serves as the primary revenue driver in the ETour ecosystem.
- * 
- * This contract demonstrates advanced ETour implementation with:
- * 1. Complex game state management (64-square board, piece types, special moves)
- * 2. Chess-specific tier configurations optimized for competitive play
- * 3. Full chess rule enforcement (castling, en passant, promotion, check/checkmate)
- * 
- * Part of the RW3 (Reclaim Web3) movement.
- */
-contract ChessOnChain is ETour {
-    
-    // ============ Game-Specific Constants ============
+interface IChessRules {
+    function processMove(uint256 board, uint256 state, uint8 from, uint8 to, uint8 promotion, bool isWhite) external pure returns (bool valid, uint256 newBoard, uint256 newState, uint8 gameEnd);
+}
 
-    uint8 public constant NO_SQUARE = 255;
-    
+contract ChessOnChain is ETour_Storage {
 
-    // ============ Game-Specific Enums ============
+    IChessRules public immutable CHESS_RULES;
 
-    enum PieceType { None, Pawn, Knight, Bishop, Rook, Queen, King }
-    enum PieceColor { None, White, Black }
+    uint256 private constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
+    uint256 private constant INITIAL_STATE = 63 | (1 << 22);  // 63 = NO_EN_PASSANT, bit 22 = fullMoveNumber=1
 
     // ============ Game-Specific Structs ============
 
-    struct Piece {
-        PieceType pieceType;
-        PieceColor color;
-    }
-
-    struct ChessMatch {
-        address player1;          // White
-        address player2;          // Black
-        address currentTurn;
+    struct Match {
+        address player1;              // White
+        address player2;              // Black
         address winner;
-        Piece[64] board;
-        MatchStatus status;
-        uint256 startTime;
-        address firstPlayer;      // Always white in chess
-        bool isDraw;
-        
-        // Chess-specific state
-        bool whiteKingMoved;
-        bool blackKingMoved;
-        bool whiteRookAMoved;     // Queenside rook
-        bool whiteRookHMoved;     // Kingside rook
-        bool blackRookAMoved;
-        bool blackRookHMoved;
-        uint8 enPassantSquare;    // Square where en passant capture is possible (NO_SQUARE if none)
-        uint16 halfMoveClock;     // For 50-move rule
-        uint16 fullMoveNumber;
-        bool whiteInCheck;
-        bool blackInCheck;
-
-        // Time Bank Fields (chess clock style)
-        uint256 player1TimeRemaining;
-        uint256 player2TimeRemaining;
-        uint256 lastMoveTimestamp;
-    }
-
-    struct CachedChessMatch {
-        address player1;
-        address player2;
-        address winner;
-        uint256 startTime;
-        uint256 endTime;
-        uint8 tierId;
-        uint8 instanceId;
-        uint8 roundNumber;
-        uint8 matchNumber;
-        bool isDraw;
-        bool exists;
-        uint16 totalMoves;
-        bytes32 finalPositionHash;  // Hash of final board position
-    }
-
-    /**
-     * @dev Extended match data for Chess including common fields and game-specific state
-     */
-    struct ChessMatchData {
-        ETour.CommonMatchData common;         // Embedded common data
-        Piece[64] board;                      // 8x8 chess board
         address currentTurn;
         address firstPlayer;
-        bool whiteInCheck;
-        bool blackInCheck;
-        uint8 enPassantSquare;
-        uint16 halfMoveClock;
-        uint16 fullMoveNumber;
-        bool whiteKingSideCastle;             // Castling rights
-        bool whiteQueenSideCastle;
-        bool blackKingSideCastle;
-        bool blackQueenSideCastle;
-        bytes moveHistory;
-        uint256 player1TimeRemaining;         // Time bank for player1
-        uint256 player2TimeRemaining;         // Time bank for player2
-        uint256 lastMoveTimestamp;            // Timestamp of last move
+        MatchStatus status;
+        bool isDraw;
+        uint256 packedBoard;
+        uint256 packedState;
+        uint256 startTime;
+        uint256 lastMoveTime;
+        uint256 player1TimeRemaining;
+        uint256 player2TimeRemaining;
+        string moves;
     }
 
-    // ============ Game-Specific State ============
-
-    mapping(bytes32 => ChessMatch) public chessMatches;
-
-    // Match cache
-    uint16 public constant MATCH_CACHE_SIZE = 500;
-    CachedChessMatch[MATCH_CACHE_SIZE] public matchCache;
-    uint16 public nextCacheIndex;
-    mapping(bytes32 => uint16) public cacheKeyToIndex;
-    bytes32[MATCH_CACHE_SIZE] private cacheKeys;
-
-    // Move history (stored as compact representation)
-    mapping(bytes32 => bytes) public moveHistory;
-
-    // ============ Player Activity Tracking ============
-
-    /**
-     * @dev Minimal tournament reference for player tracking
-     * Gas-optimized: 2 bytes total (tierId + instanceId)
-     */
-    struct TournamentRef {
-        uint8 tierId;
-        uint8 instanceId;
+    struct ChessMatchData {
+        CommonMatchData common;
+        uint256 packedBoard;
+        uint256 packedState;
+        address currentTurn;
+        address firstPlayer;
+        uint256 player1TimeRemaining;
+        uint256 player2TimeRemaining;
     }
+    struct LeaderboardEntry { address player; int256 earnings; }
 
-    // Track tournaments where player is enrolled but not yet started
-    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerEnrollingIndex;
+    // ============ Game-Specific Storage ============
 
-    // Track tournaments where player is actively competing
-    mapping(address => TournamentRef[]) public playerActiveTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) private playerActiveIndex;
+    mapping(bytes32 => Match) public matches;
 
-    // ============ Game-Specific Events ============
+    // Elite tournament match history (Tier 3 and Tier 7 finals)
+    Match[] public eliteMatches;
 
-    event ChessMoveMade(bytes32 indexed matchId, address indexed player, uint8 from, uint8 to, PieceType promotion);
-    event CheckDeclared(bytes32 indexed matchId, PieceColor kingColor);
-    event CheckmateDeclared(bytes32 indexed matchId, address indexed winner, address indexed loser);
-    event StalemateDeclared(bytes32 indexed matchId);
-    event DrawByFiftyMoveRule(bytes32 indexed matchId);
-    event DrawByInsufficientMaterial(bytes32 indexed matchId);
-    event CastlingPerformed(bytes32 indexed matchId, address indexed player, bool kingSide);
-    event EnPassantCapture(bytes32 indexed matchId, address indexed player, uint8 capturedSquare);
-    event PawnPromoted(bytes32 indexed matchId, address indexed player, uint8 square, PieceType newPiece);
-    event ChessMatchCached(bytes32 indexed matchKey, uint16 cacheIndex, address indexed player1, address indexed player2);
-    event Resignation(bytes32 indexed matchId, address indexed resigningPlayer, address indexed winner);
+    // ============ Events ============
+
+    event MoveMade(bytes32 indexed matchId, address indexed player, uint8 from, uint8 to);
 
     // ============ Constructor ============
 
-    constructor() ETour() {
-        _registerChessOnChainTiers();
+    constructor(
+        address _moduleCoreAddress,
+        address _moduleMatchesAddress,
+        address _modulePrizesAddress,
+        address _moduleRaffleAddress,
+        address _moduleEscalationAddress,
+        address _moduleChessRulesAddress
+    ) ETour_Storage(
+        _moduleCoreAddress,
+        _moduleMatchesAddress,
+        _modulePrizesAddress,
+        _moduleRaffleAddress,
+        _moduleEscalationAddress
+    ) {
+        CHESS_RULES = IChessRules(_moduleChessRulesAddress);
+
+        TimeoutConfig memory timeouts = TimeoutConfig({
+            matchTimePerPlayer: 600,
+            timeIncrementPerMove: 15,
+            matchLevel2Delay: 180,
+            matchLevel3Delay: 360,
+            enrollmentWindow: 0,  // Set per tier in loop
+            enrollmentLevel2Delay: 300
+        });
+
+        for (uint8 i = 0; i < 8; i++) {
+            timeouts.enrollmentWindow = i < 4 ? 600 : 1800;
+            timeouts.matchTimePerPlayer = i == 3 || i == 7 ? 1200 : 600;
+            timeouts.timeIncrementPerMove = i == 3 || i == 7 ? 30 : 15;
+
+            MODULE_CORE.delegatecall(
+                abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))",
+                    i,                           // tierId
+                    i < 4 ? 2 : 4,               // playerCount
+                    i < 4 ? 100 : 50,            // instanceCount
+                    (
+                        i == 0 ? 0.003 ether :
+                        i == 1 ? 0.008 ether :
+                        i == 2 ? 0.015 ether :
+                        i == 3 ? 0.1 ether :
+                        i == 4 ? 0.004 ether :
+                        i == 5 ? 0.009 ether :
+                        i == 6 ? 0.02 ether :
+                                 0.15 ether
+                    ),                          // entryFee                
+                    timeouts
+                )
+            );
+        }
+    }
+
+    // ============ Initialization ============
+
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+        uint8 matchCount = getMatchCountForRound(tierId, instanceId);
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        round.totalMatches = matchCount;
+        round.completedMatches = 0;
+        round.initialized = true;
+        round.drawCount = 0;
+
+        if (roundNumber == 0) {
+            address[] storage players = enrolledPlayers[tierId][instanceId];
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+            address walkoverPlayer = address(0);
+            if (tournament.enrolledCount % 2 == 1) {
+                uint256 randomness = uint256(keccak256(abi.encodePacked(
+                    block.prevrandao, block.timestamp, tierId, instanceId, tournament.enrolledCount
+                )));
+                uint8 walkoverIndex = uint8(randomness % tournament.enrolledCount);
+                walkoverPlayer = players[walkoverIndex];
+
+                address lastPlayer = players[tournament.enrolledCount - 1];
+                players[walkoverIndex] = lastPlayer;
+                players[tournament.enrolledCount - 1] = walkoverPlayer;
+            }
+
+            for (uint8 i = 0; i < matchCount; i++) {
+                address p1 = players[i * 2];
+                address p2 = players[i * 2 + 1];
+                _createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
+
+                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+                playerActiveMatches[p1].push(matchId);
+                playerMatchIndex[p1][matchId] = playerActiveMatches[p1].length - 1;
+                playerActiveMatches[p2].push(matchId);
+                playerMatchIndex[p2][matchId] = playerActiveMatches[p2].length - 1;
+            }
+
+            if (walkoverPlayer != address(0)) {
+                MODULE_MATCHES.delegatecall(
+                    abi.encodeWithSignature("advanceWinner(uint8,uint8,uint8,uint8,address)", tierId, instanceId, roundNumber, matchCount, walkoverPlayer)
+                );
+            }
+        }
+    }
+
+    function getMatchCountForRound(uint8 tierId, uint8 instanceId) public view returns (uint8) {
+        return tournaments[tierId][instanceId].enrolledCount / 2;
+    }
+
+    // ============ Inline Helpers ============
+
+    function _getPiece(uint256 board, uint8 square) private pure returns (uint8) {
+        return uint8((board >> (square * 4)) & 0xF);
+    }
+
+    function _isWhitePiece(uint8 piece) private pure returns (bool) {
+        return piece >= 1 && piece <= 6;
+    }
+
+    function _isBlackPiece(uint8 piece) private pure returns (bool) {
+        return piece >= 7 && piece <= 12;
+    }
+
+
+    // ============ Public ETour Function Wrappers ============
+
+    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TournamentStatus oldStatus = tournament.status;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "E");
+
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
+            initializeRound(tierId, instanceId, 0);
+        }
+    }
+
+    function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TournamentStatus oldStatus = tournament.status;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "FS");
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
+            initializeRound(tierId, instanceId, 0);
+        }
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
+            address winner = tournament.winner;
+            address[] memory singlePlayer = new address[](1);
+            singlePlayer[0] = winner;
+
+            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            );
+            require(resetSuccess, "RT");
+
+            _onTournamentCompleted(tierId, instanceId, singlePlayer);
+        }
+    }
+
+    function executeProtocolRaffle(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_RAFFLE.delegatecall(
+            abi.encodeWithSignature("executeProtocolRaffle(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "ER");
+    }
+
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("resetEnrollmentWindow(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "RW");
+    }
+
+    /// @dev Check if enrollment window can be reset (single player after timeout)
+    function canResetEnrollmentWindow(uint8 tierId, uint8 instanceId) external view returns (bool) {
+        TournamentInstance storage t = tournaments[tierId][instanceId];
+        return t.status == TournamentStatus.Enrolling &&
+               t.enrolledCount == 1 &&
+               isEnrolled[tierId][instanceId][msg.sender] &&
+               block.timestamp >= t.enrollmentTimeout.escalation1Start;
+    }
+
+    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "CAE");
+
+        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+        require(resetSuccess, "RT");
+    }
+
+    function forceEliminateStalledMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
+        (bool success, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("forceEliminateStalledMatch(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
+        );
+        require(success, "FE");
+
+        // Emit MatchCompleted event from game contract (double elimination = no winner)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination);
+
+        // Check if round is complete before consolidating
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        if (round.completedMatches == round.totalMatches) {
+            // Consolidate next round if ML2 left odd number of winners
+            MODULE_MATCHES.delegatecall(
+                abi.encodeWithSignature(
+                    "consolidateAndStartOddRound(uint8,uint8,uint8)",
+                    tierId, instanceId, roundNumber
+                )
+            );
+        }
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
+    }
+
+    function claimMatchSlotByReplacement(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
+        (bool success, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)", tierId, instanceId, roundNumber, matchNumber)
+        );
+        require(success, "CR");
+
+        // Emit MatchCompleted event from game contract (replacement player wins)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement);
+
+        _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
+
+        // Check if round is complete before consolidating
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        if (round.completedMatches == round.totalMatches) {
+            // Consolidate next round if ML3 left odd number of winners
+            MODULE_MATCHES.delegatecall(
+                abi.encodeWithSignature(
+                    "consolidateAndStartOddRound(uint8,uint8,uint8)",
+                    tierId, instanceId, roundNumber
+                )
+            );
+        }
+
+        // Add external player to cleanup list for tournament completion
+        address[] memory allPlayers = new address[](enrolledPlayersCopy.length + 1);
+        for (uint256 i = 0; i < enrolledPlayersCopy.length; i++) {
+            allPlayers[i] = enrolledPlayersCopy[i];
+        }
+        allPlayers[enrolledPlayersCopy.length] = msg.sender; // Add external player
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
     /**
-     * @dev Register all tournament tiers for ChessOnChain
-     * Simplified configuration with only 2-player and 4-player tiers
+     * @dev Check if Level 1 escalation is available (opponent timeout claim)
      */
-    function _registerChessOnChainTiers() internal {
-        // ============ Tier 0: 2-Player ============
-        uint8[] memory tier0Prizes = new uint8[](2);
-        tier0Prizes[0] = 100;  // Winner takes all
-        tier0Prizes[1] = 0;
-
-        TimeoutConfig memory timeouts0 = TimeoutConfig({
-            matchTimePerPlayer: 10 minutes,      // 10 minutes per player
-            timeIncrementPerMove: 15 seconds,    // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
-            matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
-            enrollmentWindow: 10 minutes,       // 10 min to fill tournament
-            enrollmentLevel2Delay: 5 minutes    // L2 starts 5 min after enrollment window
-        });
-
-        _registerTier(
-            0,                              // tierId
-            2,                              // playerCount
-            100,                            // instanceCount
-            0.01 ether,                     // entryFee
-            Mode.Classic,
-            timeouts0,
-            tier0Prizes
-        );
-
-        // ============ Tier 1: 4-Player ============
-        uint8[] memory tier1Prizes = new uint8[](4);
-        tier1Prizes[0] = 80;   // 1st: 80%
-        tier1Prizes[1] = 20;   // 2nd: 20%
-        tier1Prizes[2] = 0;    // 3rd: 0%
-        tier1Prizes[3] = 0;    // 4th: 0%
-
-        TimeoutConfig memory timeouts1 = TimeoutConfig({
-            matchTimePerPlayer: 10 minutes,      // 10 minutes per player
-            timeIncrementPerMove: 15 seconds,    // Fischer increment: 15 seconds bonus per move
-            matchLevel2Delay: 3 minutes,        // L2 starts 3 min after timeout
-            matchLevel3Delay: 6 minutes,        // L3 starts 6 min after timeout (cumulative)
-            enrollmentWindow: 30 minutes,       // 30 min to fill tournament
-            enrollmentLevel2Delay: 5 minutes    // L2 starts 5 min after enrollment window
-        });
-
-        _registerTier(
-            1,                              // tierId
-            4,                              // playerCount
-            50,                             // instanceCount
-            0.02 ether,                     // entryFee
-            Mode.Pro,
-            timeouts1,
-            tier1Prizes
-        );
-
-        // ============ Configure Raffle Thresholds ============
-        // Progressive thresholds: 0.2, 0.4, 0.6, 0.8, 1.0 ETH for first 5 raffles
-        // Then 1.0 ETH for all subsequent raffles
-        uint256[] memory thresholds = new uint256[](5);
-        thresholds[0] = 0.6 ether;
-        thresholds[1] = 1.2 ether;
-        thresholds[2] = 1.8 ether;
-        thresholds[3] = 2.4 ether;
-        thresholds[4] = 3.0 ether;
-
-        _registerRaffleThresholds(thresholds, 1.0 ether);
-    }
-
-    // ============ ETour Abstract Implementation ============
-
-    function _createMatchGame(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address player1,
-        address player2
-    ) internal override {
-        require(player1 != player2, "Cannot match player against themselves");
-        require(player1 != address(0) && player2 != address(0), "Invalid player address");
-
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        // Randomly assign colors
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao,
-            block.timestamp,
-            player1,
-            player2,
-            matchId
-        )));
-        
-        if (randomness % 2 == 0) {
-            matchData.player1 = player1;  // White
-            matchData.player2 = player2;  // Black
-        } else {
-            matchData.player1 = player2;  // White
-            matchData.player2 = player1;  // Black
-        }
-
-        matchData.currentTurn = matchData.player1;  // White moves first
-        matchData.firstPlayer = matchData.player1;
-        matchData.status = MatchStatus.InProgress;
-        matchData.startTime = block.timestamp;
-        matchData.isDraw = false;
-
-        // Initialize chess-specific state
-        matchData.whiteKingMoved = false;
-        matchData.blackKingMoved = false;
-        matchData.whiteRookAMoved = false;
-        matchData.whiteRookHMoved = false;
-        matchData.blackRookAMoved = false;
-        matchData.blackRookHMoved = false;
-        matchData.enPassantSquare = NO_SQUARE;
-        matchData.halfMoveClock = 0;
-        matchData.fullMoveNumber = 1;
-        matchData.whiteInCheck = false;
-        matchData.blackInCheck = false;
-
-        // Initialize time banks for both players
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
-        matchData.player1TimeRemaining = timePerPlayer;
-        matchData.player2TimeRemaining = timePerPlayer;
-        matchData.lastMoveTimestamp = block.timestamp;
-
-        // Setup initial board position
-        _setupInitialPosition(matchId);
-
-        _addPlayerActiveMatch(matchData.player1, matchId);
-        _addPlayerActiveMatch(matchData.player2, matchId);
-
-        emit MatchStarted(tierId, instanceId, roundNumber, matchNumber, matchData.player1, matchData.player2);
-    }
-
-    function _setupInitialPosition(bytes32 matchId) internal {
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        // Clear the board first
-        for (uint8 i = 0; i < 64; i++) {
-            matchData.board[i] = Piece(PieceType.None, PieceColor.None);
-        }
-
-        // White pieces (ranks 1-2, squares 0-15)
-        // Rank 1 (squares 0-7): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
-        matchData.board[0] = Piece(PieceType.Rook, PieceColor.White);
-        matchData.board[1] = Piece(PieceType.Knight, PieceColor.White);
-        matchData.board[2] = Piece(PieceType.Bishop, PieceColor.White);
-        matchData.board[3] = Piece(PieceType.Queen, PieceColor.White);
-        matchData.board[4] = Piece(PieceType.King, PieceColor.White);
-        matchData.board[5] = Piece(PieceType.Bishop, PieceColor.White);
-        matchData.board[6] = Piece(PieceType.Knight, PieceColor.White);
-        matchData.board[7] = Piece(PieceType.Rook, PieceColor.White);
-
-        // Rank 2 (squares 8-15): White Pawns
-        for (uint8 i = 8; i < 16; i++) {
-            matchData.board[i] = Piece(PieceType.Pawn, PieceColor.White);
-        }
-
-        // Black pieces (ranks 7-8, squares 48-63)
-        // Rank 7 (squares 48-55): Black Pawns
-        for (uint8 i = 48; i < 56; i++) {
-            matchData.board[i] = Piece(PieceType.Pawn, PieceColor.Black);
-        }
-
-        // Rank 8 (squares 56-63): Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook
-        matchData.board[56] = Piece(PieceType.Rook, PieceColor.Black);
-        matchData.board[57] = Piece(PieceType.Knight, PieceColor.Black);
-        matchData.board[58] = Piece(PieceType.Bishop, PieceColor.Black);
-        matchData.board[59] = Piece(PieceType.Queen, PieceColor.Black);
-        matchData.board[60] = Piece(PieceType.King, PieceColor.Black);
-        matchData.board[61] = Piece(PieceType.Bishop, PieceColor.Black);
-        matchData.board[62] = Piece(PieceType.Knight, PieceColor.Black);
-        matchData.board[63] = Piece(PieceType.Rook, PieceColor.Black);
-    }
-
-    function _resetMatchGame(bytes32 matchId) internal override {
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        matchData.player1 = address(0);
-        matchData.player2 = address(0);
-        matchData.currentTurn = address(0);
-        matchData.winner = address(0);
-        matchData.status = MatchStatus.NotStarted;
-        matchData.lastMoveTimestamp = 0;
-        matchData.startTime = 0;
-        matchData.firstPlayer = address(0);
-        matchData.isDraw = false;
-
-        matchData.whiteKingMoved = false;
-        matchData.blackKingMoved = false;
-        matchData.whiteRookAMoved = false;
-        matchData.whiteRookHMoved = false;
-        matchData.blackRookAMoved = false;
-        matchData.blackRookHMoved = false;
-        matchData.enPassantSquare = NO_SQUARE;
-        matchData.halfMoveClock = 0;
-        matchData.fullMoveNumber = 1;
-        matchData.whiteInCheck = false;
-        matchData.blackInCheck = false;
-
-        for (uint8 i = 0; i < 64; i++) {
-            matchData.board[i] = Piece(PieceType.None, PieceColor.None);
-        }
-
-        delete moveHistory[matchId];
-    }
-
-    function _getMatchResult(bytes32 matchId) internal view override returns (address winner, bool isDraw, MatchStatus status) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        return (matchData.winner, matchData.isDraw, matchData.status);
-    }
-
-    function _addToMatchCacheGame(
+    function isMatchEscL1Available(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) internal override {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        bytes32 matchKey = keccak256(abi.encodePacked(matchData.player1, matchData.player2, block.timestamp));
-        uint16 cacheIndex = nextCacheIndex;
-
-        bytes32 oldKey = cacheKeys[cacheIndex];
-        if (oldKey != bytes32(0)) {
-            delete cacheKeyToIndex[oldKey];
-        }
-
-        // Calculate total moves from fullMoveNumber
-        uint16 totalMoves = (matchData.fullMoveNumber - 1) * 2;
-        if (matchData.currentTurn == matchData.player1) {
-            // White's turn means black just moved
-            totalMoves += 1;
-        }
-
-        matchCache[cacheIndex] = CachedChessMatch({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            winner: matchData.winner,
-            startTime: matchData.startTime,
-            endTime: block.timestamp,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isDraw: matchData.isDraw,
-            exists: true,
-            totalMoves: totalMoves,
-            finalPositionHash: _hashPosition(matchId)
-        });
-
-        cacheKeys[cacheIndex] = matchKey;
-        cacheKeyToIndex[matchKey] = cacheIndex;
-
-        nextCacheIndex = uint16((cacheIndex + 1) % MATCH_CACHE_SIZE);
-
-        emit ChessMatchCached(matchKey, cacheIndex, matchData.player1, matchData.player2);
-    }
-
-    function _hashPosition(bytes32 matchId) internal view returns (bytes32) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        // Hash board state piece by piece since we can't pack fixed arrays directly
-        bytes32 boardHash = keccak256(abi.encode(matchData.board));
-        
-        return keccak256(abi.encodePacked(
-            boardHash,
-            matchData.currentTurn,
-            matchData.whiteKingMoved,
-            matchData.blackKingMoved,
-            matchData.enPassantSquare
-        ));
-    }
-
-    function _getMatchPlayers(bytes32 matchId) internal view override returns (address player1, address player2) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        return (matchData.player1, matchData.player2);
-    }
-
-    function _getTimeIncrement() internal view override returns (uint256) {
-        // Note: This function is called during match, so we get config from the match's tier
-        // In practice, all tiers in ChessOnChain use 15 seconds
-        return 15 seconds; // Fischer increment: 15 seconds per move
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL1Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L1");
+        return abi.decode(result, (bool));
     }
 
     /**
-     * @dev Check if the current player has run out of time
-     * Used by escalation system to detect stalled matches
+     * @dev Check if Level 2 escalation is available (advanced player force eliminate)
      */
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) internal view override returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL2Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L2");
+        return abi.decode(result, (bool));
+    }
 
-        // If match is not in progress, return false
-        if (matchData.status != MatchStatus.InProgress) {
+    /**
+     * @dev Check if Level 3 escalation is available (external player replacement)
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
+            abi.encodeWithSignature(
+                "isMatchEscL3Available(uint8,uint8,uint8,uint8)",
+                tierId, instanceId, roundNumber, matchNumber
+            )
+        );
+        require(success, "L3");
+        return abi.decode(result, (bool));
+    }
+
+    /**
+     * @dev Check if a player has advanced in the tournament
+     */
+    function isPlayerInAdvancedRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 stalledRoundNumber,
+        address player
+    ) external view returns (bool) {
+        if (!isEnrolled[tierId][instanceId][player]) {
             return false;
         }
 
-        // Calculate time elapsed since last move
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
 
-        // Get current player's remaining time
-        uint256 currentPlayerTimeRemaining;
-        if (matchData.currentTurn == matchData.player1) {
-            currentPlayerTimeRemaining = matchData.player1TimeRemaining;
-        } else {
-            currentPlayerTimeRemaining = matchData.player2TimeRemaining;
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                // Check active storage
+                if (matchData.status == MatchStatus.Completed &&
+                    matchData.winner == player &&
+                    !matchData.isDraw) {
+                    return true;
+                }
+            }
         }
 
-        // Current player has timed out if elapsed time >= their remaining time
-        return timeElapsed >= currentPlayerTimeRemaining;
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                if (matchData.player1 == player || matchData.player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) internal override {
-        ChessMatch storage matchData = chessMatches[matchId];
-        if (slot == 0) {
-            matchData.player1 = player;
+    // ============ Chess Gameplay ============
+
+    function makeMove(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, uint8 from, uint8 to, uint8 promotion) external nonReentrant {
+        require(from < 64 && to < 64 && from != to, "IS");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
+
+        require(m.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == m.player1 || msg.sender == m.player2, "NP");
+        require(msg.sender == m.currentTurn, "NT");
+
+        bool isWhite = (msg.sender == m.player1);
+        uint8 piece = _getPiece(m.packedBoard, from);
+        require(isWhite ? _isWhitePiece(piece) : _isBlackPiece(piece), "NYP");
+
+        // Single call to module for validation, execution, and game-end detection
+        (bool valid, uint256 newBoard, uint256 newState, uint8 gameEnd) = CHESS_RULES.processMove(m.packedBoard, m.packedState, from, to, promotion, isWhite);
+        require(valid, "IM");
+
+        // Update time bank
+        uint256 elapsed = block.timestamp - m.lastMoveTime;
+        if (isWhite) {
+            m.player1TimeRemaining = m.player1TimeRemaining > elapsed ? m.player1TimeRemaining - elapsed + 15 : 15;
         } else {
-            matchData.player2 = player;
+            m.player2TimeRemaining = m.player2TimeRemaining > elapsed ? m.player2TimeRemaining - elapsed + 15 : 15;
+        }
+        m.lastMoveTime = block.timestamp;
+        m.packedBoard = newBoard;
+        m.packedState = newState;
+
+        // Store move in history as compact bytes: each move is 2 bytes (from, to)
+        m.moves = string(abi.encodePacked(m.moves, from, to));
+
+        // Clear any escalation state since a move was made (match is no longer stalled) - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+
+        emit MoveMade(matchId, msg.sender, from, to);
+
+        if (gameEnd == 1) { // checkmate
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+        } else if (gameEnd == 2) { // stalemate
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (gameEnd == 4) { // insufficient material
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else {
+            m.currentTurn = isWhite ? m.player2 : m.player1;
         }
     }
 
-    function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) internal override {
-        ChessMatch storage matchData = chessMatches[matchId];
+    function claimTimeoutWin(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
 
-        require(matchData.player1 != matchData.player2, "Cannot match player against themselves");
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender != matchData.currentTurn, "OT");
 
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 opponentTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining : matchData.player2TimeRemaining;
+
+        require(elapsed >= opponentTime, "TO");
+
+        (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("markMatchStalled(bytes32,uint8,uint256)", matchId, tierId, block.timestamp)
+        );
+        require(markSuccess, "MS");
+
+        address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
+    }
+
+    function _handleTournamentCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
+            return;
+        }
+
+        address tournamentWinner = tournament.winner;
+        uint256 winnersPot = tournament.prizePool;
+
+        // Distribute prizes based on completion type
+        if (tournament.allDrawResolution) {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        } else {
+            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
+                    tierId, instanceId, winnersPot)
+            );
+            require(distributeSuccess, "DP");
+        }
+
+        // Update earnings for the winner (if there is one)
+        if (tournamentWinner != address(0)) {
+            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                    tierId, instanceId, tournamentWinner)
+            );
+        }
+
+        // Emit TournamentCompleted event with actual prize amount
+        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
+            tournament.completionReason, enrolledPlayersCopy);
+
+        // Archive elite tournament finals match (Tier 3 or Tier 7) - BEFORE reset
+        if (tierId == 3 || tierId == 7) {
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, tournament.currentRound, 0);
+            eliteMatches.push(matches[finalsMatchId]);
+        }
+
+        // Reset tournament
+        MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+
+        // Call completion hook
+        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
+    }
+
+    function _completeMatchInternal(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw, CompletionReason reason) private {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
+
+        // Clear escalation state - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+
+        address[] memory epc = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            epc[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
+        MODULE_MATCHES.delegatecall(
+            abi.encodeWithSignature("completeMatch(uint8,uint8,uint8,uint8,address,bool)", tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
+        );
+
+        // Emit MatchCompleted event from game contract
+        emit MatchCompleted(matchId, winner, isDraw, reason);
+
+        if (!isDraw) {
+            Match storage matchData = matches[matchId];
+            address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
+            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
+        }
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, epc);
+    }
+
+    // ============ IETourGame Interface ============
+
+    function _createMatchGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
+        require(player1 != player2 && player1 != address(0) && player2 != address(0), "IP");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        matchData.player1 = player2;
+        matchData.player2 = player1;
+
+        if (block.prevrandao % 2 == 0) {
+            matchData.player1 = player1;
+            matchData.player2 = player2;
+        }
+
+        matchData.currentTurn = matchData.player1;
+        matchData.firstPlayer = matchData.player1;
         matchData.status = MatchStatus.InProgress;
         matchData.startTime = block.timestamp;
-        matchData.currentTurn = matchData.player1;  // White moves first
-        matchData.firstPlayer = matchData.player1;
+        matchData.lastMoveTime = block.timestamp;
+        matchData.isDraw = false;
+        matchData.packedBoard = INITIAL_BOARD;
+        matchData.packedState = INITIAL_STATE;
+        matchData.moves = "";
 
-        // Reset chess state
-        matchData.whiteKingMoved = false;
-        matchData.blackKingMoved = false;
-        matchData.whiteRookAMoved = false;
-        matchData.whiteRookHMoved = false;
-        matchData.blackRookAMoved = false;
-        matchData.blackRookHMoved = false;
-        matchData.enPassantSquare = NO_SQUARE;
-        matchData.halfMoveClock = 0;
-        matchData.fullMoveNumber = 1;
-
-        // Initialize time banks for both players BEFORE board setup
-        uint256 timePerPlayer = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
-        matchData.player1TimeRemaining = timePerPlayer;
-        matchData.player2TimeRemaining = timePerPlayer;
-        matchData.lastMoveTimestamp = block.timestamp;
-
-        _setupInitialPosition(matchId);
+        matchData.player1TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        matchData.player2TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
     }
 
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) internal override {
-        ChessMatch storage matchData = chessMatches[matchId];
+    function _isMatchActive(bytes32 matchId) public view override returns (bool) {
+        Match storage matchData = matches[matchId];
+        return matchData.player1 != address(0) && matchData.status != MatchStatus.Completed;
+    }
+
+    function _completeMatchWithResult(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
     }
 
-    function _isMatchActive(bytes32 matchId) internal view override returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        // Active if player1 assigned and not completed
-        return matchData.player1 != address(0) &&
-               matchData.status != MatchStatus.Completed;
+    function _getTimeIncrement() public pure override returns (uint256) { return 15; }
+
+    function _resetMatchGame(bytes32 matchId) public override {
+        Match storage m = matches[matchId];
+        m.player1 = address(0); m.player2 = address(0); m.winner = address(0);
+        m.currentTurn = address(0); m.firstPlayer = address(0);
+        m.status = MatchStatus.NotStarted; m.isDraw = false;
+        m.packedBoard = 0; m.packedState = 0;
+        m.startTime = 0; m.lastMoveTime = 0;
+        m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
     }
 
-    function _getActiveMatchData(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) internal view override returns (ETour.CommonMatchData memory) {
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        // Derive loser
-        address loser = address(0);
-        if (!matchData.isDraw && matchData.winner != address(0)) {
-            loser = (matchData.winner == matchData.player1)
-                ? matchData.player2
-                : matchData.player1;
-        }
-
-        return ETour.CommonMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            winner: matchData.winner,
-            loser: loser,
-            status: matchData.status,
-            isDraw: matchData.isDraw,
-            startTime: matchData.startTime,
-            lastMoveTime: matchData.lastMoveTimestamp,
-            endTime: 0,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isCached: false
-        });
+    function _getMatchResult(bytes32 matchId) public view override returns (address, bool, MatchStatus) {
+        Match storage m = matches[matchId];
+        return (m.winner, m.isDraw, m.status);
     }
 
-    function _getMatchFromCache(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) internal view override returns (ETour.CommonMatchData memory data, bool exists) {
-        // Get player addresses from matchId
-        (address player1, address player2) = _getMatchPlayers(matchId);
-
-        // Check if players exist
-        if (player1 == address(0) && player2 == address(0)) {
-            return (data, false);
-        }
-
-        // CRITICAL: ChessOnChain cache uses different key with timestamp
-        // Must perform linear search through cache entries
-        for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
-            CachedChessMatch storage cached = matchCache[i];
-
-            if (!cached.exists) continue;
-
-            // Match by players and tournament context
-            if (cached.player1 == player1 &&
-                cached.player2 == player2 &&
-                cached.tierId == tierId &&
-                cached.instanceId == instanceId &&
-                cached.roundNumber == roundNumber &&
-                cached.matchNumber == matchNumber) {
-
-                // Found it! Populate CommonMatchData
-                address loser = address(0);
-                if (!cached.isDraw && cached.winner != address(0)) {
-                    loser = (cached.winner == cached.player1)
-                        ? cached.player2
-                        : cached.player1;
-                }
-
-                data = ETour.CommonMatchData({
-                    player1: cached.player1,
-                    player2: cached.player2,
-                    winner: cached.winner,
-                    loser: loser,
-                    status: MatchStatus.Completed,
-                    isDraw: cached.isDraw,
-                    startTime: cached.startTime,
-                    lastMoveTime: cached.endTime,
-                    endTime: cached.endTime,
-                    tierId: cached.tierId,
-                    instanceId: cached.instanceId,
-                    roundNumber: cached.roundNumber,
-                    matchNumber: cached.matchNumber,
-                    isCached: true
-                });
-
-                return (data, true);
-            }
-        }
-
-        // Not found in cache
-        return (data, false);
+    function _getMatchPlayers(bytes32 matchId) public view override returns (address, address) {
+        Match storage m = matches[matchId];
+        return (m.player1, m.player2);
     }
 
-    // ============ Timeout Functions ============
-
-    function claimTimeoutWin(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        require(msg.sender != matchData.currentTurn, "Cannot claim timeout on your own turn");
-
-        // Calculate time elapsed since last move
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
-
-        // Determine opponent's remaining time
-        uint256 opponentTimeRemaining;
-        address loser = matchData.currentTurn;
-
-        if (matchData.currentTurn == matchData.player1) {
-            opponentTimeRemaining = matchData.player1TimeRemaining;
-        } else {
-            opponentTimeRemaining = matchData.player2TimeRemaining;
-        }
-
-        // Check if opponent has run out of time
-        require(timeElapsed >= opponentTimeRemaining, "Opponent has not run out of time");
-
-        // Mark match as stalled to enable escalation if this claim isn't executed
-        // This starts escalation timers for advanced players and external replacements
-        _markMatchStalled(matchId, tierId);
-
-        emit TimeoutVictoryClaimed(tierId, instanceId, roundNumber, matchNumber, msg.sender, loser);
-
-        _completeMatch(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
+    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
+        Match storage m = matches[matchId];
+        if (slot == 0) m.player1 = player; else m.player2 = player;
     }
 
-    // ============ Chess Gameplay Functions ============
+    function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
+        Match storage m = matches[matchId];
+        m.status = MatchStatus.InProgress;
+        m.startTime = block.timestamp;
+        m.lastMoveTime = block.timestamp;
+        m.packedBoard = INITIAL_BOARD;
+        m.packedState = INITIAL_STATE;
+        m.isDraw = false;
+        m.winner = address(0);
 
-    /**
-     * @dev Make a chess move
-     * @param tierId Tournament tier
-     * @param instanceId Tournament instance
-     * @param roundNumber Round number
-     * @param matchNumber Match number
-     * @param from Source square (0-63)
-     * @param to Destination square (0-63)
-     * @param promotion Piece type for pawn promotion (PieceType.None if not promoting)
-     */
-    function makeMove(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        uint8 from,
-        uint8 to,
-        PieceType promotion
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
+        if (block.prevrandao % 2 == 1) {
+            (m.player1, m.player2) = (m.player2, m.player1);
+        }
+        m.currentTurn = m.player1;
+        m.firstPlayer = m.player1;
 
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player in this match");
-        require(msg.sender == matchData.currentTurn, "Not your turn");
-        require(from < 64 && to < 64, "Invalid square");
-        require(from != to, "Must move to different square");
-
-        PieceColor playerColor = (msg.sender == matchData.player1) ? PieceColor.White : PieceColor.Black;
-        
-        require(matchData.board[from].color == playerColor, "Not your piece");
-        require(_isValidMove(matchId, from, to, promotion), "Invalid move");
-
-        // Execute the move
-        _executeMove(matchId, from, to, promotion, tierId, instanceId, roundNumber, matchNumber);
+        m.player1TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
+        m.player2TimeRemaining = _tierConfigs[tierId].timeouts.matchTimePerPlayer;
     }
 
-    function _executeMove(
-        bytes32 matchId,
-        uint8 from,
-        uint8 to,
-        PieceType promotion,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) internal {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        Piece memory movingPiece = matchData.board[from];
-        Piece memory capturedPiece = matchData.board[to];
-        PieceColor playerColor = movingPiece.color;
-        
-        bool isCapture = capturedPiece.pieceType != PieceType.None;
-        bool isPawnMove = movingPiece.pieceType == PieceType.Pawn;
-        
-        // Handle special moves
-        
-        // Castling
-        if (movingPiece.pieceType == PieceType.King) {
-            int8 fileDiff = int8(to % 8) - int8(from % 8);
-            if (fileDiff == 2 || fileDiff == -2) {
-                _executeCastling(matchId, from, to, playerColor);
-            }
-            
-            if (playerColor == PieceColor.White) {
-                matchData.whiteKingMoved = true;
-            } else {
-                matchData.blackKingMoved = true;
-            }
-        }
-        
-        // Track rook movement for castling rights
-        if (movingPiece.pieceType == PieceType.Rook) {
-            if (from == 0) matchData.whiteRookAMoved = true;
-            if (from == 7) matchData.whiteRookHMoved = true;
-            if (from == 56) matchData.blackRookAMoved = true;
-            if (from == 63) matchData.blackRookHMoved = true;
-        }
-        
-        // En passant capture
-        if (isPawnMove && to == matchData.enPassantSquare) {
-            uint8 capturedPawnSquare = (playerColor == PieceColor.White) ? to - 8 : to + 8;
-            matchData.board[capturedPawnSquare] = Piece(PieceType.None, PieceColor.None);
-            isCapture = true;
-            emit EnPassantCapture(matchId, msg.sender, capturedPawnSquare);
-        }
-        
-        // Set en passant square for next move
-        matchData.enPassantSquare = NO_SQUARE;
-        if (isPawnMove) {
-            int8 rankDiff = int8(to / 8) - int8(from / 8);
-            if (rankDiff == 2 || rankDiff == -2) {
-                matchData.enPassantSquare = (from + to) / 2;
-            }
-        }
-        
-        // Execute the move
-        matchData.board[to] = movingPiece;
-        matchData.board[from] = Piece(PieceType.None, PieceColor.None);
-        
-        // Pawn promotion
-        if (isPawnMove) {
-            uint8 toRank = to / 8;
-            if ((playerColor == PieceColor.White && toRank == 7) || 
-                (playerColor == PieceColor.Black && toRank == 0)) {
-                require(promotion != PieceType.None && promotion != PieceType.Pawn && promotion != PieceType.King, "Invalid promotion piece");
-                matchData.board[to] = Piece(promotion, playerColor);
-                emit PawnPromoted(matchId, msg.sender, to, promotion);
-            }
-        }
-        
-        // Update game state
-        if (isCapture || isPawnMove) {
-            matchData.halfMoveClock = 0;
-        } else {
-            matchData.halfMoveClock++;
-        }
-        
-        if (playerColor == PieceColor.Black) {
-            matchData.fullMoveNumber++;
-        }
-
-        // Update time bank for current player (Fischer increment)
-        // Note: Players can make moves even if out of time - opponent must claim timeout victory
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
-        uint256 timeIncrement = _getTimeIncrement();
-
-        if (msg.sender == matchData.player1) {
-            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
-            if (matchData.player1TimeRemaining >= timeElapsed) {
-                matchData.player1TimeRemaining -= timeElapsed;
-            } else {
-                matchData.player1TimeRemaining = 0;
-            }
-            matchData.player1TimeRemaining += timeIncrement;
-        } else {
-            // Deduct elapsed time (or set to 0 if insufficient), then add Fischer increment
-            if (matchData.player2TimeRemaining >= timeElapsed) {
-                matchData.player2TimeRemaining -= timeElapsed;
-            } else {
-                matchData.player2TimeRemaining = 0;
-            }
-            matchData.player2TimeRemaining += timeIncrement;
-        }
-
-        matchData.lastMoveTimestamp = block.timestamp;
-
-        // Store move in history
-        _appendMoveToHistory(matchId, from, to, uint8(promotion));
-
-        emit ChessMoveMade(matchId, msg.sender, from, to, promotion);
-
-        // Switch turns
-        matchData.currentTurn = (matchData.currentTurn == matchData.player1) ? matchData.player2 : matchData.player1;
-
-        // Clear moving player's check status (they made a legal move, so not in check)
-        if (playerColor == PieceColor.White) {
-            matchData.whiteInCheck = false;
-        } else {
-            matchData.blackInCheck = false;
-        }
-
-        // Check for game end conditions
-        PieceColor opponentColor = (playerColor == PieceColor.White) ? PieceColor.Black : PieceColor.White;
-        
-        bool opponentInCheck = _isKingInCheck(matchId, opponentColor);
-        bool opponentHasLegalMoves = _hasLegalMoves(matchId, opponentColor);
-        
-        if (opponentColor == PieceColor.White) {
-            matchData.whiteInCheck = opponentInCheck;
-        } else {
-            matchData.blackInCheck = opponentInCheck;
-        }
-        
-        if (opponentInCheck) {
-            emit CheckDeclared(matchId, opponentColor);
-            
-            if (!opponentHasLegalMoves) {
-                // Checkmate!
-                address loser = (opponentColor == PieceColor.White) ? matchData.player1 : matchData.player2;
-                emit CheckmateDeclared(matchId, msg.sender, loser);
-                _completeMatch(tierId, instanceId, roundNumber, matchNumber, msg.sender, false);
-                return;
-            }
-        } else if (!opponentHasLegalMoves) {
-            // Stalemate - draw
-            emit StalemateDeclared(matchId);
-            _completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
-            return;
-        }
-        
-        // Check for 50-move rule
-        if (matchData.halfMoveClock >= 100) {  // 50 moves = 100 half-moves
-            emit DrawByFiftyMoveRule(matchId);
-            _completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
-            return;
-        }
-        
-        // Check for insufficient material
-        if (_isInsufficientMaterial(matchId)) {
-            emit DrawByInsufficientMaterial(matchId);
-            _completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
-            return;
-        }
+    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
+        Match storage m = matches[matchId];
+        m.status = MatchStatus.Completed;
+        m.winner = winner;
+        m.isDraw = isDraw;
     }
 
-    function _executeCastling(bytes32 matchId, uint8 kingFrom, uint8 kingTo, PieceColor color) internal {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        bool kingSide = (kingTo % 8) > (kingFrom % 8);
-        uint8 rookFrom;
-        uint8 rookTo;
-        
-        if (color == PieceColor.White) {
-            if (kingSide) {
-                rookFrom = 7;   // h1
-                rookTo = 5;     // f1
-            } else {
-                rookFrom = 0;   // a1
-                rookTo = 3;     // d1
-            }
-        } else {
-            if (kingSide) {
-                rookFrom = 63;  // h8
-                rookTo = 61;    // f8
-            } else {
-                rookFrom = 56;  // a8
-                rookTo = 59;    // d8
-            }
-        }
-        
-        // Move the rook
-        matchData.board[rookTo] = matchData.board[rookFrom];
-        matchData.board[rookFrom] = Piece(PieceType.None, PieceColor.None);
-        
-        emit CastlingPerformed(matchId, msg.sender, kingSide);
+    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
+        Match storage m = matches[matchId];
+        if (m.status != MatchStatus.InProgress) return false;
+        uint256 elapsed = block.timestamp - m.lastMoveTime;
+        uint256 time = (m.currentTurn == m.player1) ? m.player1TimeRemaining : m.player2TimeRemaining;
+        return elapsed >= time;
     }
 
-    function _appendMoveToHistory(bytes32 matchId, uint8 from, uint8 to, uint8 promotion) internal {
-        bytes storage history = moveHistory[matchId];
-        history.push(bytes1(from));
-        history.push(bytes1(to));
-        history.push(bytes1(promotion));
-    }
-
-    // ============ Move Validation ============
-
-    function _isValidMove(bytes32 matchId, uint8 from, uint8 to, PieceType promotion) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        Piece memory piece = matchData.board[from];
-        
-        // Check basic piece movement rules
-        if (!_isPieceMovementValid(matchId, from, to, piece)) {
-            return false;
-        }
-        
-        // Check if move leaves own king in check
-        if (_wouldLeaveKingInCheck(matchId, from, to, piece.color)) {
-            return false;
-        }
-        
-        // Validate promotion
-        if (piece.pieceType == PieceType.Pawn) {
-            uint8 toRank = to / 8;
-            bool isPromotion = (piece.color == PieceColor.White && toRank == 7) || 
-                               (piece.color == PieceColor.Black && toRank == 0);
-            if (isPromotion && (promotion == PieceType.None || promotion == PieceType.Pawn || promotion == PieceType.King)) {
-                return false;
-            }
-            if (!isPromotion && promotion != PieceType.None) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
-    function _isPieceMovementValid(bytes32 matchId, uint8 from, uint8 to, Piece memory piece) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        // Cannot capture own piece
-        if (matchData.board[to].color == piece.color) {
-            return false;
-        }
-        
-        int8 fromFile = int8(from % 8);
-        int8 fromRank = int8(from / 8);
-        int8 toFile = int8(to % 8);
-        int8 toRank = int8(to / 8);
-        int8 fileDiff = toFile - fromFile;
-        int8 rankDiff = toRank - fromRank;
-        
-        if (piece.pieceType == PieceType.Pawn) {
-            return _isValidPawnMove(matchId, from, to, piece.color, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Knight) {
-            return _isValidKnightMove(fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Bishop) {
-            return _isValidBishopMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Rook) {
-            return _isValidRookMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Queen) {
-            return _isValidQueenMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.King) {
-            return _isValidKingMove(matchId, from, to, piece.color, fileDiff, rankDiff);
-        }
-        
-        return false;
-    }
-
-    function _isValidPawnMove(bytes32 matchId, uint8 from, uint8 to, PieceColor color, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        int8 direction = (color == PieceColor.White) ? int8(1) : int8(-1);
-        uint8 startRank = (color == PieceColor.White) ? 1 : 6;
-        
-        // Forward move
-        if (fileDiff == 0) {
-            if (rankDiff == direction) {
-                return matchData.board[to].pieceType == PieceType.None;
-            }
-            if (rankDiff == 2 * direction && from / 8 == startRank) {
-                uint8 intermediateSquare = uint8(int8(from) + 8 * direction);
-                return matchData.board[to].pieceType == PieceType.None && 
-                       matchData.board[intermediateSquare].pieceType == PieceType.None;
-            }
-        }
-        
-        // Diagonal capture
-        if ((fileDiff == 1 || fileDiff == -1) && rankDiff == direction) {
-            // Normal capture
-            if (matchData.board[to].pieceType != PieceType.None && matchData.board[to].color != color) {
-                return true;
-            }
-            // En passant
-            if (to == matchData.enPassantSquare) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    function _isValidKnightMove(int8 fileDiff, int8 rankDiff) internal pure returns (bool) {
-        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-        return (absFile == 2 && absRank == 1) || (absFile == 1 && absRank == 2);
-    }
-
-    function _isValidBishopMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-        
-        if (absFile != absRank) return false;
-        
-        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
-    }
-
-    function _isValidRookMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        if (fileDiff != 0 && rankDiff != 0) return false;
-        
-        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
-    }
-
-    function _isValidQueenMove(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-        
-        // Queen moves like rook or bishop
-        bool isDiagonal = (absFile == absRank);
-        bool isStraight = (fileDiff == 0 || rankDiff == 0);
-        
-        if (!isDiagonal && !isStraight) return false;
-        
-        return _isPathClear(matchId, from, to, fileDiff, rankDiff);
-    }
-
-    function _isValidKingMove(bytes32 matchId, uint8 from, uint8 to, PieceColor color, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-        
-        // Normal king move
-        if (absFile <= 1 && absRank <= 1) {
-            return true;
-        }
-        
-        // Castling
-        if (absRank == 0 && absFile == 2) {
-            return _canCastle(matchId, color, fileDiff > 0);
-        }
-        
-        return false;
-    }
-
-    function _canCastle(bytes32 matchId, PieceColor color, bool kingSide) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        // Check if king or relevant rook has moved
-        if (color == PieceColor.White) {
-            if (matchData.whiteKingMoved) return false;
-            if (kingSide && matchData.whiteRookHMoved) return false;
-            if (!kingSide && matchData.whiteRookAMoved) return false;
-            if (matchData.whiteInCheck) return false;
-        } else {
-            if (matchData.blackKingMoved) return false;
-            if (kingSide && matchData.blackRookHMoved) return false;
-            if (!kingSide && matchData.blackRookAMoved) return false;
-            if (matchData.blackInCheck) return false;
-        }
-        
-        // Check if path is clear and not under attack
-        uint8 kingSquare = (color == PieceColor.White) ? 4 : 60;
-        
-        if (kingSide) {
-            // Check squares between king and rook are empty
-            if (matchData.board[kingSquare + 1].pieceType != PieceType.None) return false;
-            if (matchData.board[kingSquare + 2].pieceType != PieceType.None) return false;
-            
-            // Check king doesn't pass through check
-            if (_isSquareAttacked(matchId, kingSquare + 1, color)) return false;
-            if (_isSquareAttacked(matchId, kingSquare + 2, color)) return false;
-        } else {
-            // Check squares between king and rook are empty
-            if (matchData.board[kingSquare - 1].pieceType != PieceType.None) return false;
-            if (matchData.board[kingSquare - 2].pieceType != PieceType.None) return false;
-            if (matchData.board[kingSquare - 3].pieceType != PieceType.None) return false;
-            
-            // Check king doesn't pass through check
-            if (_isSquareAttacked(matchId, kingSquare - 1, color)) return false;
-            if (_isSquareAttacked(matchId, kingSquare - 2, color)) return false;
-        }
-        
-        return true;
-    }
-
-    function _isPathClear(bytes32 matchId, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        int8 fileStep = fileDiff == 0 ? int8(0) : (fileDiff > 0 ? int8(1) : int8(-1));
-        int8 rankStep = rankDiff == 0 ? int8(0) : (rankDiff > 0 ? int8(1) : int8(-1));
-        
-        int8 currentFile = int8(from % 8) + fileStep;
-        int8 currentRank = int8(from / 8) + rankStep;
-        int8 targetFile = int8(to % 8);
-        int8 targetRank = int8(to / 8);
-        
-        while (currentFile != targetFile || currentRank != targetRank) {
-            uint8 currentSquare = uint8(currentRank * 8 + currentFile);
-            if (matchData.board[currentSquare].pieceType != PieceType.None) {
-                return false;
-            }
-            currentFile += fileStep;
-            currentRank += rankStep;
-        }
-        
-        return true;
-    }
-
-    // ============ Check Detection ============
-
-    function _isKingInCheck(bytes32 matchId, PieceColor kingColor) internal view returns (bool) {
-        uint8 kingSquare = _findKing(matchId, kingColor);
-        return _isSquareAttacked(matchId, kingSquare, kingColor);
-    }
-
-    function _findKing(bytes32 matchId, PieceColor color) internal view returns (uint8) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        for (uint8 i = 0; i < 64; i++) {
-            if (matchData.board[i].pieceType == PieceType.King && matchData.board[i].color == color) {
-                return i;
-            }
-        }
-        
-        revert("King not found");
-    }
-
-    function _isSquareAttacked(bytes32 matchId, uint8 square, PieceColor defendingColor) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        PieceColor attackingColor = (defendingColor == PieceColor.White) ? PieceColor.Black : PieceColor.White;
-        
-        // Check for attacks from each enemy piece
-        for (uint8 i = 0; i < 64; i++) {
-            Piece memory piece = matchData.board[i];
-            if (piece.color == attackingColor) {
-                if (_canPieceAttackSquare(matchId, i, square, piece)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    function _canPieceAttackSquare(bytes32 matchId, uint8 from, uint8 to, Piece memory piece) internal view returns (bool) {
-        int8 fromFile = int8(from % 8);
-        int8 fromRank = int8(from / 8);
-        int8 toFile = int8(to % 8);
-        int8 toRank = int8(to / 8);
-        int8 fileDiff = toFile - fromFile;
-        int8 rankDiff = toRank - fromRank;
-        
-        if (piece.pieceType == PieceType.Pawn) {
-            int8 direction = (piece.color == PieceColor.White) ? int8(1) : int8(-1);
-            return (fileDiff == 1 || fileDiff == -1) && rankDiff == direction;
-        } else if (piece.pieceType == PieceType.Knight) {
-            return _isValidKnightMove(fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Bishop) {
-            return _isValidBishopMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Rook) {
-            return _isValidRookMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Queen) {
-            return _isValidQueenMove(matchId, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.King) {
-            int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-            int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-            return absFile <= 1 && absRank <= 1;
-        }
-        
-        return false;
-    }
-
-    function _wouldLeaveKingInCheck(bytes32 matchId, uint8 from, uint8 to, PieceColor color) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        // Create a temporary copy of board state in memory
-        Piece[64] memory tempBoard;
-        for (uint8 i = 0; i < 64; i++) {
-            tempBoard[i] = matchData.board[i];
-        }
-        
-        // Make the move on temp board
-        tempBoard[to] = tempBoard[from];
-        tempBoard[from] = Piece(PieceType.None, PieceColor.None);
-        
-        // Handle en passant capture
-        if (tempBoard[to].pieceType == PieceType.Pawn && to == matchData.enPassantSquare) {
-            uint8 capturedPawnSquare = (color == PieceColor.White) ? to - 8 : to + 8;
-            tempBoard[capturedPawnSquare] = Piece(PieceType.None, PieceColor.None);
-        }
-        
-        // Find king position
-        uint8 kingSquare = NO_SQUARE;
-        for (uint8 i = 0; i < 64; i++) {
-            if (tempBoard[i].pieceType == PieceType.King && tempBoard[i].color == color) {
-                kingSquare = i;
-                break;
-            }
-        }
-        
-        // Check if king is attacked
-        return _isSquareAttackedOnBoard(tempBoard, kingSquare, color);
-    }
-
-    function _isSquareAttackedOnBoard(Piece[64] memory board, uint8 square, PieceColor defendingColor) internal pure returns (bool) {
-        PieceColor attackingColor = (defendingColor == PieceColor.White) ? PieceColor.Black : PieceColor.White;
-        
-        for (uint8 i = 0; i < 64; i++) {
-            Piece memory piece = board[i];
-            if (piece.color == attackingColor) {
-                if (_canPieceAttackSquareOnBoard(board, i, square, piece)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    function _canPieceAttackSquareOnBoard(Piece[64] memory board, uint8 from, uint8 to, Piece memory piece) internal pure returns (bool) {
-        int8 fromFile = int8(from % 8);
-        int8 fromRank = int8(from / 8);
-        int8 toFile = int8(to % 8);
-        int8 toRank = int8(to / 8);
-        int8 fileDiff = toFile - fromFile;
-        int8 rankDiff = toRank - fromRank;
-        int8 absFile = fileDiff < 0 ? -fileDiff : fileDiff;
-        int8 absRank = rankDiff < 0 ? -rankDiff : rankDiff;
-        
-        if (piece.pieceType == PieceType.Pawn) {
-            int8 direction = (piece.color == PieceColor.White) ? int8(1) : int8(-1);
-            return (fileDiff == 1 || fileDiff == -1) && rankDiff == direction;
-        } else if (piece.pieceType == PieceType.Knight) {
-            return (absFile == 2 && absRank == 1) || (absFile == 1 && absRank == 2);
-        } else if (piece.pieceType == PieceType.Bishop) {
-            if (absFile != absRank) return false;
-            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Rook) {
-            if (fileDiff != 0 && rankDiff != 0) return false;
-            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.Queen) {
-            bool isDiagonal = (absFile == absRank);
-            bool isStraight = (fileDiff == 0 || rankDiff == 0);
-            if (!isDiagonal && !isStraight) return false;
-            return _isPathClearOnBoard(board, from, to, fileDiff, rankDiff);
-        } else if (piece.pieceType == PieceType.King) {
-            return absFile <= 1 && absRank <= 1;
-        }
-        
-        return false;
-    }
-
-    function _isPathClearOnBoard(Piece[64] memory board, uint8 from, uint8 to, int8 fileDiff, int8 rankDiff) internal pure returns (bool) {
-        int8 fileStep = fileDiff == 0 ? int8(0) : (fileDiff > 0 ? int8(1) : int8(-1));
-        int8 rankStep = rankDiff == 0 ? int8(0) : (rankDiff > 0 ? int8(1) : int8(-1));
-        
-        int8 currentFile = int8(from % 8) + fileStep;
-        int8 currentRank = int8(from / 8) + rankStep;
-        int8 targetFile = int8(to % 8);
-        int8 targetRank = int8(to / 8);
-        
-        while (currentFile != targetFile || currentRank != targetRank) {
-            uint8 currentSquare = uint8(currentRank * 8 + currentFile);
-            if (board[currentSquare].pieceType != PieceType.None) {
-                return false;
-            }
-            currentFile += fileStep;
-            currentRank += rankStep;
-        }
-        
-        return true;
-    }
-
-    // ============ Legal Move Generation ============
-
-    function _hasLegalMoves(bytes32 matchId, PieceColor color) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        for (uint8 from = 0; from < 64; from++) {
-            Piece memory piece = matchData.board[from];
-            if (piece.color == color) {
-                for (uint8 to = 0; to < 64; to++) {
-                    if (from != to && _isPieceMovementValid(matchId, from, to, piece)) {
-                        if (!_wouldLeaveKingInCheck(matchId, from, to, color)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    // ============ Draw Detection ============
-
-    function _isInsufficientMaterial(bytes32 matchId) internal view returns (bool) {
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        uint8 whitePieceCount = 0;
-        uint8 blackPieceCount = 0;
-        bool whiteBishop = false;
-        bool blackBishop = false;
-        bool whiteKnight = false;
-        bool blackKnight = false;
-        
-        for (uint8 i = 0; i < 64; i++) {
-            Piece memory piece = matchData.board[i];
-            if (piece.pieceType == PieceType.None) continue;
-            
-            // Any pawn, rook, or queen means sufficient material
-            if (piece.pieceType == PieceType.Pawn || 
-                piece.pieceType == PieceType.Rook || 
-                piece.pieceType == PieceType.Queen) {
-                return false;
-            }
-            
-            if (piece.color == PieceColor.White) {
-                if (piece.pieceType != PieceType.King) whitePieceCount++;
-                if (piece.pieceType == PieceType.Bishop) whiteBishop = true;
-                if (piece.pieceType == PieceType.Knight) whiteKnight = true;
-            } else {
-                if (piece.pieceType != PieceType.King) blackPieceCount++;
-                if (piece.pieceType == PieceType.Bishop) blackBishop = true;
-                if (piece.pieceType == PieceType.Knight) blackKnight = true;
-            }
-        }
-        
-        // King vs King
-        if (whitePieceCount == 0 && blackPieceCount == 0) return true;
-        
-        // King + minor piece vs King
-        if (whitePieceCount == 0 && blackPieceCount == 1 && (blackBishop || blackKnight)) return true;
-        if (blackPieceCount == 0 && whitePieceCount == 1 && (whiteBishop || whiteKnight)) return true;
-        
-        // King + Bishop vs King + Bishop (same color)
-        // Simplified: just King+Bishop vs King+Bishop
-        if (whitePieceCount == 1 && blackPieceCount == 1 && whiteBishop && blackBishop) {
-            return true;  // Simplified - in reality depends on bishop colors
-        }
-        
-        return false;
-    }
-
-    // ============ Player Actions ============
-
-    function resign(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        
-        address winner = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
-        
-        emit Resignation(matchId, msg.sender, winner);
-        _completeMatch(tierId, instanceId, roundNumber, matchNumber, winner, false);
-    }
-
-    function acceptDraw(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external nonReentrant {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        require(matchData.status == MatchStatus.InProgress, "Match not active");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "Not a player");
-        require(msg.sender != matchData.currentTurn, "Current turn player must wait for opponent");
-        
-        _completeMatch(tierId, instanceId, roundNumber, matchNumber, address(0), true);
+    function _getActiveMatchData(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (CommonMatchData memory) {
+        Match storage m = matches[matchId];
+        address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
+        return CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false);
     }
 
     // ============ View Functions ============
 
-    /**
-     * @dev Get complete Chess match data with automatic cache fallback
-     * NEW: Unifies fragmented getChessMatch/getBoard/getCastlingRights/getMoveHistory
-     */
-    function getMatch(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view returns (ChessMatchData memory) {
-        // Call base to get common data with cache fallback
-        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
-
-        ChessMatchData memory fullData;
-        fullData.common = common;
-
+    function getMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view returns (ChessMatchData memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
 
-        if (common.isCached) {
-            // Populate from cache - LIMITED DATA!
-            // Chess cache has minimal data (no board, no history)
-            // Initialize empty board (default values)
-            for (uint8 i = 0; i < 64; i++) {
-                fullData.board[i] = Piece({pieceType: PieceType.None, color: PieceColor.None});
-            }
-            fullData.currentTurn = address(0);
-            fullData.firstPlayer = common.player1;  // Assume player1 was first
-            fullData.whiteInCheck = false;
-            fullData.blackInCheck = false;
-            fullData.enPassantSquare = 0;
-            fullData.halfMoveClock = 0;
-
-            // Get totalMoves from cache (linear search again - already done in _getMatchFromCache)
-            for (uint16 i = 0; i < MATCH_CACHE_SIZE; i++) {
-                if (matchCache[i].exists &&
-                    matchCache[i].player1 == common.player1 &&
-                    matchCache[i].player2 == common.player2 &&
-                    matchCache[i].tierId == tierId &&
-                    matchCache[i].instanceId == instanceId &&
-                    matchCache[i].roundNumber == roundNumber &&
-                    matchCache[i].matchNumber == matchNumber) {
-                    fullData.fullMoveNumber = matchCache[i].totalMoves;
-                    break;
-                }
-            }
-
-            fullData.whiteKingSideCastle = false;
-            fullData.whiteQueenSideCastle = false;
-            fullData.blackKingSideCastle = false;
-            fullData.blackQueenSideCastle = false;
-            fullData.moveHistory = "";  // Not stored in cache
-            fullData.player1TimeRemaining = 0;  // N/A for completed matches
-            fullData.player2TimeRemaining = 0;
-            fullData.lastMoveTimestamp = 0;
-        } else {
-            // Populate from active storage - COMPLETE DATA
-            ChessMatch storage matchData = chessMatches[matchId];
-            fullData.board = matchData.board;
-            fullData.currentTurn = matchData.currentTurn;
-            fullData.firstPlayer = matchData.firstPlayer;
-            fullData.whiteInCheck = matchData.whiteInCheck;
-            fullData.blackInCheck = matchData.blackInCheck;
-            fullData.enPassantSquare = matchData.enPassantSquare;
-            fullData.halfMoveClock = matchData.halfMoveClock;
-            fullData.fullMoveNumber = matchData.fullMoveNumber;
-            fullData.whiteKingSideCastle = !matchData.whiteKingMoved && !matchData.whiteRookHMoved;
-            fullData.whiteQueenSideCastle = !matchData.whiteKingMoved && !matchData.whiteRookAMoved;
-            fullData.blackKingSideCastle = !matchData.blackKingMoved && !matchData.blackRookHMoved;
-            fullData.blackQueenSideCastle = !matchData.blackKingMoved && !matchData.blackRookAMoved;
-            fullData.moveHistory = moveHistory[matchId];
-            fullData.player1TimeRemaining = matchData.player1TimeRemaining;
-            fullData.player2TimeRemaining = matchData.player2TimeRemaining;
-            fullData.lastMoveTimestamp = matchData.lastMoveTimestamp;
+        if (m.player1 != address(0)) {
+            address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
+            return ChessMatchData(
+                CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false),
+                m.packedBoard, m.packedState, m.currentTurn, m.firstPlayer, m.player1TimeRemaining, m.player2TimeRemaining
+            );
         }
 
-        return fullData;
+        // Match not found - return empty data
+        ChessMatchData memory emptyData;
+        return emptyData;
     }
 
-    /**
-     * @dev Get real-time remaining time for both players
-     * Calculates current player's time by subtracting elapsed time since last move
-     * Returns stored time for waiting player
-     */
-    function getCurrentTimeRemaining(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view returns (uint256 player1Time, uint256 player2Time) {
+    function getBoard(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external view returns (uint8[64] memory board) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-
-        // For completed or not started matches, return stored values
-        ETour.CommonMatchData memory common = _getMatchCommon(tierId, instanceId, roundNumber, matchNumber);
-        if (common.status != ETour.MatchStatus.InProgress) {
-            return (matchData.player1TimeRemaining, matchData.player2TimeRemaining);
-        }
-
-        // Calculate elapsed time since last move
-        uint256 timeElapsed = block.timestamp - matchData.lastMoveTimestamp;
-
-        // Calculate real-time remaining for current player
-        if (matchData.currentTurn == common.player1) {
-            // Player 1's turn - deduct elapsed time
-            player1Time = matchData.player1TimeRemaining > timeElapsed
-                ? matchData.player1TimeRemaining - timeElapsed
-                : 0;
-            player2Time = matchData.player2TimeRemaining;
-        } else {
-            // Player 2's turn - deduct elapsed time
-            player1Time = matchData.player1TimeRemaining;
-            player2Time = matchData.player2TimeRemaining > timeElapsed
-                ? matchData.player2TimeRemaining - timeElapsed
-                : 0;
-        }
-
-        return (player1Time, player2Time);
+        uint256 packed = matches[matchId].packedBoard;
+        for (uint8 i = 0; i < 64; i++) board[i] = _getPiece(packed, i);
     }
 
-    function getChessMatch(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (
-        address player1,
-        address player2,
-        address currentTurn,
-        address winner,
-        MatchStatus status,
-        bool isDraw,
-        uint256 startTime,
-        uint256 lastMoveTime,
-        uint16 fullMoveNumber,
-        bool whiteInCheck,
-        bool blackInCheck
+    function getPlayerStats() external view returns (int256) { return playerEarnings[msg.sender]; }
+    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) { return playerEnrollingTournaments[player]; }
+    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) { return playerActiveTournaments[player]; }
+
+    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (TournamentStatus, uint8, uint8, uint256, address) {
+        TournamentInstance storage t = tournaments[tierId][instanceId];
+        return (t.status, t.currentRound, t.enrolledCount, t.prizePool, t.winner);
+    }
+
+    function getRoundInfo(uint8 tierId, uint8 instanceId, uint8 roundNumber) external view returns (uint8, uint8, bool) {
+        Round storage r = rounds[tierId][instanceId][roundNumber];
+        return (r.totalMatches, r.completedMatches, r.initialized);
+    }
+
+    function getLeaderboard() external view returns (LeaderboardEntry[] memory entries) {
+        entries = new LeaderboardEntry[](_leaderboardPlayers.length);
+        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
+            entries[i] = LeaderboardEntry(_leaderboardPlayers[i], playerEarnings[_leaderboardPlayers[i]]);
+        }
+    }
+
+    function getRaffleInfo() external view returns (
+        uint32 raffleIndex, bool isReady, uint256 currentAccumulated, uint256 threshold,
+        uint256 reserve, uint256 raffleAmount, uint256 ownerShare, uint256 winnerShare, uint32 eligiblePlayerCount
     ) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-        return (
-            matchData.player1,
-            matchData.player2,
-            matchData.currentTurn,
-            matchData.winner,
-            matchData.status,
-            matchData.isDraw,
-            matchData.startTime,
-            matchData.lastMoveTimestamp,
-            matchData.fullMoveNumber,
-            matchData.whiteInCheck,
-            matchData.blackInCheck
-        );
+        raffleIndex = uint32(currentRaffleIndex);
+        currentAccumulated = accumulatedProtocolShare;
+        threshold = 3 ether;
+        reserve = (threshold * 10) / 100;
+        isReady = currentAccumulated >= threshold;
+        raffleAmount = threshold - reserve;
+        ownerShare = (raffleAmount * 20) / 100;
+        winnerShare = (raffleAmount * 80) / 100;
+        (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSignature("getEligiblePlayerCount()"));
+        eligiblePlayerCount = s ? uint32(abi.decode(d, (uint256))) : 0;
     }
 
-    function getBoard(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (Piece[64] memory) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        return chessMatches[matchId].board;
+    function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {
+        Match storage m = eliteMatches[index];
+        return (m.player1, m.player2, m.winner, m.currentTurn, m.firstPlayer, m.status, m.isDraw, m.packedBoard, m.packedState, m.startTime, m.lastMoveTime, m.player1TimeRemaining, m.player2TimeRemaining, bytes(m.moves));
     }
 
-    function getCastlingRights(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (
-        bool whiteKingSide,
-        bool whiteQueenSide,
-        bool blackKingSide,
-        bool blackQueenSide
-    ) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        ChessMatch storage matchData = chessMatches[matchId];
-        
-        whiteKingSide = !matchData.whiteKingMoved && !matchData.whiteRookHMoved;
-        whiteQueenSide = !matchData.whiteKingMoved && !matchData.whiteRookAMoved;
-        blackKingSide = !matchData.blackKingMoved && !matchData.blackRookHMoved;
-        blackQueenSide = !matchData.blackKingMoved && !matchData.blackRookAMoved;
-    }
+    // ============ Player Tracking Hooks ============
 
-    function getMoveHistory(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (bytes memory) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        return moveHistory[matchId];
-    }
-
-    function getCachedMatchByIndex(uint16 index) external view returns (CachedChessMatch memory) {
-        require(index < MATCH_CACHE_SIZE, "Index out of bounds");
-        require(matchCache[index].exists, "No match at this index");
-        return matchCache[index];
-    }
-
-    function getRecentCachedMatches(uint16 count) external view returns (CachedChessMatch[] memory recentMatches) {
-        if (count > MATCH_CACHE_SIZE) {
-            count = MATCH_CACHE_SIZE;
-        }
-
-        recentMatches = new CachedChessMatch[](count);
-        uint16 currentIndex = nextCacheIndex;
-
-        for (uint16 i = 0; i < count; i++) {
-            if (currentIndex == 0) {
-                currentIndex = MATCH_CACHE_SIZE - 1;
-            } else {
-                currentIndex--;
-            }
-
-            if (matchCache[currentIndex].exists) {
-                recentMatches[i] = matchCache[currentIndex];
-            }
-        }
-
-        return recentMatches;
-    }
-
-    /**
-     * @dev Override RW3 declaration for ChessOnChain specifics
-     */
-    function declareRW3() public view override returns (string memory) {
-        return string(abi.encodePacked(
-            "=== RW3 COMPLIANCE DECLARATION ===\n\n",
-            "PROJECT: ChessOnChain (ETour Implementation)\n",
-            "VERSION: 1.0\n",
-            "NETWORK: Arbitrum One\n",
-            "VERIFIED: Block deployed\n\n",
-            "RULE 1 - REAL UTILITY:\n",
-            "Full chess game with tournament stakes. Primary revenue driver in ETour ecosystem.\n\n",
-            "RULE 2 - FULLY ON-CHAIN:\n",
-            "Complete chess logic including castling, en passant, promotion, check/checkmate - all on-chain.\n\n",
-            "RULE 3 - SELF-SUSTAINING:\n",
-            "Protocol fee structure covers operational costs. Contract functions autonomously.\n\n",
-            "RULE 4 - FAIR DISTRIBUTION:\n",
-            "No pre-mine, no insider allocations. All ETH in prize pools from player entry fees.\n\n",
-            "RULE 5 - NO ALTCOINS:\n",
-            "Uses only ETH for entry fees and prizes.\n\n",
-            "Generated: Block ",
-            Strings.toString(block.number)
-        ));
-    }
-
-    // ============ Player Activity Tracking Implementation ============
-
-    /**
-     * @dev Hook called when player enrolls in tournament
-     */
     function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
-        _addPlayerEnrollingTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook called when tournament starts
-     * Atomically moves ALL enrolled players from enrolling → active
-     */
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _addPlayerActiveTournament(player, tierId, instanceId);
-        }
-    }
-
-    /**
-     * @dev Hook called when player is eliminated from tournament
-     * Only removes from active list if player has no remaining active matches
-     */
-    function _onPlayerEliminatedFromTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 /* roundNumber */
-    ) internal override {
-        // Check if player has any remaining active matches in this tournament
-        bool hasActiveMatch = _playerHasActiveMatchInTournament(player, tierId, instanceId);
-
-        if (!hasActiveMatch) {
-            _removePlayerActiveTournament(player, tierId, instanceId);
-        }
-    }
-
-    /**
-     * @dev Hook called when external player joins via L3 replacement
-     * Adds directly to active list (skips enrolling)
-     */
-    function _onExternalPlayerReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal override {
-        _addPlayerActiveTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook called when tournament completes
-     * Cleans up all player tracking for this tournament
-     */
-    function _onTournamentCompleted(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory players
-    ) internal override {
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _removePlayerActiveTournament(player, tierId, instanceId);
-        }
-    }
-
-    // ============ Helper Functions ============
-
-    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
         if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
-
         playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
         playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
     }
 
-    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
-            playerEnrollingTournaments[player][index] = lastRef;
-            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+        for (uint256 i = 0; i < players.length; i++) {
+            address p = players[i];
+            _removeEnrolling(p, tierId, instanceId);
+            _addActive(p, tierId, instanceId);
         }
-
-        playerEnrollingTournaments[player].pop();
-        delete playerEnrollingIndex[player][tierId][instanceId];
     }
 
-    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
-
-        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
+    function _onPlayerEliminatedFromTournament(address player, uint8 tierId, uint8 instanceId, uint8) internal override {
+        _removeActive(player, tierId, instanceId);
     }
 
-    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
+    function _onExternalPlayerReplacement(uint8 tierId, uint8 instanceId, address player) internal override {
+        _addActive(player, tierId, instanceId);
+    }
 
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerActiveTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
-            playerActiveTournaments[player][index] = lastRef;
-            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) internal override {
+        for (uint256 i = 0; i < players.length; i++) {
+            _removeEnrolling(players[i], tierId, instanceId);
+            _removeActive(players[i], tierId, instanceId);
         }
-
-        playerActiveTournaments[player].pop();
-        delete playerActiveIndex[player][tierId][instanceId];
     }
 
-    function _playerHasActiveMatchInTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId
-    ) private view returns (bool) {
-        bytes32[] storage matches = playerActiveMatches[player];
-
-        TierConfig storage config = _tierConfigs[tierId];
-        for (uint8 r = 0; r < config.totalRounds; r++) {
-            Round storage round = rounds[tierId][instanceId][r];
-            for (uint8 m = 0; m < round.totalMatches; m++) {
-                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-
-                for (uint256 i = 0; i < matches.length; i++) {
-                    if (matches[i] == matchId) {
-                        return true;
-                    }
-                }
-            }
+    function _removeEnrolling(address p, uint8 t, uint8 i) private {
+        uint256 idx = playerEnrollingIndex[p][t][i];
+        if (idx == 0) return;
+        uint256 last = playerEnrollingTournaments[p].length - 1;
+        if (idx - 1 != last) {
+            TournamentRef memory r = playerEnrollingTournaments[p][last];
+            playerEnrollingTournaments[p][idx - 1] = r;
+            playerEnrollingIndex[p][r.tierId][r.instanceId] = idx;
         }
-
-        return false;
+        playerEnrollingTournaments[p].pop();
+        delete playerEnrollingIndex[p][t][i];
     }
 
-    // ============ View Functions ============
-
-    /**
-     * @dev Get all tournaments where player is enrolled but not yet started
-     */
-    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) {
-        return playerEnrollingTournaments[player];
+    function _addActive(address p, uint8 t, uint8 i) private {
+        if (playerActiveIndex[p][t][i] != 0) return;
+        playerActiveTournaments[p].push(TournamentRef(t, i));
+        playerActiveIndex[p][t][i] = playerActiveTournaments[p].length;
     }
 
-    /**
-     * @dev Get all tournaments where player is actively competing
-     */
-    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
-        return playerActiveTournaments[player];
-    }
-
-    /**
-     * @dev Get counts (gas-efficient for checking if player has any activity)
-     */
-    function getPlayerActivityCounts(address player) external view returns (
-        uint256 enrollingCount,
-        uint256 activeCount
-    ) {
-        return (
-            playerEnrollingTournaments[player].length,
-            playerActiveTournaments[player].length
-        );
-    }
-
-    /**
-     * @dev Check if player is in specific tournament (either enrolling or active)
-     */
-    function isPlayerInTournament(address player, uint8 tierId, uint8 instanceId)
-        external view returns (bool isEnrolling, bool isActive)
-    {
-        isEnrolling = playerEnrollingIndex[player][tierId][instanceId] != 0;
-        isActive = playerActiveIndex[player][tierId][instanceId] != 0;
-    }
-
-    /**
-     * @dev Override to provide Chess-specific game metadata
-     * @return gameName Name of the game
-     * @return gameVersion Version string
-     * @return gameDescription Short description
-     */
-    function getGameMetadata() external pure override returns (
-        string memory gameName,
-        string memory gameVersion,
-        string memory gameDescription
-    ) {
-        return (
-            "ChessOnChain",
-            "1.0.0",
-            "Full chess implementation with tournaments, special moves, and draw conditions"
-        );
+    function _removeActive(address p, uint8 t, uint8 i) private {
+        uint256 idx = playerActiveIndex[p][t][i];
+        if (idx == 0) return;
+        uint256 last = playerActiveTournaments[p].length - 1;
+        if (idx - 1 != last) {
+            TournamentRef memory r = playerActiveTournaments[p][last];
+            playerActiveTournaments[p][idx - 1] = r;
+            playerActiveIndex[p][r.tierId][r.instanceId] = idx;
+        }
+        playerActiveTournaments[p].pop();
+        delete playerActiveIndex[p][t][i];
     }
 }

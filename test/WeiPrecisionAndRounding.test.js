@@ -4,15 +4,43 @@ import { expect } from "chai";
 describe("Wei Precision and Rounding in Prize Distribution", function () {
     let game;
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
-    const TIER_0_FEE = hre.ethers.parseEther("0.001");
-    const TIER_1_FEE = hre.ethers.parseEther("0.002");
-    const TIER_2_FEE = hre.ethers.parseEther("0.004");
+    const TIER_0_FEE = hre.ethers.parseEther("0.0003");
+    const TIER_1_FEE = hre.ethers.parseEther("0.0007");
+    const TIER_2_FEE = hre.ethers.parseEther("0.00013");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6, player7, player8] = await hre.ethers.getSigners();
 
+        // Deploy modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress()
+        );
+        await game.waitForDeployment();
     });
 
     describe("Wei Rounding in Prize Splits", function () {
@@ -45,11 +73,19 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 6);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8); // Draw
+            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8); // Draw
 
-            // Verify draw completed
-            const matchAfter = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(matchAfter.common.isDraw).to.be.true;
+            // Verify draw completed via TournamentCompleted event (2-player draw uses regular completion)
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
 
             // Check prize distribution
             const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
@@ -186,10 +222,10 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             expect(totalDistributed).to.equal(prizePool);
 
             // Verify prize distribution percentages
-            // Tier 2 (8-player): 1st=50%, 2nd=25%, 3rd/4th=10% each, 5th-8th=0%
+            // Tier 2 (8-player): 1st=100%, all others=0%
             const winner = players.find(async (p) => {
                 const prize = await game.playerPrizes(tierId, instanceId, p.address);
-                return prize === prizePool * 50n / 100n;
+                return prize === prizePool;
             });
 
             expect(winner).to.not.be.undefined;
