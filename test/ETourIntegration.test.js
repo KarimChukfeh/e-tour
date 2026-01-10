@@ -1175,6 +1175,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
 
             // Helper function to play a match to completion
+            // ARCHITECTURE CHANGE: Returns winner without querying storage (finals cleared on completion)
             async function playMatchToWin(roundNum, matchNum, players) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
                 if (match.common.status !== 1n) return null; // Not InProgress
@@ -1187,15 +1188,16 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
                 if (!fpSigner || !spSigner) return null;
 
-                // Win pattern
+                // Win pattern - first player wins
                 await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 0);
                 await game.connect(spSigner).makeMove(tierId, instanceId, roundNum, matchNum, 3);
                 await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 1);
                 await game.connect(spSigner).makeMove(tierId, instanceId, roundNum, matchNum, 4);
                 await game.connect(fpSigner).makeMove(tierId, instanceId, roundNum, matchNum, 2);
 
-                const finalMatch = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                return finalMatch.common.winner;
+                // Return winner directly (first player in this pattern)
+                // Don't query storage - finals are cleared on tournament completion
+                return fp;
             }
 
             // Complete first tournament fully
@@ -1922,11 +1924,23 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             let match1 = await game.getMatch(tierId, instanceId, 0, 1);
             expect(match1.common.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
 
-            // Play match 1 and verify TournamentCompletedAllDraw event
+            // Play match 1 and verify TournamentCompleted event (all-draw scenario)
             const tx = await playMatchToDraw(1);
-            await expect(tx)
-                .to.emit(game, "TournamentCompletedAllDraw")
-                .withArgs(tierId, instanceId, 0, 4, prizePool / 4n);
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = game.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(hre.ethers.ZeroAddress); // All-draw has no single winner
+            expect(parsedEvent.args.prizeAmount).to.equal(prizePool); // Total prize pool
+            expect(parsedEvent.args.completionReason).to.equal(2); // AllDrawScenario
+            expect(parsedEvent.args.enrolledPlayers.length).to.equal(4); // All 4 players
 
             // After all-draw completion, tournament resets (match data is cleared)
             // But playerPrizes persists as historical record
@@ -2166,7 +2180,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
     });
 
     describe("getMatch Cache Fallback - Two-Person Tournament", function () {
-        it("Should return match data from cache after tournament completion and match reset (loser perspective)", async function () {
+        it("Should clear finals immediately after tournament completion (ARCHITECTURE CHANGE)", async function () {
             const tierId = 0; // 2-player tier
             const instanceId = 10; // Use unique instance to avoid conflicts with other tests
             const roundNumber = 0;
@@ -2204,45 +2218,24 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(otherPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 2);
             await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 8);
 
-            // Step 4: getMatch should work after match completion
-            // Finals matches are preserved in live storage (not cached)
-            matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            // Step 4: ARCHITECTURE CHANGE - Finals cleared immediately on tournament completion
+            // Match data should NO LONGER be queryable from storage
+            // Historical data available via events (MatchCompleted, TournamentCompleted)
 
-            // Verify finals is preserved (not cached) - this is round 0, match 0 = finals for 2-player tier
-            expect(matchData.common.isCached).to.be.false; // Finals preserved in live storage
+            // Verify tournament completed and reset
+            tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
 
-            // Verify match data is complete and correct
-            expect(matchData.common.player1).to.equal(actualPlayer1);
-            expect(matchData.common.player2).to.equal(actualPlayer2);
-            expect(matchData.common.status).to.equal(2); // Completed
-            expect(matchData.common.isDraw).to.be.false;
+            // Verify finals match is cleared (not accessible via getMatch)
+            await expect(
+                game.getMatch(tierId, instanceId, roundNumber, matchNumber)
+            ).to.be.revertedWith("MNF"); // Match Not Found - finals cleared
 
-            // Verify winner and loser addresses
-            expect(matchData.common.winner).to.equal(firstPlayer); // First player won
-            expect(matchData.common.loser).to.equal(firstPlayer === actualPlayer1 ? actualPlayer2 : actualPlayer1);
-
-            // Verify winner is not zero address
-            expect(matchData.common.winner).to.not.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.loser).to.not.equal(hre.ethers.ZeroAddress);
-
-            // Verify timestamps are preserved
-            expect(matchData.common.startTime).to.be.gt(0);
-            // Finals are preserved in live storage (not cached), so check lastMoveTime instead of endTime
-            expect(matchData.common.lastMoveTime).to.be.gt(0);
-            expect(matchData.common.lastMoveTime).to.be.gte(matchData.common.startTime);
-
-            // Verify tournament context
-            expect(matchData.common.tierId).to.equal(tierId);
-            expect(matchData.common.instanceId).to.equal(instanceId);
-            expect(matchData.common.roundNumber).to.equal(roundNumber);
-            expect(matchData.common.matchNumber).to.equal(matchNumber);
-
-            // Verify board state is preserved in cache (packedBoard is a uint256 encoding all cells)
-            expect(matchData.packedBoard).to.be.greaterThan(0);
-            expect(matchData.firstPlayer).to.equal(firstPlayer);
+            // Historical data verification should use events (MatchCompleted, TournamentCompleted)
+            // This represents proper Web3 architecture where events are the source of truth
         });
 
-        it("Should return match data from cache after tournament completion (winner perspective)", async function () {
+        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
             const tierId = 0;
             const instanceId = 1; // Use different instance
             const roundNumber = 0;
@@ -2278,7 +2271,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.status).to.equal(2); // Completed
         });
 
-        it("Should handle draw scenario with cache fallback", async function () {
+        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
             const tierId = 0;
             const instanceId = 2; // Use different instance
             const roundNumber = 0;
@@ -2362,7 +2355,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.common.status).to.equal(1); // Still InProgress
         });
 
-        it("Should prevent cache collision when circular buffer wraps around", async function () {
+        it.skip("ARCHITECTURE CHANGE: Cache removed - use events for historical data", async function () {
             // This test verifies that matchIdToCacheIndex mappings are properly cleaned up
             // when the cache wraps around and overwrites old entries
 
@@ -2429,7 +2422,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
     });
 
     describe("Finals Match Preservation", function () {
-        it("Should preserve finals match data in live storage after tournament completion", async function () {
+        it.skip("ARCHITECTURE CHANGE: Finals cleared immediately - use events", async function () {
             const tierId = 0;
             const instanceId = 50; // Use unique instance
             const roundNumber = 0; // Finals is in round 0 for 2-player
@@ -2474,7 +2467,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.packedBoard).to.be.greaterThan(0);
         });
 
-        it("Should cache old finals and preserve new finals when second tournament completes (instance-specific eviction)", async function () {
+        it.skip("ARCHITECTURE CHANGE: Finals cleared immediately - use events", async function () {
             const tierId = 0;
             const instanceId = 51; // Use unique instance
             const roundNumber = 0;

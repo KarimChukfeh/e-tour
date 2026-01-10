@@ -173,7 +173,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             expect(remainder).to.be.gte(0n);
         });
 
-        it("Should emit TournamentCompletedAllDraw event with correct parameters", async function () {
+        it("Should emit TournamentCompleted event with correct parameters for all-draw scenario", async function () {
             const tierId = 1;
             const instanceId = 0;
 
@@ -204,11 +204,23 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await playMatchToDraw(0);
 
             const tx = await playMatchToDraw(1);
+            const receipt = await tx.wait();
 
-            // Verify event emitted
-            await expect(tx)
-                .to.emit(game, "TournamentCompletedAllDraw")
-                .withArgs(tierId, instanceId, 0, 4, prizePool / 4n);
+            // Verify TournamentCompleted event emitted with all-draw parameters
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedEvent = game.interface.parseLog(tournamentEvent);
+            expect(parsedEvent.args.winner).to.equal(hre.ethers.ZeroAddress); // All-draw has no single winner
+            expect(parsedEvent.args.prizeAmount).to.equal(prizePool); // Total prize pool
+            expect(parsedEvent.args.completionReason).to.equal(2); // AllDrawScenario
+            expect(parsedEvent.args.enrolledPlayers.length).to.equal(4); // All 4 players
         });
 
         it("Should correctly set allDrawResolution and allDrawRound flags", async function () {

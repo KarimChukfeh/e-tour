@@ -414,7 +414,7 @@ contract ETour_Matches is ETour_Storage {
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
 
-        emit TournamentCompletedAllDraw(tierId, instanceId, roundNumber, uint8(remainingPlayers.length), prizePerPlayer);
+        emit TournamentCompleted(tierId, instanceId, address(0), winnersPot, TournamentCompletionReason.AllDrawScenario, players);
     }
 
     // ============ Player Consolidation ============

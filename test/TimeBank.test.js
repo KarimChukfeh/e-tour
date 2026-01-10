@@ -164,15 +164,37 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Second player claims timeout - should succeed
-            await expect(
-                game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.emit(game, "TimeoutVictoryClaimed")
-              .withArgs(tierId, instanceId, 0, 0, secondPlayerAddr, firstPlayerAddr);
+            // Tournament completes with timeout winner - capture TournamentCompleted event
+            const tx = await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+            const receipt = await tx.wait();
 
-            // Verify match is completed with secondPlayer as winner
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.winner).to.equal(secondPlayerAddr);
-            expect(match.common.status).to.equal(2); // MatchStatus.Completed
+            // Verify TimeoutVictoryClaimed event
+            const timeoutEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TimeoutVictoryClaimed";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(timeoutEvent).to.not.be.undefined;
+
+            // Verify TournamentCompleted event contains winner data
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedTournamentEvent = game.interface.parseLog(tournamentEvent);
+            expect(parsedTournamentEvent.args.winner).to.equal(secondPlayerAddr);
+
+            // Verify tournament reset to Enrolling
+            const [tournamentStatus] = await game.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Tournament completed and reset to Enrolling
         });
 
         it("Should NOT allow player to claim timeout on their own turn", async function () {
@@ -262,7 +284,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
         it("Should correctly handle match completion before timeout", async function () {
             const tierId = 0;
-            const instanceId = 0;
+            const instanceId = 50; // Use unique instance to avoid conflicts
 
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
@@ -276,19 +298,34 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3); // O middle-left
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);  // X top-center
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4); // O center
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);  // X top-right - WIN
+            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);  // X top-right - WIN
 
-            // Match should be completed
-            const finalMatch = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(finalMatch.common.status).to.equal(2); // MatchStatus.Completed
+            // Verify TournamentCompleted event contains winner data
+            const receipt = await tx.wait();
+            const tournamentEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = game.interface.parseLog(log);
+                    return parsed.name === "TournamentCompleted";
+                } catch (e) {
+                    return false;
+                }
+            });
+            expect(tournamentEvent).to.not.be.undefined;
+            const parsedTournamentEvent = game.interface.parseLog(tournamentEvent);
+            expect(parsedTournamentEvent.args.winner).to.equal(match.currentTurn);
 
-            // Cannot claim timeout on completed match
+            // Match should be completed (2-player tournament finals)
+            // Finals cleared immediately - verify tournament completed via status
+            const [tournamentStatus] = await game.getTournamentInfo(tierId, instanceId);
+            expect(tournamentStatus).to.equal(0); // Tournament completed and reset to Enrolling
+
+            // Cannot claim timeout on completed match (finals already cleared)
             await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.revertedWith("MA"); // Short error code for match not active
+            ).to.be.revertedWith("MA"); // Match not Active - finals cleared (status = 0)
         });
     });
 

@@ -55,7 +55,7 @@ describe("Finals Cache Verification", function () {
         await game.waitForDeployment();
     });
 
-    it("Should cache finals (A vs B) and retrieve from cache after clearing", async function () {
+    it.skip("ARCHITECTURE CHANGE: Finals cleared immediately - use events for historical data", async function () {
         console.log("\n=== FINALS CACHE VERIFICATION TEST ===\n");
 
         const tierId = 0;

@@ -275,7 +275,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     event RoundCompleted(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber);
     event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, TournamentCompletionReason completionReason, address[] enrolledPlayers);
     event AllDrawRoundDetected(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 remainingPlayers);
-    event TournamentCompletedAllDraw(uint8 indexed tierId, uint8 indexed instanceId, uint8 roundNumber, uint8 sharedWinnerCount, uint256 prizePerWinner);
     event TournamentReset(uint8 indexed tierId, uint8 indexed instanceId);
     event OwnerFeePaid(address indexed owner, uint256 amount);
     event ProtocolFeePaid(address indexed recipient, uint256 amount);
