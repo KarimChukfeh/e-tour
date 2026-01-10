@@ -475,10 +475,12 @@ contract ChessOnChain is ETour_Storage {
         // Store move in history as compact bytes: each move is 2 bytes (from, to)
         m.moves = string(abi.encodePacked(m.moves, from, to));
 
-        // Clear any escalation state since a move was made (match is no longer stalled)
-        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
-        );
+        // Clear any escalation state since a move was made (match is no longer stalled) - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
 
         emit MoveMade(matchId, msg.sender, from, to);
 
@@ -554,6 +556,11 @@ contract ChessOnChain is ETour_Storage {
             );
         }
 
+        // Emit TournamentCompleted event with actual prize amount
+        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
+            tournament.finalsWasDraw, tournament.coWinner);
+
         // Archive elite tournament finals match (Tier 3 or Tier 7) - BEFORE reset
         if (tierId == 3 || tierId == 7) {
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, tournament.currentRound, 0);
@@ -574,9 +581,12 @@ contract ChessOnChain is ETour_Storage {
 
         _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
 
-        MODULE_ESCALATION.delegatecall(
-            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
-        );
+        // Clear escalation state - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
 
         address[] memory epc = new address[](enrolledPlayers[tierId][instanceId].length);
         for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
