@@ -1,0 +1,2266 @@
+
+> e-tour@1.0.0 test
+> hardhat test
+
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+StateTracker initialized: object
+StateTracker methods: [
+  'constructor',
+  'startTest',
+  'recordTimelineEntry',
+  'endTest',
+  'isTracking',
+  'getTestData',
+  'getAllTests',
+  'getCurrentTestId',
+  'getSummary',
+  'getTestsByFile',
+  'getTestsByStatus',
+  'clear',
+  'toJSON',
+  'fromJSON'
+]
+Scientific test reporter setup complete. State capture enabled.
+
+
+  All-Draw Prize Distribution Edge Cases
+    Finals Draw Scenarios
+      ✔ Should split prize equally for finals draw with standard prize pool
+      ✔ Should update tournament finalsWasDraw flag correctly
+    Semi-Finals All-Draw Scenarios
+      ✔ Should split prize among 4 players when both semi-finals draw
+      ✔ Should emit TournamentCompleted event with correct parameters for all-draw scenario
+      ✔ Should correctly set allDrawResolution and allDrawRound flags
+    8-Player All-Draw Round 0 Scenario
+      ✔ Should split prize among 8 players if all round 0 matches draw (46ms)
+    Mixed Results Scenarios
+Matches may have been cached after tournament completion
+      ✔ Should handle one draw and three wins in 8-player tournament (42ms)
+    Player Stats for All-Draw Scenarios
+      ✔ Should update player stats correctly for all-draw tournament
+
+  ChessOnChain Comprehensive Escalation Tests
+    EL1: Enrollment Force Start
+      ✔ Should allow enrolled player to force start after enrollment timeout
+      ✔ Should reject force start before timeout
+      ✔ Should reject force start from non-enrolled player
+      ✔ Should complete tournament immediately if only one player enrolled and force starts
+      ✔ Should clear player activity after solo force start completion
+    EL2: Enrollment External Claim
+      ✔ Should allow external player to claim abandoned enrollment pool after EL2 delay
+      ✔ Should reject claim before EL2 delay
+      ✔ Should forfeit all enrolled players when pool is claimed
+      ✔ Should clear all player activity entries after EL2 claim
+      ✔ Should allow new tournament to start after EL2 claim and reset
+    ML1: Match Timeout Claim
+      ✔ Should allow opponent to claim timeout after match timeout
+      ✔ Should complete 2-player tournament after ML1 timeout claim
+      ✔ Should clear player activity after ML1 tournament completion
+      ✔ Should reject timeout claim before timeout period
+      ✔ Should reject timeout claim on own turn
+    ML2: Advanced Player Force Eliminate
+      ✔ Should allow advanced player to force eliminate stalled semi-final (79ms)
+      ✔ Should reject ML2 from non-advanced player
+      ✔ Should complete tournament when finalist uses ML2 on stalled semi-final (74ms)
+      ✔ Should clear all player activity after ML2 tournament completion (75ms)
+      ✔ Should handle ML2 on finals match (both players eliminated) (154ms)
+      ✔ Should reject ML2 before escalation delay (74ms)
+    ML3: External Player Replacement
+      ✔ Should allow external player to replace stalled match player
+      ✔ Should complete 2-player tournament after ML3 claim
+      ✔ Should clear all player activity after ML3 tournament completion
+      ✔ Should allow ML3 claimer to advance in tournament (69ms)
+      ✔ Should reject ML3 before escalation delay
+      ✔ Should reject ML3 on non-stalled match
+      ✔ Should handle ML3 on finals match properly (130ms)
+    Cascading Effects: Multi-Level Escalation
+      ✔ Should handle ML1 -> tournament completion -> reset -> new enrollment
+      ✔ Should handle ML2 in round 0 -> ML3 in finals (75ms)
+      ✔ Should handle EL2 with multiple enrollments -> complete reset
+      ✔ Should track forfeited amounts correctly across escalation types (72ms)
+    Prize Distribution Verification Across Escalation Types
+      ✔ Should distribute correct prizes for EL1 solo force start
+      ✔ Should distribute correct prizes for EL2 abandoned claim
+      ✔ Should distribute correct prizes for ML1 timeout victory
+      ✔ Should distribute correct prizes for ML2 force eliminate victory (71ms)
+      ✔ Should distribute correct prizes for ML3 replacement victory
+      ✔ Should maintain zero contract balance after all escalation type completions
+    Tournament Reset Verification
+      ✔ Should fully reset tournament state after EL2 completion
+      ✔ Should fully reset tournament state after ML2 completion (69ms)
+      ✔ Should fully reset tournament state after ML3 completion
+
+  Comprehensive Tournament Escalation Flow Tests
+    8-Player Tournament with Mixed Escalation Scenarios
+
+=== COMPREHENSIVE ESCALATION TEST ===
+
+✓ 8 players enrolled, tournament started
+
+=== ROUND 0: 4 MATCHES (8 → 4 players) ===
+
+Match 0: Normal completion
+✓ Winner: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC (now advanced player)
+
+Match 1: Stalls → L2 force elimination by advanced player
+✓ Outsider correctly blocked from L2
+✓ Match force eliminated via L2 by advanced player
+
+Match 2: Stalls → L3 replacement by outsider
+✓ Advanced player correctly blocked from L3
+✓ Outsider 0xa0Ee7A... claimed via L3
+
+Match 3: Stalls → L2 still works after L3 active (proving L2 never expires)
+Waited 5 minutes (way past L3 activation)
+✓ L2 still worked 5 minutes after L3 became active - L2 NEVER EXPIRES
+
+=== ROUND 0 SUMMARY ===
+✓ All 4 matches completed:
+  - 1 normal win
+  - 2 L2 force eliminations
+  - 1 L3 replacement
+
+=== ROUND 1: 2 MATCHES (Semi-Finals) ===
+
+Round 1 has: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC vs 0x0000000000000000000000000000000000000000
+
+=== TOURNAMENT COMPLETION ===
+Tournament status: 1
+
+✅ COMPREHENSIVE ESCALATION TEST PASSED
+
+Validated:
+✓ Normal match completions work
+✓ L2 (force eliminate) works for advanced players
+✓ L2 blocked for non-advanced players
+✓ L3 (replacement) works for outsiders
+✓ L3 blocked for advanced players
+✓ L2 never expires (works even after L3 active)
+✓ Bracket advancement handles mixed completion types
+      ✔ Should handle tournament with normal wins, L2 eliminations, and L3 replacements (39ms)
+
+=== Testing Eliminated Player L3 Access ===
+
+Match 0: Winner 0x709979..., Loser 0x3C44Cd...
+✓ Advanced player (winner) blocked from L3
+✓ Eliminated (non-advanced) player successfully claimed L3
+
+✅ Eliminated players CAN claim L3 (they're not advanced)
+      ✔ Should verify eliminated player can claim L3 in their own round
+
+=== Complex Bracket Test ===
+
+Round 0:
+  Match 0: Normal ✓
+  Match 1: Normal ✓
+  Match 2: L2 elimination ✓
+  Match 3: L3 replacement ✓
+
+✓ Round 0 complete with mixed completion types
+
+Round 1 players: 0x3C44Cd... vs 0xBcd404...
+✓ Bracket advanced correctly
+
+✅ Complex bracket with multiple escalation types handled correctly
+      ✔ Should handle complex bracket with multiple escalation types (44ms)
+
+  ConnectFourOnChain Comprehensive Escalation Tests
+    EL1: Enrollment Force Start
+      ✔ Should allow enrolled player to force start after enrollment timeout
+      ✔ Should reject force start before timeout
+      ✔ Should reject force start from non-enrolled player
+      ✔ Should complete tournament immediately if only one player enrolled and force starts
+      ✔ Should clear player activity after solo force start completion
+    EL2: Enrollment External Claim
+      ✔ Should allow external player to claim abandoned enrollment pool after EL2 delay
+      ✔ Should reject claim before EL2 delay
+      ✔ Should forfeit all enrolled players when pool is claimed
+      ✔ Should clear all player activity entries after EL2 claim
+      ✔ Should allow new tournament to start after EL2 claim and reset
+    ML1: Match Timeout Claim
+      ✔ Should allow opponent to claim timeout after match timeout
+      ✔ Should complete 2-player tournament after ML1 timeout claim
+      ✔ Should clear player activity after ML1 tournament completion
+      ✔ Should reject timeout claim before timeout period
+      ✔ Should reject timeout claim on own turn
+    ML2: Advanced Player Force Eliminate
+      ✔ Should allow advanced player to force eliminate stalled semi-final
+      ✔ Should reject ML2 from non-advanced player
+      ✔ Should complete tournament when finalist uses ML2 on stalled semi-final
+      ✔ Should clear all player activity after ML2 tournament completion
+      ✔ Should handle ML2 on finals match (both players eliminated)
+      ✔ Should reject ML2 before escalation delay
+    ML3: External Player Replacement
+      ✔ Should allow external player to replace stalled match player
+      ✔ Should complete 2-player tournament after ML3 claim
+      ✔ Should clear all player activity after ML3 tournament completion
+      ✔ Should allow ML3 claimer to advance in tournament
+      ✔ Should reject ML3 before escalation delay
+      ✔ Should reject ML3 on non-stalled match
+      ✔ Should handle ML3 on finals match properly
+    Cascading Effects: Multi-Level Escalation
+      ✔ Should handle ML1 -> tournament completion -> reset -> new enrollment
+      ✔ Should handle ML2 in round 0 -> ML3 in finals (56ms)
+      ✔ Should handle EL2 with multiple enrollments -> complete reset
+      ✔ Should track forfeited amounts correctly across escalation types
+    Prize Distribution Verification Across Escalation Types
+      ✔ Should distribute correct prizes for EL1 solo force start
+      ✔ Should distribute correct prizes for EL2 abandoned claim
+      ✔ Should distribute correct prizes for ML1 timeout victory
+      ✔ Should distribute correct prizes for ML2 force eliminate victory
+      ✔ Should distribute correct prizes for ML3 replacement victory
+      ✔ Should maintain protocol and owner fees after all escalation type completions
+    Tournament Reset Verification
+      ✔ Should fully reset tournament state after EL2 completion
+      ✔ Should fully reset tournament state after ML2 completion
+      ✔ Should fully reset tournament state after ML3 completion
+
+  TicTacChain (ETour Protocol) Tests
+    Deployment
+      ✔ Should deploy successfully
+      ✔ Should have correct owner
+      ✔ Should have 3 tiers configured
+    Tournament Enrollment
+      ✔ Should enroll players and auto-start when full (2-player)
+      ✔ Should split entry fees correctly (90% prize pool, 10% owner)
+      ✔ Should reject incorrect entry fee
+      ✔ Should reject duplicate enrollment
+      ✔ Should reject invalid tier
+    Tournament Logic
+      ✔ Should initialize round with correct match count (8-player = 4 matches)
+      ✔ Should handle force start after enrollment timeout
+    Game Play
+      ✔ Should allow players to make moves
+      ✔ Should switch turns after each move
+      ✔ Should reject move when not your turn
+      ✔ Should reject move to occupied cell
+      ✔ Should reject invalid cell index
+      ✔ Should reject move from non-player
+    Win Detection
+      ✔ Should detect horizontal win (top row)
+      ✔ Should detect vertical win (left column)
+      ✔ Should detect diagonal win (0, 4, 8)
+      ✔ Should detect draw when board is full with no winner
+    Tournament Completion
+      ✔ Should complete 2-player tournament and distribute prizes
+    Timeout Functions
+      ✔ Should allow timeout claim after timeout period
+      ✔ Should reject early timeout claim
+      ✔ Should reject timeout claim on your own turn
+    View Functions
+      ✔ Should return match data correctly
+    Gas Optimization
+      Gas used for enrollment: 322622
+      ✔ Should have reasonable gas costs for enrollment
+      Gas used for move: 80476
+      ✔ Should have reasonable gas costs for making a move
+    Abandoned Enrollment Pool Claims
+      ✔ Should reject claim before escalation2 window
+      ✔ Should allow external player to claim abandoned pool after escalation2
+      ✔ Should forfeit all enrolled players when pool is claimed
+      ✔ Should reject claim when no enrollment pool exists
+    Force Start Edge Cases
+      ✔ Should reject force start from non-enrolled player
+      ✔ Should handle single player force start with immediate win
+    View Functions Coverage
+      ✔ Should return correct tournament info via getTournamentInfo
+      ✔ Should return round info correctly
+      ✔ Should return player stats correctly
+      ✔ Should track player earnings on leaderboard - winner has positive, loser negative
+      ✔ Should return full leaderboard with all players
+    Prize Distribution
+      ✔ Should distribute prizes correctly (2-player)
+      ✔ Should handle draw finals with co-winners
+    8-Player Tournament Full Flow
+      ✔ Should complete full 8-player bracket tournament (47ms)
+    Timeout Escalation Levels
+      ✔ Should track timeout escalation timestamps
+    Invalid Operations
+      ✔ Should reject invalid instance ID
+      ✔ Should reject enrollment in full tournament
+      ✔ Should reject force start when tournament already in progress
+    Tournament Reset and Cleanup
+      ✔ Should properly reset all state after tournament completion
+      ✔ Should allow re-enrollment after tournament reset
+    Entry Fee Distribution
+      ✔ Should correctly split fees (90% pool, 7.5% owner, 2.5% protocol)
+    Enrollment Timeout State
+      ✔ Should initialize enrollment timeout timestamps on first enrollment
+      ✔ Should track forfeit pool during enrollment
+    All-Draw Round Scenarios
+      ✔ Should handle finals draw with co-winners
+      ✔ Should handle 8-player tournament with multiple draws in first round
+    Advanced Tournament Progression
+      ✔ Should handle walkover when odd number of players in round
+
+========== FIRST TOURNAMENT ==========
+First Tournament Finalists: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+First Tournament Winner: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+
+========== SECOND TOURNAMENT ==========
+Second Tournament Semifinal 0 Players: 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc 0x976EA74026E726554dB657fA54763abd0C3a0aa9
+Second Tournament Semifinal 0 Winner: 0x976EA74026E726554dB657fA54763abd0C3a0aa9
+Second Tournament Semifinal 1 Winner: 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955
+
+Second Tournament Finals after both semifinals:
+  player1: 0x976EA74026E726554dB657fA54763abd0C3a0aa9
+  player2: 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955
+  status: 1n
+      ✔ Should NOT have stale finals data from previous tournament
+    Match Timeout State Tracking
+      ✔ Should update lastMoveTime after each move
+      ✔ Should allow timeout claim after move timeout elapses
+    Complete Tournament Flow with Mixed Results
+      ✔ Should complete 8-player tournament with wins and draws (47ms)
+    Escalation Victory and Prize Distribution
+      ✔ Should award full prize pool when timeout claim wins 2-player tournament
+      ✔ Should track forfeited amounts for eliminated players on escalation
+      ✔ Should correctly distribute prize pool after abandoned enrollment claim
+    playerPrizes and Leaderboard Consistency
+      ✔ Should have playerPrizes equal to prize amount for winner in 2-player tournament
+      ✔ Should have leaderboard earnings equal to (playerPrizes - entryFee) for winner
+      ✔ Should have consistent playerPrizes and leaderboard for 8-player tournament (55ms)
+      ✔ Should have consistent playerPrizes and leaderboard after timeout victory
+      ✔ Should have consistent playerPrizes and leaderboard for draw finals
+    Force Start with Odd Players
+      ✔ Should handle force start with 3 players (requires walkover)
+      ✔ Should handle force start with 5 players
+      ✔ Should handle force start with 7 players
+      ✔ Should complete tournament started with odd players
+    All-Draw Round Scenarios
+      ✔ Should handle all semi-finals drawing - all 4 players share prize
+      ✔ Should complete tournament when finals also draws (co-winners)
+    Prize Distribution Edge Cases
+      ✔ Should handle prize distribution with odd total (rounding)
+      ✔ Should distribute prizes correctly in 8-player tournament (55ms)
+    Multi-Tournament Player Scenarios
+      ✔ Should allow same player to enroll in different instances
+      ✔ Should allow same player in different tiers
+      ✔ Should correctly update earnings across multiple tournaments
+    Instance and Tier Boundary Cases
+      ✔ Should reject enrollment at max instanceId
+      ✔ Should reject enrollment in non-existent tier
+      ✔ Should handle enrollment at exact tier boundaries
+    getMatch Cache Fallback - Two-Person Tournament
+      ✔ Should clear finals immediately after tournament completion (ARCHITECTURE CHANGE)
+      ✔ Should fail gracefully for non-existent match
+      ✔ Should return active match data when match is still in progress
+      ✔ verifies that matchIdToCacheIndex mappings are properly cleaned up
+    Finals Match Preservation
+      - ARCHITECTURE CHANGE: Finals cleared immediately - use events
+      - ARCHITECTURE CHANGE: Finals cleared immediately - use events
+
+  Enrollment Window Reset
+    Test 1: Successful Reset
+      ✔ Should allow solo player to reset enrollment window after expiry
+    Test 2: Reject if Tournament Not Enrolling
+      ✔ Should reject reset if tournament not enrolling
+    Test 3: Reject if Multiple Players Enrolled
+      ✔ Should reject reset if multiple players enrolled
+    Test 4: Reject if Caller Not Enrolled
+      ✔ Should reject reset if caller not enrolled
+    Test 5: Reject if Window Not Expired
+      ✔ Should reject reset if enrollment window not expired
+    Test 6: Reset Still Works After Escalation Level 2
+      ✔ Should allow reset even after escalation level 2 reached
+    Test 7: Second Player Can Enroll After Reset
+      ✔ Should allow second player to enroll after reset
+    Test 8: Multiple Resets Allowed
+      ✔ Should allow player to reset multiple times
+    Test 9: canResetEnrollmentWindow View Function Accuracy
+      ✔ Should accurately report reset eligibility via view function
+    Test 10: Reset Preserves forfeitPool
+      ✔ Should preserve forfeitPool amount after reset
+    Test 11: Reset Updates Escalation Timestamps
+      ✔ Should update escalation timestamps correctly on reset
+    Test 12: Cannot Reset After Force Start
+      ✔ Should not allow reset after force starting tournament
+
+  Finals Cache Verification
+    - ARCHITECTURE CHANGE: Finals cleared immediately - use events for historical data
+
+  Finals Data Persistence Bug (TDD)
+    Scenario 1: Finals Never Completed (InProgress)
+
+=== TEST: Incomplete Finals Data Persistence ===
+
+CYCLE 1: Creating tournament...
+Finals status: 1 (1=InProgress)
+✓ Finals completed, tournament reset
+✓ Tournament status: 0 (0=Enrolling)
+
+NEW CYCLE: Verifying finals cleared immediately...
+✓ FINALS CLEARED IMMEDIATELY ON RESET
+  - No stale data window
+  - Historical data available via events
+✓ Player3 enrolled in new cycle
+✓ Finals remain cleared (as expected)
+
+=== TEST COMPLETE ===
+
+      ✔ Should clear incomplete finals match data on first enrollment in new cycle
+    Scenario 2: Double-Elimination Finals (winner = address(0))
+
+=== TEST: Double-Elimination Finals Data Persistence ===
+
+CYCLE 1: Creating 4-player tournament...
+✓ Semi-final 0 complete: winner=0x3C44CdDd...
+✓ Semi-final 1 complete: winner=0x90F79bf6...
+✓ Finals created: 0x3C44CdDd... vs 0x90F79bf6...
+Executing ML2 on finals...
+✓ ML2 executed - tournament completed and reset
+✓ Tournament status: 0 (0=Enrolling)
+
+NEW CYCLE: Verifying immediate finals clearing...
+✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY
+  - winner=0x0 case handled properly
+  - No stale data vulnerability
+✓ First enrollment in new cycle
+✓ Finals remain cleared (as expected)
+
+=== TEST COMPLETE ===
+
+      ✔ Should clear double-elimination finals on first enrollment in new cycle
+    Scenario 3: Exploit Attempt After Status Check Fix
+
+=== TEST: ML3 Exploit Prevention with Status Check ===
+
+CYCLE 1: Completing tournament...
+✓ Tournament completed normally
+✓ Tournament reset: status=0 (0=Enrolling)
+
+ATTACKER: Attempting ML3 on stale finals...
+✓ EXPLOIT BLOCKED: Tournament status check prevented ML3
+  - Error: VM Exception while processing transaction: reverted with reason string 'Tournament not in progress'
+
+=== TEST COMPLETE ===
+
+      ✔ Should prevent ML3 claim on stale finals even if not cleared
+
+  TicTacChain - Constructor Initialization
+    ✔ Should have 3 tiers initialized after deployment
+    ✔ Should have valid tier configurations after deployment
+
+  L2/L3 Ordering Test (DEPRECATED - tierConfigs removed)
+    - Should ensure L3 is NEVER available before L2
+    - Should BLOCK L3 claim attempt before L2 delay passes
+
+  ML2 (Force Eliminate) Comprehensive Tests
+    Advanced Player Detection
+
+=== TEST: Advanced Player Detection ===
+
+Enrolling 4 players...
+✓ 4 players enrolled
+Match 0: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 vs 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Match 1: 0x90F79bf6EB2c4f870365E785982E1f101E93b906 vs 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+
+Completing Match 0...
+Match 0 status: 2
+Match 0 winner: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Match 0 isDraw: false
+✓ Match 0 complete - Winner: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+
+Checking finals assignment...
+Finals player1: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Finals player2: 0x0000000000000000000000000000000000000000
+Finals status: 0
+✓ Winner is in finals
+
+Checking isPlayerInAdvancedRound for round 0...
+Winner 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC isPlayerInAdvancedRound: true
+Loser 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 isPlayerInAdvancedRound: false
+✓ Advanced player detection working correctly
+      ✔ Should correctly identify player who won their match as advanced
+
+=== TEST: Advanced Player Detection After Caching ===
+
+Match 0 winner: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Match 0 isCached: false
+isPlayerInAdvancedRound (cached=false): true
+✓ Advanced player detection works with cached matches
+      ✔ Should detect advanced player even after match is cached
+    ML2 Execution
+
+=== TEST: ML2 Force Eliminate ===
+
+Advanced player: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+
+Stalling Match 1...
+✓ Match 1 stalled
+
+Advancing time for ML2...
+
+Verifying ML2 eligibility...
+Advanced player 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC isPlayerInAdvancedRound: true
+
+Executing ML2 force eliminate...
+✓ ML2 executed successfully
+✓ Match 1 double-eliminated
+      ✔ Should allow advanced player to force eliminate stalled match
+
+=== TEST: ML2 Rejection for Non-Advanced ===
+
+
+Attempting ML2 with non-advanced player...
+✓ Non-advanced player correctly rejected
+      ✔ Should reject ML2 from non-advanced player
+    Tournament Completion via ML2
+
+=== TEST: ML2 Tournament Completion (Finalist triggers ML2 on semi) ===
+
+✓ 4 players enrolled
+✓ Match 0 complete, finalist: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+✓ Finalist assigned to finals
+✓ Match 1 (semi-final) stalled
+
+Finalist using ML2 to eliminate stalled semi-final...
+✓ ML2 executed
+✓ Tournament completed and reset
+✓ TournamentCompleted event emitted
+✓ Finalist received prize: 0.00252 ETH
+
+=== TEST COMPLETE ===
+
+      ✔ Should complete tournament when finalist uses ML2 on stalled semi-final
+
+=== TEST: ML2 on Finals (Double Elimination) ===
+
+✓ 2 players enrolled (immediate finals)
+✓ Finals match stalled
+
+(Switching to 4-player scenario for advanced player requirement)
+✓ Both semi-finals complete
+✓ Finals stalled
+
+Using ML2 on finals (will eliminate both players)...
+✓ ML2 executed on finals
+✓ Tournament completed and reset
+✓ TournamentCompleted event emitted
+
+=== TEST COMPLETE ===
+
+      ✔ Should complete tournament when ML2 is used on finals (both eliminated)
+    Escalation Timing Issues
+
+=== TEST: Escalation Timer Reset on Move ===
+
+✓ 4 players enrolled
+✓ Advanced player: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+✓ Match 1 - first move made
+
+Waiting for timeout (but not ML2 delay)...
+✓ Match 1 - second move made (should clear escalation state)
+
+Trying ML2 immediately after move (should fail)...
+✓ ML2 correctly rejected - escalation state was cleared
+
+Waiting for timeout + ML2 delay from NEW move...
+✓ ML2 successful after proper delay
+
+=== TEST COMPLETE ===
+
+      ✔ Should reset ML2 timer when a move is made after timeout
+    Edge Cases
+
+=== TEST: ML2 with Walkover Advancement ===
+
+(Test scenario: Player advances via auto-walkover, then uses ML2)
+⚠ Test skipped - requires walkover scenario setup
+      ✔ Should handle ML2 when advanced player won via walkover
+
+  ML2 Exact User Scenario
+
+=== EXACT USER SCENARIO TEST ===
+
+Step 1: Enrolling 4 players (A, B, C, D)...
+Match 0 (semi): 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 vs 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Match 1 (semi): 0x90F79bf6EB2c4f870365E785982E1f101E93b906 vs 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+✓ Tournament started
+
+Step 2: Playing A vs B (A should win)...
+Winner of match 0: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+✓ A won and advanced to finals
+Finals: player1=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC, player2=0x0000000000000000000000000000000000000000
+
+Step 3: C vs D stalling (one move then timeout)...
+✓ One move made in C vs D, now waiting for stall...
+✓ Time advanced past ML2 threshold
+
+Step 4: State BEFORE ML2 trigger:
+  Tournament status: 1 (0=Enrolling, 1=InProgress, 2=Completed)
+  Enrolled count: 4
+  Prize pool: 0.00252 ETH
+  A enrolling tournaments: 0
+  A active tournaments: 1
+  Is A advanced? true
+
+Step 5: A triggering ML2 on C vs D...
+✓ ML2 transaction successful
+
+Step 6: State AFTER ML2 trigger:
+  Tournament status: 0 (0=Enrolling, 1=InProgress, 2=Completed)
+  Enrolled count: 0
+  Prize pool: 0.0 ETH
+  Winner: 0x0000000000000000000000000000000000000000
+  A enrolling tournaments: 0
+  A active tournaments: 0
+  C enrolling tournaments: 0
+  D enrolling tournaments: 0
+
+Step 7: Verifying tournament completion...
+✓ Tournament properly reset
+
+Step 8: Verifying prize distribution...
+  A's prize: 0.00252 ETH
+✓ Prize distributed to A
+
+Step 9: Verifying TournamentCompleted event...
+✓ TournamentCompleted event emitted (1 event(s))
+
+=== TEST COMPLETE ✅ ===
+
+    ✔ EXACT SCENARIO: A beats B, C vs D stalls, A triggers ML2 → should complete tournament
+
+  ML3 Finals Match Completion Bug Fix
+    ML3 Claim on Finals Match
+
+=== ML3 FINALS COMPLETION TEST ===
+
+Step 1: Enrolling 2 players...
+✓ Tournament started with 2 players (immediate finals)
+
+Step 2: Stalling finals match...
+✓ 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC made first move, now waiting for timeout...
+
+Step 3: Advancing time past ML3 threshold...
+✓ Time advanced past ML3 threshold
+Prize pool before ML3 claim: 0.00054 ETH
+
+Step 4: External player claiming ML3 on finals match...
+✓ ML3 claim transaction successful
+
+Step 5: Verifying tournament completion...
+✓ Tournament status is Enrolling (reset completed)
+✓ Winner cleared after reset
+✓ Enrolled count reset to 0
+✓ Prize pool reset to 0
+
+Step 6: Verifying prize distribution...
+✓ Outsider received prize: 0.00054 ETH
+Prize accuracy: 100% (difference: 0.0 ETH)
+
+Step 7: Verifying TournamentCompleted event...
+✓ TournamentCompleted event emitted with correct data
+
+Step 8: Verifying external player tracking cleanup...
+✓ External player (ML3 activator) properly removed from active tournaments
+
+Step 9: Verifying new tournament can start...
+✓ New player can enroll in reset tournament
+
+=== TEST COMPLETE ===
+
+      ✔ Should properly complete tournament, distribute prizes, and reset when ML3 is claimed on finals
+
+=== ADVANCED PLAYER CHECK TEST ===
+
+Step 1: Enrolling 4 players...
+✓ Tournament started with 4 players
+  Match 0: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 vs 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+  Match 1: 0x90F79bf6EB2c4f870365E785982E1f101E93b906 vs 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+
+Step 2: Completing Match 0 (A vs B)...
+✓ Match 0 complete, winner: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+
+Step 3: Checking finals match...
+  Finals player1: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+  Finals player2: 0x0000000000000000000000000000000000000000
+✓ Winner 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC is assigned to finals
+
+Step 4: Stalling Match 1 (C vs D)...
+✓ Match 1 stalled after first move
+
+Step 5: Checking isPlayerInAdvancedRound...
+✓ Winner 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC correctly identified as advanced player
+✓ Loser 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 correctly NOT identified as advanced
+
+=== TEST COMPLETE ===
+
+      ✔ Should correctly identify advanced player for ML2 eligibility
+      - Should also handle ML2 (force eliminate) on finals match properly
+
+  Match-Level Escalation (Anti-Stalling) Tests
+    Level 1: Normal Timeout Claim (Baseline)
+      ✔ Should allow opponent to claim timeout when player runs out of time
+    Level 2: Advanced Player Force Elimination
+      ✔ Should mark match as stalled when player runs out of time
+      ✔ Should allow advanced player to force eliminate stalled match after escalation window
+      ✔ Should reject force elimination from non-advanced player
+      ✔ Should reject force elimination before escalation window
+    Level 3: External Player Replacement
+      ✔ Should allow external player to claim match slot after Level 3 escalation window
+      ✔ Should reject replacement claim before Level 3 window
+      ✔ Should reject replacement claim on non-stalled match
+    Escalation Integration with Tournament Progression
+Round 0 after enrollment: { initialized: true, totalMatches: 2n, completedMatches: 0n }
+Round 0 after Match 1 completes: { totalMatches: 2n, completedMatches: 1n }
+Tournament status after Match 1: 1n
+      ✔ Should allow tournament to progress after force elimination
+      ✔ Should allow replacement player to advance in tournament
+    Edge Cases and Security
+      ✔ Should not allow claiming already completed match
+      ✔ Should clear escalation state after match completion
+
+  Prize Distribution Failure Fallback
+    Prize Send Failure - Solo Winner
+      ✔ Should fallback to accumulatedProtocolShare when solo winner rejects prize
+    Prize Send Failure - Tournament Winner
+      ✔ Should fallback to accumulatedProtocolShare when winner address rejects
+    Accumulated Protocol Share Tracking
+      ✔ Should track accumulated protocol share from failed distributions
+    Tournament Completion with Failed Prize
+      ✔ Should complete tournament even if prize distribution fails
+    Multi-Player Tournament with Failed Prizes
+      ✔ Should handle multiple prize distributions in 4-player tournament
+    Contract Balance Accounting
+      ✔ Should maintain correct contract balance with accumulated fees
+
+  Protocol Raffle System
+    getRaffleInfo() View Function
+      ✔ Should return correct raffle info when below threshold
+      ✔ Should return correct raffle info when at threshold with no players
+      - Should count enrolled players correctly (DEPRECATED - eligiblePlayerCount calculation changed)
+      ✔ Should return raffleIndex starting at 0
+      ✔ Should return correct threshold from _getRaffleThreshold()
+      ✔ Should return correct reserve from _getRaffleReserve()
+    Access Control
+      ✔ Should reject non-enrolled players when threshold not met
+      ✔ Should reject non-enrolled players even when threshold met
+      ✔ Should allow enrolled players to trigger raffle (Enrolling status)
+      ✔ Should allow enrolled players to trigger raffle (InProgress status)
+      ✔ Should reject players only enrolled in Completed tournaments
+    Raffle Mechanics (Integration with Failed Prizes)
+      ✔ Should accumulate protocol share from failed prize distributions
+      - Should handle multiple enrollment counts correctly (DEPRECATED - eligiblePlayerCount calculation changed)
+    Raffle Distribution
+      ✔ Should calculate 20% owner / 80% winner correctly
+      ✔ Should maintain 1 ETH reserve after raffle
+    Event Emission
+      ✔ Should emit ProtocolRaffleExecuted with correct data
+    Edge Cases
+      ✔ Should handle exactly 3 ETH threshold
+      ✔ Should handle large amounts (10 ETH)
+      - Should handle single enrolled player (100% chance) (DEPRECATED - eligiblePlayerCount calculation changed)
+      - Should handle player enrolled in many tournaments (DEPRECATED - eligiblePlayerCount calculation changed)
+    Security Considerations
+      ✔ Should use nonReentrant modifier on executeProtocolRaffle
+      ✔ Should follow CEI pattern (Checks-Effects-Interactions)
+      ✔ Should handle failed owner send
+      ✔ Should handle failed winner send
+    Randomness Quality
+      ✔ Should use block.prevrandao for randomness
+      ✔ Should produce different results with different block data
+    Gas Efficiency
+      ✔ Should handle reasonable number of enrolled players
+      ✔ Should document max capacity (1000 players)
+    Integration with Prize Distribution
+      ✔ Should accumulate protocol share from entry fees (2.5%)
+      ✔ Should accumulate from both protocol fees AND failed prize distributions
+
+  Basic Deployment Test
+Deploying modules...
+Core deployed
+Matches deployed
+Prizes deployed
+Raffle deployed
+Escalation deployed
+GameCache deployed
+
+Deploying TicTacChain...
+TicTacChain deployed
+Tier count: 3
+    ✔ Should deploy all contracts successfully (135ms)
+
+  Test Delegatecall Direct
+TicTacChain deployed and initialized
+
+✅ Delegatecall via enrollment succeeded!
+    ✔ Should test delegatecall behavior via enrollment
+
+  Test ETour_Storage Access
+✅ tierCount: 3
+    ✔ Should access tierCount from ETour_Storage
+✅ owner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    ✔ Should access owner from ETour_Storage
+✅ Contract initialized with 3 tiers
+    ✔ Should verify contract is initialized by checking tiers
+
+  Enrollment Debug Test
+Contract deployed successfully
+Tier count: 3
+Attempting to enroll with fee: 300000000000000
+Enrollment successful!
+    ✔ Should enroll player in tier 0
+
+  Test Getter Call
+
+✅ Game initialized
+✅ getPlayerEnrollingTournaments works! Count: 0
+    ✔ Should call getPlayerEnrollingTournaments (returns array)
+✅ Initial isEnrolled: false
+✅ After enrollment isEnrolled: true
+    ✔ Should check enrollment via isEnrolled
+
+  Test Player Activity Counts
+
+✅ Game initialized
+✅ Initial enrollment state: false
+✅ After enrollment: true
+    ✔ Should verify enrollment status works (replaces activity counts)
+
+  Test Simple Tracking
+
+✅ Game deployed and initialized
+Game address: 0x80bfecFce361Ed9E00b0E9Bc023E0EACa6917De5
+✅ Player enrolled and tracking works
+    ✔ Should test that player tracking storage exists in game contract (137ms)
+
+  TicTacChain Enrollment Quick Test
+
+TicTacChain: 0x16B293F3E1C995b4ea9938c41006021D9810878B
+Initialized
+
+✅ Player1 enrolled! Gas: 302710
+    ✔ Should enroll player1
+✅ Player2 enrolled! Gas: 556818
+    ✔ Should enroll player2 and start
+
+  Time Bank System (Chess Clock) Tests
+    Time Bank Initialization
+      ✔ Should initialize both players with configured match time at match start
+    Time Bank Mechanics
+      ✔ Should deduct time from player's bank after making a move
+      ✔ Should allow multiple moves with cumulative time deduction
+      ✔ Should NOT allow opponent to claim timeout before time runs out
+      ✔ Should allow opponent to claim timeout after time runs out
+      ✔ Should NOT allow player to claim timeout on their own turn
+      ✔ Should accurately track time after turn switches
+      ✔ Should handle time bank reaching exactly zero
+      ✔ Should NOT allow timeout claim while opponent still has time
+    Time Bank Edge Cases
+      ✔ Should handle rapid successive moves without time manipulation
+      ✔ Should correctly handle match completion before timeout
+    Tournament Integration with Time Banks
+      ✔ Should handle 4-player tournament with time banks properly
+      ✔ Should allow timeout claim in semifinal and winner advances to finals
+    Time Increment (Future Feature)
+      ✔ Should have zero increment by default
+
+  Real-Time Time Remaining Query Tests (DEPRECATED - getCurrentTimeRemaining removed from TicTacChain)
+    Time Remaining Queries
+      - Should show correct time remaining for current player after time passes
+      - Should show real-time countdown for current player's turn
+      - Should allow multiple clients to query accurate time remaining simultaneously
+      - Should accurately calculate time remaining for both players in an ongoing match
+    Proposed Solution: getCurrentTimeRemaining()
+      - Should have a view function that calculates real-time remaining
+
+  Tournament Reset and Enrollment Edge Cases
+    Tournament Reset State Management
+      ✔ Should allow enrollment after tournament completes and resets
+      ✔ Should clear all round data on tournament reset
+      ✔ Should clear player enrollment status on reset
+    Enrollment State Protection
+      ✔ Should reject enrollment during active tournament
+      ✔ Should reject duplicate enrollment in same tournament
+      ✔ Should allow same player in different instances
+      ✔ Should allow same player in different tiers
+    Prize Pool Reset
+      ✔ Should reset prize pool to zero after distribution
+      ✔ Should accumulate new prize pool for second tournament
+    Match Cache Cleanup
+      - ARCHITECTURE CHANGE: Finals cleared immediately - use events for historical data
+
+  Wei Precision and Rounding in Prize Distribution
+    Wei Rounding in Prize Splits
+      ✔ Should handle indivisible prize pool in finals draw (2 co-winners)
+      ✔ Should handle wei remainder in 4-way all-draw split
+      ✔ Should not lose wei in 8-player tournament prize distribution (53ms)
+    Contract Balance Verification
+      ✔ Should maintain zero contract balance after prize distribution
+      ✔ Should accumulate protocol fees correctly across multiple tournaments
+    Prize Distribution Precision
+      ✔ Should handle standard entry fee precision correctly
+      ✔ Should handle entry fee calculations with precision
+
+  Chess Advanced Draw Rules
+    Insufficient Material Draw
+      - Should automatically draw with only kings remaining
+      - Should automatically draw with king + bishop vs king
+      - Should automatically draw with king + knight vs king
+    Stalemate Detection
+      - Should detect stalemate when player has no legal moves but not in check
+
+  Chess Checkmate & Match Completion Tests
+    Checkmate Detection
+      ✔ Should detect Scholar's Mate and mark match as completed (54ms)
+      ✔ Should detect Back Rank Mate
+      ✔ Should detect checkmate and emit MatchCompleted event (54ms)
+    Timeout Victory Match Completion
+      ✔ Should complete match after timeout claim
+      ✔ Should update player stats after timeout victory
+    4-Player Tournament Progression
+      ✔ Should advance winners to finals after round 0 completion (64ms)
+      ✔ Should complete tournament after finals match
+    Round Completion Logic
+      ✔ Should mark round as complete when all matches finish
+      ✔ Should increment completed matches count for each finished match
+
+  ChessOnChain 8-Tier System Tests
+    Tier Configuration Validation
+      ✔ Should have exactly 8 tiers configured
+    Boundary Tier Enrollment Tests
+      Tier 0 (Lowest Fee 2-Player)
+        ✔ Should accept correct entry fee
+        ✔ Should reject incorrect entry fee
+        ✔ Should auto-start when last slot fills
+        ✔ Should split entry fees correctly (90/7.5/2.5)
+      Tier 3 (Highest Fee 2-Player)
+        ✔ Should accept correct entry fee
+        ✔ Should reject incorrect entry fee
+        ✔ Should auto-start when last slot fills
+        ✔ Should split entry fees correctly (90/7.5/2.5)
+      Tier 4 (Lowest Fee 4-Player)
+        ✔ Should accept correct entry fee
+        ✔ Should reject incorrect entry fee
+        ✔ Should auto-start when last slot fills
+        ✔ Should split entry fees correctly (90/7.5/2.5)
+      Tier 7 (Highest Fee 4-Player)
+        ✔ Should accept correct entry fee
+        ✔ Should reject incorrect entry fee
+        ✔ Should auto-start when last slot fills
+        ✔ Should split entry fees correctly (90/7.5/2.5)
+    2-Player Tier Progression
+      ✔ Should complete Tier 0 tournament via checkmate (81ms)
+      ✔ Should complete Tier 3 tournament via checkmate (76ms)
+      ✔ Should complete Tier 0 tournament via timeout
+      ✔ Should complete Tier 3 tournament via timeout
+    4-Player Tier Progression
+      ✔ Should complete Tier 4 semi-finals and finals via checkmate (277ms)
+      ✔ Should complete Tier 7 semi-finals and finals via checkmate (311ms)
+      ✔ Should handle mixed completion methods (timeout + checkmate) (194ms)
+      ✔ Should handle Tier 7 mixed completion methods (135ms)
+    Prize Distribution Validation
+      ✔ Should distribute winner-takes-all correctly in Tier 0 (76ms)
+      ✔ Should distribute winner-takes-all correctly in Tier 3 (78ms)
+      ✔ Should distribute winner-takes-all correctly in Tier 4 (266ms)
+      ✔ Should distribute winner-takes-all correctly in Tier 7 (268ms)
+    Cross-Tier Independence
+      ✔ Should allow player to enroll in multiple tiers simultaneously
+      ✔ Should track prizes independently per tier (181ms)
+      ✔ Should allow player in different instances of same tier
+    Elite Matches Storage (Tier 3 and Tier 7)
+      ✔ Should store Tier 3 finals match in eliteMatches array (79ms)
+      ✔ Should store Tier 7 finals match in eliteMatches array (252ms)
+      ✔ Should NOT store non-elite tier matches (Tier 1) (76ms)
+      ✔ Should store complete move history in moves string for Tier 3 (88ms)
+      ✔ Should store multiple elite matches sequentially (377ms)
+      ✔ Should handle draw in elite finals correctly (122ms)
+
+  ChessOnChain Tests
+    Deployment
+      ✔ Should deploy successfully
+      ✔ Should have correct owner
+    Check Status Bug Fix
+      ✔ Should clear check status when player escapes check
+      ✔ Should correctly track check status throughout a game
+    Basic Game Flow
+      ✔ Should allow a basic game to start
+    1v1 Duel Match Initialization
+      ✔ Should start match immediately after 2 players enroll in 1v1 duel
+      ✔ Should allow immediate gameplay after match starts in 1v1 duel
+      ✔ Should return correct status from all view functions after 1v1 duel starts
+    Pawn Promotion
+      ✔ Should allow pawn promotion to Queen
+      ✔ Should reject promotion with PieceType.None
+    Castling
+      ✔ Should allow kingside castling
+    Timeout Claims
+      ✔ Should allow timeout claim after timeout period
+      ✔ Should reject early timeout claim
+      ✔ Should reject timeout claim on your own turn
+    View Functions
+      ✔ Should return chess match data
+      ✔ Should return board state
+    Scholar's Mate (Checkmate)
+      ✔ Should detect checkmate (Scholar's Mate) (70ms)
+    4-Player Tournament
+      ✔ Should handle 4-player tournament bracket
+
+  ConnectFour Edge Cases
+    Full Board Draw (42 Pieces)
+      - Should detect draw when entire 7x6 board is filled without winner
+      - Should reject moves after board is full
+    Column Full Detection
+      ✔ Should reject move to column that is full (6 pieces)
+      ✔ Should allow moves to other columns when one column is full
+
+  ConnectFour Maximum Capacity Gas Estimation
+
+🚀 Initializing ConnectFour Maximum Capacity Gas Test...
+✅ Loaded 150 player accounts
+✅ ConnectFourOnChain deployed at 0xFC3115156e389729E2eE1e5d0cb27211A14cb19F
+    Phase 1: Contract Saturation Setup
+
+📋 Enrolling players to saturate contract...
+
+  Tier 0 (2-player): Enrolling 24 players across 12 instances...
+    ✓ 3/12 instances filled
+    ✓ 6/12 instances filled
+    ✓ 9/12 instances filled
+    ✓ 12/12 instances filled
+  ✅ Tier 0 complete: 24 players enrolled
+
+  Tier 1 (4-player): Enrolling 40 players across 10 instances...
+    ✓ 3/10 instances filled
+    ✓ 6/10 instances filled
+    ✓ 9/10 instances filled
+  ✅ Tier 1 complete: 40 players enrolled
+
+  Tier 2 (8-player): Enrolling 64 players across 8 instances...
+    ✓ 2/8 instances filled
+    ✓ 4/8 instances filled
+    ✓ 6/8 instances filled
+    ✓ 8/8 instances filled
+  ✅ Tier 2 complete: 64 players enrolled
+
+✅ CONTRACT SATURATION COMPLETE
+   Total Players: 128 = 128 enrolled (Tier 3 removed)
+   Active Tournaments: 30
+      ✔ Should saturate contract with 128 players across all tiers (153ms)
+    Phase 2: Worst-Case Gas Measurement
+
+🎮 SCENARIO 1: Long Game (20+ moves)
+
+    📊 Playing long game (20 moves)
+      Move 5/20 complete - Gas: 71284
+      Move 10/20 complete - Gas: 73637
+      Move 15/20 complete - Gas: 73404
+      Move 20/20 complete - Gas: 73068
+    ✅ Long game complete - 20 moves played
+      ✔ Scenario 1: Long Game with Multiple Moves
+
+🚀 SCENARIO 2: Tournament Auto-Start
+    Enrolling final player to trigger auto-start...
+
+    💎 AUTO-START GAS COST
+       Gas: 1,851,001
+       Cost: 0.001851001012957007 ETH ($5.55)
+      ✔ Scenario 2: Tournament Auto-Start at Capacity
+      - Scenario 3: Multiple Quick Games for Cache Filling
+      - Scenario 4: Timeout and Claim for Escalation
+      - Scenario 5: Complete Additional Matches for Distribution Test
+    Phase 3: Per-Player Cost Analysis
+
+📊 Calculating average player costs...
+
+    Players tracked: 136
+    Average gas per player: 430,032
+    Average cost @ 0.05 gwei: 0.0000215016 ETH
+      ✔ Should calculate average player cost across all scenarios
+
+🎯 Identifying maximum cost player...
+
+    Max cost player: 0xE5D3ab6883b7e8c35c04675F28BB992Ca1129ee4
+    Total gas: 1,851,025
+    Transactions: 1
+
+    Top 5 expensive transactions:
+      1. Enrollment: Tier 2, Instance 2, Player 8: 1,851,025 gas
+      ✔ Should identify maximum cost player path
+
+💰 Network Cost Estimates at Various Gas Prices
+
+    Gas Prices (L2): 0.03, 0.1, 0.5, 1.0 gwei
+    ETH Price Assumption: $3,000
+
+    0.03 gwei:
+      Average: 0.00001290096 ETH ($0.04)
+      Maximum: 0.00005553075 ETH ($0.17)
+
+    0.1 gwei:
+      Average: 0.0000430032 ETH ($0.13)
+      Maximum: 0.0001851025 ETH ($0.56)
+
+    0.5 gwei:
+      Average: 0.000215016 ETH ($0.65)
+      Maximum: 0.0009255125 ETH ($2.78)
+
+    1 gwei:
+      Average: 0.000430032 ETH ($1.29)
+      Maximum: 0.001851025 ETH ($5.55)
+      ✔ Should display network cost estimates at various gas prices
+    Phase 4: Generate Comprehensive Report
+
+================================================================================
+CONNECTFOUR MAXIMUM CAPACITY GAS ESTIMATION REPORT
+================================================================================
+
+## Contract State at Test Time
+- Total Players Enrolled: 128
+- Active Tournament Instances: 30
+- Tier 0: 12 instances × 2 players = 24 players
+- Tier 1: 10 instances × 4 players = 40 players
+- Tier 2: 8 instances × 8 players = 64 players
+- Total: 128 players (Tier 3 removed in new architecture)
+- Estimated Concurrent Matches: ~62
+- Match Cache Utilization: moderate
+
+## Gas Costs by Operation (Top 20 Highest)
+
+1. Enrollment: Tier 2, Instance 2, Player 8
+   Gas Used: 1,851,025
+   Cost @ 0.05 gwei: 0.001851025012957175 ETH ($5.55)
+   Player: 0xE5D3ab68...
+
+2. Enrollment: Tier 2, Instance 3, Player 8
+   Gas Used: 1,851,025
+   Cost @ 0.05 gwei: 0.001851025012957175 ETH ($5.55)
+   Player: 0xBc5BdceE...
+
+3. Enrollment: Tier 2, Instance 0, Player 8
+   Gas Used: 1,851,013
+   Cost @ 0.05 gwei: 0.001851013012957091 ETH ($5.55)
+   Player: 0xF0cE7BaB...
+
+4. Enrollment: Tier 2, Instance 7, Player 8
+   Gas Used: 1,851,013
+   Cost @ 0.05 gwei: 0.001851013012957091 ETH ($5.55)
+   Player: 0x20a6250c...
+
+5. Enrollment: Tier 2, Instance 1, Player 8
+   Gas Used: 1,851,001
+   Cost @ 0.05 gwei: 0.001851001012957007 ETH ($5.55)
+   Player: 0x586BA390...
+
+6. Enrollment: Tier 2, Instance 4, Player 8
+   Gas Used: 1,851,001
+   Cost @ 0.05 gwei: 0.001851001012957007 ETH ($5.55)
+   Player: 0x9c793571...
+
+7. Enrollment: Tier 2, Instance 5, Player 8
+   Gas Used: 1,851,001
+   Cost @ 0.05 gwei: 0.001851001012957007 ETH ($5.55)
+   Player: 0x11c9CFEc...
+
+8. Enrollment: Tier 2, Instance 6, Player 8
+   Gas Used: 1,851,001
+   Cost @ 0.05 gwei: 0.001851001012957007 ETH ($5.55)
+   Player: 0xc9DB8bec...
+
+9. Auto-Start Trigger: Tier 2 enrollment (8th player)
+   Gas Used: 1,851,001
+   Cost @ 0.05 gwei: 0.001851001012957007 ETH ($5.55)
+   Player: 0x527601C7...
+
+10. Enrollment: Tier 1, Instance 6, Player 4
+   Gas Used: 1,011,380
+   Cost @ 0.05 gwei: 0.00101138000707966 ETH ($3.03)
+   Player: 0xD6A098Eb...
+
+11. Enrollment: Tier 1, Instance 8, Player 4
+   Gas Used: 1,011,380
+   Cost @ 0.05 gwei: 0.00101138000707966 ETH ($3.03)
+   Player: 0xC0543b0b...
+
+12. Enrollment: Tier 1, Instance 1, Player 4
+   Gas Used: 1,011,368
+   Cost @ 0.05 gwei: 0.001011368007079576 ETH ($3.03)
+   Player: 0xcF2d5b3c...
+
+13. Enrollment: Tier 1, Instance 7, Player 4
+   Gas Used: 1,011,368
+   Cost @ 0.05 gwei: 0.001011368007079576 ETH ($3.03)
+   Player: 0xAb707cb8...
+
+14. Enrollment: Tier 1, Instance 2, Player 4
+   Gas Used: 1,011,356
+   Cost @ 0.05 gwei: 0.001011356007079492 ETH ($3.03)
+   Player: 0x1003ff39...
+
+15. Enrollment: Tier 1, Instance 3, Player 4
+   Gas Used: 1,011,356
+   Cost @ 0.05 gwei: 0.001011356007079492 ETH ($3.03)
+   Player: 0x9eF6c02F...
+
+16. Enrollment: Tier 1, Instance 4, Player 4
+   Gas Used: 1,011,356
+   Cost @ 0.05 gwei: 0.001011356007079492 ETH ($3.03)
+   Player: 0xC004e69C...
+
+17. Enrollment: Tier 1, Instance 5, Player 4
+   Gas Used: 1,011,356
+   Cost @ 0.05 gwei: 0.001011356007079492 ETH ($3.03)
+   Player: 0x35304262...
+
+18. Enrollment: Tier 1, Instance 9, Player 4
+   Gas Used: 1,011,356
+   Cost @ 0.05 gwei: 0.001011356007079492 ETH ($3.03)
+   Player: 0x64492E25...
+
+19. Enrollment: Tier 1, Instance 0, Player 4
+   Gas Used: 1,011,344
+   Cost @ 0.05 gwei: 0.001011344007079408 ETH ($3.03)
+   Player: 0x40Fc963A...
+
+20. Enrollment: Tier 0, Instance 2, Player 2
+   Gas Used: 591,541
+   Cost @ 0.05 gwei: 0.000591541004140787 ETH ($1.77)
+   Player: 0x976EA740...
+
+## Average Player Cost Analysis
+- Players Tracked: 136
+- Total Gas (All Players): 58,484,473
+- Average Gas per Player: 430,032
+- Average Cost @ 0.05 gwei: 0.0000215016 ETH
+- Average Cost @ 0.05 gwei: $0.06
+
+## Maximum Cost Player
+- Player Address: 0xE5D3ab6883b7e8c35c04675F28BB992Ca1129ee4
+- Total Gas Spent: 1,851,025
+- Total Transactions: 1
+- Cost @ 0.05 gwei: 0.00009255125 ETH
+- Cost @ 0.05 gwei: $0.28
+
+  Top 5 Most Expensive Transactions for Max Cost Player:
+    1. Enrollment: Tier 2, Instance 2, Player 8: 1,851,025 gas
+
+## Network Cost Estimates at Different Gas Prices (L2)
+
+┌────────────┬──────────────────┬──────────────────┐
+│ Gas Price  │ Avg Player Cost  │ Max Player Cost  │
+├────────────┼──────────────────┼──────────────────┤
+│ 0.03 gwei  │ 0.00001290096    │ 0.00005553075    │
+│            │ ($0.04         ) │ ($0.17         ) │
+│ 0.1 gwei   │ 0.0000430032     │ 0.0001851025     │
+│            │ ($0.13         ) │ ($0.56         ) │
+│ 0.5 gwei   │ 0.000215016      │ 0.0009255125     │
+│            │ ($0.65         ) │ ($2.78         ) │
+│ 1 gwei     │ 0.000430032      │ 0.001851025      │
+│            │ ($1.29         ) │ ($5.55         ) │
+└────────────┴──────────────────┴──────────────────┘
+
+## Operation Type Breakdown
+
+ENROLLMENTS:
+  Count: 1
+  Total Gas: 1,851,001
+  Average Gas: 1,851,001
+
+MOVES:
+  Count: 20
+  Total Gas: 1,475,756
+  Average Gas: 73,787
+
+================================================================================
+END OF REPORT
+================================================================================
+
+      ✔ Should print comprehensive gas analysis report
+
+  ConnectFourOnChain ETour Compatibility Tests
+    Deployment and Tier Configuration
+      ✔ Should deploy successfully as ETour implementation
+      ✔ Should have 3 tiers configured
+    Tournament Enrollment (ETour Integration)
+      ✔ Should allow player enrollment
+      ✔ Should auto-start 2-player tournament when full
+      ✔ Should correctly split entry fees (90% prize pool)
+      ✔ Should reject incorrect entry fee
+      ✔ Should reject duplicate enrollment
+    Match Creation (ETour Integration)
+      ✔ Should create match when tournament starts
+      ✔ Should initialize empty board
+      ✔ Should set random first player
+    Game Play (Connect Four Logic)
+      ✔ Should allow first player to make move
+      ✔ Should place piece at bottom of column (gravity)
+      ✔ Should stack pieces correctly
+      ✔ Should switch turns after each move
+      ✔ Should reject move when not your turn
+      ✔ Should reject move to full column
+      ✔ Should reject invalid column
+    Win Detection
+      ✔ Should detect horizontal win
+      ✔ Should detect vertical win
+    Tournament Completion (ETour Integration)
+      ✔ Should complete tournament and distribute prizes
+      ✔ Should update player stats after match
+    4-Player Tournament (Multi-Round)
+      ✔ Should handle 4-player tournament bracket
+    Timeout Functions (ETour Integration)
+      ✔ Should allow timeout claim after timeout period
+      ✔ Should reject early timeout claim
+    View Functions
+      ✔ Should return match data correctly
+    Round-Based Prize Distribution (8-Player Tournament)
+      ✔ Should start 8-player tournament with correct bracket structure
+      ✔ Should award 0% to semi-final losers (3rd and 4th place) (60ms)
+      ✔ Should award 0% to round 0 losers (5th-8th place) (60ms)
+    ABI Compatibility with ETour
+      ✔ Should have all ETour required functions
+      ✔ Should have Connect Four specific functions
+
+  TicTacChain Player Activity Tracking - Comprehensive 8-Player Tournament
+
+🎯 ENROLLING 8 PLAYERS...
+
+🏆 ROUND 0: QUARTER FINALS
+
+⏰ TIMEOUT SCENARIO: P5 vs P6
+
+💥 ESCALATION SCENARIO: P7 vs P8 - Both timeout, L2 eliminates both
+
+🏆 ROUND 1: SEMI FINALS (with consolidation)
+Round 1: 1 matches, 0 completed, initialized=true
+
+🔄 REPLACEMENT SCENARIO: Match stalls, External2 replaces
+
+🏆 ROUND 2: FINALS
+
+
+📊 ===== COMPLETE STORAGE TRACE =====
+
+=== Step 1: Initial State (before enrollment) ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=0
+P3: enrolling=0, active=0
+P4: enrolling=0, active=0
+P5: enrolling=0, active=0
+P6: enrolling=0, active=0
+P7: enrolling=0, active=0
+P8: enrolling=0, active=0
+
+=== Step 2: All 8 Players Enrolled (in enrolling list) ===
+P1: enrolling=0, active=1
+P2: enrolling=0, active=1
+P3: enrolling=0, active=1
+P4: enrolling=0, active=1
+P5: enrolling=0, active=1
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 3: Tournament Started (all moved to active list) ===
+P1: enrolling=0, active=1
+P2: enrolling=0, active=1
+P3: enrolling=0, active=1
+P4: enrolling=0, active=1
+P5: enrolling=0, active=1
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 4.1: Match 0 Complete - P1 wins, P2 eliminated ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=1
+P3: enrolling=0, active=1
+P4: enrolling=0, active=1
+P5: enrolling=0, active=1
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 4.2: Match 1 Complete - P4 wins, P3 eliminated ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=1
+P3: enrolling=0, active=0
+P4: enrolling=0, active=1
+P5: enrolling=0, active=1
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 4.3: Match 2 Timeout - Timeout win claimed, player eliminated ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=1
+P3: enrolling=0, active=0
+P4: enrolling=0, active=1
+P5: enrolling=0, active=0
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 4.4: Match 3 L2 Escalation - Both P7 & P8 eliminated by advanced player ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=1
+P3: enrolling=0, active=0
+P4: enrolling=0, active=1
+P5: enrolling=0, active=0
+P6: enrolling=0, active=1
+P7: enrolling=0, active=1
+P8: enrolling=0, active=1
+
+=== Step 5.1: Match 0 L3 Replacement - External2 replaces stalled players ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=0
+P3: enrolling=0, active=0
+P4: enrolling=0, active=0
+P5: enrolling=0, active=0
+P6: enrolling=0, active=0
+P7: enrolling=0, active=0
+P8: enrolling=0, active=0
+EXT1: enrolling=0, active=0
+EXT2: enrolling=0, active=0
+
+=== Step 7: Tournament Complete - All storage cleaned up ===
+P1: enrolling=0, active=0
+P2: enrolling=0, active=0
+P3: enrolling=0, active=0
+P4: enrolling=0, active=0
+P5: enrolling=0, active=0
+P6: enrolling=0, active=0
+P7: enrolling=0, active=0
+P8: enrolling=0, active=0
+EXT1: enrolling=0, active=0
+EXT2: enrolling=0, active=0
+
+
+📦 Storage Snapshots for Visualization:
+[
+  {
+    "label": "Step 1: Initial State (before enrollment)",
+    "timestamp": 1768031045710,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      }
+    }
+  },
+  {
+    "label": "Step 2: All 8 Players Enrolled (in enrolling list)",
+    "timestamp": 1768031045721,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 3: Tournament Started (all moved to active list)",
+    "timestamp": 1768031045729,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 4.1: Match 0 Complete - P1 wins, P2 eliminated",
+    "timestamp": 1768031045740,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 4.2: Match 1 Complete - P4 wins, P3 eliminated",
+    "timestamp": 1768031045751,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 4.3: Match 2 Timeout - Timeout win claimed, player eliminated",
+    "timestamp": 1768031045761,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 4.4: Match 3 L2 Escalation - Both P7 & P8 eliminated by advanced player",
+    "timestamp": 1768031045769,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [
+          {
+            "tierId": "2",
+            "instanceId": "0"
+          }
+        ],
+        "enrollingCount": 0,
+        "activeCount": 1
+      }
+    }
+  },
+  {
+    "label": "Step 5.1: Match 0 L3 Replacement - External2 replaces stalled players",
+    "timestamp": 1768031045779,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720": {
+        "name": "EXT1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0xBcd4042DE499D14e55001CcbB24a551F3b954096": {
+        "name": "EXT2",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      }
+    }
+  },
+  {
+    "label": "Step 7: Tournament Complete - All storage cleaned up",
+    "timestamp": 1768031045785,
+    "players": {
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+        "name": "P1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+        "name": "P2",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+        "name": "P3",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+        "name": "P4",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc": {
+        "name": "P5",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9": {
+        "name": "P6",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955": {
+        "name": "P7",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f": {
+        "name": "P8",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720": {
+        "name": "EXT1",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      },
+      "0xBcd4042DE499D14e55001CcbB24a551F3b954096": {
+        "name": "EXT2",
+        "enrolling": [],
+        "active": [],
+        "enrollingCount": 0,
+        "activeCount": 0
+      }
+    }
+  }
+]
+    ✔ should track complete 8-player tournament with escalations (98ms)
+
+Tournament status: 1n
+Enrolled count: 4n
+Current round: 0n
+
+Round 0 info:
+  Total matches: 2n
+  Completed: 0n
+  Initialized: true
+
+Attempting to get match 0,0...
+Match retrieved successfully!
+Player 1: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Player 2: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Status: 1n
+
+Semifinal 0 Complete:
+  Winner: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+  Loser: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+  Winner's active tournaments: 1
+
+Semifinal 1 Complete:
+  Winner: 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+  Loser: 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+    ✔ should keep players in active tournaments after winning semifinal while waiting for other semifinal (43ms)
+
+  TicTacChain Progressive Raffle Thresholds
+    Progressive Threshold Configuration
+      ✔ Should have 0.25 ETH threshold for raffle #1 (index 0)
+      ✔ Should have 10% reserve for TicTacChain
+      ✔ Should calculate raffle amount correctly with 10% reserve
+    Threshold Progression
+      ✔ Should progress from 0.25 to 0.5 ETH after first raffle
+      ✔ Should cap at 1.0 ETH for raffle #4 and beyond
+    Raffle Index Tracking
+      ✔ Should start with currentRaffleIndex = 0
+      ✔ Should show raffleIndex in getRaffleInfo matching currentRaffleIndex
+    Protocol Fee Accumulation with Low Threshold
+      ✔ Should accumulate protocol fees toward 0.25 ETH threshold
+      ✔ Should show accurate progress toward threshold
+    Distribution with 10% Reserve
+      ✔ Should calculate 90% distribution with 10% reserve
+    Comparison with Base ETour
+      ✔ TicTacChain should have lower threshold than base ETour default
+      ✔ Both should use 10% proportional reserve
+    Threshold Scaling Examples
+      ✔ Should document threshold and reserve progression
+
+
+  409 passing (1m)
+  25 pending
+

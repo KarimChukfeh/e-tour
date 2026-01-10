@@ -783,20 +783,6 @@ contract ChessOnChain is ETour_Storage {
         for (uint8 i = 0; i < 64; i++) board[i] = _getPiece(packed, i);
     }
 
-    function getCurrentTimeRemaining(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view returns (uint256 p1, uint256 p2) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-        if (m.status != MatchStatus.InProgress) return (m.player1TimeRemaining, m.player2TimeRemaining);
-        uint256 elapsed = block.timestamp - m.lastMoveTime;
-        if (m.currentTurn == m.player1) {
-            p1 = m.player1TimeRemaining > elapsed ? m.player1TimeRemaining - elapsed : 0;
-            p2 = m.player2TimeRemaining;
-        } else {
-            p1 = m.player1TimeRemaining;
-            p2 = m.player2TimeRemaining > elapsed ? m.player2TimeRemaining - elapsed : 0;
-        }
-    }
-
     function getPlayerStats() external view returns (int256) { return playerEarnings[msg.sender]; }
     function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) { return playerEnrollingTournaments[player]; }
     function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) { return playerActiveTournaments[player]; }
