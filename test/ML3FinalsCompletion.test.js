@@ -243,11 +243,10 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             console.log("\n=== TEST COMPLETE ===\n");
         });
 
-        it.skip("Should also handle ML2 (force eliminate) on finals match properly", async function() {
-            // SKIPPED: This test reveals a separate bug in ETour_Escalation._handleRoundCompletion
+        it("Should also handle ML2 (force eliminate) on finals match properly", async function() {
+            // Testing ML2 (force eliminate) on finals match
             // When ML2 double-eliminates both finals players (winner=address(0), isDraw=false),
-            // the tournament doesn't complete because _handleRoundCompletion doesn't handle this case.
-            // This is a separate issue from the ML3 bug we're fixing here.
+            // the tournament should complete properly.
             this.timeout(60000);
 
             console.log("\n=== ML2 FINALS COMPLETION TEST ===\n");

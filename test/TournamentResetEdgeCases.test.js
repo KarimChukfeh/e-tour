@@ -305,43 +305,4 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             expect(tournament2.prizePool).to.equal(expectedPrizePool);
         });
     });
-
-    describe("Match Cache Cleanup", function () {
-        it.skip("ARCHITECTURE CHANGE: Finals cleared immediately - use events for historical data", async function () {
-            const tierId = 0;
-            const instanceId = 0;
-
-            // First tournament
-            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            // Verify match exists
-            const match1 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match1.common.status).to.equal(1); // Active
-
-            // Complete tournament
-            const firstPlayer = match1.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = firstPlayer === player1 ? player2 : player1;
-
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
-            await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
-
-            // After reset, finals match is preserved in live storage (still retrievable for history)
-            const match1Cached = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match1Cached.common.isCached).to.be.false; // Finals preserved, not cached
-            expect(match1Cached.common.status).to.equal(2); // Completed
-
-            // Second tournament should create new match
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-
-            const match2 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match2.common.isCached).to.be.false; // New match, not cached
-            expect(match2.common.status).to.equal(1); // Active
-            expect(match2.common.player1).to.not.equal(match1.common.player1); // Different players
-        });
-    });
 });

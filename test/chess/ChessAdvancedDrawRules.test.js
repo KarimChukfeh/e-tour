@@ -23,33 +23,4 @@ describe("Chess Advanced Draw Rules", function () {
         const ChessOnChain = await hre.ethers.getContractFactory("ChessOnChain");
         chess = await ChessOnChain.deploy();
     });
-
-
-    describe("Insufficient Material Draw", function () {
-        it.skip("Should automatically draw with only kings remaining", async function () {
-            // This would require playing out a game to reach K vs K position
-            // The contract checks for insufficient material after each move
-            // Skipped: Too complex to reach this position programmatically without board setup API
-        });
-
-        it.skip("Should automatically draw with king + bishop vs king", async function () {
-            // Similar to above - contract has the logic but reaching this
-            // position programmatically would require extensive game simulation
-            // Skipped: Too complex without board setup capability
-        });
-
-        it.skip("Should automatically draw with king + knight vs king", async function () {
-            // Same reasoning as above
-            // Skipped: Too complex without board setup capability
-        });
-    });
-
-    describe("Stalemate Detection", function () {
-        it.skip("Should detect stalemate when player has no legal moves but not in check", async function () {
-            // Stalemate is a complex position to set up programmatically
-            // Would require playing specific moves to corner the king
-            // The contract has stalemate detection logic
-            // Skipped: Would need manual board setup capability for comprehensive testing
-        });
-    });
 });

@@ -495,23 +495,6 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
             gasData.enrollments.push(gasRecord);
         });
 
-        it.skip("Scenario 3: Multiple Quick Games for Cache Filling", async function () {
-            console.log("\n⚡ SCENARIO 3: Multiple Match Completions");
-            // SKIPPED: All tier instances are saturated and time banks would be depleted by this point.
-            // Scenarios 1-2 already provide sufficient gas measurement data for match completions.
-        });
-
-        it.skip("Scenario 4: Timeout and Claim for Escalation", async function () {
-            console.log("\n⏰ SCENARIO 4: Timeout Escalation");
-            // SKIPPED: All tier instances are saturated. Timeout escalation gas costs
-            // are adequately covered by other escalation tests in the test suite.
-        });
-
-        it.skip("Scenario 5: Complete Additional Matches for Distribution Test", async function () {
-            console.log("\n🏁 SCENARIO 5: Match Completions for Tournament Progression");
-            // SKIPPED: All tier instances are saturated. Tournament progression and
-            // prize distribution gas costs are covered by Scenarios 1-2 and other tests.
-        });
     });
 
     describe("Phase 3: Per-Player Cost Analysis", function () {
