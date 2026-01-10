@@ -279,11 +279,14 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       await time.increase(MATCH_TIMEOUT + 1);
 
+      // Claim timeout - this completes the match and tournament
       await chess.connect(whitePlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
 
-      match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      expect(match.common.status).to.equal(2); // Completed
-      expect(match.common.winner).to.equal(whitePlayer.address);
+      // ARCHITECTURE CHANGE: Finals are now cleared immediately on tournament completion
+      // Match data no longer queryable - use events for historical data
+      // Verify tournament completed by checking status
+      const [status] = await chess.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(status).to.equal(0); // Enrolling (reset after completion)
     });
 
     it("Should complete 2-player tournament after ML1 timeout claim", async function () {
@@ -522,11 +525,13 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
+      // Claim ML3 - this completes the match and tournament
       await chess.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);
 
-      match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      expect(match.common.status).to.equal(2); // Completed
-      expect(match.common.winner).to.equal(outsider.address);
+      // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
+      // Verify tournament completed by checking status
+      const [status] = await chess.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(status).to.equal(0); // Enrolling (reset after completion)
     });
 
     it("Should complete 2-player tournament after ML3 claim", async function () {

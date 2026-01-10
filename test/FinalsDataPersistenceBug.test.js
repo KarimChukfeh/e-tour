@@ -89,46 +89,36 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             const tournament1 = await game.getTournamentInfo(tierId, instanceId);
             console.log(`✓ Tournament status: ${tournament1.status} (0=Enrolling)`);
 
-            // CYCLE 2: First enrollment should clear old finals
-            console.log("\nCYCLE 2: First enrollment in new cycle...");
+            // NEW ARCHITECTURE: Finals cleared immediately on reset
+            console.log("\nNEW CYCLE: Verifying finals cleared immediately...");
 
-            // Check if old finals data still exists BEFORE enrollment
+            // Finals should be cleared immediately (no vulnerability window)
             try {
                 const staleFinals = await game.getMatch(tierId, instanceId, 0, 0);
-                console.log(`⚠️  OLD FINALS DATA STILL EXISTS BEFORE ENROLLMENT:`);
+                console.log(`❌ UNEXPECTED: Finals data still exists!`);
                 console.log(`  - player1: ${staleFinals.common.player1}`);
-                console.log(`  - player2: ${staleFinals.common.player2}`);
-                console.log(`  - status: ${staleFinals.common.status}`);
-                console.log(`  - isCached: ${staleFinals.common.isCached}`);
-            } catch (e) {
-                console.log(`✓ Old finals already cleared (expected after fix)`);
-            }
-
-            // First enrollment in Cycle 2
-            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
-            console.log("✓ Player3 enrolled in Cycle 2");
-
-            // BUG CHECK: Old finals data should be cleared now
-            try {
-                const finalsMatch2 = await game.getMatch(tierId, instanceId, 0, 0);
-
-                // If we can read it, check if it's the OLD data (BUG) or NEW data (OK)
-                if (finalsMatch2.common.player1 === player1.address ||
-                    finalsMatch2.common.player2 === player2.address) {
-                    console.log(`\n❌ BUG DETECTED: Old finals data NOT cleared!`);
-                    console.log(`  - Old player1: ${player1.address}`);
-                    console.log(`  - Old player2: ${player2.address}`);
-                    console.log(`  - Current player1: ${finalsMatch2.common.player1}`);
-                    console.log(`  - Current player2: ${finalsMatch2.common.player2}`);
-
-                    // This test SHOULD FAIL before the fix
-                    expect.fail("Old finals data persisted into new tournament cycle!");
-                } else {
-                    console.log(`✓ Finals data belongs to new cycle`);
-                }
+                expect.fail("Finals should be cleared immediately on reset!");
             } catch (e) {
                 if (e.message.includes("MNF")) {
-                    console.log(`✓ Old finals properly cleared (match not found)`);
+                    console.log(`✓ FINALS CLEARED IMMEDIATELY ON RESET`);
+                    console.log(`  - No stale data window`);
+                    console.log(`  - Historical data available via events`);
+                } else {
+                    throw e;
+                }
+            }
+
+            // First enrollment in new cycle
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            console.log("✓ Player3 enrolled in new cycle");
+
+            // Finals should still be cleared
+            try {
+                await game.getMatch(tierId, instanceId, 0, 0);
+                expect.fail("Finals should remain cleared");
+            } catch (e) {
+                if (e.message.includes("MNF")) {
+                    console.log(`✓ Finals remain cleared (as expected)`);
                 } else {
                     throw e;
                 }
@@ -190,56 +180,47 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             await time.increase(MATCH_TIMEOUT + MATCH_LEVEL_2_DELAY + 1);
 
             // Advanced player (firstPlayer0) forces elimination on finals
+            console.log(`Executing ML2 on finals...`);
             await game.connect(firstPlayer0).forceEliminateStalledMatch(tierId, instanceId, 1, 0);
 
-            const finalsAfterML2 = await game.getMatch(tierId, instanceId, 1, 0);
-            console.log(`✓ ML2 executed on finals:`);
-            console.log(`  - winner: ${finalsAfterML2.common.winner} (should be 0x0)`);
-            console.log(`  - status: ${finalsAfterML2.common.status} (2=Completed)`);
-
-            expect(finalsAfterML2.common.winner).to.equal(hre.ethers.ZeroAddress);
-            expect(finalsAfterML2.common.status).to.equal(2); // Completed
+            console.log(`✓ ML2 executed - tournament completed and reset`);
 
             // Tournament should have completed and reset
             const tournament1 = await game.getTournamentInfo(tierId, instanceId);
-            console.log(`✓ Tournament completed and reset: status=${tournament1.status}`);
+            console.log(`✓ Tournament status: ${tournament1.status} (0=Enrolling)`);
 
-            // CYCLE 2: First enrollment should clear old finals (even with winner = address(0))
-            console.log("\nCYCLE 2: First enrollment in new cycle...");
+            // NEW ARCHITECTURE: Finals cleared immediately on reset (no waiting for enrollment)
+            console.log("\nNEW CYCLE: Verifying immediate finals clearing...");
 
-            // Check if old finals exists BEFORE enrollment
+            // Finals should be cleared immediately after reset
             try {
                 const staleFinals = await game.getMatch(tierId, instanceId, 1, 0);
-                console.log(`⚠️  OLD FINALS DATA EXISTS (winner=0x0 case):`);
+                console.log(`❌ UNEXPECTED: Finals data still exists after reset!`);
                 console.log(`  - player1: ${staleFinals.common.player1}`);
                 console.log(`  - winner: ${staleFinals.common.winner}`);
-                console.log(`  - status: ${staleFinals.common.status}`);
-            } catch (e) {
-                console.log(`✓ Old finals already cleared`);
-            }
-
-            // Enroll new players for Cycle 2
-            const newPlayer1 = attacker;
-            await game.connect(newPlayer1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            console.log("✓ First enrollment in Cycle 2");
-
-            // BUG CHECK: Old finals with winner=0x0 should be cleared
-            try {
-                const finalsMatch2 = await game.getMatch(tierId, instanceId, 1, 0);
-
-                // Check if it's old data (contains player1 or firstPlayer1)
-                if (finalsMatch2.common.player1 === firstPlayer0.address ||
-                    finalsMatch2.common.player2 === firstPlayer1.address) {
-                    console.log(`\n❌ BUG DETECTED: Double-elimination finals NOT cleared!`);
-                    console.log(`  - Old finalists still present in match data`);
-
-                    expect.fail("Double-elimination finals data persisted into new cycle!");
-                } else {
-                    console.log(`✓ Finals data cleared properly`);
-                }
+                expect.fail("Finals should be cleared immediately on reset!");
             } catch (e) {
                 if (e.message.includes("MNF")) {
-                    console.log(`✓ Old finals properly cleared`);
+                    console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY`);
+                    console.log(`  - winner=0x0 case handled properly`);
+                    console.log(`  - No stale data vulnerability`);
+                } else {
+                    throw e;
+                }
+            }
+
+            // Enroll new player for Cycle 2
+            const newPlayer1 = attacker;
+            await game.connect(newPlayer1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            console.log("✓ First enrollment in new cycle");
+
+            // Finals should still be cleared
+            try {
+                await game.getMatch(tierId, instanceId, 1, 0);
+                expect.fail("Finals should remain cleared");
+            } catch (e) {
+                if (e.message.includes("MNF")) {
+                    console.log(`✓ Finals remain cleared (as expected)`);
                 } else {
                     throw e;
                 }

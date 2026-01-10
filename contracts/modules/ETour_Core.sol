@@ -124,26 +124,6 @@ contract ETour_Core is ETour_Storage {
             tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
-
-
-            // SECURITY: Unconditionally clear old finals match from previous tournament cycle
-            // This prevents stale match data from persisting across cycles, which could allow:
-            // 1. Finals with no winner (ML2 double-elimination) to persist
-            // 2. Incomplete finals (InProgress) to remain accessible
-            // 3. Cross-cycle matchId collisions causing data pollution
-            uint8 finalRound = config.totalRounds - 1;
-            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
-            (address player1, address player2) = this._getMatchPlayers(finalsMatchId);
-
-            // Clear finals if ANY match data exists (regardless of status/winner)
-            if (player1 != address(0) || player2 != address(0)) {
-                // Cache old finals before resetting it (if completed)
-                (, , MatchStatus finalsStatus) = this._getMatchResult(finalsMatchId);
-                if (finalsStatus == MatchStatus.Completed) {
-                    this._addToMatchCacheGame(tierId, instanceId, finalRound, 0);
-                }
-                this._resetMatchGame(finalsMatchId);
-            }
         }
 
         require(tournament.status == TournamentStatus.Enrolling, "Tournament not accepting enrollments");

@@ -293,12 +293,14 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       await time.increase(MATCH_TIMEOUT + 1);
 
+      // Claim timeout - completes match and tournament
       await expect(connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0))
         .to.emit(connectFour, "MatchCompleted");
 
-      const matchAfter = await connectFour.getMatch(TIER, INSTANCE_ID, 0, 0);
-      expect(matchAfter.common.status).to.equal(2); // Completed
-      expect(matchAfter.common.winner).to.equal(currentPlayer.address);
+      // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
+      // Verify tournament completed by checking status
+      const [status] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(status).to.equal(0); // Enrolling (reset after completion)
     });
 
     it("Should complete 2-player tournament after ML1 timeout claim", async function () {
@@ -553,11 +555,13 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await makeMove(currentPlayer, 0, 0, 0, TIER);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
+      // Claim ML3 - completes match and tournament
       await connectFour.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);
 
-      const matchAfter = await connectFour.getMatch(TIER, INSTANCE_ID, 0, 0);
-      expect(matchAfter.common.status).to.equal(2); // Completed
-      expect(matchAfter.common.winner).to.equal(outsider.address);
+      // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
+      // Verify tournament completed by checking status
+      const [status] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
+      expect(status).to.equal(0); // Enrolling (reset after completion)
     });
 
     it("Should complete 2-player tournament after ML3 claim", async function () {

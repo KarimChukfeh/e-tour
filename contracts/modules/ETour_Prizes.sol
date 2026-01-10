@@ -233,14 +233,6 @@ contract ETour_Prizes is ETour_Storage {
         // CRITICAL: Reset status FIRST before any other operations
         tournament.status = TournamentStatus.Enrolling;
 
-        // Calculate finals matchId (last round, match 0)
-        uint8 finalRound = config.totalRounds - 1;
-        bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
-
-        // Note: Finals is NOT reset here - it remains preserved in live storage
-        // for immediate post-tournament queries. It will be reset on first new enrollment
-        // (see ETour_Core.enrollInTournament)
-
         // Continue with other resets
         tournament.currentRound = 0;
         tournament.enrolledCount = 0;
@@ -276,6 +268,10 @@ contract ETour_Prizes is ETour_Storage {
         // Notify tracking systems of tournament completion
         _onTournamentCompleted(tierId, instanceId, playersCopy);
 
+        // ARCHITECTURE: Finals are treated like any other match - no special preservation
+        // Historical data is available via events (MatchCreated, MatchCompleted, TournamentCompleted)
+        // This prevents stale data persistence issues and simplifies the codebase
+
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
             Round storage round = rounds[tierId][instanceId][roundNum];
 
@@ -303,11 +299,6 @@ contract ETour_Prizes is ETour_Storage {
             for (uint8 matchNum = 0; matchNum < matchCount; matchNum++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
 
-                // Skip resetting finals - preserved until first new enrollment
-                if (matchId == finalsMatchId) {
-                    continue;
-                }
-
                 // Clear drawParticipants for both match players
                 (address p1, address p2) = this._getMatchPlayers(matchId);
                 if (p1 != address(0)) {
@@ -317,6 +308,7 @@ contract ETour_Prizes is ETour_Storage {
                     delete drawParticipants[tierId][instanceId][roundNum][matchNum][p2];
                 }
 
+                // Reset ALL matches including finals - no special treatment
                 this._resetMatchGame(matchId);
             }
         }

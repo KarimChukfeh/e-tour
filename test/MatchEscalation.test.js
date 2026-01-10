@@ -85,14 +85,15 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
             await hre.ethers.provider.send("evm_mine", []);
 
-            // Second player claims timeout
+            // Second player claims timeout - this completes match and tournament
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
             ).to.emit(game, "TimeoutVictoryClaimed");
 
-            // Match should be completed
-            const updatedMatch = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(updatedMatch.common.status).to.equal(2); // MatchStatus.Completed
+            // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
+            // Verify tournament completed by checking status
+            const tournament = await game.getTournamentInfo(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
         });
     });
 
