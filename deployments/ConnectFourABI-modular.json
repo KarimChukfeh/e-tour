@@ -1,9 +1,9 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
+  "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-10T11:31:24.486Z",
+  "deployedAt": "2026-01-10T15:51:32.226Z",
   "modules": {
     "core": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
     "matches": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
