@@ -97,7 +97,7 @@ contract TicTacChain is ETour_Storage {
                     i,
                     i == 0 ? 2 : (i == 1 ? 4 : 8),
                     i == 0 ? 100 : (i == 1 ? 50 : 25),
-                    (i == 0 ? 0.0003 ether : (i == 1 ? 0.0007 ether : 0.00013 ether)),
+                    (i == 0 ? 0.0003 ether : (i == 1 ? 0.0007 ether : 0.0013 ether)),
                     timeouts
                 )
             );
