@@ -1,0 +1,17 @@
+{
+  "network": "arbitrum",
+  "chainId": "42161",
+  "deployer": "0xAF44A0De1684cBa4511ff539B2b4D2010bc93c6f",
+  "timestamp": "2026-01-11T02:24:49.903Z",
+  "blockNumber": 420086951,
+  "modules": {
+    "ETour_Core": "0xF757e6683FaeDB93CfDfC570CB00B693c3339F57",
+    "ETour_Matches": "0x78A650651C75765DA954Ab170122A282c9910527",
+    "ETour_Prizes": "0x3D26b767E7D3874e9c0882444f1c7a9252450086",
+    "ETour_Raffle": "0x737E9caD75aBF927652Ca0e3D95f0CE6EE686953",
+    "ETour_Escalation": "0xbf231fFbd9Da0EA80f471bBCB09ab133C67D1A5F"
+  },
+  "contracts": {
+    "ConnectFourOnChain": "0x37df366Aa1A69665E28c5b2430436b3Af63B6F85"
+  }
+}
