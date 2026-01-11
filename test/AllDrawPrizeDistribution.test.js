@@ -6,7 +6,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
     const TIER_0_FEE = hre.ethers.parseEther("0.0003");
     const TIER_1_FEE = hre.ethers.parseEther("0.0007");
-    const TIER_2_FEE = hre.ethers.parseEther("0.00013");
+    const TIER_2_FEE = hre.ethers.parseEther("0.0013");
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6, player7, player8] = await hre.ethers.getSigners();

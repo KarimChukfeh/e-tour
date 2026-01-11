@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x22175851c7C3fd37C824A68D9005b0ac6C701Cfe",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-01-11T02:24:17.168Z",
+  "address": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-01-11T04:28:40.572Z",
   "modules": {
-    "core": "0xF757e6683FaeDB93CfDfC570CB00B693c3339F57",
-    "matches": "0x78A650651C75765DA954Ab170122A282c9910527",
-    "prizes": "0x3D26b767E7D3874e9c0882444f1c7a9252450086",
-    "raffle": "0x737E9caD75aBF927652Ca0e3D95f0CE6EE686953",
-    "escalation": "0xbf231fFbd9Da0EA80f471bBCB09ab133C67D1A5F"
+    "core": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "matches": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "prizes": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "raffle": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "escalation": "0x9A676e781A523b5d0C0e43731313A708CB607508"
   },
   "abi": [
     {
