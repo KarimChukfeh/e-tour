@@ -112,8 +112,8 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Set accumulated protocol share to exceed threshold (0.25 ETH for first raffle)
-            const threshold = hre.ethers.parseEther("0.25");
+            // Set accumulated protocol share to exceed threshold (0.001 ETH for first raffle)
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
 
             // Verify threshold is met
@@ -155,10 +155,10 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result.participants).to.include(result.winner);
 
             // Validate distribution amounts
-            const reserve = hre.ethers.parseEther("0.025"); // 10% of 0.25
-            const raffleAmount = threshold - reserve; // 0.225 ETH
-            const expectedOwnerShare = (raffleAmount * 20n) / 100n; // 0.045 ETH
-            const expectedWinnerPrize = (raffleAmount * 80n) / 100n; // 0.18 ETH
+            const reserve = hre.ethers.parseEther("0.0001"); // 10% of 0.001
+            const raffleAmount = threshold - reserve; // 0.0009 ETH
+            const expectedOwnerShare = (raffleAmount * 20n) / 100n; // 0.00018 ETH
+            const expectedWinnerPrize = (raffleAmount * 80n) / 100n; // 0.00072 ETH
 
             expect(result.protocolReserve).to.equal(reserve);
             expect(result.ownerShare).to.equal(expectedOwnerShare);
@@ -174,14 +174,14 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const instanceId = 0;
 
             // Execute first raffle
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
             await game.connect(player1).executeProtocolRaffle();
 
             const result1 = await getRaffleResult(1);
 
-            // Execute second raffle (threshold is now 0.5 ETH)
-            const threshold2 = hre.ethers.parseEther("0.5");
+            // Execute second raffle (threshold is now 0.005 ETH)
+            const threshold2 = hre.ethers.parseEther("0.005");
             await setAccumulatedProtocolShare(threshold2);
 
             // Mine a few blocks to change block data for different randomness
@@ -217,7 +217,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             await game.connect(player5).enrollInTournament(tierId, instanceId2, { value: TIER_0_FEE });
 
             // Set threshold and execute
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
             await game.connect(player3).executeProtocolRaffle();
 
@@ -253,8 +253,8 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Execute Raffle #1 (threshold: 0.25 ETH)
-            const threshold1 = hre.ethers.parseEther("0.25");
+            // Execute Raffle #1 (threshold: 0.001 ETH)
+            const threshold1 = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold1);
 
             const tx1 = await game.connect(player1).executeProtocolRaffle();
@@ -265,9 +265,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const infoAfter1 = await game.getRaffleInfo();
             expect(infoAfter1.raffleIndex).to.equal(1);
 
-            // Execute Raffle #2 (threshold: 0.5 ETH)
+            // Execute Raffle #2 (threshold: 0.005 ETH)
             await hre.network.provider.send("hardhat_mine", ["0x3"]);
-            const threshold2 = hre.ethers.parseEther("0.5");
+            const threshold2 = hre.ethers.parseEther("0.005");
             await setAccumulatedProtocolShare(threshold2);
 
             const tx2 = await game.connect(player2).executeProtocolRaffle();
@@ -278,9 +278,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const infoAfter2 = await game.getRaffleInfo();
             expect(infoAfter2.raffleIndex).to.equal(2);
 
-            // Execute Raffle #3 (threshold: 0.75 ETH)
+            // Execute Raffle #3 (threshold: 0.02 ETH)
             await hre.network.provider.send("hardhat_mine", ["0x3"]);
-            const threshold3 = hre.ethers.parseEther("0.75");
+            const threshold3 = hre.ethers.parseEther("0.02");
             await setAccumulatedProtocolShare(threshold3);
 
             const tx3 = await game.connect(player1).executeProtocolRaffle();
@@ -300,9 +300,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result1.executor).to.equal(player1.address);
             expect(result1.timestamp).to.equal(block1.timestamp);
             expect(result1.rafflePot).to.equal(threshold1);
-            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.025")); // 10% of 0.25
-            expect(result1.ownerShare).to.equal(hre.ethers.parseEther("0.045")); // 20% of 0.225
-            expect(result1.winnerPrize).to.equal(hre.ethers.parseEther("0.18")); // 80% of 0.225
+            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.0001")); // 10% of 0.001
+            expect(result1.ownerShare).to.equal(hre.ethers.parseEther("0.00018")); // 20% of 0.0009
+            expect(result1.winnerPrize).to.equal(hre.ethers.parseEther("0.00072")); // 80% of 0.0009
             expect(result1.participants.length).to.be.gte(2);
             expect(result1.weights.length).to.equal(result1.participants.length);
 
@@ -310,9 +310,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result2.executor).to.equal(player2.address);
             expect(result2.timestamp).to.equal(block2.timestamp);
             expect(result2.rafflePot).to.equal(threshold2);
-            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.05")); // 10% of 0.5
-            expect(result2.ownerShare).to.equal(hre.ethers.parseEther("0.09")); // 20% of 0.45
-            expect(result2.winnerPrize).to.equal(hre.ethers.parseEther("0.36")); // 80% of 0.45
+            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.0005")); // 10% of 0.005
+            expect(result2.ownerShare).to.equal(hre.ethers.parseEther("0.0009")); // 20% of 0.0045
+            expect(result2.winnerPrize).to.equal(hre.ethers.parseEther("0.0036")); // 80% of 0.0045
             expect(result2.participants.length).to.be.gte(2);
             expect(result2.weights.length).to.equal(result2.participants.length);
 
@@ -320,9 +320,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result3.executor).to.equal(player1.address);
             expect(result3.timestamp).to.equal(block3.timestamp);
             expect(result3.rafflePot).to.equal(threshold3);
-            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.075")); // 10% of 0.75
-            expect(result3.ownerShare).to.equal(hre.ethers.parseEther("0.135")); // 20% of 0.675
-            expect(result3.winnerPrize).to.equal(hre.ethers.parseEther("0.54")); // 80% of 0.675
+            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.002")); // 10% of 0.02
+            expect(result3.ownerShare).to.equal(hre.ethers.parseEther("0.0036")); // 20% of 0.018
+            expect(result3.winnerPrize).to.equal(hre.ethers.parseEther("0.0144")); // 80% of 0.018
             expect(result3.participants.length).to.be.gte(2);
             expect(result3.weights.length).to.equal(result3.participants.length);
 
@@ -346,12 +346,12 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const instanceId = 0;
 
             // Execute 2 raffles
-            const threshold1 = hre.ethers.parseEther("0.25");
+            const threshold1 = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold1);
             await game.connect(player1).executeProtocolRaffle();
 
             await hre.network.provider.send("hardhat_mine", ["0x3"]);
-            const threshold2 = hre.ethers.parseEther("0.5");
+            const threshold2 = hre.ethers.parseEther("0.005");
             await setAccumulatedProtocolShare(threshold2);
             await game.connect(player2).executeProtocolRaffle();
 
@@ -379,26 +379,26 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            // Raffle #1: 0.25 ETH threshold
-            const threshold1 = hre.ethers.parseEther("0.25");
+            // Raffle #1: 0.001 ETH threshold
+            const threshold1 = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold1);
             await game.connect(player1).executeProtocolRaffle();
 
-            // Raffle #2: 0.5 ETH threshold
+            // Raffle #2: 0.005 ETH threshold
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
-            const threshold2 = hre.ethers.parseEther("0.5");
+            const threshold2 = hre.ethers.parseEther("0.005");
             await setAccumulatedProtocolShare(threshold2);
             await game.connect(player1).executeProtocolRaffle();
 
-            // Raffle #3: 0.75 ETH threshold
+            // Raffle #3: 0.02 ETH threshold
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
-            const threshold3 = hre.ethers.parseEther("0.75");
+            const threshold3 = hre.ethers.parseEther("0.02");
             await setAccumulatedProtocolShare(threshold3);
             await game.connect(player1).executeProtocolRaffle();
 
-            // Raffle #4: 1.0 ETH threshold (capped)
+            // Raffle #4: 0.05 ETH threshold
             await hre.network.provider.send("hardhat_mine", ["0x2"]);
-            const threshold4 = hre.ethers.parseEther("1.0");
+            const threshold4 = hre.ethers.parseEther("0.05");
             await setAccumulatedProtocolShare(threshold4);
             await game.connect(player1).executeProtocolRaffle();
 
@@ -409,16 +409,16 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const result4 = await getRaffleResult(4);
 
             // Verify progressive pot increases
-            expect(result1.rafflePot).to.equal(hre.ethers.parseEther("0.25"));
-            expect(result2.rafflePot).to.equal(hre.ethers.parseEther("0.5"));
-            expect(result3.rafflePot).to.equal(hre.ethers.parseEther("0.75"));
-            expect(result4.rafflePot).to.equal(hre.ethers.parseEther("1.0"));
+            expect(result1.rafflePot).to.equal(hre.ethers.parseEther("0.001"));
+            expect(result2.rafflePot).to.equal(hre.ethers.parseEther("0.005"));
+            expect(result3.rafflePot).to.equal(hre.ethers.parseEther("0.02"));
+            expect(result4.rafflePot).to.equal(hre.ethers.parseEther("0.05"));
 
             // Verify 10% reserve for each
-            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.025"));
-            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.05"));
-            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.075"));
-            expect(result4.protocolReserve).to.equal(hre.ethers.parseEther("0.1"));
+            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.0001"));
+            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.0005"));
+            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.002"));
+            expect(result4.protocolReserve).to.equal(hre.ethers.parseEther("0.005"));
 
             // Verify winner prizes increase proportionally
             expect(result2.winnerPrize).to.be.gt(result1.winnerPrize);
@@ -448,7 +448,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             await game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             // Execute raffle
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
             await game.connect(player5).executeProtocolRaffle();
 
@@ -466,7 +466,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
             await game.connect(player1).executeProtocolRaffle();
 
@@ -481,7 +481,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
             await game.connect(player1).executeProtocolRaffle();
 
@@ -512,7 +512,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const tierId = 0;
             const instanceId = 0;
 
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
 
             const tx = await game.connect(player1).executeProtocolRaffle();
@@ -530,7 +530,7 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             const instanceId = 0;
 
             // Current test has 2 participants
-            const threshold = hre.ethers.parseEther("0.25");
+            const threshold = hre.ethers.parseEther("0.001");
             await setAccumulatedProtocolShare(threshold);
 
             const tx = await game.connect(player1).executeProtocolRaffle();
