@@ -17,7 +17,7 @@ async function main() {
     console.log("");
 
     // Get or deploy all modules once (shared across all games)
-    const modules = await getOrDeployModules();
+    const modules = await getOrDeployModules(true); // Force new deployment
 
     // Deploy TicTacChain
     console.log("=" .repeat(60));
@@ -36,6 +36,17 @@ async function main() {
     console.log("✅ TicTacChain deployed to:", ticTacChainAddress);
     console.log("");
 
+    // Deploy ChessRulesModule (game-specific for Chess)
+    console.log("=" .repeat(60));
+    console.log("Deploying ChessRulesModule (game-specific)...");
+    console.log("=" .repeat(60));
+    const ChessRulesModule = await hre.ethers.getContractFactory("ChessRulesModule");
+    const chessRulesModule = await ChessRulesModule.deploy();
+    await chessRulesModule.waitForDeployment();
+    const chessRulesModuleAddress = await chessRulesModule.getAddress();
+    console.log("✅ ChessRulesModule deployed to:", chessRulesModuleAddress);
+    console.log("");
+
     // Deploy ChessOnChain
     console.log("=" .repeat(60));
     console.log("Deploying ChessOnChain...");
@@ -46,7 +57,8 @@ async function main() {
         modules.matches,
         modules.prizes,
         modules.raffle,
-        modules.escalation
+        modules.escalation,
+        chessRulesModuleAddress
     );
     await chessOnChain.waitForDeployment();
     const chessOnChainAddress = await chessOnChain.getAddress();
@@ -96,7 +108,8 @@ async function main() {
             ETour_Matches: modules.matches,
             ETour_Prizes: modules.prizes,
             ETour_Raffle: modules.raffle,
-            ETour_Escalation: modules.escalation
+            ETour_Escalation: modules.escalation,
+            ChessRulesModule: chessRulesModuleAddress
         },
         contracts: {
             TicTacChain: ticTacChainAddress,
@@ -123,7 +136,10 @@ async function main() {
         network: hre.network.name,
         chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
         deployedAt: timestamp,
-        modules: modules,
+        modules: {
+            ...modules,
+            chessRules: chessRulesModuleAddress
+        },
         contracts: {
             TicTacChain: {
                 address: ticTacChainAddress,
@@ -157,10 +173,11 @@ async function main() {
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.prizes}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.raffle}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${modules.escalation}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessRulesModuleAddress}`);
     console.log("");
     console.log("# Verify game contracts:");
     console.log(`npx hardhat verify --network ${hre.network.name} ${ticTacChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation}`);
-    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation}`);
+    console.log(`npx hardhat verify --network ${hre.network.name} ${chessOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation} ${chessRulesModuleAddress}`);
     console.log(`npx hardhat verify --network ${hre.network.name} ${connectFourOnChainAddress} ${modules.core} ${modules.matches} ${modules.prizes} ${modules.raffle} ${modules.escalation}`);
     console.log("");
 
@@ -174,12 +191,13 @@ async function main() {
     console.log("  Chain ID:", networkDeployment.chainId);
     console.log("  Block:", blockNumber);
     console.log("");
-    console.log("📍 Module Addresses (Shared):");
+    console.log("📍 Module Addresses:");
     console.log("  ETour_Core:       ", modules.core);
     console.log("  ETour_Matches:    ", modules.matches);
     console.log("  ETour_Prizes:     ", modules.prizes);
     console.log("  ETour_Raffle:     ", modules.raffle);
     console.log("  ETour_Escalation: ", modules.escalation);
+    console.log("  ChessRulesModule: ", chessRulesModuleAddress, "(game-specific)");
     console.log("");
     console.log("📍 Game Contract Addresses:");
     console.log("  TicTacChain:      ", ticTacChainAddress);
