@@ -10,7 +10,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
     const TIER_0_FEE = hre.ethers.parseEther("0.0003"); // 2-player tier
     const TIER_1_FEE = hre.ethers.parseEther("0.0007"); // 4-player tier
-    const TIER_2_FEE = hre.ethers.parseEther("0.00013"); // 8-player tier
+    const TIER_2_FEE = hre.ethers.parseEther("0.0013"); // 8-player tier
 
     beforeEach(async function () {
         [owner, player1, player2, player3, player4, player5, player6, player7, player8] = await hre.ethers.getSigners();

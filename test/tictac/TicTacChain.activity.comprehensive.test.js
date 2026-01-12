@@ -8,7 +8,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
   const TIER_2 = 2; // 8-player tier
   const INSTANCE_0 = 0;
-  const ENTRY_FEE_TIER_2 = hre.ethers.parseEther("0.00013");
+  const ENTRY_FEE_TIER_2 = hre.ethers.parseEther("0.0013");
 
   // Storage snapshots at each step
   const storageSnapshots = [];

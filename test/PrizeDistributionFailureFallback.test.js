@@ -3,6 +3,7 @@ import { expect } from "chai";
 
 describe("Prize Distribution Failure Fallback", function () {
     let game;
+    let modulePrizesInterface;
     let owner, player1, player2, player3, player4;
     let rejectingContract;
     let playerProxy;
@@ -11,8 +12,40 @@ describe("Prize Distribution Failure Fallback", function () {
     beforeEach(async function () {
         [owner, player1, player2, player3, player4] = await hre.ethers.getSigners();
 
+        // Deploy all ETour modules
+        const ETour_Core = await hre.ethers.getContractFactory("contracts/modules/ETour_Core.sol:ETour_Core");
+        const moduleCore = await ETour_Core.deploy();
+        await moduleCore.waitForDeployment();
+
+        const ETour_Matches = await hre.ethers.getContractFactory("contracts/modules/ETour_Matches.sol:ETour_Matches");
+        const moduleMatches = await ETour_Matches.deploy();
+        await moduleMatches.waitForDeployment();
+
+        const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
+        const modulePrizes = await ETour_Prizes.deploy();
+        await modulePrizes.waitForDeployment();
+
+        // Save the prizes module interface for event parsing
+        modulePrizesInterface = modulePrizes.interface;
+
+        const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
+        const moduleRaffle = await ETour_Raffle.deploy();
+        await moduleRaffle.waitForDeployment();
+
+        const ETour_Escalation = await hre.ethers.getContractFactory("contracts/modules/ETour_Escalation.sol:ETour_Escalation");
+        const moduleEscalation = await ETour_Escalation.deploy();
+        await moduleEscalation.waitForDeployment();
+
+        // Deploy TicTacChain with module addresses
         const TicTacChain = await hre.ethers.getContractFactory("TicTacChain");
-        game = await TicTacChain.deploy();
+        game = await TicTacChain.deploy(
+            await moduleCore.getAddress(),
+            await moduleMatches.getAddress(),
+            await modulePrizes.getAddress(),
+            await moduleRaffle.getAddress(),
+            await moduleEscalation.getAddress()
+        );
+        await game.waitForDeployment();
 
         // Deploy a contract that rejects ETH transfers
         const RejectingReceiver = await hre.ethers.getContractFactory("RejectingReceiver");
@@ -166,7 +199,25 @@ describe("Prize Distribution Failure Fallback", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 3);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
+            const winningTx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
+
+            const receipt = await winningTx.wait();
+
+            // Verify ETourPrize event was emitted
+            const prizeEvent = receipt.logs.find(log => {
+                try {
+                    const parsed = modulePrizesInterface.parseLog(log);
+                    return parsed.name === "ETourPrize";
+                } catch (e) {
+                    return false;
+                }
+            });
+
+            expect(prizeEvent).to.not.be.undefined;
+            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            expect(parsedEvent.args.from).to.equal(await game.getAddress());
+            expect(parsedEvent.args.to).to.equal(firstPlayer.address);
+            expect(parsedEvent.args.gameName).to.equal("TicTacToe");
 
             // Tournament should be completed and reset
             const tournament = await game.tournaments(tierId, instanceId);
