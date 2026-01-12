@@ -1081,15 +1081,15 @@ contract TicTacChain is ETour_Storage {
         if (tournament.allDrawResolution) {
             // All-draw: distribute equal prizes to all remaining players
             (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
-                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot, "TicTacToe")
             );
             require(distributeSuccess, "DP");
         } else {
             // Normal completion: distribute prizes based on ranking
             (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
-                    tierId, instanceId, winnersPot)
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
+                    tierId, instanceId, winnersPot, "TicTacToe")
             );
             require(distributeSuccess, "DP");
         }

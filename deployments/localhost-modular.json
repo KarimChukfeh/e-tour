@@ -2,8 +2,8 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-01-11T04:28:40.572Z",
-  "blockNumber": 3161,
+  "timestamp": "2026-01-12T19:30:16.253Z",
+  "blockNumber": 18863,
   "modules": {
     "ETour_Core": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
     "ETour_Matches": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
@@ -12,6 +12,6 @@
     "ETour_Escalation": "0x9A676e781A523b5d0C0e43731313A708CB607508"
   },
   "contracts": {
-    "TicTacChain": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
+    "TicTacChain": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154"
   }
 }

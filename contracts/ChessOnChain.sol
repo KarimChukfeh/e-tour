@@ -568,14 +568,14 @@ contract ChessOnChain is ETour_Storage {
         // Distribute prizes based on completion type
         if (tournament.allDrawResolution) {
             (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256)",
-                    tierId, instanceId, enrolledPlayersCopy, winnersPot)
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot, "Chess")
             );
             require(distributeSuccess, "DP");
         } else {
             (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256)",
-                    tierId, instanceId, winnersPot)
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
+                    tierId, instanceId, winnersPot, "Chess")
             );
             require(distributeSuccess, "DP");
         }

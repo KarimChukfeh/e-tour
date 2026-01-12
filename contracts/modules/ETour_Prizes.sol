@@ -28,6 +28,22 @@ import "../interfaces/IETourGame.sol";
  */
 contract ETour_Prizes is ETour_Storage {
 
+    // ============ Events ============
+
+    /**
+     * @dev Emitted when a prize is distributed to a player
+     * @param from The game contract address distributing the prize
+     * @param to The player receiving the prize
+     * @param value The prize amount in wei
+     * @param gameName The name of the game (TicTacToe, ConnectFour, Chess)
+     */
+    event ETourPrize(
+        address indexed from,
+        address indexed to,
+        uint256 value,
+        string gameName
+    );
+
     // Constructor - modules need to set module addresses even though they're stateless
     // This is a bit of a hack - modules inherit ETour_Storage for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
@@ -56,7 +72,8 @@ contract ETour_Prizes is ETour_Storage {
         address recipient,
         uint256 amount,
         uint8 tierId,
-        uint8 instanceId
+        uint8 instanceId,
+        string memory gameName
     ) public returns (bool success) {
         require(amount > 0, "Amount must be greater than 0");
 
@@ -64,6 +81,8 @@ contract ETour_Prizes is ETour_Storage {
         (bool sent, ) = payable(recipient).call{value: amount}("");
 
         if (sent) {
+            // Emit event for MetaMask transaction history
+            emit ETourPrize(address(this), recipient, amount, gameName);
             return true; // Prize sent successfully
         }
 
@@ -77,7 +96,7 @@ contract ETour_Prizes is ETour_Storage {
      * @dev Distribute prizes based on player rankings
      * EXACT COPY from ETour.sol lines 1238-1274
      */
-    function distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot) external {
+    function distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot, string memory gameName) external {
         address[] storage players = enrolledPlayers[tierId][instanceId];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
@@ -104,7 +123,7 @@ contract ETour_Prizes is ETour_Storage {
 
                     // Attempt to send prize with fallback to protocol pool if failed
                     // Call directly as internal function (no nested delegatecall needed)
-                    bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId);
+                    bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId, gameName);
                 }
             }
         }
@@ -118,7 +137,8 @@ contract ETour_Prizes is ETour_Storage {
         uint8 tierId,
         uint8 instanceId,
         address[] memory remainingPlayers,
-        uint256 winnersPot
+        uint256 winnersPot,
+        string memory gameName
     ) external {
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
 
@@ -129,7 +149,7 @@ contract ETour_Prizes is ETour_Storage {
 
             // Attempt to send prize with fallback to protocol pool if failed
             // Call directly as internal function (no nested delegatecall needed)
-            bool sent = sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId);
+            bool sent = sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId, gameName);
         }
     }
 

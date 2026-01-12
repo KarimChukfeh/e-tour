@@ -3,6 +3,7 @@ import { expect } from "chai";
 
 describe("All-Draw Prize Distribution Edge Cases", function () {
     let game;
+    let modulePrizesInterface;
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
     const TIER_0_FEE = hre.ethers.parseEther("0.0003");
     const TIER_1_FEE = hre.ethers.parseEther("0.0007");
@@ -23,6 +24,9 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
         const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
         const modulePrizes = await ETour_Prizes.deploy();
         await modulePrizes.waitForDeployment();
+
+        // Save the prizes module interface for event parsing
+        modulePrizesInterface = modulePrizes.interface;
 
         const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
         const moduleRaffle = await ETour_Raffle.deploy();
@@ -70,7 +74,29 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 6);
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5);
-            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
+            const finalTx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
+
+            const receipt = await finalTx.wait();
+
+            // Verify ETourPrize events were emitted for both players
+            const prizeEvents = receipt.logs.filter(log => {
+                try {
+                    const parsed = modulePrizesInterface.parseLog(log);
+                    return parsed.name === "ETourPrize";
+                } catch (e) {
+                    return false;
+                }
+            });
+
+            expect(prizeEvents.length).to.equal(2); // Both players should receive prizes
+
+            // Verify both players received event with correct game name
+            for (const event of prizeEvents) {
+                const parsedEvent = modulePrizesInterface.parseLog(event);
+                expect(parsedEvent.args.from).to.equal(await game.getAddress());
+                expect([player1.address, player2.address]).to.include(parsedEvent.args.to);
+                expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+            }
 
             // After tournament completes, rankings are cleared but prizes persist
             // Verify equal prize distribution (prizes are permanent historical record)
@@ -149,7 +175,30 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             }
 
             await playMatchToDraw(0);
-            await playMatchToDraw(1);
+            const finalTx = await playMatchToDraw(1);
+
+            const receipt = await finalTx.wait();
+
+            // Verify ETourPrize events were emitted for all 4 players
+            const prizeEvents = receipt.logs.filter(log => {
+                try {
+                    const parsed = modulePrizesInterface.parseLog(log);
+                    return parsed.name === "ETourPrize";
+                } catch (e) {
+                    return false;
+                }
+            });
+
+            expect(prizeEvents.length).to.equal(4); // All 4 players should receive prizes
+
+            // Verify all players received event with correct game name
+            const playerAddresses = players.map(p => p.address);
+            for (const event of prizeEvents) {
+                const parsedEvent = modulePrizesInterface.parseLog(event);
+                expect(parsedEvent.args.from).to.equal(await game.getAddress());
+                expect(playerAddresses).to.include(parsedEvent.args.to);
+                expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+            }
 
             // Verify all 4 players have equal prizes
             const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
