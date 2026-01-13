@@ -3,7 +3,6 @@ import { expect } from "chai";
 
 describe("Prize Distribution Failure Fallback", function () {
     let game;
-    let modulePrizesInterface;
     let owner, player1, player2, player3, player4;
     let rejectingContract;
     let playerProxy;
@@ -24,9 +23,6 @@ describe("Prize Distribution Failure Fallback", function () {
         const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
         const modulePrizes = await ETour_Prizes.deploy();
         await modulePrizes.waitForDeployment();
-
-        // Save the prizes module interface for event parsing
-        modulePrizesInterface = modulePrizes.interface;
 
         const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
         const moduleRaffle = await ETour_Raffle.deploy();
@@ -206,7 +202,7 @@ describe("Prize Distribution Failure Fallback", function () {
             // Verify ETourPrize event was emitted
             const prizeEvent = receipt.logs.find(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = game.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -214,7 +210,7 @@ describe("Prize Distribution Failure Fallback", function () {
             });
 
             expect(prizeEvent).to.not.be.undefined;
-            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            const parsedEvent = game.interface.parseLog(prizeEvent);
             expect(parsedEvent.args.from).to.equal(await game.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
             expect(parsedEvent.args.gameName).to.equal("TicTacToe");

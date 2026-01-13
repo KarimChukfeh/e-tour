@@ -566,18 +566,28 @@ contract ChessOnChain is ETour_Storage {
         uint256 winnersPot = tournament.prizePool;
 
         // Distribute prizes based on completion type
+        address[] memory winners;
+        uint256[] memory prizes;
+
         if (tournament.allDrawResolution) {
-            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
                     tierId, instanceId, enrolledPlayersCopy, winnersPot, "Chess")
             );
             require(distributeSuccess, "DP");
+            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
         } else {
-            (bool distributeSuccess, ) = MODULE_PRIZES.delegatecall(
+            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
                     tierId, instanceId, winnersPot, "Chess")
             );
             require(distributeSuccess, "DP");
+            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
+        }
+
+        // Emit ETourPrize events for each winner
+        for (uint256 i = 0; i < winners.length; i++) {
+            emit ETourPrize(address(this), winners[i], prizes[i], "Chess");
         }
 
         // Update earnings for the winner (if there is one)

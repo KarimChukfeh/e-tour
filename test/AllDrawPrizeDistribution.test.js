@@ -3,7 +3,6 @@ import { expect } from "chai";
 
 describe("All-Draw Prize Distribution Edge Cases", function () {
     let game;
-    let modulePrizesInterface;
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
     const TIER_0_FEE = hre.ethers.parseEther("0.0003");
     const TIER_1_FEE = hre.ethers.parseEther("0.0007");
@@ -24,9 +23,6 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
         const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
         const modulePrizes = await ETour_Prizes.deploy();
         await modulePrizes.waitForDeployment();
-
-        // Save the prizes module interface for event parsing
-        modulePrizesInterface = modulePrizes.interface;
 
         const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
         const moduleRaffle = await ETour_Raffle.deploy();
@@ -81,7 +77,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             // Verify ETourPrize events were emitted for both players
             const prizeEvents = receipt.logs.filter(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = game.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -92,7 +88,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
             // Verify both players received event with correct game name
             for (const event of prizeEvents) {
-                const parsedEvent = modulePrizesInterface.parseLog(event);
+                const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect([player1.address, player2.address]).to.include(parsedEvent.args.to);
                 expect(parsedEvent.args.gameName).to.equal("TicTacToe");
@@ -182,7 +178,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             // Verify ETourPrize events were emitted for all 4 players
             const prizeEvents = receipt.logs.filter(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = game.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -194,7 +190,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             // Verify all players received event with correct game name
             const playerAddresses = players.map(p => p.address);
             for (const event of prizeEvents) {
-                const parsedEvent = modulePrizesInterface.parseLog(event);
+                const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
                 expect(parsedEvent.args.gameName).to.equal("TicTacToe");

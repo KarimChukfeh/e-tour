@@ -28,22 +28,6 @@ import "../interfaces/IETourGame.sol";
  */
 contract ETour_Prizes is ETour_Storage {
 
-    // ============ Events ============
-
-    /**
-     * @dev Emitted when a prize is distributed to a player
-     * @param from The game contract address distributing the prize
-     * @param to The player receiving the prize
-     * @param value The prize amount in wei
-     * @param gameName The name of the game (TicTacToe, ConnectFour, Chess)
-     */
-    event ETourPrize(
-        address indexed from,
-        address indexed to,
-        uint256 value,
-        string gameName
-    );
-
     // Constructor - modules need to set module addresses even though they're stateless
     // This is a bit of a hack - modules inherit ETour_Storage for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
@@ -81,8 +65,6 @@ contract ETour_Prizes is ETour_Storage {
         (bool sent, ) = payable(recipient).call{value: amount}("");
 
         if (sent) {
-            // Emit event for MetaMask transaction history
-            emit ETourPrize(address(this), recipient, amount, gameName);
             return true; // Prize sent successfully
         }
 
@@ -95,8 +77,13 @@ contract ETour_Prizes is ETour_Storage {
     /**
      * @dev Distribute prizes based on player rankings
      * EXACT COPY from ETour.sol lines 1238-1274
+     * @return winners Array of addresses that received prizes
+     * @return prizes Array of prize amounts corresponding to each winner
      */
-    function distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot, string memory gameName) external {
+    function distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot, string memory gameName)
+        external
+        returns (address[] memory winners, uint256[] memory prizes)
+    {
         address[] storage players = enrolledPlayers[tierId][instanceId];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
@@ -111,6 +98,11 @@ contract ETour_Prizes is ETour_Storage {
             }
         }
 
+        // Use temporary arrays with max possible size
+        address[] memory tempWinners = new address[](players.length);
+        uint256[] memory tempPrizes = new uint256[](players.length);
+        uint256 successCount = 0;
+
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             uint8 ranking = playerRanking[tierId][instanceId][player];
@@ -124,14 +116,31 @@ contract ETour_Prizes is ETour_Storage {
                     // Attempt to send prize with fallback to protocol pool if failed
                     // Call directly as internal function (no nested delegatecall needed)
                     bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId, gameName);
+
+                    // Only add to return arrays if prize was successfully sent
+                    if (sent) {
+                        tempWinners[successCount] = player;
+                        tempPrizes[successCount] = prizeAmount;
+                        successCount++;
+                    }
                 }
             }
+        }
+
+        // Create properly sized return arrays
+        winners = new address[](successCount);
+        prizes = new uint256[](successCount);
+        for (uint256 i = 0; i < successCount; i++) {
+            winners[i] = tempWinners[i];
+            prizes[i] = tempPrizes[i];
         }
     }
 
     /**
      * @dev Distribute equal prizes to all remaining players (all-draw scenario)
      * EXACT COPY from ETour.sol lines 1276-1297
+     * @return winners Array of addresses that received prizes
+     * @return prizes Array of prize amounts corresponding to each winner
      */
     function distributeEqualPrizes(
         uint8 tierId,
@@ -139,8 +148,13 @@ contract ETour_Prizes is ETour_Storage {
         address[] memory remainingPlayers,
         uint256 winnersPot,
         string memory gameName
-    ) external {
+    ) external returns (address[] memory winners, uint256[] memory prizes) {
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
+
+        // Use temporary arrays with max possible size
+        address[] memory tempWinners = new address[](remainingPlayers.length);
+        uint256[] memory tempPrizes = new uint256[](remainingPlayers.length);
+        uint256 successCount = 0;
 
         for (uint256 i = 0; i < remainingPlayers.length; i++) {
             address player = remainingPlayers[i];
@@ -150,6 +164,21 @@ contract ETour_Prizes is ETour_Storage {
             // Attempt to send prize with fallback to protocol pool if failed
             // Call directly as internal function (no nested delegatecall needed)
             bool sent = sendPrizeWithFallback(player, prizePerPlayer, tierId, instanceId, gameName);
+
+            // Only add to return arrays if prize was successfully sent
+            if (sent) {
+                tempWinners[successCount] = player;
+                tempPrizes[successCount] = prizePerPlayer;
+                successCount++;
+            }
+        }
+
+        // Create properly sized return arrays
+        winners = new address[](successCount);
+        prizes = new uint256[](successCount);
+        for (uint256 i = 0; i < successCount; i++) {
+            winners[i] = tempWinners[i];
+            prizes[i] = tempPrizes[i];
         }
     }
 

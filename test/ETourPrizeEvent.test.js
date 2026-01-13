@@ -3,7 +3,6 @@ import { expect } from "chai";
 
 describe("ETourPrize Event Tests", function () {
     let ticTacChain, chess, connectFour;
-    let modulePrizesInterface;
     let owner, player1, player2, player3, player4;
     const TICTAC_TIER_0_FEE = hre.ethers.parseEther("0.0003");
     const TICTAC_TIER_1_FEE = hre.ethers.parseEther("0.0007");
@@ -25,9 +24,6 @@ describe("ETourPrize Event Tests", function () {
         const ETour_Prizes = await hre.ethers.getContractFactory("contracts/modules/ETour_Prizes.sol:ETour_Prizes");
         const modulePrizes = await ETour_Prizes.deploy();
         await modulePrizes.waitForDeployment();
-
-        // Save the prizes module interface for event parsing
-        modulePrizesInterface = modulePrizes.interface;
 
         const ETour_Raffle = await hre.ethers.getContractFactory("contracts/modules/ETour_Raffle.sol:ETour_Raffle");
         const moduleRaffle = await ETour_Raffle.deploy();
@@ -98,10 +94,10 @@ describe("ETourPrize Event Tests", function () {
 
             const receipt = await winningTx.wait();
 
-            // Find ETourPrize event (use module interface to parse)
+            // Find ETourPrize event (emitted from game contract)
             const prizeEvent = receipt.logs.find(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = ticTacChain.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -109,7 +105,7 @@ describe("ETourPrize Event Tests", function () {
             });
 
             expect(prizeEvent).to.not.be.undefined;
-            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            const parsedEvent = ticTacChain.interface.parseLog(prizeEvent);
 
             // Verify event parameters
             expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
@@ -151,7 +147,7 @@ describe("ETourPrize Event Tests", function () {
             // Find all ETourPrize events
             const prizeEvents = receipt.logs.filter(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = ticTacChain.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -164,7 +160,7 @@ describe("ETourPrize Event Tests", function () {
             // Verify each event has correct structure
             const playerAddresses = players.map(p => p.address);
             for (const event of prizeEvents) {
-                const parsedEvent = modulePrizesInterface.parseLog(event);
+                const parsedEvent = ticTacChain.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
                 expect(parsedEvent.args.value).to.be.gt(0);
@@ -208,7 +204,7 @@ describe("ETourPrize Event Tests", function () {
             // Find ETourPrize event
             const prizeEvent = receipt.logs.find(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = connectFour.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -216,7 +212,7 @@ describe("ETourPrize Event Tests", function () {
             });
 
             expect(prizeEvent).to.not.be.undefined;
-            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            const parsedEvent = connectFour.interface.parseLog(prizeEvent);
 
             // Verify event parameters
             expect(parsedEvent.args.from).to.equal(await connectFour.getAddress());
@@ -249,7 +245,7 @@ describe("ETourPrize Event Tests", function () {
             // Check event exists in logs
             const prizeEvent = receipt.logs.find(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = ticTacChain.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
@@ -264,7 +260,7 @@ describe("ETourPrize Event Tests", function () {
             // Topic 2: indexed to address
             expect(prizeEvent.topics.length).to.equal(3);
 
-            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            const parsedEvent = ticTacChain.interface.parseLog(prizeEvent);
             expect(parsedEvent.args.from).to.be.properAddress;
             expect(parsedEvent.args.to).to.be.properAddress;
         });
@@ -294,14 +290,14 @@ describe("ETourPrize Event Tests", function () {
             // Find ETourPrize event
             const prizeEvent = receipt.logs.find(log => {
                 try {
-                    const parsed = modulePrizesInterface.parseLog(log);
+                    const parsed = ticTacChain.interface.parseLog(log);
                     return parsed.name === "ETourPrize";
                 } catch (e) {
                     return false;
                 }
             });
 
-            const parsedEvent = modulePrizesInterface.parseLog(prizeEvent);
+            const parsedEvent = ticTacChain.interface.parseLog(prizeEvent);
 
             // Verify event value matches expected prize pool
             expect(parsedEvent.args.value).to.equal(expectedPrize);
@@ -342,7 +338,7 @@ describe("ETourPrize Event Tests", function () {
                 // Should NOT emit ETourPrize event since transfer failed
                 const prizeEvent = receipt.logs.find(log => {
                     try {
-                        const parsed = modulePrizesInterface.parseLog(log);
+                        const parsed = ticTacChain.interface.parseLog(log);
                         return parsed.name === "ETourPrize";
                     } catch (e) {
                         return false;

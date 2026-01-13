@@ -257,6 +257,20 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint256 winnerEnrollmentCount
     );
 
+    /**
+     * @dev Emitted when a prize is distributed to a player
+     * @param from The game contract address distributing the prize
+     * @param to The player receiving the prize
+     * @param value The prize amount in wei
+     * @param gameName The name of the game (TicTacToe, ConnectFour, Chess)
+     */
+    event ETourPrize(
+        address indexed from,
+        address indexed to,
+        uint256 value,
+        string gameName
+    );
+
     // ============ Constructor ============
 
     constructor(
