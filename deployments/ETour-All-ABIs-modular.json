@@ -1,18 +1,18 @@
 {
   "network": "arbitrum",
   "chainId": "42161",
-  "deployedAt": "2026-01-12T23:57:49.387Z",
+  "deployedAt": "2026-01-13T00:16:58.834Z",
   "modules": {
-    "core": "0x403363b4D948cc2943c78DE15B7e45E461C7df65",
-    "matches": "0x808C322e139004c0205766Fd5392E45910Bc9E63",
-    "prizes": "0x854042aE368c02fA93Ea7f4c1b7ee78777C2e217",
-    "raffle": "0xeae61bc186eb3E76735B2ecF621B298bb5722544",
-    "escalation": "0x0C2B27819011d029A37BB29bBdBF0f763A8858e2",
-    "chessRules": "0x747b3BDf46CAB4D970483823363e5F1c6428E7Fa"
+    "core": "0x50fA8Bc9622F7Cac110586a418F8731f17A9dbFE",
+    "matches": "0xF3C194d0277Ee9F2F46cd17D78D377a9f04b4a9B",
+    "prizes": "0x6828987b8684c5a4ec1353D38aE16D205238E46F",
+    "raffle": "0x7D00c716955B32375bef412078AD2B72cE8530B8",
+    "escalation": "0x8eF07467764b4B0baE5d4A481371d351c3b3c0DF",
+    "chessRules": "0xE794752f489d0223a80114efA39BC520ceE38978"
   },
   "contracts": {
     "TicTacChain": {
-      "address": "0x9b5F0f3f955736674b7b2cB77ef8Ad1D593e2E52",
+      "address": "0xA98e643F2EE17781f1FDE5D740CB413b6d5DbDbe",
       "abi": [
         {
           "inputs": [
@@ -49,37 +49,6 @@
           "inputs": [],
           "name": "ReentrancyGuardReentrantCall",
           "type": "error"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            },
-            {
-              "indexed": false,
-              "internalType": "string",
-              "name": "gameName",
-              "type": "string"
-            }
-          ],
-          "name": "ETourPrize",
-          "type": "event"
         },
         {
           "anonymous": false,
@@ -233,6 +202,37 @@
             }
           ],
           "name": "TournamentCompleted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "gameName",
+              "type": "string"
+            }
+          ],
+          "name": "Transfer",
           "type": "event"
         },
         {
@@ -2203,7 +2203,7 @@
       ]
     },
     "ChessOnChain": {
-      "address": "0x39e8efCDCF3eB2f8B87c307e574A863Ed831EEF0",
+      "address": "0x010b8790d9597D5E7800a44Ad24f76F0C45584e7",
       "abi": [
         {
           "inputs": [
@@ -2245,37 +2245,6 @@
           "inputs": [],
           "name": "ReentrancyGuardReentrantCall",
           "type": "error"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            },
-            {
-              "indexed": false,
-              "internalType": "string",
-              "name": "gameName",
-              "type": "string"
-            }
-          ],
-          "name": "ETourPrize",
-          "type": "event"
         },
         {
           "anonymous": false,
@@ -2435,6 +2404,37 @@
             }
           ],
           "name": "TournamentCompleted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "gameName",
+              "type": "string"
+            }
+          ],
+          "name": "Transfer",
           "type": "event"
         },
         {
@@ -4640,7 +4640,7 @@
       ]
     },
     "ConnectFourOnChain": {
-      "address": "0xb640Fb13B48fa7280ab2813e2A58441CC1485B2F",
+      "address": "0x96855793ba805ffDEf910e77807604c33f9816Ae",
       "abi": [
         {
           "inputs": [
@@ -4677,37 +4677,6 @@
           "inputs": [],
           "name": "ReentrancyGuardReentrantCall",
           "type": "error"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-            },
-            {
-              "indexed": false,
-              "internalType": "string",
-              "name": "gameName",
-              "type": "string"
-            }
-          ],
-          "name": "ETourPrize",
-          "type": "event"
         },
         {
           "anonymous": false,
@@ -4867,6 +4836,37 @@
             }
           ],
           "name": "TournamentCompleted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "gameName",
+              "type": "string"
+            }
+          ],
+          "name": "Transfer",
           "type": "event"
         },
         {

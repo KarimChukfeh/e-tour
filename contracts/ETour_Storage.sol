@@ -259,12 +259,13 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     /**
      * @dev Emitted when a prize is distributed to a player
+     * Mimics the Transfer event for better wallet display
      * @param from The game contract address distributing the prize
      * @param to The player receiving the prize
      * @param value The prize amount in wei
-     * @param gameName The name of the game (TicTacToe, ConnectFour, Chess)
+     * @param gameName The name of the game reward (e.g., "TicTacToe Reward")
      */
-    event ETourPrize(
+    event Transfer(
         address indexed from,
         address indexed to,
         uint256 value,
