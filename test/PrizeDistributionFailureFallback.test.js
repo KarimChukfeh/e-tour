@@ -199,11 +199,11 @@ describe("Prize Distribution Failure Fallback", function () {
 
             const receipt = await winningTx.wait();
 
-            // Verify ETourPrize event was emitted
+            // Verify Transfer event was emitted
             const prizeEvent = receipt.logs.find(log => {
                 try {
                     const parsed = game.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -213,7 +213,7 @@ describe("Prize Distribution Failure Fallback", function () {
             const parsedEvent = game.interface.parseLog(prizeEvent);
             expect(parsedEvent.args.from).to.equal(await game.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
-            expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+            expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
 
             // Tournament should be completed and reset
             const tournament = await game.tournaments(tierId, instanceId);

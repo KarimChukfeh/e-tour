@@ -1,7 +1,7 @@
 import hre from "hardhat";
 import { expect } from "chai";
 
-describe("ETourPrize Event Tests", function () {
+describe("Transfer Event Tests", function () {
     let ticTacChain, chess, connectFour;
     let owner, player1, player2, player3, player4;
     const TICTAC_TIER_0_FEE = hre.ethers.parseEther("0.0003");
@@ -73,8 +73,8 @@ describe("ETourPrize Event Tests", function () {
         await connectFour.waitForDeployment();
     });
 
-    describe("TicTacToe ETourPrize Event", function () {
-        it("Should emit ETourPrize event with correct parameters for winner", async function () {
+    describe("TicTacToe Reward Transfer Event", function () {
+        it("Should emit Transfer event with correct parameters for winner", async function () {
             const tierId = 0;
             const instanceId = 0;
 
@@ -94,11 +94,11 @@ describe("ETourPrize Event Tests", function () {
 
             const receipt = await winningTx.wait();
 
-            // Find ETourPrize event (emitted from game contract)
+            // Find Transfer event (emitted from game contract)
             const prizeEvent = receipt.logs.find(log => {
                 try {
                     const parsed = ticTacChain.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -111,10 +111,10 @@ describe("ETourPrize Event Tests", function () {
             expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
             expect(parsedEvent.args.value).to.be.gt(0);
-            expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+            expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
         });
 
-        it("Should emit ETourPrize events for all winners in all-draw scenario", async function () {
+        it("Should emit Transfer events for all winners in all-draw scenario", async function () {
             const tierId = 1; // 4-player
             const instanceId = 0;
 
@@ -144,11 +144,11 @@ describe("ETourPrize Event Tests", function () {
             const finalTx = await playMatchToDraw(1);
             const receipt = await finalTx.wait();
 
-            // Find all ETourPrize events
+            // Find all Transfer events
             const prizeEvents = receipt.logs.filter(log => {
                 try {
                     const parsed = ticTacChain.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -164,13 +164,13 @@ describe("ETourPrize Event Tests", function () {
                 expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
                 expect(parsedEvent.args.value).to.be.gt(0);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
         });
     });
 
-    describe("Chess ETourPrize Event", function () {
-        it("Should emit ETourPrize event with gameName='Chess' for winner", async function () {
+    describe("Chess Transfer Event", function () {
+        it("Should emit Transfer event with gameName='Chess Reward' for winner", async function () {
             // Chess game flow is more complex and tested in other test files
             // This test verifies that Chess contract uses the correct game name
             // The event emission logic is the same across all games
@@ -178,8 +178,8 @@ describe("ETourPrize Event Tests", function () {
         });
     });
 
-    describe("ConnectFour ETourPrize Event", function () {
-        it("Should emit ETourPrize event with gameName='ConnectFour' for winner", async function () {
+    describe("ConnectFour Reward Transfer Event", function () {
+        it("Should emit Transfer event with gameName='ConnectFour Reward' for winner", async function () {
             const tierId = 0;
             const instanceId = 0;
 
@@ -201,11 +201,11 @@ describe("ETourPrize Event Tests", function () {
 
             const receipt = await winningTx.wait();
 
-            // Find ETourPrize event
+            // Find Transfer event
             const prizeEvent = receipt.logs.find(log => {
                 try {
                     const parsed = connectFour.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -218,11 +218,11 @@ describe("ETourPrize Event Tests", function () {
             expect(parsedEvent.args.from).to.equal(await connectFour.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
             expect(parsedEvent.args.value).to.be.gt(0);
-            expect(parsedEvent.args.gameName).to.equal("ConnectFour");
+            expect(parsedEvent.args.gameName).to.equal("ConnectFour Reward");
         });
     });
 
-    describe("ETourPrize Event Structure", function () {
+    describe("Transfer Event Structure", function () {
         it("Should have correct indexed parameters for MetaMask filtering", async function () {
             const tierId = 0;
             const instanceId = 0;
@@ -246,7 +246,7 @@ describe("ETourPrize Event Tests", function () {
             const prizeEvent = receipt.logs.find(log => {
                 try {
                     const parsed = ticTacChain.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -287,11 +287,11 @@ describe("ETourPrize Event Tests", function () {
 
             const receipt = await winningTx.wait();
 
-            // Find ETourPrize event
+            // Find Transfer event
             const prizeEvent = receipt.logs.find(log => {
                 try {
                     const parsed = ticTacChain.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -305,8 +305,8 @@ describe("ETourPrize Event Tests", function () {
         });
     });
 
-    describe("ETourPrize Event - No Emission on Failure", function () {
-        it("Should not emit ETourPrize event when prize transfer fails", async function () {
+    describe("Transfer Event - No Emission on Failure", function () {
+        it("Should not emit Transfer event when prize transfer fails", async function () {
             // Deploy a rejecting receiver
             const PlayerProxy = await hre.ethers.getContractFactory("PlayerProxy");
             const playerProxy = await PlayerProxy.deploy(ticTacChain.target);
@@ -335,11 +335,11 @@ describe("ETourPrize Event Tests", function () {
 
                 const receipt = await winningTx.wait();
 
-                // Should NOT emit ETourPrize event since transfer failed
+                // Should NOT emit Transfer event since transfer failed
                 const prizeEvent = receipt.logs.find(log => {
                     try {
                         const parsed = ticTacChain.interface.parseLog(log);
-                        return parsed.name === "ETourPrize";
+                        return parsed.name === "Transfer";
                     } catch (e) {
                         return false;
                     }

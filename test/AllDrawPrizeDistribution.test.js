@@ -74,11 +74,11 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
             const receipt = await finalTx.wait();
 
-            // Verify ETourPrize events were emitted for both players
+            // Verify Transfer events were emitted for both players
             const prizeEvents = receipt.logs.filter(log => {
                 try {
                     const parsed = game.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -91,7 +91,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
                 const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect([player1.address, player2.address]).to.include(parsedEvent.args.to);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
 
             // After tournament completes, rankings are cleared but prizes persist
@@ -175,11 +175,11 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
             const receipt = await finalTx.wait();
 
-            // Verify ETourPrize events were emitted for all 4 players
+            // Verify Transfer events were emitted for all 4 players
             const prizeEvents = receipt.logs.filter(log => {
                 try {
                     const parsed = game.interface.parseLog(log);
-                    return parsed.name === "ETourPrize";
+                    return parsed.name === "Transfer";
                 } catch (e) {
                     return false;
                 }
@@ -193,7 +193,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
                 const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe");
+                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
 
             // Verify all 4 players have equal prizes
