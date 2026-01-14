@@ -101,7 +101,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
     function _registerTiers() private {
         TimeoutConfig memory timeouts = TimeoutConfig({
-            matchTimePerPlayer: 120,
+            matchTimePerPlayer: 300,
             timeIncrementPerMove: 15,
             matchLevel2Delay: 120,
             matchLevel3Delay: 240,
