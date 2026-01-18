@@ -2249,7 +2249,6 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(matchData.isCached).to.be.false; // Should be active
             expect(matchData.status).to.equal(1); // InProgress
             expect(matchData.winner).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.loser).to.equal(hre.ethers.ZeroAddress);
             // endTime field was removed - startTime is set when match begins
 
             // Make one move

@@ -291,10 +291,11 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Initial state has all castling rights available (bits 6-11 all 0)
             // Position hash includes bits 0-11
-            const initialState = matchData.packedState;
+            const [packedBoard, packedState, moves] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            const initialState = packedState;
 
             // Verify castling flags are in the hash by checking state bits
-            const castlingBits = (initialState >> 6n) & 0x3Fn; // bits 6-11
+            const castlingBits = (BigInt(initialState) >> 6n) & 0x3Fn; // bits 6-11
             expect(castlingBits).to.equal(0n); // All castling rights available initially
         });
     });
@@ -376,7 +377,8 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Get position with en passant available
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const enPassantState = matchData.packedState;
+            const [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            const enPassantState = BigInt(packedState);
 
             // En passant square should be set (bits 0-5)
             const epSquare = enPassantState & 0x3Fn;
@@ -421,9 +423,10 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Check that both systems are tracking
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
+            const [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
 
             // Half-move clock should be 2 (both moves are non-pawn, non-capture)
-            const halfMoveClock = Number((matchData.packedState >> 14n) & 0xFFn);
+            const halfMoveClock = Number((BigInt(packedState) >> 14n) & 0xFFn);
             expect(halfMoveClock).to.equal(2);
 
             // Game should still be in progress (new position only seen once)

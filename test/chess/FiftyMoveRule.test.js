@@ -247,7 +247,8 @@ describe("Chess Fifty-Move Rule", function () {
         it("Should track half-move clock during actual gameplay", async function () {
             // Initial state - clock at 0
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(0);
+            let [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(0);
 
             // Move 1: White Ng1-f3 (non-pawn, non-capture)
             await chess.connect(whitePlayer).makeMove(
@@ -256,7 +257,8 @@ describe("Chess Fifty-Move Rule", function () {
             );
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(1);
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(1);
 
             // Move 2: Black Ng8-f6 (non-pawn, non-capture)
             await chess.connect(blackPlayer).makeMove(
@@ -265,7 +267,8 @@ describe("Chess Fifty-Move Rule", function () {
             );
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(2);
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(2);
 
             // Move 3: White e2-e4 (pawn move - should reset)
             await chess.connect(whitePlayer).makeMove(
@@ -274,7 +277,8 @@ describe("Chess Fifty-Move Rule", function () {
             );
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(0);
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(0);
         });
 
         it("Should end game as draw via threefold repetition before fifty-move (expected behavior)", async function () {
@@ -312,13 +316,15 @@ describe("Chess Fifty-Move Rule", function () {
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.g8, squares.f6, PieceType.None);
 
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(2);
+            let [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(2);
 
             // Pawn move resets clock
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.e2, squares.e4, PieceType.None);
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(0);
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(0);
             expect(matchData.status).to.equal(1); // Still InProgress
         });
 
@@ -367,12 +373,14 @@ describe("Chess Fifty-Move Rule", function () {
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.g8, squares.f6, PieceType.None);
 
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(2);
+            let [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(2);
 
             // Pawn move resets
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.e2, squares.e4, PieceType.None);
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(getHalfMoveClock(matchData.packedState)).to.equal(0);
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(getHalfMoveClock(BigInt(packedState))).to.equal(0);
         });
     });
 });

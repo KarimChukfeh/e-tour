@@ -146,7 +146,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
             // Board is now packed - check that packedBoard is 0 (all cells empty)
-            expect(match.packedBoard).to.equal(0);
+            const [packedBoard] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], match.gameState);
+            expect(packedBoard).to.equal(0);
         });
 
         it("Should set random first player", async function () {
@@ -419,7 +420,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
             expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
             expect(match.status).to.equal(1);
-            expect(match.packedBoard).to.equal(0); // Board initialized empty
+            const [packedBoard] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], match.gameState);
+            expect(packedBoard).to.equal(0); // Board initialized empty
         });
 
         // Removed RW3 compliance test - function may not exist in new architecture

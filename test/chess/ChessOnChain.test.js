@@ -33,10 +33,10 @@ describe("ChessOnChain Tests", function () {
     // Helper to extract check status from packedState
     // Bit 12: whiteInCheck, Bit 13: blackInCheck
     function isWhiteInCheck(packedState) {
-        return ((packedState >> 12n) & 1n) === 1n;
+        return ((BigInt(packedState) >> 12n) & 1n) === 1n;
     }
     function isBlackInCheck(packedState) {
-        return ((packedState >> 13n) & 1n) === 1n;
+        return ((BigInt(packedState) >> 13n) & 1n) === 1n;
     }
 
     beforeEach(async function () {
@@ -167,7 +167,8 @@ describe("ChessOnChain Tests", function () {
 
             // Verify White is in check after Black's queen move
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(isWhiteInCheck(matchData.packedState)).to.be.true;
+            let [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(isWhiteInCheck(packedState)).to.be.true;
 
             // Move 7: White Bf1-e2 (blocks check)
             await chess.connect(whitePlayer).makeMove(
@@ -178,14 +179,16 @@ describe("ChessOnChain Tests", function () {
             // THE BUG: Before the fix, whiteInCheck would still be true here
             // After the fix, whiteInCheck should be false immediately
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(isWhiteInCheck(matchData.packedState)).to.be.false;
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(isWhiteInCheck(packedState)).to.be.false;
         });
 
         it("Should correctly track check status throughout a game", async function () {
             // Initial state - no one in check
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(isWhiteInCheck(matchData.packedState)).to.be.false;
-            expect(isBlackInCheck(matchData.packedState)).to.be.false;
+            let [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(isWhiteInCheck(packedState)).to.be.false;
+            expect(isBlackInCheck(packedState)).to.be.false;
 
             // After a regular move, still no check
             await chess.connect(whitePlayer).makeMove(
@@ -194,8 +197,9 @@ describe("ChessOnChain Tests", function () {
             );
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(isWhiteInCheck(matchData.packedState)).to.be.false;
-            expect(isBlackInCheck(matchData.packedState)).to.be.false;
+            [, packedState] = hre.ethers.AbiCoder.defaultAbiCoder().decode(["uint256", "uint256", "string"], matchData.gameState);
+            expect(isWhiteInCheck(packedState)).to.be.false;
+            expect(isBlackInCheck(packedState)).to.be.false;
         });
     });
 
