@@ -236,7 +236,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // ============ Events ============
 
-    event MatchCompleted(bytes32 indexed matchId, address winner, bool isDraw, CompletionReason reason, uint256 board);
+    event MatchCompleted(bytes32 indexed matchId, address indexed player1, address indexed player2, address winner, bool isDraw, CompletionReason reason, uint256 board);
     event TournamentCompleted(uint8 indexed tierId, uint8 indexed instanceId, address winner, uint256 prizeAmount, CompletionReason reason, address[] enrolledPlayers);
     event ProtocolRaffleExecuted(
         uint256 indexed raffleIndex,

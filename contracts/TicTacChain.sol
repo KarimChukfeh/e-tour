@@ -349,7 +349,8 @@ contract TicTacChain is ETour_Storage {
 
         // Emit MatchCompleted event from game contract (double elimination = no winner)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination, matches[matchId].packedBoard);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, address(0), false, CompletionReason.ForceElimination, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -402,7 +403,8 @@ contract TicTacChain is ETour_Storage {
 
         // Emit MatchCompleted event from game contract (replacement player wins)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement, matches[matchId].packedBoard);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
@@ -691,7 +693,8 @@ contract TicTacChain is ETour_Storage {
         require(completeSuccess, "CM");
 
         // Emit MatchCompleted event from game contract
-        emit MatchCompleted(matchId, winner, isDraw, reason, matches[matchId].packedBoard);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
 
         // Call elimination hook for loser (if not a draw)
         if (!isDraw) {
