@@ -2,16 +2,16 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-01-18T15:00:06.701Z",
-  "blockNumber": 34,
+  "timestamp": "2026-01-18T15:27:05.010Z",
+  "blockNumber": 1652,
   "modules": {
-    "ETour_Core": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-    "ETour_Matches": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-    "ETour_Prizes": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-    "ETour_Raffle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-    "ETour_Escalation": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+    "ETour_Core": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "ETour_Matches": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "ETour_Prizes": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+    "ETour_Raffle": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+    "ETour_Escalation": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
   },
   "contracts": {
-    "ConnectFourOnChain": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+    "ConnectFourOnChain": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44"
   }
 }
