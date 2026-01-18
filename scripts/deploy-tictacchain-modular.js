@@ -17,7 +17,7 @@ async function main() {
     console.log("");
 
     // Get or deploy modules (reuses existing if available)
-    const modules = await getOrDeployModules();
+    const modules = await getOrDeployModules(true);
 
     // Deploy TicTacChain (ETour is inherited, not deployed separately)
     console.log("=" .repeat(60));

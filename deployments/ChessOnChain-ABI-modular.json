@@ -1,15 +1,15 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x5Db8027483D65071E44118992eF84B694e28683A",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-01-12T20:16:19.745Z",
+  "address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-01-18T05:31:41.732Z",
   "modules": {
-    "core": "0x04183c702c3E93326D3F9ae0f7E3db10c97b4852",
-    "matches": "0xAcdE2bB420463530CC1858A4b0F01037C2468794",
-    "prizes": "0x639F53CCBB21f736Baad4E3cfCb1ABE672832e6C",
-    "raffle": "0xF8394c3316C9D461d719A71deCD801Fc23922a67",
-    "escalation": "0xcdde3c90e724DfbACb392E2E611c7500129BD8f6"
+    "core": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "matches": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "prizes": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+    "raffle": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "escalation": "0x9A676e781A523b5d0C0e43731313A708CB607508"
   },
   "abi": [
     {
@@ -79,6 +79,12 @@
           "internalType": "enum ETour_Storage.CompletionReason",
           "name": "reason",
           "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "board",
+          "type": "uint256"
         }
       ],
       "name": "MatchCompleted",
@@ -211,6 +217,37 @@
         }
       ],
       "name": "TournamentCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "gameName",
+          "type": "string"
+        }
+      ],
+      "name": "Transfer",
       "type": "event"
     },
     {

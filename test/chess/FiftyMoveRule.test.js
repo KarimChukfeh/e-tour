@@ -303,7 +303,7 @@ describe("Chess Fifty-Move Rule", function () {
             );
 
             await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(matchId, hre.ethers.ZeroAddress, true, 2);
+                .withArgs(matchId, hre.ethers.ZeroAddress, true, 2, () => true);
         });
 
         it("Should reset half-move clock on pawn move", async function () {

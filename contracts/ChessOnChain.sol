@@ -300,7 +300,7 @@ contract ChessOnChain is ETour_Storage {
 
         // Emit MatchCompleted event from game contract (double elimination = no winner)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination);
+        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination, matches[matchId].packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -332,7 +332,7 @@ contract ChessOnChain is ETour_Storage {
 
         // Emit MatchCompleted event from game contract (replacement player wins)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement);
+        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement, matches[matchId].packedBoard);
 
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
 
@@ -640,7 +640,7 @@ contract ChessOnChain is ETour_Storage {
         );
 
         // Emit MatchCompleted event from game contract
-        emit MatchCompleted(matchId, winner, isDraw, reason);
+        emit MatchCompleted(matchId, winner, isDraw, reason, matches[matchId].packedBoard);
 
         if (!isDraw) {
             Match storage matchData = matches[matchId];

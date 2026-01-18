@@ -185,7 +185,8 @@ describe("Chess Threefold Repetition Rule", function () {
                     matchId,
                     hre.ethers.ZeroAddress,
                     true,
-                    2 // CompletionReason.Draw
+                    2, // CompletionReason.Draw
+                    () => true // board (any value)
                 );
         });
 
@@ -223,7 +224,8 @@ describe("Chess Threefold Repetition Rule", function () {
                     matchId,
                     hre.ethers.ZeroAddress,
                     true,
-                    2 // CompletionReason.Draw
+                    2, // CompletionReason.Draw
+                    () => true // board (any value)
                 );
         });
 
@@ -338,7 +340,7 @@ describe("Chess Threefold Repetition Rule", function () {
             );
 
             await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(matchId, hre.ethers.ZeroAddress, true, 2);
+                .withArgs(matchId, hre.ethers.ZeroAddress, true, 2, () => true);
         });
 
         it("Should allow pawn moves without resetting position counts", async function () {

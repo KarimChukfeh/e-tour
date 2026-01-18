@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0xD00D0527A4D867BE7d6adaf7d06De2f7Fdd35C84",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-01-14T01:46:02.553Z",
+  "address": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-01-18T05:31:51.721Z",
   "modules": {
-    "core": "0x50fA8Bc9622F7Cac110586a418F8731f17A9dbFE",
-    "matches": "0xF3C194d0277Ee9F2F46cd17D78D377a9f04b4a9B",
-    "prizes": "0x6828987b8684c5a4ec1353D38aE16D205238E46F",
-    "raffle": "0x7D00c716955B32375bef412078AD2B72cE8530B8",
-    "escalation": "0x8eF07467764b4B0baE5d4A481371d351c3b3c0DF"
+    "core": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "matches": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "prizes": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+    "raffle": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "escalation": "0x9A676e781A523b5d0C0e43731313A708CB607508"
   },
   "abi": [
     {
@@ -74,6 +74,12 @@
           "internalType": "enum ETour_Storage.CompletionReason",
           "name": "reason",
           "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "board",
+          "type": "uint256"
         }
       ],
       "name": "MatchCompleted",
