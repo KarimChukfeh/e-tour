@@ -131,19 +131,21 @@ contract ETour_Escalation is ETour_Storage {
             return true;
         }
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Check if match is active
-        if (!this._isMatchActive(matchId)) {
+        if (!gameContract._isMatchActive(matchId)) {
             return false;
         }
 
         // Get match common data to check status
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
 
         // Check if current player has run out of time (using game-specific time bank logic)
-        if (this._hasCurrentPlayerTimedOut(matchId)) {
+        if (gameContract._hasCurrentPlayerTimedOut(matchId)) {
             TierConfig storage config = _tierConfigs[tierId];
 
             // Calculate when the timeout occurred for accurate escalation timing
@@ -239,7 +241,7 @@ contract ETour_Escalation is ETour_Storage {
         // Mark escalation level and double eliminate both players
         timeout.activeEscalation = EscalationLevel.Escalation2_AdvancedPlayers;
 
-        // Complete match with double elimination
+        // Complete match with double elimination (no tournament winner)
         _completeMatchDoubleEliminationInternal(tierId, instanceId, roundNumber, matchNumber);
     }
 
@@ -295,13 +297,15 @@ contract ETour_Escalation is ETour_Storage {
             return false;
         }
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Check 1: Has player won a match in any round up to and including the stalled round?
         for (uint8 r = 0; r <= stalledRoundNumber; r++) {
             Round storage round = rounds[tierId][instanceId][r];
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
 
                 if (status == MatchStatus.Completed &&
                     winner == player &&
@@ -320,7 +324,7 @@ contract ETour_Escalation is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address p1, address p2) = this._getMatchPlayers(matchId);
+                (address p1, address p2) = gameContract._getMatchPlayers(matchId);
 
                 if (p1 == player || p2 == player) {
                     return true;
@@ -396,9 +400,10 @@ contract ETour_Escalation is ETour_Storage {
         uint8 matchNumber
     ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        (address player1, address player2) = this._getMatchPlayers(matchId);
+        IETourGame gameContract = IETourGame(address(this));
+        (address player1, address player2) = gameContract._getMatchPlayers(matchId);
 
-        this._completeMatchWithResult(matchId, address(0), false);
+        gameContract._completeMatchWithResult(matchId, address(0), false);
 
         // Assign rankings directly
         _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
@@ -535,39 +540,6 @@ contract ETour_Escalation is ETour_Storage {
     // ============ Escalation Availability Helpers (Public View) ============
 
     /**
-     * @dev Check if Level 1 escalation (opponent timeout claim) is available
-     * EXACT COPY from ETour.sol lines 1980-2001
-     */
-    function isMatchEscL1Available(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (bool available) {
-        // SECURITY: Tournament must be in progress for escalation
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        if (tournament.status != TournamentStatus.InProgress) {
-            return false;
-        }
-
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Check if match is active
-        if (!this._isMatchActive(matchId)) {
-            return false;
-        }
-
-        // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
-        if (matchData.status != MatchStatus.InProgress) {
-            return false;
-        }
-
-        // Check if current player has timed out
-        return this._hasCurrentPlayerTimedOut(matchId);
-    }
-
-    /**
      * @dev Check if Level 2 escalation (advanced player force eliminate) is available
      * EXACT COPY from ETour.sol lines 2007-2044
      */
@@ -584,20 +556,21 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        IETourGame gameContract = IETourGame(address(this));
 
         // Check if match is active
-        if (!this._isMatchActive(matchId)) {
+        if (!gameContract._isMatchActive(matchId)) {
             return false;
         }
 
         // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
 
         // Check if current player has timed out
-        if (!this._hasCurrentPlayerTimedOut(matchId)) {
+        if (!gameContract._hasCurrentPlayerTimedOut(matchId)) {
             return false;
         }
 
@@ -633,20 +606,21 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        IETourGame gameContract = IETourGame(address(this));
 
         // Check if match is active
-        if (!this._isMatchActive(matchId)) {
+        if (!gameContract._isMatchActive(matchId)) {
             return false;
         }
 
         // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
 
         // Check if current player has timed out
-        if (!this._hasCurrentPlayerTimedOut(matchId)) {
+        if (!gameContract._hasCurrentPlayerTimedOut(matchId)) {
             return false;
         }
 
@@ -713,14 +687,16 @@ contract ETour_Escalation is ETour_Storage {
 
         bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, nextMatchNum);
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Set player in next match (use game interface to set properly)
         uint8 slot = currentMatchNum % 2; // 0 or 1
-        this._setMatchPlayer(nextMatchId, slot, winner);
+        gameContract._setMatchPlayer(nextMatchId, slot, winner);
 
         // If both players assigned, initialize the match
-        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+        (address p1, address p2) = gameContract._getMatchPlayers(nextMatchId);
         if (p1 != address(0) && p2 != address(0)) {
-            this._initializeMatchForPlay(nextMatchId, tierId);
+            gameContract._initializeMatchForPlay(nextMatchId, tierId);
         }
     }
 
@@ -732,11 +708,13 @@ contract ETour_Escalation is ETour_Storage {
         TierConfig storage config = _tierConfigs[tierId];
         Round storage round = rounds[tierId][instanceId][roundNumber];
 
+        IETourGame gameContract = IETourGame(address(this));
+
         // Check if this is the final round
         if (roundNumber == config.totalRounds - 1) {
             // Finals completed - check for winner
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
-            (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
+            (address winner, bool isDraw, ) = gameContract._getMatchResult(finalsMatchId);
 
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             if (!isDraw && winner != address(0)) {
@@ -758,7 +736,7 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.completionReason = CompletionReason.Draw;
                 tournament.status = TournamentStatus.Completed;
 
-                (address p1, address p2) = this._getMatchPlayers(finalsMatchId);
+                (address p1, address p2) = gameContract._getMatchPlayers(finalsMatchId);
                 playerRanking[tierId][instanceId][p1] = 1;
                 playerRanking[tierId][instanceId][p2] = 1;
             } else if (!isDraw && winner == address(0)) {
@@ -778,7 +756,7 @@ contract ETour_Escalation is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, m);
-                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
 
                 if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
                     winnersCount++;

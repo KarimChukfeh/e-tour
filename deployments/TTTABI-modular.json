@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+  "address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-18T15:26:56.978Z",
+  "deployedAt": "2026-01-18T19:08:59.495Z",
   "modules": {
-    "core": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-    "matches": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-    "prizes": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-    "raffle": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
-    "escalation": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
+    "core": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+    "matches": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "prizes": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+    "raffle": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
+    "escalation": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042"
   },
   "abi": [
     {
@@ -1469,40 +1469,6 @@
         }
       ],
       "name": "isEnrolled",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
-      "name": "isMatchEscL1Available",
       "outputs": [
         {
           "internalType": "bool",
