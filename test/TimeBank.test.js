@@ -71,8 +71,8 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             expect(match.player1TimeRemaining).to.equal(TIER_0_MATCH_TIME);
             expect(match.player2TimeRemaining).to.equal(TIER_0_MATCH_TIME);
 
-            // lastMoveTimestamp should be set to current block timestamp
-            expect(match.lastMoveTimestamp).to.be.gt(0);
+            // lastMoveTime should be set to current block timestamp
+            expect(match.lastMoveTime).to.be.gt(0);
         });
     });
 
