@@ -13,7 +13,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
   // Escalation timeouts from contract (ConnectFour Tier 0)
   const ENROLLMENT_TIMEOUT = 300; // 5 minutes
   const ENROLLMENT_ESC_L2 = 300; // 5 minutes
-  const MATCH_TIMEOUT = 120; // 2 minutes (matchTimePerPlayer)
+  const MATCH_TIMEOUT = 300; // 5 minutes (matchTimePerPlayer)
   const MATCH_ESC_L2 = 120; // 2 minutes
   const MATCH_ESC_L3 = 240; // 4 minutes
 
