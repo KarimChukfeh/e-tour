@@ -116,13 +116,6 @@ contract ETour_Matches is ETour_Storage {
         removePlayerActiveMatch(player1, matchId);
         removePlayerActiveMatch(player2, matchId);
 
-        // Update player stats
-        playerStats[player1].matchesPlayed++;
-        playerStats[player2].matchesPlayed++;
-        if (!isDraw) {
-            playerStats[winner].matchesWon++;
-        }
-
         // Note: Escalation state is cleared by the game contract before calling completeMatch
         // No need to clear again here to avoid double clearing
 
@@ -347,21 +340,6 @@ contract ETour_Matches is ETour_Storage {
         uint256 winnersPot = tournament.prizePool;
         address[] storage players = enrolledPlayers[tierId][instanceId];
 
-        if (tournament.finalsWasDraw) {
-            // Get both finalists from the finals match
-            TierConfig storage config = _tierConfigs[tierId];
-            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, config.totalRounds - 1, 0);
-            (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalsMatchId);
-            playerStats[finalPlayer1].tournamentsWon++;
-            playerStats[finalPlayer2].tournamentsWon++;
-        } else {
-            playerStats[winner].tournamentsWon++;
-        }
-
-        for (uint256 i = 0; i < players.length; i++) {
-            playerStats[players[i]].tournamentsPlayed++;
-        }
-
         // NOTE: Prize distribution, earnings update, reset, and event emission are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
@@ -389,9 +367,6 @@ contract ETour_Matches is ETour_Storage {
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
 
         address[] storage players = enrolledPlayers[tierId][instanceId];
-        for (uint256 i = 0; i < players.length; i++) {
-            playerStats[players[i]].tournamentsPlayed++;
-        }
 
         // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls

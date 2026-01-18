@@ -411,9 +411,6 @@ contract ETour_Escalation is ETour_Storage {
         _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
         _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
-        playerStats[player1].matchesPlayed++;
-        playerStats[player2].matchesPlayed++;
-
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         // Clear escalation state
@@ -456,9 +453,6 @@ contract ETour_Escalation is ETour_Storage {
         _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
         _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
-        playerStats[player1].matchesPlayed++;
-        playerStats[player2].matchesPlayed++;
-
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[tierId][instanceId][replacementPlayer]) {
             enrolledPlayers[tierId][instanceId].push(replacementPlayer);
@@ -467,9 +461,6 @@ contract ETour_Escalation is ETour_Storage {
             tournament.enrolledCount++;
             _onExternalPlayerReplacement(tierId, instanceId, replacementPlayer);
         }
-
-        playerStats[replacementPlayer].matchesPlayed++;
-        playerStats[replacementPlayer].matchesWon++;
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
@@ -802,9 +793,6 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.status = TournamentStatus.Completed;
                 tournament.completionReason = CompletionReason.NormalWin;
                 playerRanking[tierId][instanceId][lastWinner] = 1;
-
-                // Update player stats
-                playerStats[lastWinner].tournamentsWon++;
 
                 // NOTE: Prize distribution, earnings update, event emission, and reset
                 // are handled by the game contract (TicTacChain) after detecting completion.

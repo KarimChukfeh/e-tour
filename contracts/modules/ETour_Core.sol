@@ -300,9 +300,6 @@ contract ETour_Core is ETour_Storage {
                 }
             }
 
-            playerStats[soloWinner].tournamentsWon++;
-            playerStats[soloWinner].tournamentsPlayed++;
-
             // Create enrolled players array for event
             address[] memory singlePlayerArray = new address[](1);
             singlePlayerArray[0] = soloWinner;
