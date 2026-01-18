@@ -16,7 +16,10 @@ contract ChessOnChain is ETour_Storage {
 
     // ============ Game-Specific Structs ============
 
-    struct Match {
+    /**
+     * @dev Active match storage structure for Chess games in progress
+     */
+    struct ActiveMatch {
         address player1;              // White
         address player2;              // Black
         address winner;
@@ -33,20 +36,11 @@ contract ChessOnChain is ETour_Storage {
         string moves;
     }
 
-    struct ChessMatchData {
-        CommonMatchData common;
-        uint256 packedBoard;
-        uint256 packedState;
-        address currentTurn;
-        address firstPlayer;
-        uint256 player1TimeRemaining;
-        uint256 player2TimeRemaining;
-    }
     struct LeaderboardEntry { address player; int256 earnings; }
 
     // ============ Game-Specific Storage ============
 
-    mapping(bytes32 => Match) public matches;
+    mapping(bytes32 => ActiveMatch) public matches;
 
     // Threefold repetition tracking: matchId -> positionHash -> occurrenceCount
     // Position hash incorporates gameNonce to invalidate counts on match reset
@@ -54,7 +48,7 @@ contract ChessOnChain is ETour_Storage {
     mapping(bytes32 => uint256) private _gameNonce;
 
     // Elite tournament match history (Tier 3 and Tier 7 finals)
-    Match[] public eliteMatches;
+    ActiveMatch[] public eliteMatches;
 
     // ============ Events ============
 
@@ -435,7 +429,7 @@ contract ChessOnChain is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                Match storage matchData = matches[matchId];
+                ActiveMatch storage matchData = matches[matchId];
 
                 // Check active storage
                 if (matchData.status == MatchStatus.Completed &&
@@ -455,7 +449,7 @@ contract ChessOnChain is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                Match storage matchData = matches[matchId];
+                ActiveMatch storage matchData = matches[matchId];
 
                 if (matchData.player1 == player || matchData.player2 == player) {
                     return true;
@@ -472,7 +466,7 @@ contract ChessOnChain is ETour_Storage {
         require(from < 64 && to < 64 && from != to, "IS");
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
 
         require(m.status == MatchStatus.InProgress, "MA");
         require(msg.sender == m.player1 || msg.sender == m.player2, "NP");
@@ -530,7 +524,7 @@ contract ChessOnChain is ETour_Storage {
 
     function claimTimeoutWin(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external nonReentrant {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         require(matchData.status == MatchStatus.InProgress, "MA");
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
@@ -643,7 +637,7 @@ contract ChessOnChain is ETour_Storage {
         emit MatchCompleted(matchId, winner, isDraw, reason);
 
         if (!isDraw) {
-            Match storage matchData = matches[matchId];
+            ActiveMatch storage matchData = matches[matchId];
             address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
@@ -658,7 +652,7 @@ contract ChessOnChain is ETour_Storage {
         require(player1 != player2 && player1 != address(0) && player2 != address(0), "IP");
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         matchData.player1 = player2;
         matchData.player2 = player1;
@@ -687,13 +681,13 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
         return matchData.player1 != address(0) && matchData.status != MatchStatus.Completed;
     }
 
     function _completeMatchWithResult(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
         matchData.isDraw = isDraw;
@@ -702,7 +696,7 @@ contract ChessOnChain is ETour_Storage {
     function _getTimeIncrement() public pure override returns (uint256) { return 15; }
 
     function _resetMatchGame(bytes32 matchId) public override {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         m.player1 = address(0); m.player2 = address(0); m.winner = address(0);
         m.currentTurn = address(0); m.firstPlayer = address(0);
         m.status = MatchStatus.NotStarted; m.isDraw = false;
@@ -714,22 +708,30 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function _getMatchResult(bytes32 matchId) public view override returns (address, bool, MatchStatus) {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         return (m.winner, m.isDraw, m.status);
     }
 
     function _getMatchPlayers(bytes32 matchId) public view override returns (address, address) {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         return (m.player1, m.player2);
     }
 
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         if (slot == 0) m.player1 = player; else m.player2 = player;
     }
 
+    /**
+     * @dev Get match board state - wrapper for modules
+     */
+    function _getMatchBoardState(bytes32 matchId) public view override returns (bytes memory) {
+        ActiveMatch storage m = matches[matchId];
+        return abi.encode(m.packedBoard, m.packedState, m.moves);
+    }
+
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         m.status = MatchStatus.InProgress;
         m.startTime = block.timestamp;
         m.lastMoveTime = block.timestamp;
@@ -754,43 +756,89 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         m.status = MatchStatus.Completed;
         m.winner = winner;
         m.isDraw = isDraw;
     }
 
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
         if (m.status != MatchStatus.InProgress) return false;
         uint256 elapsed = block.timestamp - m.lastMoveTime;
         uint256 time = (m.currentTurn == m.player1) ? m.player1TimeRemaining : m.player2TimeRemaining;
         return elapsed >= time;
     }
 
-    function _getActiveMatchData(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (CommonMatchData memory) {
-        Match storage m = matches[matchId];
-        address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
-        return CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false);
+    /**
+     * @dev Get active match data - converts ActiveMatch to unified Match struct
+     */
+    function _getActiveMatchData(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (Match memory) {
+        ActiveMatch storage m = matches[matchId];
+        return Match({
+            matchId: matchId,
+            player1: m.player1,
+            player2: m.player2,
+            winner: m.winner,
+            currentTurn: m.currentTurn,
+            firstPlayer: m.firstPlayer,
+            status: m.status,
+            isDraw: m.isDraw,
+            startTime: m.startTime,
+            lastMoveTime: m.lastMoveTime,
+            endTime: 0,  // Not tracked for active matches
+            player1TimeRemaining: m.player1TimeRemaining,
+            player2TimeRemaining: m.player2TimeRemaining,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            gameState: abi.encode(m.packedBoard, m.packedState, m.moves),
+            completionReason: CompletionReason.NormalWin,  // Not meaningful for active matches
+            isCached: false
+        });
     }
 
     // ============ View Functions ============
 
-    function getMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view returns (ChessMatchData memory) {
+    function getMatch(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view returns (Match memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage m = matches[matchId];
+        ActiveMatch storage m = matches[matchId];
 
         if (m.player1 != address(0)) {
-            address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
-            return ChessMatchData(
-                CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false),
-                m.packedBoard, m.packedState, m.currentTurn, m.firstPlayer, m.player1TimeRemaining, m.player2TimeRemaining
-            );
+            // Convert ActiveMatch to unified Match struct
+            return Match({
+                matchId: matchId,
+                player1: m.player1,
+                player2: m.player2,
+                winner: m.winner,
+                currentTurn: m.currentTurn,
+                firstPlayer: m.firstPlayer,
+                status: m.status,
+                isDraw: m.isDraw,
+                startTime: m.startTime,
+                lastMoveTime: m.lastMoveTime,
+                endTime: 0,  // Not tracked for active matches
+                player1TimeRemaining: m.player1TimeRemaining,
+                player2TimeRemaining: m.player2TimeRemaining,
+                tierId: tierId,
+                instanceId: instanceId,
+                roundNumber: roundNumber,
+                matchNumber: matchNumber,
+                gameState: abi.encode(m.packedBoard, m.packedState, m.moves),
+                completionReason: CompletionReason.NormalWin,  // Not meaningful for active matches
+                isCached: false
+            });
         }
 
-        // Match not found - return empty data
-        ChessMatchData memory emptyData;
-        return emptyData;
+        // Match not found - return empty Match
+        return Match({
+            matchId: bytes32(0), player1: address(0), player2: address(0), winner: address(0),
+            currentTurn: address(0), firstPlayer: address(0), status: MatchStatus.NotStarted, isDraw: false,
+            startTime: 0, lastMoveTime: 0, endTime: 0, player1TimeRemaining: 0, player2TimeRemaining: 0,
+            tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, gameState: "",
+            completionReason: CompletionReason.NormalWin, isCached: false
+        });
     }
 
     function getBoard(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external view returns (uint8[64] memory board) {
@@ -850,7 +898,7 @@ contract ChessOnChain is ETour_Storage {
     }
 
     function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {
-        Match storage m = eliteMatches[index];
+        ActiveMatch storage m = eliteMatches[index];
         return (m.player1, m.player2, m.winner, m.currentTurn, m.firstPlayer, m.status, m.isDraw, m.packedBoard, m.packedState, m.startTime, m.lastMoveTime, m.player1TimeRemaining, m.player2TimeRemaining, bytes(m.moves));
     }
 

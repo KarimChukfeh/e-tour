@@ -44,7 +44,8 @@ contract ETour_Prizes is ETour_Storage {
     function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (Match memory) { revert("Module: Use IETourGame"); }
+    function _getMatchBoardState(bytes32) public view override returns (bytes memory) { revert("Module: Use IETourGame"); }
 
     // ============ Prize Distribution Functions ============
 

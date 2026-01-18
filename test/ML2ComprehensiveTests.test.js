@@ -70,8 +70,8 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             // Get initial match assignments
             const match0Initial = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
             const match1Initial = await game.getMatch(TIER_4, INSTANCE_ID, 0, 1);
-            console.log(`Match 0: ${match0Initial.common.player1} vs ${match0Initial.common.player2}`);
-            console.log(`Match 1: ${match1Initial.common.player1} vs ${match1Initial.common.player2}`);
+            console.log(`Match 0: ${match0Initial.player1} vs ${match0Initial.player2}`);
+            console.log(`Match 1: ${match1Initial.player1} vs ${match1Initial.player2}`);
 
             // Complete Match 0 (playerA vs playerB)
             console.log("\nCompleting Match 0...");
@@ -90,26 +90,26 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
 
             // Check match result
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
-            console.log(`Match 0 status: ${match0.common.status}`);
-            console.log(`Match 0 winner: ${match0.common.winner}`);
-            console.log(`Match 0 isDraw: ${match0.common.isDraw}`);
+            console.log(`Match 0 status: ${match0.status}`);
+            console.log(`Match 0 winner: ${match0.winner}`);
+            console.log(`Match 0 isDraw: ${match0.isDraw}`);
 
-            expect(match0.common.status).to.equal(2, "Match should be completed");
-            expect(match0.common.winner).to.not.equal(hre.ethers.ZeroAddress, "Match should have a winner");
-            expect(match0.common.isDraw).to.be.false;
+            expect(match0.status).to.equal(2, "Match should be completed");
+            expect(match0.winner).to.not.equal(hre.ethers.ZeroAddress, "Match should have a winner");
+            expect(match0.isDraw).to.be.false;
 
-            const winner = match0.common.winner;
-            const loser = (winner === match0.common.player1) ? match0.common.player2 : match0.common.player1;
+            const winner = match0.winner;
+            const loser = (winner === match0.player1) ? match0.player2 : match0.player1;
             console.log(`✓ Match 0 complete - Winner: ${winner}`);
 
             // Check if winner is in finals
             console.log("\nChecking finals assignment...");
             const finalsMatch = await game.getMatch(TIER_4, INSTANCE_ID, 1, 0);
-            console.log(`Finals player1: ${finalsMatch.common.player1}`);
-            console.log(`Finals player2: ${finalsMatch.common.player2}`);
-            console.log(`Finals status: ${finalsMatch.common.status}`);
+            console.log(`Finals player1: ${finalsMatch.player1}`);
+            console.log(`Finals player2: ${finalsMatch.player2}`);
+            console.log(`Finals status: ${finalsMatch.status}`);
 
-            const inFinals = (finalsMatch.common.player1 === winner || finalsMatch.common.player2 === winner);
+            const inFinals = (finalsMatch.player1 === winner || finalsMatch.player2 === winner);
             expect(inFinals).to.be.true;
             console.log(`✓ Winner is in finals`);
 
@@ -148,17 +148,17 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
 
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
-            const winner = match0.common.winner;
+            const winner = match0.winner;
             console.log(`Match 0 winner: ${winner}`);
-            console.log(`Match 0 isCached: ${match0.common.isCached}`);
+            console.log(`Match 0 isCached: ${match0.isCached}`);
 
             // Check if match data is still available (either in active storage or cache)
-            expect(match0.common.status).to.equal(2);
-            expect(match0.common.winner).to.equal(winner);
+            expect(match0.status).to.equal(2);
+            expect(match0.winner).to.equal(winner);
 
             // Test isPlayerInAdvancedRound - should work regardless of caching
             const isAdvanced = await game.isPlayerInAdvancedRound(TIER_4, INSTANCE_ID, 0, winner);
-            console.log(`isPlayerInAdvancedRound (cached=${match0.common.isCached}): ${isAdvanced}`);
+            console.log(`isPlayerInAdvancedRound (cached=${match0.isCached}): ${isAdvanced}`);
 
             expect(isAdvanced).to.be.true;
             console.log("✓ Advanced player detection works with cached matches");
@@ -188,7 +188,7 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
 
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
-            const advancedPlayer = match0.common.winner;
+            const advancedPlayer = match0.winner;
             console.log(`Advanced player: ${advancedPlayer}`);
 
             // Stall Match 1
@@ -280,12 +280,12 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
 
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
-            const finalist = match0.common.winner;
+            const finalist = match0.winner;
             console.log(`✓ Match 0 complete, finalist: ${finalist}`);
 
             // Verify finalist is in finals
             const finalsMatch = await game.getMatch(TIER_4, INSTANCE_ID, 1, 0);
-            expect(finalsMatch.common.player1 === finalist || finalsMatch.common.player2 === finalist).to.be.true;
+            expect(finalsMatch.player1 === finalist || finalsMatch.player2 === finalist).to.be.true;
             console.log("✓ Finalist assigned to finals");
 
             // Stall Match 1 (semi-final)
@@ -365,7 +365,7 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 4);
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
-            const advancedPlayer1 = (await game.getMatch(TIER_4, INSTANCE_ID, 0, 0)).common.winner;
+            const advancedPlayer1 = (await game.getMatch(TIER_4, INSTANCE_ID, 0, 0)).winner;
 
             // Complete semi-final match 1
             let match1 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 1);
@@ -431,7 +431,7 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 4);
             match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
-            const advancedPlayer = (await game.getMatch(TIER_4, INSTANCE_ID, 0, 0)).common.winner;
+            const advancedPlayer = (await game.getMatch(TIER_4, INSTANCE_ID, 0, 0)).winner;
             console.log(`✓ Advanced player: ${advancedPlayer}`);
 
             // Start Match 1, make one move

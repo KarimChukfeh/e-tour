@@ -21,11 +21,11 @@ contract TicTacChain is ETour_Storage {
     // ============ Game-Specific Structs ============
 
     /**
-     * @dev Match storage structure for active Tic-Tac-Toe games
+     * @dev Active match storage structure for Tic-Tac-Toe games in progress
      * Board is packed: 2 bits per cell (0=empty, 1=player1, 2=player2)
      * Total 9 cells = 18 bits (fits in uint256 with room to spare)
      */
-    struct Match {
+    struct ActiveMatch {
         address player1;
         address player2;
         address winner;
@@ -40,23 +40,9 @@ contract TicTacChain is ETour_Storage {
         uint256 player2TimeRemaining;
     }
 
-    /**
-     * @dev Extended match data for TicTacToe including common fields and game-specific state
-     * Used for view functions to return complete match information
-     */
-    struct TicTacToeMatchData {
-        CommonMatchData common;        // Standardized tournament match data
-        uint256 packedBoard;           // Game-specific: packed board state
-        address currentTurn;           // Who plays next (address(0) for completed)
-        address firstPlayer;           // Who started the match
-        uint256 player1TimeRemaining;  // Time bank for player1
-        uint256 player2TimeRemaining;  // Time bank for player2
-        uint256 lastMoveTimestamp;     // When last move was made
-    }
-
     // ============ Game-Specific Storage ============
 
-    mapping(bytes32 => Match) public matches;  // Active matches only (matchId => Match)
+    mapping(bytes32 => ActiveMatch) public matches;  // Active matches only (matchId => ActiveMatch)
 
     // ============ Module Addresses ============
     // (All ETour modules inherited from ETour_Storage, game logic is built-in)
@@ -507,7 +493,7 @@ contract TicTacChain is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                Match storage matchData = matches[matchId];
+                ActiveMatch storage matchData = matches[matchId];
 
                 // Check active storage
                 if (matchData.status == MatchStatus.Completed &&
@@ -527,7 +513,7 @@ contract TicTacChain is ETour_Storage {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                Match storage matchData = matches[matchId];
+                ActiveMatch storage matchData = matches[matchId];
 
                 if (matchData.player1 == player || matchData.player2 == player) {
                     return true;
@@ -554,7 +540,7 @@ contract TicTacChain is ETour_Storage {
         require(cellIndex < 9, "IC");
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         require(matchData.status == MatchStatus.InProgress, "MA");
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
@@ -618,7 +604,7 @@ contract TicTacChain is ETour_Storage {
         uint8 matchNumber
     ) external nonReentrant {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         require(matchData.status == MatchStatus.InProgress, "MA");
         require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
@@ -695,7 +681,7 @@ contract TicTacChain is ETour_Storage {
 
         // Call elimination hook for loser (if not a draw)
         if (!isDraw) {
-            Match storage matchData = matches[matchId];
+            ActiveMatch storage matchData = matches[matchId];
             address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
             _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
         }
@@ -780,7 +766,7 @@ contract TicTacChain is ETour_Storage {
         require(player1 != address(0) && player2 != address(0), "P2");
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         matchData.player1 = player1;
         matchData.player2 = player2;
@@ -813,7 +799,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Check if match is active (exists and not completed)
      */
     function _isMatchActive(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
         // Active if player1 assigned and not completed
         return matchData.player1 != address(0) &&
                matchData.status != MatchStatus.Completed;
@@ -831,7 +817,7 @@ contract TicTacChain is ETour_Storage {
         bool isDraw
     ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
@@ -851,7 +837,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Reset match - wrapper for modules expecting bytes32 matchId
      */
     function _resetMatchGame(bytes32 matchId) public override {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         matchData.player1 = address(0);
         matchData.player2 = address(0);
@@ -871,7 +857,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Get match result - wrapper for modules
      */
     function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
@@ -879,7 +865,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Get match players - wrapper for modules
      */
     function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
         return (matchData.player1, matchData.player2);
     }
 
@@ -887,7 +873,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Set match player - wrapper for modules
      */
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public override {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         if (slot == 0) {
             matchData.player1 = player;
@@ -897,10 +883,18 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
+     * @dev Get match board state - wrapper for modules
+     */
+    function _getMatchBoardState(bytes32 matchId) public view override returns (bytes memory) {
+        ActiveMatch storage matchData = matches[matchId];
+        return abi.encode(matchData.packedBoard);
+    }
+
+    /**
      * @dev Initialize match for play - wrapper for modules
      */
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         // Set match status and times
         matchData.status = MatchStatus.InProgress;
@@ -932,7 +926,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Complete match with result - wrapper for modules
      */
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
         matchData.winner = winner;
@@ -946,7 +940,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Check if current player timed out - wrapper for modules
      */
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         if (matchData.status != MatchStatus.InProgress) return false;
 
@@ -959,7 +953,7 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
-     * @dev Get active match data - for modules that need CommonMatchData
+     * @dev Get active match data - converts ActiveMatch to unified Match struct
      */
     function _getActiveMatchData(
         bytes32 matchId,
@@ -967,30 +961,29 @@ contract TicTacChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view override returns (CommonMatchData memory) {
-        Match storage matchData = matches[matchId];
+    ) public view override returns (Match memory) {
+        ActiveMatch storage matchData = matches[matchId];
 
-        // Derive loser
-        address loser = address(0);
-        if (!matchData.isDraw && matchData.winner != address(0)) {
-            loser = (matchData.winner == matchData.player1)
-                ? matchData.player2
-                : matchData.player1;
-        }
-
-        return CommonMatchData({
+        return Match({
+            matchId: matchId,
             player1: matchData.player1,
             player2: matchData.player2,
             winner: matchData.winner,
-            loser: loser,
+            currentTurn: matchData.currentTurn,
+            firstPlayer: matchData.firstPlayer,
             status: matchData.status,
             isDraw: matchData.isDraw,
             startTime: matchData.startTime,
             lastMoveTime: matchData.lastMoveTime,
+            endTime: 0,  // Not tracked for active matches
+            player1TimeRemaining: matchData.player1TimeRemaining,
+            player2TimeRemaining: matchData.player2TimeRemaining,
             tierId: tierId,
             instanceId: instanceId,
             roundNumber: roundNumber,
             matchNumber: matchNumber,
+            gameState: abi.encode(matchData.packedBoard),
+            completionReason: CompletionReason.NormalWin,  // Not meaningful for active matches
             isCached: false
         });
     }
@@ -1005,50 +998,45 @@ contract TicTacChain is ETour_Storage {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view returns (TicTacToeMatchData memory) {
+    ) public view returns (Match memory) {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage matchData = matches[matchId];
+        ActiveMatch storage matchData = matches[matchId];
 
         // Check if match exists in active storage (even if completed)
         if (matchData.player1 != address(0)) {
-            TicTacToeMatchData memory fullData;
-
-            // Build CommonMatchData
-            address loser = address(0);
-            if (!matchData.isDraw && matchData.winner != address(0)) {
-                loser = (matchData.winner == matchData.player1) ? matchData.player2 : matchData.player1;
-            }
-
-            fullData.common = CommonMatchData({
+            // Convert ActiveMatch to unified Match struct
+            return Match({
+                matchId: matchId,
                 player1: matchData.player1,
                 player2: matchData.player2,
                 winner: matchData.winner,
-                loser: loser,
+                currentTurn: matchData.currentTurn,
+                firstPlayer: matchData.firstPlayer,
                 status: matchData.status,
                 isDraw: matchData.isDraw,
                 startTime: matchData.startTime,
                 lastMoveTime: matchData.lastMoveTime,
+                endTime: 0,  // Not tracked for active matches
+                player1TimeRemaining: matchData.player1TimeRemaining,
+                player2TimeRemaining: matchData.player2TimeRemaining,
                 tierId: tierId,
                 instanceId: instanceId,
                 roundNumber: roundNumber,
                 matchNumber: matchNumber,
+                gameState: abi.encode(matchData.packedBoard),
+                completionReason: CompletionReason.NormalWin,  // Not meaningful for active matches
                 isCached: false
             });
-
-            // Add game-specific data
-            fullData.packedBoard = matchData.packedBoard;
-            fullData.currentTurn = matchData.currentTurn;
-            fullData.firstPlayer = matchData.firstPlayer;
-            fullData.player1TimeRemaining = matchData.player1TimeRemaining;
-            fullData.player2TimeRemaining = matchData.player2TimeRemaining;
-            fullData.lastMoveTimestamp = matchData.lastMoveTime;
-
-            return fullData;
         }
 
-        // Match not found in active storage - return empty data
-        TicTacToeMatchData memory emptyData;
-        return emptyData;
+        // Match not found - return empty Match
+        return Match({
+            matchId: bytes32(0), player1: address(0), player2: address(0), winner: address(0),
+            currentTurn: address(0), firstPlayer: address(0), status: MatchStatus.NotStarted, isDraw: false,
+            startTime: 0, lastMoveTime: 0, endTime: 0, player1TimeRemaining: 0, player2TimeRemaining: 0,
+            tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, gameState: "",
+            completionReason: CompletionReason.NormalWin, isCached: false
+        });
     }
 
     /**

@@ -121,7 +121,7 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = allPlayers.find(p => p.address === match.currentTurn);
-                const sp = allPlayers.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = allPlayers.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
@@ -184,10 +184,10 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
             // Helper to win matches quickly
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null;
+                if (match.status !== 1n) return null;
 
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);

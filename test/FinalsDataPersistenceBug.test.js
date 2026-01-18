@@ -67,7 +67,7 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const finalsMatch1 = await game.getMatch(tierId, instanceId, 0, 0);
-            console.log(`Finals status: ${finalsMatch1.common.status} (1=InProgress)`);
+            console.log(`Finals status: ${finalsMatch1.status} (1=InProgress)`);
 
             // Complete match normally
             const firstPlayer = finalsMatch1.currentTurn === player1.address ? player1 : player2;
@@ -89,8 +89,8 @@ describe("Finals Data Persistence Bug (TDD)", function () {
 
             // Finals should be cleared immediately (returns empty data)
             const staleFinals = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.player2).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ FINALS CLEARED IMMEDIATELY ON RESET`);
             console.log(`  - No stale data window`);
             console.log(`  - Historical data available via events`);
@@ -101,7 +101,7 @@ describe("Finals Data Persistence Bug (TDD)", function () {
 
             // Finals should still be cleared (empty data until new match starts)
             const clearedFinals = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedFinals.player1).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ Finals remain cleared (as expected)`)
 
             console.log("\n=== TEST COMPLETE ===\n");
@@ -152,7 +152,7 @@ describe("Finals Data Persistence Bug (TDD)", function () {
 
             // Finals should now exist
             const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-            console.log(`✓ Finals created: ${finalsMatch.common.player1.slice(0, 10)}... vs ${finalsMatch.common.player2.slice(0, 10)}...`);
+            console.log(`✓ Finals created: ${finalsMatch.player1.slice(0, 10)}... vs ${finalsMatch.player2.slice(0, 10)}...`);
 
             // Trigger ML2 on finals (double elimination)
             const MATCH_TIMEOUT = 120;
@@ -174,8 +174,8 @@ describe("Finals Data Persistence Bug (TDD)", function () {
 
             // Finals should be cleared immediately after reset (returns empty data)
             const staleFinals = await game.getMatch(tierId, instanceId, 1, 0);
-            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(staleFinals.player2).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY`);
             console.log(`  - winner=0x0 case handled properly`);
             console.log(`  - No stale data vulnerability`);
@@ -187,7 +187,7 @@ describe("Finals Data Persistence Bug (TDD)", function () {
 
             // Finals should still be cleared (empty data)
             const clearedFinals = await game.getMatch(tierId, instanceId, 1, 0);
-            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedFinals.player1).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ Finals remain cleared (as expected)`)
 
             console.log("\n=== TEST COMPLETE ===\n");

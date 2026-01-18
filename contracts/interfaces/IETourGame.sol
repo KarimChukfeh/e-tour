@@ -114,7 +114,7 @@ interface IETourGame {
      * @param instanceId Instance within tier
      * @param roundNumber Round number
      * @param matchNumber Match number within round
-     * @return Common match data with isCached = false
+     * @return Unified match data with isCached = false
      */
     function _getActiveMatchData(
         bytes32 matchId,
@@ -122,5 +122,40 @@ interface IETourGame {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (ETour_Storage.CommonMatchData memory);
+    ) external view returns (ETour_Storage.Match memory);
+
+    /**
+     * @dev Get match board state
+     * @param matchId Match identifier
+     * @return Board state encoded as bytes
+     */
+    function _getMatchBoardState(bytes32 matchId) external view returns (bytes memory);
+
+    /**
+     * @dev Record match to player history
+     * @param matchId Unique match identifier
+     * @param player1 First player address
+     * @param player2 Second player address
+     * @param winner Winner address (address(0) if draw)
+     * @param isDraw Whether match was a draw
+     * @param startTime Match start timestamp
+     * @param completionReason How the match ended
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param roundNumber Round number
+     * @param matchNumber Match number within round
+     */
+    function _recordMatchHistory(
+        bytes32 matchId,
+        address player1,
+        address player2,
+        address winner,
+        bool isDraw,
+        uint256 startTime,
+        ETour_Storage.CompletionReason completionReason,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external;
 }

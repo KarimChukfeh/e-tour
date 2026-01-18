@@ -45,7 +45,8 @@ contract ETour_Escalation is ETour_Storage {
     function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
     function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (Match memory) { revert("Module: Use IETourGame"); }
+    function _getMatchBoardState(bytes32) public view override returns (bytes memory) { revert("Module: Use IETourGame"); }
 
     // ============ Match Stalling Functions ============
 
@@ -137,7 +138,7 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         // Get match common data to check status
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        Match memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
@@ -184,7 +185,7 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         // Get match common data to check status
-        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        Match memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
@@ -414,6 +415,23 @@ contract ETour_Escalation is ETour_Storage {
         playerStats[player1].matchesPlayed++;
         playerStats[player2].matchesPlayed++;
 
+        // Record match history
+        IETourGame gameContract = IETourGame(address(this));
+        Match memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        gameContract._recordMatchHistory(
+            matchId,
+            player1,
+            player2,
+            address(0),  // No winner in force elimination
+            false,
+            matchData.startTime,
+            CompletionReason.ForceElimination,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber
+        );
+
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         // Clear escalation state
@@ -470,6 +488,49 @@ contract ETour_Escalation is ETour_Storage {
 
         playerStats[replacementPlayer].matchesPlayed++;
         playerStats[replacementPlayer].matchesWon++;
+
+        // Record match history
+        Match memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        gameContract._recordMatchHistory(
+            matchId,
+            player1,
+            player2,
+            replacementPlayer,
+            false,
+            matchData.startTime,
+            CompletionReason.Replacement,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber
+        );
+
+        // Also add to replacement player's history (they weren't an original participant)
+        // Get the game state and create record manually
+        bytes memory gameState = gameContract._getMatchBoardState(matchId);
+        Match memory record = Match({
+            matchId: matchId,
+            player1: player1,
+            player2: player2,
+            winner: replacementPlayer,
+            currentTurn: address(0),      // Match is complete
+            firstPlayer: address(0),       // Not needed for history
+            status: MatchStatus.Completed,
+            isDraw: false,
+            startTime: matchData.startTime,
+            lastMoveTime: 0,               // Not tracked for history
+            endTime: block.timestamp,
+            player1TimeRemaining: 0,       // Not needed for history
+            player2TimeRemaining: 0,       // Not needed for history
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            gameState: gameState,
+            completionReason: CompletionReason.Replacement,
+            isCached: false
+        });
+        playerStats[replacementPlayer].matches.push(record);
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
@@ -567,7 +628,7 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        Match memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
@@ -600,7 +661,7 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        Match memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }
@@ -649,7 +710,7 @@ contract ETour_Escalation is ETour_Storage {
         }
 
         // Get match data
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        Match memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) {
             return false;
         }

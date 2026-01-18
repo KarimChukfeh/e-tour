@@ -115,11 +115,57 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 drawCount;
     }
 
+    /**
+     * @dev Unified Match struct used for both active matches and match history
+     * Replaces CommonMatchData, MatchRecord, and game-specific Match structs
+     * Each game encodes its specific state (board, moves, etc.) in gameState bytes
+     */
+    struct Match {
+        // Identity
+        bytes32 matchId;
+
+        // Players
+        address player1;
+        address player2;
+        address winner;
+        address currentTurn;
+        address firstPlayer;
+
+        // State
+        MatchStatus status;
+        bool isDraw;
+
+        // Timing
+        uint256 startTime;
+        uint256 lastMoveTime;
+        uint256 endTime;
+        uint256 player1TimeRemaining;
+        uint256 player2TimeRemaining;
+
+        // Tournament Context
+        uint8 tierId;
+        uint8 instanceId;
+        uint8 roundNumber;
+        uint8 matchNumber;
+
+        // Game-Specific State (encoded as bytes for flexibility)
+        // TicTacToe/ConnectFour: abi.encode(packedBoard)
+        // Chess: abi.encode(packedBoard, packedState, moves)
+        bytes gameState;
+
+        // Completion
+        CompletionReason completionReason;
+
+        // Cache indicator (for view functions)
+        bool isCached;
+    }
+
     struct PlayerStats {
         uint256 tournamentsWon;
         uint256 tournamentsPlayed;
         uint256 matchesWon;
         uint256 matchesPlayed;
+        Match[] matches;  // Complete history of all matches played
     }
 
     struct EnrollmentTimeoutState {
@@ -147,35 +193,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     struct TournamentRef {
         uint8 tierId;
         uint8 instanceId;
-    }
-
-    /**
-     * @dev Common match data shared across all game implementations
-     * Used by standardized getMatch() function with automatic cache fallback
-     */
-    struct CommonMatchData {
-        // Player Information
-        address player1;
-        address player2;
-        address winner;
-        address loser;          // Derived: (winner == player1) ? player2 : player1
-
-        // Match State
-        MatchStatus status;
-        bool isDraw;
-
-        // Timing
-        uint256 startTime;
-        uint256 lastMoveTime;
-
-        // Tournament Context
-        uint8 tierId;
-        uint8 instanceId;
-        uint8 roundNumber;
-        uint8 matchNumber;
-
-        // Data Source Indicator
-        bool isCached;          // true = from cache, false = from active storage
     }
 
     /**
@@ -322,6 +339,67 @@ abstract contract ETour_Storage is ReentrancyGuard {
         return result;
     }
 
+    /**
+     * @dev Record match to player history
+     * Called by modules when match completes
+     * PUBLIC for module delegatecall access
+     * @param matchId Unique match identifier
+     * @param player1 First player address
+     * @param player2 Second player address
+     * @param winner Winner address (address(0) if draw)
+     * @param isDraw Whether match was a draw
+     * @param startTime Match start timestamp
+     * @param completionReason How the match ended
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param roundNumber Round number
+     * @param matchNumber Match number within round
+     */
+    function _recordMatchHistory(
+        bytes32 matchId,
+        address player1,
+        address player2,
+        address winner,
+        bool isDraw,
+        uint256 startTime,
+        CompletionReason completionReason,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) public {
+        // Get game state from game contract
+        bytes memory gameState = this._getMatchBoardState(matchId);
+
+        // Create match record using unified Match struct
+        Match memory record = Match({
+            matchId: matchId,
+            player1: player1,
+            player2: player2,
+            winner: winner,
+            currentTurn: address(0),      // Match is complete
+            firstPlayer: address(0),       // Not needed for history
+            status: MatchStatus.Completed,
+            isDraw: isDraw,
+            startTime: startTime,
+            lastMoveTime: 0,               // Not tracked for history
+            endTime: block.timestamp,
+            player1TimeRemaining: 0,       // Not needed for history
+            player2TimeRemaining: 0,       // Not needed for history
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            gameState: gameState,
+            completionReason: completionReason,
+            isCached: false
+        });
+
+        // Add to both players' history
+        playerStats[player1].matches.push(record);
+        playerStats[player2].matches.push(record);
+    }
+
     // ============ Abstract Functions (Implemented by Game Contracts) ============
 
     /**
@@ -412,7 +490,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view virtual returns (CommonMatchData memory);
+    ) public view virtual returns (Match memory);
+
+    /**
+     * @dev Get match board state
+     * Called by modules to retrieve end-game board state for history
+     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
+     */
+    function _getMatchBoardState(bytes32 matchId) public view virtual returns (bytes memory);
 
     // ============ Hooks (Optional overrides by Game Contracts) ============
 

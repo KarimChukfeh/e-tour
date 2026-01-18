@@ -73,8 +73,8 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
     async function playScholarsMate(tierId, instanceId, roundNum, matchNum) {
         const matchData = await chess.getMatch(tierId, instanceId, roundNum, matchNum);
-        const whitePlayerAddr = matchData.common.player1;
-        const blackPlayerAddr = matchData.common.player2;
+        const whitePlayerAddr = matchData.player1;
+        const blackPlayerAddr = matchData.player2;
 
         const signers = await hre.ethers.getSigners();
         const whitePlayer = signers.find(s => s.address === whitePlayerAddr);
@@ -95,9 +95,9 @@ describe("ChessOnChain 8-Tier System Tests", function () {
     async function claimTimeoutWin(tierId, instanceId, roundNum, matchNum) {
         const matchData = await chess.getMatch(tierId, instanceId, roundNum, matchNum);
         const currentTurnAddr = matchData.currentTurn;
-        const waitingPlayerAddr = currentTurnAddr === matchData.common.player1
-            ? matchData.common.player2
-            : matchData.common.player1;
+        const waitingPlayerAddr = currentTurnAddr === matchData.player1
+            ? matchData.player2
+            : matchData.player1;
 
         const signers = await hre.ethers.getSigners();
         const waitingPlayer = signers.find(s => s.address === waitingPlayerAddr);
@@ -712,8 +712,8 @@ describe("ChessOnChain 8-Tier System Tests", function () {
 
             // Play Scholar's Mate
             const matchData = await chess.getMatch(tierId, instanceId, 0, 0);
-            const whitePlayerAddr = matchData.common.player1;
-            const blackPlayerAddr = matchData.common.player2;
+            const whitePlayerAddr = matchData.player1;
+            const blackPlayerAddr = matchData.player2;
 
             const signers = await hre.ethers.getSigners();
             const whitePlayer = signers.find(s => s.address === whitePlayerAddr);

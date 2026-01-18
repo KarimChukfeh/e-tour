@@ -65,8 +65,8 @@ describe("ML2 Exact User Scenario", function() {
         const match0 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
         const match1 = await game.getMatch(TIER_4, INSTANCE_ID, 0, 1);
 
-        console.log(`Match 0 (semi): ${match0.common.player1} vs ${match0.common.player2}`);
-        console.log(`Match 1 (semi): ${match1.common.player1} vs ${match1.common.player2}`);
+        console.log(`Match 0 (semi): ${match0.player1} vs ${match0.player2}`);
+        console.log(`Match 1 (semi): ${match1.player1} vs ${match1.player2}`);
         console.log("✓ Tournament started");
 
         // Step 2: A vs B → A wins
@@ -85,15 +85,15 @@ describe("ML2 Exact User Scenario", function() {
         await game.connect(await hre.ethers.getSigner(currentMatch.currentTurn)).makeMove(TIER_4, INSTANCE_ID, 0, 0, 2);
 
         const match0After = await game.getMatch(TIER_4, INSTANCE_ID, 0, 0);
-        const winnerAddress = match0After.common.winner;
+        const winnerAddress = match0After.winner;
         const winnerA = await hre.ethers.getSigner(winnerAddress);
         console.log(`Winner of match 0: ${winnerAddress}`);
         console.log(`✓ A won and advanced to finals`);
 
         // Verify A is in finals
         const finalsMatch = await game.getMatch(TIER_4, INSTANCE_ID, 1, 0);
-        expect(finalsMatch.common.player1 === winnerAddress || finalsMatch.common.player2 === winnerAddress).to.be.true;
-        console.log(`Finals: player1=${finalsMatch.common.player1}, player2=${finalsMatch.common.player2}`);
+        expect(finalsMatch.player1 === winnerAddress || finalsMatch.player2 === winnerAddress).to.be.true;
+        console.log(`Finals: player1=${finalsMatch.player1}, player2=${finalsMatch.player2}`);
 
         // Step 3: C vs D stalls
         console.log("\nStep 3: C vs D stalling (one move then timeout)...");

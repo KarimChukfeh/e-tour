@@ -10,15 +10,15 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
     const TIER_ID = 2; // 8-player tier (good balance for testing)
     const INSTANCE_ID = 0;
     const TIER_FEE = hre.ethers.parseEther("0.004"); // Correct fee for Tier 2
-    const MATCH_TIME = 120; // 2 minutes per player (updated for 15s Fischer increment)
+    const MATCH_TIME = 300; // 5 minutes per player (matchTimePerPlayer from contract)
     const L2_DELAY = 120; // 2 minutes (matchLevel2Delay from contract)
     const L3_DELAY = 240; // 4 minutes (matchLevel3Delay from contract)
 
     // Helper to complete a match quickly (vertical win in Connect Four)
     async function completeMatch(tierId, instanceId, roundNumber, matchNumber) {
         const match = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-        const p1 = match.common.player1;
-        const p2 = match.common.player2;
+        const p1 = match.player1;
+        const p2 = match.player2;
 
         // Use currentTurn to determine who moves
         let currentMatch = match;
@@ -103,8 +103,8 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             console.log("Match 0: Normal completion");
             await completeMatch(TIER_ID, INSTANCE_ID, 0, 0);
             const match0After = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 0);
-            expect(match0After.common.status).to.equal(2);
-            const advancedPlayer = match0After.common.winner;
+            expect(match0After.status).to.equal(2);
+            const advancedPlayer = match0After.winner;
             console.log(`✓ Winner: ${advancedPlayer} (now advanced player)`);
 
             // Match 1: Stalls → Advanced player uses L2
@@ -124,8 +124,8 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Advanced player force eliminates
             await game.connect(await hre.ethers.getSigner(advancedPlayer)).forceEliminateStalledMatch(TIER_ID, INSTANCE_ID, 0, 1);
             const match1After = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 1);
-            expect(match1After.common.status).to.equal(2);
-            expect(match1After.common.winner).to.equal(hre.ethers.ZeroAddress);
+            expect(match1After.status).to.equal(2);
+            expect(match1After.winner).to.equal(hre.ethers.ZeroAddress);
             console.log("✓ Match force eliminated via L2 by advanced player");
 
             // Match 2: Stalls → Outsider claims L3
@@ -145,8 +145,8 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Outsider claims
             await game.connect(outsiders[0]).claimMatchSlotByReplacement(TIER_ID, INSTANCE_ID, 0, 2);
             const match2After = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 2);
-            expect(match2After.common.status).to.equal(2);
-            expect(match2After.common.winner).to.equal(outsiders[0].address);
+            expect(match2After.status).to.equal(2);
+            expect(match2After.winner).to.equal(outsiders[0].address);
             console.log(`✓ Outsider ${outsiders[0].address.substring(0, 8)}... claimed via L3`);
 
             // Match 3: Stalls → Advanced player uses L2 AFTER L3 is active (proving L2 doesn't expire)
@@ -161,7 +161,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Advanced player should still be able to use L2
             await game.connect(await hre.ethers.getSigner(advancedPlayer)).forceEliminateStalledMatch(TIER_ID, INSTANCE_ID, 0, 3);
             const match3After = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 3);
-            expect(match3After.common.status).to.equal(2);
+            expect(match3After.status).to.equal(2);
             console.log("✓ L2 still worked 5 minutes after L3 became active - L2 NEVER EXPIRES");
 
             console.log("\n=== ROUND 0 SUMMARY ===");
@@ -177,9 +177,9 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Get round 1 status - only 2 players advanced (match 0 winner and outsider0)
             // Matches 1 and 3 had double eliminations, so only 2 players in round 1
             const round1Match0 = await game.getMatch(TIER_ID, INSTANCE_ID, 1, 0);
-            console.log(`Round 1 has: ${round1Match0.common.player1} vs ${round1Match0.common.player2}`);
+            console.log(`Round 1 has: ${round1Match0.player1} vs ${round1Match0.player2}`);
 
-            if (round1Match0.common.status === 1) {
+            if (round1Match0.status === 1) {
                 await completeMatch(TIER_ID, INSTANCE_ID, 1, 0);
                 console.log("✓ Semi-final completed");
             }
@@ -215,8 +215,8 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Complete match 0 to get winner and loser
             await completeMatch(TIER_ID, INSTANCE_ID, 0, 0);
             const match0 = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 0);
-            const winner = match0.common.winner;
-            const loser = match0.common.player1 === winner ? match0.common.player2 : match0.common.player1;
+            const winner = match0.winner;
+            const loser = match0.player1 === winner ? match0.player2 : match0.player1;
             console.log(`Match 0: Winner ${winner.substring(0, 8)}..., Loser ${loser.substring(0, 8)}...`);
 
             // Stall match 1
@@ -233,7 +233,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             // Loser is eliminated but NOT advanced, so can claim L3
             await game.connect(await hre.ethers.getSigner(loser)).claimMatchSlotByReplacement(TIER_ID, INSTANCE_ID, 0, 1);
             const match1After = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 1);
-            expect(match1After.common.winner).to.equal(loser);
+            expect(match1After.winner).to.equal(loser);
             console.log("✓ Eliminated (non-advanced) player successfully claimed L3");
 
             console.log("\n✅ Eliminated players CAN claim L3 (they're not advanced)");
@@ -256,7 +256,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
             await completeMatch(TIER_ID, INSTANCE_ID, 0, 0);
             console.log("  Match 0: Normal ✓");
             const match0 = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 0);
-            const advPlayer = match0.common.winner;
+            const advPlayer = match0.winner;
 
             // Match 1: Normal
             await completeMatch(TIER_ID, INSTANCE_ID, 0, 1);
@@ -283,8 +283,8 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
 
             // Check who advanced to round 1
             const r1m0 = await game.getMatch(TIER_ID, INSTANCE_ID, 1, 0);
-            if (r1m0.common.player1 !== hre.ethers.ZeroAddress) {
-                console.log(`\nRound 1 players: ${r1m0.common.player1.substring(0, 8)}... vs ${r1m0.common.player2.substring(0, 8)}...`);
+            if (r1m0.player1 !== hre.ethers.ZeroAddress) {
+                console.log(`\nRound 1 players: ${r1m0.player1.substring(0, 8)}... vs ${r1m0.player2.substring(0, 8)}...`);
                 console.log("✓ Bracket advanced correctly");
             }
 

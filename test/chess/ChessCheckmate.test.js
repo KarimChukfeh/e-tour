@@ -89,8 +89,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Determine white and black players
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
-            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
+            const whitePlayer = matchData.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.player1 === player1.address ? player2 : player1;
 
             const sq = {
                 e2: 12, e4: 28,
@@ -137,8 +137,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
-            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
+            const whitePlayer = matchData.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.player1 === player1.address ? player2 : player1;
 
             // Set up a simplified back rank mate scenario
             // Note: This is a simplified sequence - in real game would need more moves
@@ -161,7 +161,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Verify match can continue (not checkmate yet)
             const matchInfo = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchInfo.common.status).to.equal(MatchStatus.InProgress);
+            expect(matchInfo.status).to.equal(MatchStatus.InProgress);
         });
 
         it("Should detect checkmate and emit MatchCompleted event", async function () {
@@ -171,8 +171,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            const whitePlayer = matchData.common.player1 === player1.address ? player1 : player2;
-            const blackPlayer = matchData.common.player1 === player1.address ? player2 : player1;
+            const whitePlayer = matchData.player1 === player1.address ? player1 : player2;
+            const blackPlayer = matchData.player1 === player1.address ? player2 : player1;
 
             const sq = {
                 e2: 12, e4: 28, e7: 52, e5: 36,
@@ -298,8 +298,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Get match 0 players
             const match0 = await chess.getMatch(tierId, instanceId, 0, 0);
-            const match0White = match0.currentTurn === match0.common.player1 ? match0.common.player1 : match0.common.player2;
-            const match0Black = match0.currentTurn === match0.common.player1 ? match0.common.player2 : match0.common.player1;
+            const match0White = match0.currentTurn === match0.player1 ? match0.player1 : match0.player2;
+            const match0Black = match0.currentTurn === match0.player1 ? match0.player2 : match0.player1;
 
             const whitePlayer0 = await hre.ethers.getSigner(match0White);
             const blackPlayer0 = await hre.ethers.getSigner(match0Black);
@@ -321,8 +321,8 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Verify match 0 completed
             const match0After = await chess.getMatch(tierId, instanceId, 0, 0);
-            expect(match0After.common.status).to.equal(MatchStatus.Completed);
-            expect(match0After.common.winner).to.equal(match0White);
+            expect(match0After.status).to.equal(MatchStatus.Completed);
+            expect(match0After.winner).to.equal(match0White);
 
             // Verify round 0 shows 1 completed match
             const round0After = await chess.rounds(tierId, instanceId, 0);
@@ -330,9 +330,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Get match 1 players and complete it via timeout
             const match1 = await chess.getMatch(tierId, instanceId, 0, 1);
-            const waitingPlayer1 = match1.currentTurn === match1.common.player1 ?
-                await hre.ethers.getSigner(match1.common.player2) :
-                await hre.ethers.getSigner(match1.common.player1);
+            const waitingPlayer1 = match1.currentTurn === match1.player1 ?
+                await hre.ethers.getSigner(match1.player2) :
+                await hre.ethers.getSigner(match1.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -341,7 +341,7 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Verify match 1 completed
             const match1After = await chess.getMatch(tierId, instanceId, 0, 1);
-            expect(match1After.common.status).to.equal(MatchStatus.Completed);
+            expect(match1After.status).to.equal(MatchStatus.Completed);
 
             // Verify round 0 is complete
             const round0Final = await chess.rounds(tierId, instanceId, 0);
@@ -369,18 +369,18 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Complete semifinal matches via timeout
             const match0 = await chess.getMatch(tierId, instanceId, 0, 0);
-            const waitingPlayer0 = match0.currentTurn === match0.common.player1 ?
-                await hre.ethers.getSigner(match0.common.player2) :
-                await hre.ethers.getSigner(match0.common.player1);
+            const waitingPlayer0 = match0.currentTurn === match0.player1 ?
+                await hre.ethers.getSigner(match0.player2) :
+                await hre.ethers.getSigner(match0.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
             await chess.connect(waitingPlayer0).claimTimeoutWin(tierId, instanceId, 0, 0);
 
             const match1 = await chess.getMatch(tierId, instanceId, 0, 1);
-            const waitingPlayer1 = match1.currentTurn === match1.common.player1 ?
-                await hre.ethers.getSigner(match1.common.player2) :
-                await hre.ethers.getSigner(match1.common.player1);
+            const waitingPlayer1 = match1.currentTurn === match1.player1 ?
+                await hre.ethers.getSigner(match1.player2) :
+                await hre.ethers.getSigner(match1.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -388,9 +388,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Now complete finals match
             const finalsMatch = await chess.getMatch(tierId, instanceId, 1, 0);
-            const finalsWaiting = finalsMatch.currentTurn === finalsMatch.common.player1 ?
-                await hre.ethers.getSigner(finalsMatch.common.player2) :
-                await hre.ethers.getSigner(finalsMatch.common.player1);
+            const finalsWaiting = finalsMatch.currentTurn === finalsMatch.player1 ?
+                await hre.ethers.getSigner(finalsMatch.player2) :
+                await hre.ethers.getSigner(finalsMatch.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -430,9 +430,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Complete match via timeout
             const match = await chess.getMatch(tierId, instanceId, 0, 0);
-            const waitingPlayer = match.currentTurn === match.common.player1 ?
-                await hre.ethers.getSigner(match.common.player2) :
-                await hre.ethers.getSigner(match.common.player1);
+            const waitingPlayer = match.currentTurn === match.player1 ?
+                await hre.ethers.getSigner(match.player2) :
+                await hre.ethers.getSigner(match.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -465,9 +465,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Complete first match
             const match0 = await chess.getMatch(tierId, instanceId, 0, 0);
-            const waitingPlayer0 = match0.currentTurn === match0.common.player1 ?
-                await hre.ethers.getSigner(match0.common.player2) :
-                await hre.ethers.getSigner(match0.common.player1);
+            const waitingPlayer0 = match0.currentTurn === match0.player1 ?
+                await hre.ethers.getSigner(match0.player2) :
+                await hre.ethers.getSigner(match0.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);
@@ -480,9 +480,9 @@ describe("Chess Checkmate & Match Completion Tests", function () {
 
             // Complete second match
             const match1 = await chess.getMatch(tierId, instanceId, 0, 1);
-            const waitingPlayer1 = match1.currentTurn === match1.common.player1 ?
-                await hre.ethers.getSigner(match1.common.player2) :
-                await hre.ethers.getSigner(match1.common.player1);
+            const waitingPlayer1 = match1.currentTurn === match1.player1 ?
+                await hre.ethers.getSigner(match1.player2) :
+                await hre.ethers.getSigner(match1.player1);
 
             await hre.ethers.provider.send("evm_increaseTime", [601]);
             await hre.ethers.provider.send("evm_mine", []);

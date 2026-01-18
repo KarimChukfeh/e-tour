@@ -235,7 +235,7 @@ describe("Chess Fifty-Move Rule", function () {
             // Get match state to determine who is white/black
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
 
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -319,7 +319,7 @@ describe("Chess Fifty-Move Rule", function () {
 
             matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
             expect(getHalfMoveClock(matchData.packedState)).to.equal(0);
-            expect(matchData.common.status).to.equal(1); // Still InProgress
+            expect(matchData.status).to.equal(1); // Still InProgress
         });
 
         it("Should verify fifty-move rule logic at module level with high clock value", async function () {
@@ -328,7 +328,7 @@ describe("Chess Fifty-Move Rule", function () {
             // Integration requires 100 moves without threefold, which is complex to construct
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // Game in progress
+            expect(matchData.status).to.equal(1); // Game in progress
 
             // The module-level tests above prove the fifty-move logic works correctly
             // Testing 100 half-moves without triggering threefold would require
@@ -342,7 +342,7 @@ describe("Chess Fifty-Move Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -355,7 +355,7 @@ describe("Chess Fifty-Move Rule", function () {
             // This is an edge case - promotions are pawn moves and should reset the clock
             // We can't easily test this in integration without a long game, but the module handles it
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // Just verify setup works
+            expect(matchData.status).to.equal(1); // Just verify setup works
         });
 
         it("Should handle en passant captures (both pawn move AND capture - resets clock)", async function () {

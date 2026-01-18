@@ -350,7 +350,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
 
             // Check that winner advanced to finals
             const finals = await game.getMatch(tierId, instanceId, 1, 0);
-            expect(finals.common.player1).to.equal(sf0SecondPlayer.address);
+            expect(finals.player1).to.equal(sf0SecondPlayer.address);
 
             // Finals should have fresh time banks when both semifinals complete
             // Since only one semifinal is done, time banks will be 0 until match starts

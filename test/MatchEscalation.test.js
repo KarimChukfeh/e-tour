@@ -134,8 +134,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             // Match 1: Second two players (will complete normally)
 
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const match1Player1Addr = match1.common.player1;
-            const match1Player2Addr = match1.common.player2;
+            const match1Player1Addr = match1.player1;
+            const match1Player2Addr = match1.player2;
             const match1Player1 = [player1, player2, player3, player4].find(p => p.address === match1Player1Addr);
             const match1Player2 = [player1, player2, player3, player4].find(p => p.address === match1Player2Addr);
 
@@ -216,8 +216,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Complete Match 1 to get advanced player
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const match1Player1Addr = match1.common.player1;
-            const match1Player2Addr = match1.common.player2;
+            const match1Player1Addr = match1.player1;
+            const match1Player2Addr = match1.player2;
             const match1Player1 = [player1, player2, player3, player4].find(p => p.address === match1Player1Addr);
             const match1Player2 = [player1, player2, player3, player4].find(p => p.address === match1Player2Addr);
             const match1FirstPlayer = match1.currentTurn === match1Player1Addr ? match1Player1 : match1Player2;
@@ -272,8 +272,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Match should be completed with player5 as winner
             const completedMatch = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(completedMatch.common.status).to.equal(2); // Completed
-            expect(completedMatch.common.winner).to.equal(player5.address);
+            expect(completedMatch.status).to.equal(2); // Completed
+            expect(completedMatch.winner).to.equal(player5.address);
 
             // Player5 should now be enrolled in the tournament
             const isEnrolled = await game.isEnrolled(tierId, instanceId, player5.address);
@@ -341,8 +341,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Match 1 completes normally
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const match1Player1Addr = match1.common.player1;
-            const match1Player2Addr = match1.common.player2;
+            const match1Player1Addr = match1.player1;
+            const match1Player2Addr = match1.player2;
             const match1Player1 = [player1, player2, player3, player4].find(p => p.address === match1Player1Addr);
             const match1Player2 = [player1, player2, player3, player4].find(p => p.address === match1Player2Addr);
             const match1FirstPlayer = match1.currentTurn === match1Player1Addr ? match1Player1 : match1Player2;
@@ -403,8 +403,8 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Match 1 completes
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const match1Player1Addr = match1.common.player1;
-            const match1Player2Addr = match1.common.player2;
+            const match1Player1Addr = match1.player1;
+            const match1Player2Addr = match1.player2;
             const match1Player1 = [player1, player2, player3, player4].find(p => p.address === match1Player1Addr);
             const match1Player2 = [player1, player2, player3, player4].find(p => p.address === match1Player2Addr);
             const match1FirstPlayer = match1.currentTurn === match1Player1Addr ? match1Player1 : match1Player2;
@@ -425,7 +425,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
 
             // Player5 should now be in the finals against the winner of Match 1
             const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-            const finalsPlayers = [finalsMatch.common.player1, finalsMatch.common.player2];
+            const finalsPlayers = [finalsMatch.player1, finalsMatch.player2];
 
             expect(finalsPlayers).to.include(player5.address);
             expect(finalsPlayers).to.include(match1FirstPlayer.address);

@@ -48,8 +48,8 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
   async function playMatch(tierId, instanceId, roundNum, matchNum, winner) {
     const matchData = await ticTacChain.getMatch(tierId, instanceId, roundNum, matchNum);
-    const player1Addr = matchData.common.player1;
-    const player2Addr = matchData.common.player2;
+    const player1Addr = matchData.player1;
+    const player2Addr = matchData.player2;
 
     // Determine who's who
     const player1 = [p1, p2, p3, p4, p5, p6, p7, p8, external1, external2].find(p => p.address === player1Addr);
@@ -74,7 +74,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     let lastTx;
     for (const move of moves) {
       const currentMatchData = await ticTacChain.getMatch(tierId, instanceId, roundNum, matchNum);
-      if (currentMatchData.common.status === 2) break; // Already completed
+      if (currentMatchData.status === 2) break; // Already completed
 
       currentPlayer = currentMatchData.currentTurn === player1.address ? player1 : player2;
 
@@ -210,9 +210,9 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
       // Get match data and make one move
       const semifinalMatch = await ticTacChain.getMatch(TIER_2, INSTANCE_0, 1, 0);
-      const semifinalPlayer = semifinalMatch.currentTurn === semifinalMatch.common.player1 ?
-        allPlayersWithExternal.find(p => p.address === semifinalMatch.common.player1) :
-        allPlayersWithExternal.find(p => p.address === semifinalMatch.common.player2);
+      const semifinalPlayer = semifinalMatch.currentTurn === semifinalMatch.player1 ?
+        allPlayersWithExternal.find(p => p.address === semifinalMatch.player1) :
+        allPlayersWithExternal.find(p => p.address === semifinalMatch.player2);
 
       await ticTacChain.connect(semifinalPlayer).makeMove(TIER_2, INSTANCE_0, 1, 0, 0);
 
@@ -227,7 +227,7 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
       if (totalMatches > 1) {
         try {
           const match1Data = await ticTacChain.getMatch(TIER_2, INSTANCE_0, 1, 1);
-          if (match1Data.common.player1 !== hre.ethers.ZeroAddress && match1Data.common.player2 !== hre.ethers.ZeroAddress) {
+          if (match1Data.player1 !== hre.ethers.ZeroAddress && match1Data.player2 !== hre.ethers.ZeroAddress) {
             await playMatch(TIER_2, INSTANCE_0, 1, 1, 1);
             await captureStorageSnapshot("Step 5.2: Match 1 Complete", allPlayersWithExternal);
           }
@@ -244,8 +244,8 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     if (finalMatches > 0) {
       // Play finals normally
       const finalMatchData = await ticTacChain.getMatch(TIER_2, INSTANCE_0, 2, 0);
-      const finalist1 = finalMatchData.common.player1;
-      const finalist2 = finalMatchData.common.player2;
+      const finalist1 = finalMatchData.player1;
+      const finalist2 = finalMatchData.player2;
 
       console.log(`Finals: ${finalist1} vs ${finalist2}`);
 
@@ -344,9 +344,9 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     try {
       const match = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 0);
       console.log("Match retrieved successfully!");
-      console.log("Player 1:", match.common.player1);
-      console.log("Player 2:", match.common.player2);
-      console.log("Status:", match.common.status);
+      console.log("Player 1:", match.player1);
+      console.log("Player 2:", match.player2);
+      console.log("Status:", match.status);
     } catch (err) {
       console.log("Error getting match:", err.message);
 
@@ -363,8 +363,8 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await playMatch(TIER_1, INSTANCE_0, 0, 0, 1); // Player 1 wins
 
     const match0Data = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 0);
-    const sf0Winner = match0Data.common.winner;
-    const sf0Loser = match0Data.common.player1 === sf0Winner ? match0Data.common.player2 : match0Data.common.player1;
+    const sf0Winner = match0Data.winner;
+    const sf0Loser = match0Data.player1 === sf0Winner ? match0Data.player2 : match0Data.player1;
 
     console.log(`\nSemifinal 0 Complete:`);
     console.log(`  Winner: ${sf0Winner}`);
@@ -386,8 +386,8 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
 
     // Other semifinal players should still be active
     const match1Data = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 1);
-    const sf1Player1 = match1Data.common.player1;
-    const sf1Player2 = match1Data.common.player2;
+    const sf1Player1 = match1Data.player1;
+    const sf1Player2 = match1Data.player2;
 
     const sf1P1Active = await ticTacChain.getPlayerActiveTournaments(sf1Player1);
     const sf1P2Active = await ticTacChain.getPlayerActiveTournaments(sf1Player2);
@@ -399,9 +399,9 @@ describe("TicTacChain Player Activity Tracking - Comprehensive 8-Player Tourname
     await playMatch(TIER_1, INSTANCE_0, 0, 1, 1); // First player wins
 
     const match1CompleteData = await ticTacChain.getMatch(TIER_1, INSTANCE_0, 0, 1);
-    const sf1Winner = match1CompleteData.common.winner;
-    const sf1Loser = match1CompleteData.common.player1 === sf1Winner ?
-      match1CompleteData.common.player2 : match1CompleteData.common.player1;
+    const sf1Winner = match1CompleteData.winner;
+    const sf1Loser = match1CompleteData.player1 === sf1Winner ?
+      match1CompleteData.player2 : match1CompleteData.player1;
 
     console.log(`\nSemifinal 1 Complete:`);
     console.log(`  Winner: ${sf1Winner}`);

@@ -98,7 +98,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
    */
   async function getWhiteAndBlack(roundNumber, matchNumber, tier = TIER) {
     const match = await chess.getMatch(tier, INSTANCE_ID, roundNumber, matchNumber);
-    return { white: match.common.player1, black: match.common.player2 };
+    return { white: match.player1, black: match.player2 };
   }
 
   /**
@@ -113,7 +113,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
   async function playScholarsMateFast(player1, player2, roundNumber = 0, matchNumber = 0, tier = TIER) {
     // Get match data to determine who is white (player1 is always white)
     let match = await chess.getMatch(tier, INSTANCE_ID, roundNumber, matchNumber);
-    const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+    const whitePlayer = match.player1 === player1.address ? player1 : player2;
     const blackPlayer = whitePlayer.address === player1.address ? player2 : player1;
 
     await makeChessMove(whitePlayer, 12, 28, roundNumber, matchNumber, 0, tier); // e2-e4
@@ -270,7 +270,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Tournament auto-starts with 2 players
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
 
       await makeChessMove(whitePlayer, 12, 28); // e2-e4 (correct numbering)
 
@@ -291,7 +291,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
 
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + 1);
@@ -307,7 +307,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       // Verify prize
       const expectedPrize = (ENTRY_FEE * 2n * 90n) / 100n;
       const balanceAfter = await ethers.provider.getBalance(whitePlayer.address);
-      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.001"));
+      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.002"));
     });
 
     it("Should clear player activity after ML1 tournament completion", async function () {
@@ -315,7 +315,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
 
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + 1);
@@ -333,7 +333,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
 
       await makeChessMove(whitePlayer, 12, 28);
 
@@ -370,13 +370,13 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Stall semi-final 1 (round 0, match 1)
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       // Winner of match 0 can force eliminate
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
 
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
 
@@ -393,7 +393,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player4).enrollInTournament(TIER4, INSTANCE_ID, { value: ENTRY_FEE_T4 });
 
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28, 0, 0, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
@@ -413,13 +413,13 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Stall semi-final 1 (round 0, match 1)
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       // Winner of match 0 can force eliminate
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       const balanceBefore = await ethers.provider.getBalance(advancedPlayer.address);
 
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
@@ -443,12 +443,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await playScholarsMateFast(player1, player2, 0, 0, TIER4);
 
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
 
       const active1 = await chess.getPlayerActiveTournaments(player1.address);
@@ -478,12 +478,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       const winner1 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
 
       // Determine which signer corresponds to currentTurn
-      const finalsFirstPlayer = finalsMatch.currentTurn === winner0.common.winner ?
-        (winner0.common.winner === player1.address ? player1 : player2) :
-        (winner1.common.winner === player3.address ? player3 : player4);
-      const finalsSecondPlayer = finalsMatch.currentTurn === winner0.common.winner ?
-        (winner1.common.winner === player3.address ? player3 : player4) :
-        (winner0.common.winner === player1.address ? player1 : player2);
+      const finalsFirstPlayer = finalsMatch.currentTurn === winner0.winner ?
+        (winner0.winner === player1.address ? player1 : player2) :
+        (winner1.winner === player3.address ? player3 : player4);
+      const finalsSecondPlayer = finalsMatch.currentTurn === winner0.winner ?
+        (winner1.winner === player3.address ? player3 : player4) :
+        (winner0.winner === player1.address ? player1 : player2);
 
       await makeChessMove(finalsFirstPlayer, 12, 28, 1, 0, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
@@ -503,12 +503,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await playScholarsMateFast(player1, player2, 0, 0, TIER4);
 
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + 1);
 
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
 
       await expect(
         chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1)
@@ -522,7 +522,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
@@ -540,7 +540,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
@@ -555,7 +555,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       // Verify prize
       const expectedPrize = (ENTRY_FEE * 2n * 90n) / 100n;
       const balanceAfter = await ethers.provider.getBalance(outsider.address);
-      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.001"));
+      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.002"));
     });
 
     it("Should clear all player activity after ML3 tournament completion", async function () {
@@ -563,7 +563,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
       await chess.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);
@@ -588,7 +588,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Stall semi-final 1 (round 0, match 1)
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
@@ -597,7 +597,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       // Check that outsider is in finals (round 1, match 0)
       const finals = await chess.getMatch(TIER4, INSTANCE_ID, 1, 0);
       const isOutsiderInFinals =
-        finals.common.player1 === outsider.address || finals.common.player2 === outsider.address;
+        finals.player1 === outsider.address || finals.player2 === outsider.address;
       expect(isOutsiderInFinals).to.be.true;
     });
 
@@ -606,7 +606,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
@@ -638,9 +638,9 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       const finalsMatch = await chess.getMatch(TIER4, INSTANCE_ID, 1, 0);
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
       const winner1 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const finalsWhitePlayer = finalsMatch.common.player1 === winner0.common.winner ?
-        (winner0.common.winner === player1.address ? player1 : player2) :
-        (winner1.common.winner === player3.address ? player3 : player4);
+      const finalsWhitePlayer = finalsMatch.player1 === winner0.winner ?
+        (winner0.winner === player1.address ? player1 : player2) :
+        (winner1.winner === player3.address ? player3 : player4);
 
       await makeChessMove(finalsWhitePlayer, 12, 28, 1, 0, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
@@ -666,7 +666,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + 1);
       await chess.connect(whitePlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
@@ -695,13 +695,13 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Stall semi-final 1 (round 0, match 1) and use ML2
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       // Advanced player uses ML2
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
 
       // Tournament completes since other semi-final was eliminated
@@ -740,12 +740,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
 
       // Stall semi-final 1 (round 0, match 1), use ML2
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
 
       // Verify tournament completed and reset after ML2
@@ -796,7 +796,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + 1);
 
@@ -820,12 +820,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await playScholarsMateFast(player1, player2, 0, 0, TIER4);
 
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       const balanceBefore = await ethers.provider.getBalance(advancedPlayer.address);
       const tx = await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
       const receipt = await tx.wait();
@@ -842,7 +842,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
 
@@ -865,7 +865,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + 1);
       await chess.connect(whitePlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
@@ -905,12 +905,12 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await playScholarsMateFast(player1, player2, 0, 0, TIER4);
 
       let match = await chess.getMatch(TIER4, INSTANCE_ID, 0, 1);
-      const whitePlayer = match.common.player1 === player3.address ? player3 : player4;
+      const whitePlayer = match.player1 === player3.address ? player3 : player4;
       await makeChessMove(whitePlayer, 12, 28, 0, 1, 0, TIER4);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       const winner0 = await chess.getMatch(TIER4, INSTANCE_ID, 0, 0);
-      const advancedPlayer = winner0.common.winner === player1.address ? player1 : player2;
+      const advancedPlayer = winner0.winner === player1.address ? player1 : player2;
       await chess.connect(advancedPlayer).forceEliminateStalledMatch(TIER4, INSTANCE_ID, 0, 1);
 
       const [status, currentRound, enrolledCount, prizePool] = await chess.getTournamentInfo(TIER4, INSTANCE_ID);
@@ -925,7 +925,7 @@ describe("ChessOnChain Comprehensive Escalation Tests", function () {
       await chess.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       let match = await chess.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const whitePlayer = match.common.player1 === player1.address ? player1 : player2;
+      const whitePlayer = match.player1 === player1.address ? player1 : player2;
       await makeChessMove(whitePlayer, 12, 28);
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
       await chess.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);

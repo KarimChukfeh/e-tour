@@ -72,7 +72,7 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             // Step 2: Stall the finals match (make one move, then let it timeout)
             console.log("\nStep 2: Stalling finals match...");
             const match = await game.getMatch(TIER_ID, INSTANCE_ID, 0, 0);
-            expect(match.common.status).to.equal(1); // InProgress
+            expect(match.status).to.equal(1); // InProgress
             const firstMover = match.currentTurn;
 
             await game.connect(await hre.ethers.getSigner(firstMover)).makeMove(TIER_ID, INSTANCE_ID, 0, 0, 0);
@@ -205,15 +205,15 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             await game.connect(await hre.ethers.getSigner(match0.currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 2);
 
             match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
-            expect(match0.common.status).to.equal(2); // Completed
-            const winnerMatch0 = match0.common.winner;
+            expect(match0.status).to.equal(2); // Completed
+            const winnerMatch0 = match0.winner;
             console.log(`✓ Match 0 complete, winner: ${winnerMatch0}`);
 
             // Step 3: Verify winner is advanced to finals
             console.log("\nStep 3: Checking finals match...");
             const finalsMatch = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 1, 0);
-            const finalsP1 = finalsMatch.common.player1;
-            const finalsP2 = finalsMatch.common.player2;
+            const finalsP1 = finalsMatch.player1;
+            const finalsP2 = finalsMatch.player2;
             console.log(`  Finals player1: ${finalsP1}`);
             console.log(`  Finals player2: ${finalsP2}`);
 
@@ -278,8 +278,8 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             await game.connect(await hre.ethers.getSigner((await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0)).currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 6);
 
             const match0After = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
-            expect(match0After.common.status).to.equal(2);
-            const advancedPlayer = match0After.common.winner;
+            expect(match0After.status).to.equal(2);
+            const advancedPlayer = match0After.winner;
             console.log(`✓ Semi-final 0 complete, winner: ${advancedPlayer}`);
 
             // Complete match 1
@@ -291,7 +291,7 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             await game.connect(await hre.ethers.getSigner((await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 1)).currentTurn)).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 6);
 
             const match1After = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 1);
-            expect(match1After.common.status).to.equal(2);
+            expect(match1After.status).to.equal(2);
             console.log(`✓ Semi-final 1 complete`);
 
             // Step 3: Stall finals match

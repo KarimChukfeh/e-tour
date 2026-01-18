@@ -143,8 +143,8 @@ describe("ConnectFour Maximum Capacity Gas Estimation", function () {
     async function playGameToWin(tierId, instanceId, roundNum, matchNum) {
         const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
         const firstPlayerAddr = match.currentTurn;
-        const player1Addr = match.common.player1;
-        const player2Addr = match.common.player2;
+        const player1Addr = match.player1;
+        const player2Addr = match.player2;
 
         const firstPlayer = getPlayerForAddress(firstPlayerAddr);
         const secondPlayerAddr = firstPlayerAddr.toLowerCase() === player1Addr.toLowerCase() ? player2Addr : player1Addr;

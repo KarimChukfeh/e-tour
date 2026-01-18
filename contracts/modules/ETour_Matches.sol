@@ -42,11 +42,13 @@ contract ETour_Matches is ETour_Storage {
     function _getTimeIncrement() public view override returns (uint256) { return 0; }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { return false; }
     function _isMatchActive(bytes32) public view override returns (bool) { return false; }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { return CommonMatchData({
-        player1: address(0), player2: address(0), winner: address(0), loser: address(0),
-        status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
-        tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, isCached: false
+    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (Match memory) { return Match({
+        matchId: bytes32(0), player1: address(0), player2: address(0), winner: address(0),
+        currentTurn: address(0), firstPlayer: address(0), status: MatchStatus.NotStarted, isDraw: false,
+        startTime: 0, lastMoveTime: 0, endTime: 0, player1TimeRemaining: 0, player2TimeRemaining: 0,
+        tierId: 0, instanceId: 0, roundNumber: 0, matchNumber: 0, gameState: "", completionReason: CompletionReason.NormalWin, isCached: false
     }); }
+    function _getMatchBoardState(bytes32) public view override returns (bytes memory) { return ""; }
 
     // ============ Round Initialization ============
 
@@ -122,6 +124,22 @@ contract ETour_Matches is ETour_Storage {
         if (!isDraw) {
             playerStats[winner].matchesWon++;
         }
+
+        // Record match history
+        Match memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        this._recordMatchHistory(
+            matchId,
+            player1,
+            player2,
+            winner,
+            isDraw,
+            matchData.startTime,
+            isDraw ? CompletionReason.Draw : CompletionReason.NormalWin,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber
+        );
 
         // Note: Escalation state is cleared by the game contract before calling completeMatch
         // No need to clear again here to avoid double clearing

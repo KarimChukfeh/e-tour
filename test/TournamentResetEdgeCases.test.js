@@ -116,8 +116,8 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
 
             // Complete finals
             const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-            const finalsP1 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.common.player1);
-            const finalsP2 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.common.player2);
+            const finalsP1 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.player1);
+            const finalsP2 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.player2);
             const finalsFirst = finalsMatch.currentTurn === finalsP1.address ? finalsP1 : finalsP2;
             const finalsSecond = finalsFirst === finalsP1 ? finalsP2 : finalsP1;
 

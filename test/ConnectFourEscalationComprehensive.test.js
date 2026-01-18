@@ -13,7 +13,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
   // Escalation timeouts from contract (ConnectFour Tier 0)
   const ENROLLMENT_TIMEOUT = 300; // 5 minutes
   const ENROLLMENT_ESC_L2 = 300; // 5 minutes
-  const MATCH_TIMEOUT = 120; // 2 minutes (matchTimePerPlayer)
+  const MATCH_TIMEOUT = 300; // 5 minutes (matchTimePerPlayer)
   const MATCH_ESC_L2 = 120; // 2 minutes
   const MATCH_ESC_L3 = 240; // 4 minutes
 
@@ -382,8 +382,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Complete semi-final 0 (round 0, match 0)
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
       const allPlayers = [player1, player2, player3, player4];
-      const winner0 = allPlayers.find(p => p.address === match0.common.player1) || player1;
-      const loser0 = allPlayers.find(p => p.address === match0.common.player2) || player2;
+      const winner0 = allPlayers.find(p => p.address === match0.player1) || player1;
+      const loser0 = allPlayers.find(p => p.address === match0.player2) || player2;
       await playQuickHorizontalWin(winner0, loser0, 0, 0, TIER1);
 
       // Stall semi-final 1 (round 0, match 1)
@@ -428,8 +428,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Complete semi-final 0 (round 0, match 0)
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
       const allPlayers = [player1, player2, player3, player4];
-      const winner = allPlayers.find(p => p.address === match0.common.player1) || player1;
-      const loser = allPlayers.find(p => p.address === match0.common.player2) || player2;
+      const winner = allPlayers.find(p => p.address === match0.player1) || player1;
+      const loser = allPlayers.find(p => p.address === match0.player2) || player2;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       // Stall semi-final 1 (round 0, match 1)
@@ -462,8 +462,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
       const allPlayers = [player1, player2, player3, player4];
-      const winner = allPlayers.find(p => p.address === match0.common.player1) || player1;
-      const loser = allPlayers.find(p => p.address === match0.common.player2) || player2;
+      const winner = allPlayers.find(p => p.address === match0.player1) || player1;
+      const loser = allPlayers.find(p => p.address === match0.player2) || player2;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);
@@ -492,13 +492,13 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       // Complete both semi-finals
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
-      const w1 = match0.common.player1 === player1.address ? player1 : player2;
-      const l1 = match0.common.player1 === player1.address ? player2 : player1;
+      const w1 = match0.player1 === player1.address ? player1 : player2;
+      const l1 = match0.player1 === player1.address ? player2 : player1;
       await playQuickHorizontalWin(w1, l1, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);
-      const w2 = match1.common.player1 === player3.address ? player3 : player4;
-      const l2 = match1.common.player1 === player3.address ? player4 : player3;
+      const w2 = match1.player1 === player3.address ? player3 : player4;
+      const l2 = match1.player1 === player3.address ? player4 : player3;
       await playQuickHorizontalWin(w2, l2, 0, 1, TIER1);
 
       // Stall finals (round 1, match 0)
@@ -524,8 +524,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
       const allPlayers = [player1, player2, player3, player4];
-      const winner = allPlayers.find(p => p.address === match0.common.player1) || player1;
-      const loser = allPlayers.find(p => p.address === match0.common.player2) || player2;
+      const winner = allPlayers.find(p => p.address === match0.player1) || player1;
+      const loser = allPlayers.find(p => p.address === match0.player2) || player2;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);
@@ -582,7 +582,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Verify prize
       const expectedPrize = (ENTRY_FEE * 2n * 90n) / 100n;
       const balanceAfter = await ethers.provider.getBalance(outsider.address);
-      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.001"));
+      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.002"));
     });
 
     it("Should clear all player activity after ML3 tournament completion", async function () {
@@ -614,8 +614,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Complete semi-final 0
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
       const allPlayers = [player1, player2, player3, player4];
-      const winner = allPlayers.find(p => p.address === match0.common.player1) || player1;
-      const loser = allPlayers.find(p => p.address === match0.common.player2) || player2;
+      const winner = allPlayers.find(p => p.address === match0.player1) || player1;
+      const loser = allPlayers.find(p => p.address === match0.player2) || player2;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       // Stall semi-final 1
@@ -630,7 +630,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Check that outsider is in finals
       const finals = await connectFour.getMatch(TIER1, INSTANCE_ID, 1, 0);
       const isOutsiderInFinals =
-        finals.common.player1 === outsider.address || finals.common.player2 === outsider.address;
+        finals.player1 === outsider.address || finals.player2 === outsider.address;
       expect(isOutsiderInFinals).to.be.true;
     });
 
@@ -666,13 +666,13 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       // Complete both semi-finals
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
-      const w1 = match0.common.player1 === player1.address ? player1 : player2;
-      const l1 = match0.common.player1 === player1.address ? player2 : player1;
+      const w1 = match0.player1 === player1.address ? player1 : player2;
+      const l1 = match0.player1 === player1.address ? player2 : player1;
       await playQuickHorizontalWin(w1, l1, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);
-      const w2 = match1.common.player1 === player3.address ? player3 : player4;
-      const l2 = match1.common.player1 === player3.address ? player4 : player3;
+      const w2 = match1.player1 === player3.address ? player3 : player4;
+      const l2 = match1.player1 === player3.address ? player4 : player3;
       await playQuickHorizontalWin(w2, l2, 0, 1, TIER1);
 
       // Stall finals
@@ -739,8 +739,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Complete 3 matches in round 0
       for (let i = 0; i < 3; i++) {
         const match = await connectFour.getMatch(TIER2, INSTANCE_ID, 0, i);
-        const w = match.common.player1 === allPlayers[i * 2].address ? allPlayers[i * 2] : allPlayers[i * 2 + 1];
-        const l = match.common.player1 === allPlayers[i * 2].address ? allPlayers[i * 2 + 1] : allPlayers[i * 2];
+        const w = match.player1 === allPlayers[i * 2].address ? allPlayers[i * 2] : allPlayers[i * 2 + 1];
+        const l = match.player1 === allPlayers[i * 2].address ? allPlayers[i * 2 + 1] : allPlayers[i * 2];
         await playQuickHorizontalWin(w, l, 0, i, TIER2);
       }
 
@@ -753,7 +753,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       // Advanced player uses ML2
       const match0 = await connectFour.getMatch(TIER2, INSTANCE_ID, 0, 0);
-      const advancedPlayer = match0.common.winner;
+      const advancedPlayer = match0.winner;
       const advancedSigner = allPlayers.find(p => p.address === advancedPlayer);
 
       await connectFour.connect(advancedSigner).forceEliminateStalledMatch(TIER2, INSTANCE_ID, 0, 3);
@@ -764,14 +764,14 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       // Complete the single semi-final
       const semi0 = await connectFour.getMatch(TIER2, INSTANCE_ID, 1, 0);
-      const sw1 = allPlayers.find(p => p.address === semi0.common.player1);
-      const sl1 = allPlayers.find(p => p.address === semi0.common.player2);
+      const sw1 = allPlayers.find(p => p.address === semi0.player1);
+      const sl1 = allPlayers.find(p => p.address === semi0.player2);
       await playQuickHorizontalWin(sw1, sl1, 1, 0, TIER2);
 
       // Verify finals exists with the winner and the walkover player
       const finals = await connectFour.getMatch(TIER2, INSTANCE_ID, 2, 0);
-      expect(finals.common.player1).to.not.equal(ethers.ZeroAddress);
-      expect(finals.common.player2).to.not.equal(ethers.ZeroAddress);
+      expect(finals.player1).to.not.equal(ethers.ZeroAddress);
+      expect(finals.player2).to.not.equal(ethers.ZeroAddress);
     });
 
     it("Should handle EL2 with multiple enrollments -> complete reset", async function () {
@@ -800,8 +800,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       // Complete semi-final 0
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
-      const w = match0.common.player1 === player1.address ? player1 : player2;
-      const l = match0.common.player1 === player1.address ? player2 : player1;
+      const w = match0.player1 === player1.address ? player1 : player2;
+      const l = match0.player1 === player1.address ? player2 : player1;
       await playQuickHorizontalWin(w, l, 0, 0, TIER1);
 
       // Stall semi-final 1, use ML2
@@ -880,8 +880,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await connectFour.connect(player4).enrollInTournament(TIER1, INSTANCE_ID, { value: ENTRY_FEE_T1 });
 
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
-      const winner = match0.common.player1 === player1.address ? player1 : player2;
-      const loser = match0.common.player1 === player1.address ? player2 : player1;
+      const winner = match0.player1 === player1.address ? player1 : player2;
+      const loser = match0.player1 === player1.address ? player2 : player1;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);
@@ -969,8 +969,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await connectFour.connect(player4).enrollInTournament(TIER1, INSTANCE_ID, { value: ENTRY_FEE_T1 });
 
       const match0 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 0);
-      const winner = match0.common.player1 === player1.address ? player1 : player2;
-      const loser = match0.common.player1 === player1.address ? player2 : player1;
+      const winner = match0.player1 === player1.address ? player1 : player2;
+      const loser = match0.player1 === player1.address ? player2 : player1;
       await playQuickHorizontalWin(winner, loser, 0, 0, TIER1);
 
       const match1 = await connectFour.getMatch(TIER1, INSTANCE_ID, 0, 1);

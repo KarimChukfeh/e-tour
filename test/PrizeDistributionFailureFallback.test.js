@@ -244,7 +244,7 @@ describe("Prize Distribution Failure Fallback", function () {
 
             // Complete semi-finals
             const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            const p1_m0 = [player1, player2].find(p => p.address === match0.common.player1);
+            const p1_m0 = [player1, player2].find(p => p.address === match0.player1);
             const p2_m0 = p1_m0 === player1 ? player2 : player1;
             const first_m0 = match0.currentTurn === p1_m0.address ? p1_m0 : p2_m0;
             const second_m0 = first_m0 === p1_m0 ? p2_m0 : p1_m0;
@@ -256,7 +256,7 @@ describe("Prize Distribution Failure Fallback", function () {
             await game.connect(first_m0).makeMove(tierId, instanceId, 0, 0, 2); // Winner
 
             const match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            const p1_m1 = [player3, player4].find(p => p.address === match1.common.player1);
+            const p1_m1 = [player3, player4].find(p => p.address === match1.player1);
             const p2_m1 = p1_m1 === player3 ? player4 : player3;
             const first_m1 = match1.currentTurn === p1_m1.address ? p1_m1 : p2_m1;
             const second_m1 = first_m1 === p1_m1 ? p2_m1 : p1_m1;
@@ -269,8 +269,8 @@ describe("Prize Distribution Failure Fallback", function () {
 
             // Complete finals
             const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
-            const finalsP1 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.common.player1);
-            const finalsP2 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.common.player2);
+            const finalsP1 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.player1);
+            const finalsP2 = [player1, player2, player3, player4].find(p => p.address === finalsMatch.player2);
             const finalsFirst = finalsMatch.currentTurn === finalsP1.address ? finalsP1 : finalsP2;
             const finalsSecond = finalsFirst === finalsP1 ? finalsP2 : finalsP1;
 

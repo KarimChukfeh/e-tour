@@ -127,7 +127,7 @@ describe("Transfer Event Tests", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await ticTacChain.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await ticTacChain.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await ticTacChain.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);

@@ -102,7 +102,7 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -115,7 +115,7 @@ describe("Chess Threefold Repetition Rule", function () {
             // Initial position is recorded once at game start
             // Game should still be in progress
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
 
         it("Should not trigger draw after second occurrence of position", async function () {
@@ -127,7 +127,7 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Game should still be in progress after 2nd occurrence
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
 
         it("Should track different positions without false positives", async function () {
@@ -136,7 +136,7 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Game should still be in progress (new position only seen once)
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
     });
 
@@ -146,7 +146,7 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -166,7 +166,7 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Verify still in progress
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
 
             // Cycle 2: Knights out and back again (returns to start, count = 3 -> DRAW)
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.g1, squares.f3, PieceType.None);
@@ -205,7 +205,7 @@ describe("Chess Threefold Repetition Rule", function () {
             // Position A again: Nf3, Nf6 (count = 2)
 
             let matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // Still in progress
+            expect(matchData.status).to.equal(1); // Still in progress
 
             // Go to different position and back again
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.b1, squares.c3, PieceType.None);
@@ -236,8 +236,8 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Should still be in progress
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
-            expect(matchData.common.isDraw).to.be.false;
+            expect(matchData.status).to.equal(1); // InProgress
+            expect(matchData.isDraw).to.be.false;
         });
     });
 
@@ -247,7 +247,7 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -279,7 +279,7 @@ describe("Chess Threefold Repetition Rule", function () {
             // Now we're back to the starting position (2nd occurrence), white to move
             // Game should still be in progress (not threefold yet)
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
 
         it("Should distinguish positions by castling rights", async function () {
@@ -305,7 +305,7 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -359,7 +359,7 @@ describe("Chess Threefold Repetition Rule", function () {
 
             // Game should still be in progress
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
 
         it("Should correctly handle en passant affecting position uniqueness", async function () {
@@ -393,7 +393,7 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(player2).enrollInTournament(tierId, instanceId, { value: entryFee });
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            if (matchData.common.player1 === player1.address) {
+            if (matchData.player1 === player1.address) {
                 whitePlayer = player1;
                 blackPlayer = player2;
             } else {
@@ -411,7 +411,7 @@ describe("Chess Threefold Repetition Rule", function () {
             // by confirming the game can end in checkmate without threefold being checked
 
             const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.status).to.equal(1); // Just verify game is in progress
+            expect(matchData.status).to.equal(1); // Just verify game is in progress
         });
 
         it("Should correctly track positions alongside fifty-move clock", async function () {
@@ -427,7 +427,7 @@ describe("Chess Threefold Repetition Rule", function () {
             expect(halfMoveClock).to.equal(2);
 
             // Game should still be in progress (new position only seen once)
-            expect(matchData.common.status).to.equal(1); // InProgress
+            expect(matchData.status).to.equal(1); // InProgress
         });
     });
 });

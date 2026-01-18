@@ -157,7 +157,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
@@ -228,7 +228,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
@@ -275,7 +275,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
@@ -328,7 +328,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 if (!fp || !sp) {
                     console.log(`Could not find players for match ${matchNum}`);
@@ -394,7 +394,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
@@ -411,7 +411,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, roundNum, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, roundNum, matchNum, 3);
@@ -441,12 +441,12 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
                 // Verify match 0 drew and others won
                 try {
                     const match0 = await game.getMatch(tierId, instanceId, 0, 0);
-                    expect(match0.common.isDraw).to.be.true;
+                    expect(match0.isDraw).to.be.true;
 
                     for (let i = 1; i < 4; i++) {
                         const match = await game.getMatch(tierId, instanceId, 0, i);
-                        expect(match.common.isDraw).to.be.false;
-                        expect(match.common.winner).to.not.equal(hre.ethers.ZeroAddress);
+                        expect(match.isDraw).to.be.false;
+                        expect(match.winner).to.not.equal(hre.ethers.ZeroAddress);
                     }
                 } catch (e) {
                     // Tournament may have completed and matches moved to cache
@@ -469,7 +469,7 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
                 const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = players.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
                 await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);

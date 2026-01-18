@@ -135,9 +135,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.status).to.equal(1); // InProgress
-            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.status).to.equal(1); // InProgress
+            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should initialize empty board", async function () {
@@ -154,7 +154,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const instanceId = 0;
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.currentTurn).to.be.oneOf([match.common.player1, match.common.player2]);
+            expect(match.currentTurn).to.be.oneOf([match.player1, match.player2]);
             expect(match.firstPlayer).to.equal(match.currentTurn);
         });
     });
@@ -416,9 +416,9 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.common.status).to.equal(1);
+            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.status).to.equal(1);
             expect(match.packedBoard).to.equal(0); // Board initialized empty
         });
 
@@ -446,8 +446,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
 
             // Normalize addresses for comparison (player1 and player2 are in common property)
             const currentTurn = match.currentTurn?.toLowerCase();
-            const player1 = match.common.player1?.toLowerCase();
-            const player2 = match.common.player2?.toLowerCase();
+            const player1 = match.player1?.toLowerCase();
+            const player2 = match.player2?.toLowerCase();
 
             const firstPlayer = players.find(p => p.address.toLowerCase() === currentTurn);
             const secondPlayer = players.find(p =>
@@ -516,10 +516,10 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const sf0Match = await game.getMatch(TIER_2_ID, instanceId, 1, 0);
             const sf1Match = await game.getMatch(TIER_2_ID, instanceId, 1, 1);
 
-            semifinalLoserBalancesBefore[sf0Match.common.player1] = await hre.ethers.provider.getBalance(sf0Match.common.player1);
-            semifinalLoserBalancesBefore[sf0Match.common.player2] = await hre.ethers.provider.getBalance(sf0Match.common.player2);
-            semifinalLoserBalancesBefore[sf1Match.common.player1] = await hre.ethers.provider.getBalance(sf1Match.common.player1);
-            semifinalLoserBalancesBefore[sf1Match.common.player2] = await hre.ethers.provider.getBalance(sf1Match.common.player2);
+            semifinalLoserBalancesBefore[sf0Match.player1] = await hre.ethers.provider.getBalance(sf0Match.player1);
+            semifinalLoserBalancesBefore[sf0Match.player2] = await hre.ethers.provider.getBalance(sf0Match.player2);
+            semifinalLoserBalancesBefore[sf1Match.player1] = await hre.ethers.provider.getBalance(sf1Match.player1);
+            semifinalLoserBalancesBefore[sf1Match.player2] = await hre.ethers.provider.getBalance(sf1Match.player2);
 
             // Track semi-final losers
             const sf0Result = await playMatchToWin(TIER_2_ID, instanceId, 1, 0);
@@ -565,8 +565,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Get all round 0 match participants before playing
             for (let matchNum = 0; matchNum < 4; matchNum++) {
                 const match = await game.getMatch(TIER_2_ID, instanceId, 0, matchNum);
-                const p1 = players.find(p => p.address.toLowerCase() === match.common.player1?.toLowerCase());
-                const p2 = players.find(p => p.address.toLowerCase() === match.common.player2?.toLowerCase());
+                const p1 = players.find(p => p.address.toLowerCase() === match.player1?.toLowerCase());
+                const p2 = players.find(p => p.address.toLowerCase() === match.player2?.toLowerCase());
                 round0LoserBalancesBefore[p1.address] = await hre.ethers.provider.getBalance(p1.address);
                 round0LoserBalancesBefore[p2.address] = await hre.ethers.provider.getBalance(p2.address);
             }

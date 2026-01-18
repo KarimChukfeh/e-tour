@@ -451,9 +451,9 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.common.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(match.common.status).to.equal(1); // InProgress
+            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.status).to.equal(1); // InProgress
         });
     });
 
@@ -787,10 +787,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to play a match to completion (first player wins)
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return; // Not in progress
+                if (match.status !== 1n) return; // Not in progress
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -845,7 +845,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const match = await game.getMatch(tierId, instanceId, 0, 0);
 
             // Match should have timeout state initialized
-            expect(match.common.status).to.equal(1); // InProgress
+            expect(match.status).to.equal(1); // InProgress
         });
 
     });
@@ -1049,10 +1049,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to play a match to draw
             async function playMatchToDraw(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return false;
+                if (match.status !== 1n) return false;
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1079,10 +1079,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Play matches 2 and 3 to normal wins
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return;
+                if (match.status !== 1n) return;
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1124,10 +1124,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return;
+                if (match.status !== 1n) return;
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1170,10 +1170,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // ARCHITECTURE CHANGE: Returns winner without querying storage (finals cleared on completion)
             async function playMatchToWin(roundNum, matchNum, players) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null; // Not InProgress
+                if (match.status !== 1n) return null; // Not InProgress
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1201,8 +1201,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Capture finalists BEFORE finals completes (so we have the data before it's cached/cleared)
             const firstTournamentFinalsBeforeComplete = await game.getMatch(tierId, instanceId, 1, 0);
-            const firstTournamentFinalist1 = firstTournamentFinalsBeforeComplete.common.player1;
-            const firstTournamentFinalist2 = firstTournamentFinalsBeforeComplete.common.player2;
+            const firstTournamentFinalist1 = firstTournamentFinalsBeforeComplete.player1;
+            const firstTournamentFinalist2 = firstTournamentFinalsBeforeComplete.player2;
             console.log("First Tournament Finalists:", firstTournamentFinalist1, firstTournamentFinalist2);
 
             // Complete finals
@@ -1228,8 +1228,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Get semifinal 0 match details for second tournament
             const sf0Before = await game.getMatch(tierId, instanceId, 0, 0);
-            const sf0Player1 = sf0Before.common.player1;
-            const sf0Player2 = sf0Before.common.player2;
+            const sf0Player1 = sf0Before.player1;
+            const sf0Player2 = sf0Before.player2;
 
             console.log("Second Tournament Semifinal 0 Players:", sf0Player1, sf0Player2);
 
@@ -1252,24 +1252,24 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             const secondTournamentFinalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
 
             console.log("\nSecond Tournament Finals after both semifinals:");
-            console.log("  player1:", secondTournamentFinalsMatch.common.player1);
-            console.log("  player2:", secondTournamentFinalsMatch.common.player2);
-            console.log("  status:", secondTournamentFinalsMatch.common.status);
+            console.log("  player1:", secondTournamentFinalsMatch.player1);
+            console.log("  player2:", secondTournamentFinalsMatch.player2);
+            console.log("  status:", secondTournamentFinalsMatch.status);
 
             // Verify finals has the correct semifinal winners
-            expect(secondTournamentFinalsMatch.common.player1).to.equal(sf0Winner,
+            expect(secondTournamentFinalsMatch.player1).to.equal(sf0Winner,
                 "Finals slot 0 should have semifinal 0 winner");
-            expect(secondTournamentFinalsMatch.common.player2).to.equal(sf1Winner,
+            expect(secondTournamentFinalsMatch.player2).to.equal(sf1Winner,
                 "Finals slot 1 should have semifinal 1 winner");
 
             // Verify no players from first tournament are in current finals
-            expect(secondTournamentFinalsMatch.common.player1).to.not.equal(firstTournamentFinalist1);
-            expect(secondTournamentFinalsMatch.common.player1).to.not.equal(firstTournamentFinalist2);
-            expect(secondTournamentFinalsMatch.common.player2).to.not.equal(firstTournamentFinalist1);
-            expect(secondTournamentFinalsMatch.common.player2).to.not.equal(firstTournamentFinalist2);
+            expect(secondTournamentFinalsMatch.player1).to.not.equal(firstTournamentFinalist1);
+            expect(secondTournamentFinalsMatch.player1).to.not.equal(firstTournamentFinalist2);
+            expect(secondTournamentFinalsMatch.player2).to.not.equal(firstTournamentFinalist1);
+            expect(secondTournamentFinalsMatch.player2).to.not.equal(firstTournamentFinalist2);
 
             // Finals should be either InProgress (1) or Completed (2), but not NotStarted (0)
-            expect(secondTournamentFinalsMatch.common.status).to.be.greaterThan(0,
+            expect(secondTournamentFinalsMatch.status).to.be.greaterThan(0,
                 "Finals should have started (InProgress or Completed)");
 
             // Finals should be independent from first tournament
@@ -1285,7 +1285,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
 
             const matchBefore = await game.getMatch(tierId, instanceId, 0, 0);
-            const initialLastMove = matchBefore.common.lastMoveTime;
+            const initialLastMove = matchBefore.lastMoveTime;
 
             // Fast forward time a bit
             await hre.ethers.provider.send("evm_increaseTime", [10]);
@@ -1296,7 +1296,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
             const matchAfter = await game.getMatch(tierId, instanceId, 0, 0);
-            const newLastMove = matchAfter.common.lastMoveTime;
+            const newLastMove = matchAfter.lastMoveTime;
 
             // lastMoveTime should have been updated
             expect(newLastMove).to.be.gt(initialLastMove);
@@ -1341,10 +1341,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null;
+                if (match.status !== 1n) return null;
 
                 const fp = match.currentTurn;
-                const sp = match.common.player1 === fp ? match.common.player2 : match.common.player1;
+                const sp = match.player1 === fp ? match.player2 : match.player1;
 
                 const fpSigner = players.find(p => p.address === fp);
                 const spSigner = players.find(p => p.address === sp);
@@ -1589,10 +1589,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win a match
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null;
+                if (match.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
+                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
                 const fp = allPlayers.find(p => p.address === fpAddr);
                 const sp = allPlayers.find(p => p.address === spAddr);
 
@@ -1824,10 +1824,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win a match
             async function playMatchToWin(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null;
+                if (match.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
+                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
                 const fp = players.find(p => p.address === fpAddr);
                 const sp = players.find(p => p.address === spAddr);
 
@@ -1881,10 +1881,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper function to play a match to draw, returns last transaction
             async function playMatchToDraw(matchNum) {
                 const match = await game.getMatch(tierId, instanceId, 0, matchNum);
-                expect(match.common.status).to.equal(1n, `Match ${matchNum} should be InProgress`);
+                expect(match.status).to.equal(1n, `Match ${matchNum} should be InProgress`);
 
                 const fp = allPlayers.find(p => p.address === match.currentTurn);
-                const sp = allPlayers.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
+                const sp = allPlayers.find(p => p.address === (match.player1 === match.currentTurn ? match.player2 : match.player1));
 
                 // Draw pattern
                 await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
@@ -1904,11 +1904,11 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Verify match 0 completed and match 1 is still active
             let match0 = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match0.common.status).to.equal(2n); // Completed
-            expect(match0.common.isDraw).to.be.true;
+            expect(match0.status).to.equal(2n); // Completed
+            expect(match0.isDraw).to.be.true;
 
             let match1 = await game.getMatch(tierId, instanceId, 0, 1);
-            expect(match1.common.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
+            expect(match1.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
 
             // Play match 1 and verify TournamentCompleted event (all-draw scenario)
             const tx = await playMatchToDraw(1);
@@ -2028,10 +2028,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Helper to win matches
             async function winMatch(roundNum, matchNum) {
                 const match = await game.getMatch(tierId, instanceId, roundNum, matchNum);
-                if (match.common.status !== 1n) return null;
+                if (match.status !== 1n) return null;
 
                 const fpAddr = match.currentTurn;
-                const spAddr = match.common.player1 === fpAddr ? match.common.player2 : match.common.player1;
+                const spAddr = match.player1 === fpAddr ? match.player2 : match.player1;
                 const fp = players.find(p => p.address === fpAddr);
                 const sp = players.find(p => p.address === spAddr);
 
@@ -2182,14 +2182,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Step 2: Get initial match state - should work (active match)
             let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.status).to.equal(1); // InProgress
-            expect(matchData.common.isCached).to.be.false; // Should come from active storage
+            expect(matchData.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(matchData.status).to.equal(1); // InProgress
+            expect(matchData.isCached).to.be.false; // Should come from active storage
 
             // Store player addresses for later verification
-            const actualPlayer1 = matchData.common.player1;
-            const actualPlayer2 = matchData.common.player2;
+            const actualPlayer1 = matchData.player1;
+            const actualPlayer2 = matchData.player2;
             const firstPlayer = matchData.firstPlayer;
 
             // Step 3: Play the match to completion
@@ -2214,8 +2214,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Verify finals match is cleared (returns empty data after tournament completion)
             const clearedMatchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(clearedMatchData.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(clearedMatchData.common.player2).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedMatchData.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedMatchData.player2).to.equal(hre.ethers.ZeroAddress);
 
             // Historical data verification should use events (MatchCompleted, TournamentCompleted)
             // This represents proper Web3 architecture where events are the source of truth
@@ -2229,8 +2229,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Returns empty data when match doesn't exist
             const matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.player2).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.player2).to.equal(hre.ethers.ZeroAddress);
         });
 
         it("Should return active match data when match is still in progress", async function () {
@@ -2246,22 +2246,22 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Get match info - should come from active storage
             let matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
 
-            expect(matchData.common.isCached).to.be.false; // Should be active
-            expect(matchData.common.status).to.equal(1); // InProgress
-            expect(matchData.common.winner).to.equal(hre.ethers.ZeroAddress);
-            expect(matchData.common.loser).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.isCached).to.be.false; // Should be active
+            expect(matchData.status).to.equal(1); // InProgress
+            expect(matchData.winner).to.equal(hre.ethers.ZeroAddress);
+            expect(matchData.loser).to.equal(hre.ethers.ZeroAddress);
             // endTime field was removed - startTime is set when match begins
 
             // Make one move
             const firstPlayer = matchData.firstPlayer;
-            const actualPlayer1 = matchData.common.player1;
+            const actualPlayer1 = matchData.player1;
             let currentPlayer = firstPlayer === actualPlayer1 ? player7 : player8;
             await game.connect(currentPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, 4);
 
             // Still should come from active storage
             matchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.isCached).to.be.false;
-            expect(matchData.common.status).to.equal(1); // Still InProgress
+            expect(matchData.isCached).to.be.false;
+            expect(matchData.status).to.equal(1); // Still InProgress
         });
 
     });
