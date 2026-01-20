@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0xD00D0527A4D867BE7d6adaf7d06De2f7Fdd35C84",
+  "address": "0xbCe968Dd57910fe6953C25b9205564418b8458ba",
   "network": "arbitrum",
   "chainId": "42161",
-  "deployedAt": "2026-01-14T01:46:02.553Z",
+  "deployedAt": "2026-01-19T03:35:17.511Z",
   "modules": {
-    "core": "0x50fA8Bc9622F7Cac110586a418F8731f17A9dbFE",
-    "matches": "0xF3C194d0277Ee9F2F46cd17D78D377a9f04b4a9B",
-    "prizes": "0x6828987b8684c5a4ec1353D38aE16D205238E46F",
-    "raffle": "0x7D00c716955B32375bef412078AD2B72cE8530B8",
-    "escalation": "0x8eF07467764b4B0baE5d4A481371d351c3b3c0DF"
+    "core": "0x1723E9f3AFA01f24F31F97007513Ef5E8C0c3b98",
+    "matches": "0x86A6C8145a42CABcC802B3B4b262abECC8806ff3",
+    "prizes": "0x59754606d3e834284f85E92a2aa2eA86B8718Eeb",
+    "raffle": "0x0C2D8C8508733Fc899E880FD0a1A1fe7A6A3760A",
+    "escalation": "0x1aa556A8f0911a3512744eE83e19890a6779534b"
   },
   "abi": [
     {
@@ -58,6 +58,18 @@
           "type": "bytes32"
         },
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player1",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player2",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "internalType": "address",
           "name": "winner",
@@ -74,6 +86,12 @@
           "internalType": "enum ETour_Storage.CompletionReason",
           "name": "reason",
           "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "board",
+          "type": "uint256"
         }
       ],
       "name": "MatchCompleted",
@@ -1485,40 +1503,6 @@
           "type": "uint8"
         }
       ],
-      "name": "isMatchEscL1Available",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
       "name": "isMatchEscL2Available",
       "outputs": [
         {
@@ -1930,40 +1914,6 @@
           "internalType": "uint8",
           "name": "",
           "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerStats",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "tournamentsWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tournamentsPlayed",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesPlayed",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",

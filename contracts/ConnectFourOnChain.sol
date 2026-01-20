@@ -311,9 +311,10 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "FE");
 
-        // Emit MatchCompleted event from game contract (double elimination = no winner)
+        // Emit MatchCompleted event from game contract (triggering player wins)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, address(0), false, CompletionReason.ForceElimination);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -354,7 +355,8 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Emit MatchCompleted event from game contract (replacement player wins)
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        emit MatchCompleted(matchId, msg.sender, false, CompletionReason.Replacement);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
 
         // Hook for external player replacement
         _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
@@ -383,26 +385,8 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     /**
-     * @dev Check if Level 1 escalation is available (opponent timeout claim)
-     */
-    function isMatchEscL1Available(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isMatchEscL1Available(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber
-            )
-        );
-        require(success, "L1");
-        return abi.decode(result, (bool));
-    }
-
-    /**
      * @dev Check if Level 2 escalation is available (advanced player force eliminate)
+     * Implementation directly in ConnectFour to avoid delegatecall in view function
      */
     function isMatchEscL2Available(
         uint8 tierId,
@@ -410,18 +394,48 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isMatchEscL2Available(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber
-            )
-        );
-        require(success, "L2");
-        return abi.decode(result, (bool));
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
     }
 
     /**
      * @dev Check if Level 3 escalation is available (external player replacement)
+     * Implementation directly in ConnectFour to avoid delegatecall in view function
      */
     function isMatchEscL3Available(
         uint8 tierId,
@@ -429,14 +443,43 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 roundNumber,
         uint8 matchNumber
     ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_ESCALATION.staticcall(
-            abi.encodeWithSignature(
-                "isMatchEscL3Available(uint8,uint8,uint8,uint8)",
-                tierId, instanceId, roundNumber, matchNumber
-            )
-        );
-        require(success, "L3");
-        return abi.decode(result, (bool));
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
     }
 
     /**
@@ -707,7 +750,8 @@ contract ConnectFourOnChain is ETour_Storage {
         require(completeSuccess, "CM");
 
         // Emit MatchCompleted event from game contract
-        emit MatchCompleted(matchId, winner, isDraw, reason);
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
 
         if (!isDraw) {
             Match storage matchData = matches[matchId];

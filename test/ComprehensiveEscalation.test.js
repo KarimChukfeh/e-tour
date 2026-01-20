@@ -10,7 +10,7 @@ describe("Comprehensive Tournament Escalation Flow Tests", function() {
     const TIER_ID = 2; // 8-player tier (good balance for testing)
     const INSTANCE_ID = 0;
     const TIER_FEE = hre.ethers.parseEther("0.004"); // Correct fee for Tier 2
-    const MATCH_TIME = 120; // 2 minutes per player (updated for 15s Fischer increment)
+    const MATCH_TIME = 300; // 5 minutes per player (matchTimePerPlayer from contract)
     const L2_DELAY = 120; // 2 minutes (matchLevel2Delay from contract)
     const L3_DELAY = 240; // 4 minutes (matchLevel3Delay from contract)
 

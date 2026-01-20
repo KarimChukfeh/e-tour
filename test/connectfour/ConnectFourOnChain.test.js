@@ -268,7 +268,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             expect(matchCompletedEvent).to.not.be.undefined;
 
             // Check winner and isDraw from event args
-            const [matchId, winner, isDraw] = matchCompletedEvent.args;
+            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
             expect(winner).to.equal(firstPlayer.address);
             expect(isDraw).to.be.false;
         });
@@ -293,7 +293,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             );
             expect(matchCompletedEvent).to.not.be.undefined;
 
-            const [matchId, winner, isDraw] = matchCompletedEvent.args;
+            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
             expect(winner).to.equal(firstPlayer.address);
         });
 

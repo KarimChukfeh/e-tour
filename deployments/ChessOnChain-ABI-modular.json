@@ -1,15 +1,15 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x5Db8027483D65071E44118992eF84B694e28683A",
+  "address": "0x24bc1e22c8d4e444FA109933629BDB0617c0DeFa",
   "network": "arbitrum",
   "chainId": "42161",
-  "deployedAt": "2026-01-12T20:16:19.745Z",
+  "deployedAt": "2026-01-19T03:35:11.548Z",
   "modules": {
-    "core": "0x04183c702c3E93326D3F9ae0f7E3db10c97b4852",
-    "matches": "0xAcdE2bB420463530CC1858A4b0F01037C2468794",
-    "prizes": "0x639F53CCBB21f736Baad4E3cfCb1ABE672832e6C",
-    "raffle": "0xF8394c3316C9D461d719A71deCD801Fc23922a67",
-    "escalation": "0xcdde3c90e724DfbACb392E2E611c7500129BD8f6"
+    "core": "0x1723E9f3AFA01f24F31F97007513Ef5E8C0c3b98",
+    "matches": "0x86A6C8145a42CABcC802B3B4b262abECC8806ff3",
+    "prizes": "0x59754606d3e834284f85E92a2aa2eA86B8718Eeb",
+    "raffle": "0x0C2D8C8508733Fc899E880FD0a1A1fe7A6A3760A",
+    "escalation": "0x1aa556A8f0911a3512744eE83e19890a6779534b"
   },
   "abi": [
     {
@@ -63,6 +63,18 @@
           "type": "bytes32"
         },
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player1",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player2",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "internalType": "address",
           "name": "winner",
@@ -79,6 +91,12 @@
           "internalType": "enum ETour_Storage.CompletionReason",
           "name": "reason",
           "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "board",
+          "type": "uint256"
         }
       ],
       "name": "MatchCompleted",
@@ -211,6 +229,37 @@
         }
       ],
       "name": "TournamentCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "gameName",
+          "type": "string"
+        }
+      ],
+      "name": "Transfer",
       "type": "event"
     },
     {
@@ -1679,40 +1728,6 @@
           "type": "uint8"
         }
       ],
-      "name": "isMatchEscL1Available",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "tierId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "instanceId",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "roundNumber",
-          "type": "uint8"
-        },
-        {
-          "internalType": "uint8",
-          "name": "matchNumber",
-          "type": "uint8"
-        }
-      ],
       "name": "isMatchEscL2Available",
       "outputs": [
         {
@@ -2144,40 +2159,6 @@
           "internalType": "uint8",
           "name": "",
           "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "playerStats",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "tournamentsWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tournamentsPlayed",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesWon",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "matchesPlayed",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",
