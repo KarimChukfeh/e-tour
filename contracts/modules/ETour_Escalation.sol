@@ -418,9 +418,6 @@ contract ETour_Escalation is ETour_Storage {
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
-        // Clear escalation state
-        _clearEscalationState(matchId);
-
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
 
@@ -428,6 +425,11 @@ contract ETour_Escalation is ETour_Storage {
             // Check for orphaned winners and complete round (inline logic)
             _handleRoundCompletion(tierId, instanceId, roundNumber);
         }
+
+        // Clear escalation state AFTER _handleRoundCompletion checks it
+        // FIX: Moved from before _handleRoundCompletion to preserve escalation state
+        // for tournament completionReason determination
+        _clearEscalationState(matchId);
     }
 
     /**
@@ -469,9 +471,6 @@ contract ETour_Escalation is ETour_Storage {
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
-        // Clear escalation state
-        _clearEscalationState(matchId);
-
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber < config.totalRounds - 1) {
             // Advance winner inline
@@ -485,6 +484,11 @@ contract ETour_Escalation is ETour_Storage {
             // Check for orphaned winners and complete round (inline logic)
             _handleRoundCompletion(tierId, instanceId, roundNumber);
         }
+
+        // Clear escalation state AFTER _handleRoundCompletion checks it
+        // FIX: Moved from before _handleRoundCompletion to preserve escalation state
+        // for tournament completionReason determination
+        _clearEscalationState(matchId);
     }
 
     /**
