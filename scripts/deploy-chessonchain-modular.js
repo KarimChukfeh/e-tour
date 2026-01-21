@@ -127,7 +127,14 @@ async function main() {
         network: hre.network.name,
         chainId: (await hre.ethers.provider.getNetwork()).chainId.toString(),
         deployedAt: timestamp,
-        modules: modules,
+        modules: {
+            core: modules.core,
+            matches: modules.matches,
+            prizes: modules.prizes,
+            raffle: modules.raffle,
+            escalation: modules.escalation,
+            chessRules: chessRulesModuleAddress
+        },
         abi: chessOnChainArtifact.abi
     };
 
