@@ -53,12 +53,12 @@ describe("Protocol Raffle System", function () {
             expect(info.currentAccumulated).to.equal(0);
 
             // Even when below threshold, should show POTENTIAL distribution at threshold
-            // TicTacChain: threshold 0.001 ETH, reserve 0.0001 ETH (10%)
+            // TicTacChain: threshold 0.001 ETH, reserve 0.00005 ETH (5%)
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.0001"));
-            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.0009")); // 0.001 - 0.0001
-            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.00018")); // 20% of 0.0009
-            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.00072")); // 80% of 0.0009
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
+            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.00095")); // 0.001 - 0.00005
+            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.00005")); // 5% of total (5/95 of 0.00095)
+            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.0009")); // 90% of total (90/95 of 0.00095)
 
             expect(info.eligiblePlayerCount).to.equal(0);
         });
@@ -101,8 +101,8 @@ describe("Protocol Raffle System", function () {
 
         it("Should return correct reserve from _getRaffleReserve()", async function () {
             const info = await game.getRaffleInfo();
-            // TicTacChain raffle #1: threshold = 0.001 ETH, reserve = 10% = 0.0001 ETH
-            const expectedReserve = hre.ethers.parseEther("0.0001");
+            // TicTacChain raffle #1: threshold = 0.001 ETH, reserve = 5% = 0.00005 ETH
+            const expectedReserve = hre.ethers.parseEther("0.00005");
             expect(info.reserve).to.equal(expectedReserve);
         });
     });
@@ -224,21 +224,24 @@ describe("Protocol Raffle System", function () {
     });
 
     describe("Raffle Distribution", function () {
-        it("Should calculate 20% owner / 80% winner correctly", async function () {
-            const raffleAmount = hre.ethers.parseEther("2"); // 3 ETH - 1 ETH reserve
-            const expectedOwner = (raffleAmount * 20n) / 100n;
-            const expectedWinner = (raffleAmount * 80n) / 100n;
+        it("Should calculate 5% owner / 90% winner correctly", async function () {
+            const threshold = hre.ethers.parseEther("3"); // 3 ETH threshold
+            const reserve = (threshold * 5n) / 100n; // 0.15 ETH reserve
+            const raffleAmount = threshold - reserve; // 2.85 ETH
+            const expectedOwner = (raffleAmount * 5n) / 95n; // 5% of total
+            const expectedWinner = (raffleAmount * 90n) / 95n; // 90% of total
 
-            expect(expectedOwner).to.equal(hre.ethers.parseEther("0.4"));
-            expect(expectedWinner).to.equal(hre.ethers.parseEther("1.6"));
+            expect(expectedOwner).to.equal(hre.ethers.parseEther("0.15"));
+            expect(expectedWinner).to.equal(hre.ethers.parseEther("2.7"));
         });
 
-        it("Should maintain 1 ETH reserve after raffle", async function () {
+        it("Should maintain 5% reserve after raffle", async function () {
             // This test documents expected behavior
-            // After raffle: accumulatedProtocolShare should be exactly 1 ETH
+            // After raffle with 3 ETH threshold: accumulatedProtocolShare should be 0.15 ETH (5%)
 
-            const expectedReserve = ONE_ETH;
-            expect(expectedReserve).to.equal(hre.ethers.parseEther("1"));
+            const threshold = hre.ethers.parseEther("3");
+            const expectedReserve = (threshold * 5n) / 100n;
+            expect(expectedReserve).to.equal(hre.ethers.parseEther("0.15"));
         });
     });
 
@@ -249,9 +252,9 @@ describe("Protocol Raffle System", function () {
             // - winner address
             // - caller address
             // - raffleAmount
-            // - ownerShare (20%)
-            // - winnerShare (80%)
-            // - remainingReserve (1 ETH)
+            // - ownerShare (5%)
+            // - winnerShare (90%)
+            // - remainingReserve (5%)
             // - winnerEnrollmentCount
 
             // Cannot test actual event emission without triggering raffle
@@ -264,20 +267,22 @@ describe("Protocol Raffle System", function () {
     describe("Edge Cases", function () {
         it("Should handle exactly 3 ETH threshold", async function () {
             const accumulated = THREE_ETH;
-            const raffleAmount = accumulated - ONE_ETH;
+            const reserve = (accumulated * 5n) / 100n; // 0.15 ETH
+            const raffleAmount = accumulated - reserve;
 
-            expect(raffleAmount).to.equal(hre.ethers.parseEther("2"));
+            expect(raffleAmount).to.equal(hre.ethers.parseEther("2.85"));
         });
 
         it("Should handle large amounts (10 ETH)", async function () {
             const accumulated = hre.ethers.parseEther("10");
-            const raffleAmount = accumulated - ONE_ETH;
-            const ownerShare = (raffleAmount * 20n) / 100n;
-            const winnerShare = (raffleAmount * 80n) / 100n;
+            const reserve = (accumulated * 5n) / 100n; // 0.5 ETH
+            const raffleAmount = accumulated - reserve; // 9.5 ETH
+            const ownerShare = (raffleAmount * 5n) / 95n; // 5% of total
+            const winnerShare = (raffleAmount * 90n) / 95n; // 90% of total
 
-            expect(raffleAmount).to.equal(hre.ethers.parseEther("9"));
-            expect(ownerShare).to.equal(hre.ethers.parseEther("1.8"));
-            expect(winnerShare).to.equal(hre.ethers.parseEther("7.2"));
+            expect(raffleAmount).to.equal(hre.ethers.parseEther("9.5"));
+            expect(ownerShare).to.equal(hre.ethers.parseEther("0.5"));
+            expect(winnerShare).to.equal(hre.ethers.parseEther("9"));
         });
 
         // NOTE: eligiblePlayerCount calculation was simplified/changed

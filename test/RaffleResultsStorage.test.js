@@ -155,10 +155,10 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result.participants).to.include(result.winner);
 
             // Validate distribution amounts
-            const reserve = hre.ethers.parseEther("0.0001"); // 10% of 0.001
-            const raffleAmount = threshold - reserve; // 0.0009 ETH
-            const expectedOwnerShare = (raffleAmount * 20n) / 100n; // 0.00018 ETH
-            const expectedWinnerPrize = (raffleAmount * 80n) / 100n; // 0.00072 ETH
+            const reserve = hre.ethers.parseEther("0.00005"); // 5% of 0.001
+            const raffleAmount = threshold - reserve; // 0.00095 ETH
+            const expectedOwnerShare = (raffleAmount * 5n) / 95n; // 5% of total
+            const expectedWinnerPrize = (raffleAmount * 90n) / 95n; // 90% of total
 
             expect(result.protocolReserve).to.equal(reserve);
             expect(result.ownerShare).to.equal(expectedOwnerShare);
@@ -300,9 +300,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result1.executor).to.equal(player1.address);
             expect(result1.timestamp).to.equal(block1.timestamp);
             expect(result1.rafflePot).to.equal(threshold1);
-            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.0001")); // 10% of 0.001
-            expect(result1.ownerShare).to.equal(hre.ethers.parseEther("0.00018")); // 20% of 0.0009
-            expect(result1.winnerPrize).to.equal(hre.ethers.parseEther("0.00072")); // 80% of 0.0009
+            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.00005")); // 5% of 0.001
+            expect(result1.ownerShare).to.equal(hre.ethers.parseEther("0.00005")); // 5% of total
+            expect(result1.winnerPrize).to.equal(hre.ethers.parseEther("0.0009")); // 90% of total
             expect(result1.participants.length).to.be.gte(2);
             expect(result1.weights.length).to.equal(result1.participants.length);
 
@@ -310,9 +310,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result2.executor).to.equal(player2.address);
             expect(result2.timestamp).to.equal(block2.timestamp);
             expect(result2.rafflePot).to.equal(threshold2);
-            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.0005")); // 10% of 0.005
-            expect(result2.ownerShare).to.equal(hre.ethers.parseEther("0.0009")); // 20% of 0.0045
-            expect(result2.winnerPrize).to.equal(hre.ethers.parseEther("0.0036")); // 80% of 0.0045
+            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.00025")); // 5% of 0.005
+            expect(result2.ownerShare).to.equal(hre.ethers.parseEther("0.00025")); // 5% of total
+            expect(result2.winnerPrize).to.equal(hre.ethers.parseEther("0.0045")); // 90% of total
             expect(result2.participants.length).to.be.gte(2);
             expect(result2.weights.length).to.equal(result2.participants.length);
 
@@ -320,9 +320,9 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result3.executor).to.equal(player1.address);
             expect(result3.timestamp).to.equal(block3.timestamp);
             expect(result3.rafflePot).to.equal(threshold3);
-            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.002")); // 10% of 0.02
-            expect(result3.ownerShare).to.equal(hre.ethers.parseEther("0.0036")); // 20% of 0.018
-            expect(result3.winnerPrize).to.equal(hre.ethers.parseEther("0.0144")); // 80% of 0.018
+            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.001")); // 5% of 0.02
+            expect(result3.ownerShare).to.equal(hre.ethers.parseEther("0.001")); // 5% of total
+            expect(result3.winnerPrize).to.equal(hre.ethers.parseEther("0.018")); // 90% of total
             expect(result3.participants.length).to.be.gte(2);
             expect(result3.weights.length).to.equal(result3.participants.length);
 
@@ -414,11 +414,11 @@ describe("Raffle Results Storage - Historic Data Validation", function () {
             expect(result3.rafflePot).to.equal(hre.ethers.parseEther("0.02"));
             expect(result4.rafflePot).to.equal(hre.ethers.parseEther("0.05"));
 
-            // Verify 10% reserve for each
-            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.0001"));
-            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.0005"));
-            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.002"));
-            expect(result4.protocolReserve).to.equal(hre.ethers.parseEther("0.005"));
+            // Verify 5% reserve for each
+            expect(result1.protocolReserve).to.equal(hre.ethers.parseEther("0.00005"));
+            expect(result2.protocolReserve).to.equal(hre.ethers.parseEther("0.00025"));
+            expect(result3.protocolReserve).to.equal(hre.ethers.parseEther("0.001"));
+            expect(result4.protocolReserve).to.equal(hre.ethers.parseEther("0.0025"));
 
             // Verify winner prizes increase proportionally
             expect(result2.winnerPrize).to.be.gt(result1.winnerPrize);

@@ -871,11 +871,11 @@ contract ChessOnChain is ETour_Storage {
         raffleIndex = uint32(currentRaffleIndex);
         currentAccumulated = accumulatedProtocolShare;
         threshold = _getRaffleThreshold();
-        reserve = (threshold * 10) / 100;
+        reserve = (threshold * 5) / 100;
         isReady = currentAccumulated >= threshold;
         raffleAmount = threshold - reserve;
-        ownerShare = (raffleAmount * 20) / 100;
-        winnerShare = (raffleAmount * 80) / 100;
+        ownerShare = (raffleAmount * 5) / 95;
+        winnerShare = (raffleAmount * 90) / 95;
         (bool s, bytes memory d) = MODULE_RAFFLE.staticcall(abi.encodeWithSignature("getEligiblePlayerCount()"));
         eligiblePlayerCount = s ? uint32(abi.decode(d, (uint256))) : 0;
     }

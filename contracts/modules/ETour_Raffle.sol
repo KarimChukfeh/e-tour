@@ -11,7 +11,7 @@ import "../ETour_Storage.sol";
  * - Raffle threshold and reserve calculations
  * - Player eligibility checking for raffle participation
  * - Weighted random winner selection based on enrollment counts
- * - Raffle execution with owner/winner distribution (20%/80%)
+ * - Raffle execution with owner/winner distribution (5%/90%)
  * - Raffle state information for UI display
  *
  * CRITICAL - DELEGATECALL SEMANTICS:
@@ -91,7 +91,7 @@ contract ETour_Raffle is ETour_Storage {
      */
     function getRaffleReserve() external view returns (uint256) {
         uint256 threshold = _getRaffleThreshold();
-        return (threshold * 10) / 100;  // 10% of threshold
+        return (threshold * 5) / 100;  // 5% of threshold
     }
 
     /**
@@ -100,7 +100,7 @@ contract ETour_Raffle is ETour_Storage {
      */
     function _getRaffleReserve() internal view returns (uint256) {
         uint256 threshold = _getRaffleThreshold();
-        return (threshold * 10) / 100;  // 10% of threshold
+        return (threshold * 5) / 100;  // 5% of threshold
     }
 
     // ============ Player Eligibility Functions ============
@@ -412,13 +412,13 @@ contract ETour_Raffle is ETour_Storage {
 
         // EFFECT 1: Calculate raffle amount BEFORE incrementing index
         // (reserve must use current threshold, not next threshold)
-        uint256 reserve = (threshold * 10) / 100;  // 10% of current threshold
+        uint256 reserve = (threshold * 5) / 100;  // 5% of current threshold
         uint256 raffleAmount = accumulatedProtocolShare - reserve;
 
         // EFFECT 2: Increment raffle index
         currentRaffleIndex++;
-        ownerAmount = (raffleAmount * 20) / 100;  // 20%
-        winnerAmount = (raffleAmount * 80) / 100; // 80%
+        ownerAmount = (raffleAmount * 5) / 95;  // 5% of total (5/95 of remaining)
+        winnerAmount = (raffleAmount * 90) / 95; // 90% of total (90/95 of remaining)
 
         // EFFECT 3: Update accumulated protocol share (keep reserve)
         accumulatedProtocolShare = reserve;
@@ -555,8 +555,8 @@ contract ETour_Raffle is ETour_Storage {
         // This allows clients to display: "When 3 ETH reached, 2 ETH distributed, 1 ETH kept"
         // even before the threshold is reached
         raffleAmount = threshold - reserve;
-        ownerShare = (raffleAmount * 20) / 100;
-        winnerShare = (raffleAmount * 80) / 100;
+        ownerShare = (raffleAmount * 5) / 95;
+        winnerShare = (raffleAmount * 90) / 95;
 
         // Count eligible players
         (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();

@@ -52,24 +52,24 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
         });
 
-        it("Should have 10% reserve for TicTacChain", async function () {
+        it("Should have 5% reserve for TicTacChain", async function () {
             const info = await game.getRaffleInfo();
-            // Raffle #1: threshold = 0.001 ETH, reserve = 10% = 0.0001 ETH
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.0001"));
+            // Raffle #1: threshold = 0.001 ETH, reserve = 5% = 0.00005 ETH
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
         });
 
-        it("Should calculate raffle amount correctly with 10% reserve", async function () {
+        it("Should calculate raffle amount correctly with 5% reserve", async function () {
             // When threshold is met, raffleAmount = accumulated - reserve
             const info = await game.getRaffleInfo();
 
-            // Threshold is 0.001 ETH, reserve is 0.0001 ETH (10%)
+            // Threshold is 0.001 ETH, reserve is 0.00005 ETH (5%)
             // If we had 0.001 ETH accumulated:
-            // raffleAmount = 0.001 - 0.0001 = 0.0009 ETH (90% distributed)
-            // owner: 0.00018 ETH (20% of 0.0009), winner: 0.00072 ETH (80% of 0.0009)
+            // raffleAmount = 0.001 - 0.00005 = 0.00095 ETH (95% distributed)
+            // owner: 0.00005 ETH (5% of total), winner: 0.0009 ETH (90% of total)
 
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.0001"));
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
-            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.0009"));
+            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.00095"));
         });
     });
 
@@ -173,25 +173,25 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
         });
     });
 
-    describe("Distribution with 10% Reserve", function () {
-        it("Should calculate 90% distribution with 10% reserve", async function () {
-            // With 10% reserve for all thresholds
+    describe("Distribution with 5% Reserve", function () {
+        it("Should calculate 95% distribution with 5% reserve", async function () {
+            // With 5% reserve for all thresholds
             // Example: 0.5 ETH threshold reached
-            // reserve = 0.05 ETH (10%)
-            // raffleAmount = 0.45 ETH (90%)
-            // owner: 0.09 ETH (20% of raffle)
-            // winner: 0.36 ETH (80% of raffle)
+            // reserve = 0.025 ETH (5%)
+            // raffleAmount = 0.475 ETH (95%)
+            // owner: 0.025 ETH (5% of total, which is 5/95 of raffle)
+            // winner: 0.45 ETH (90% of total, which is 90/95 of raffle)
 
             const threshold = hre.ethers.parseEther("0.5");
-            const reserve = threshold * 10n / 100n;  // 0.05 ETH
-            const raffleAmount = threshold - reserve; // 0.45 ETH
-            const ownerShare = raffleAmount * 20n / 100n;  // 0.09 ETH
-            const winnerShare = raffleAmount * 80n / 100n; // 0.36 ETH
+            const reserve = threshold * 5n / 100n;  // 0.025 ETH
+            const raffleAmount = threshold - reserve; // 0.475 ETH
+            const ownerShare = raffleAmount * 5n / 95n;  // 0.025 ETH
+            const winnerShare = raffleAmount * 90n / 95n; // 0.45 ETH
 
-            expect(reserve).to.equal(hre.ethers.parseEther("0.05"));
-            expect(raffleAmount).to.equal(hre.ethers.parseEther("0.45"));
-            expect(ownerShare).to.equal(hre.ethers.parseEther("0.09"));
-            expect(winnerShare).to.equal(hre.ethers.parseEther("0.36"));
+            expect(reserve).to.equal(hre.ethers.parseEther("0.025"));
+            expect(raffleAmount).to.equal(hre.ethers.parseEther("0.475"));
+            expect(ownerShare).to.equal(hre.ethers.parseEther("0.025"));
+            expect(winnerShare).to.equal(hre.ethers.parseEther("0.45"));
             expect(ownerShare + winnerShare + reserve).to.equal(threshold);
         });
     });
@@ -205,28 +205,28 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             expect(info.threshold).to.be.lt(hre.ethers.parseEther("3"));
         });
 
-        it("Both should use 10% proportional reserve", async function () {
-            // TicTacChain raffle #1: threshold 0.001 ETH → reserve 0.0001 ETH (10%)
-            // ETour default: threshold 3 ETH → reserve 0.3 ETH (10%)
+        it("Both should use 5% proportional reserve", async function () {
+            // TicTacChain raffle #1: threshold 0.001 ETH → reserve 0.00005 ETH (5%)
+            // ETour default: threshold 3 ETH → reserve 0.15 ETH (5%)
             const info = await game.getRaffleInfo();
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.0001")); // 10% of 0.001
+            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005")); // 5% of 0.001
 
             // For comparison: ETour with 3 ETH threshold would have:
-            // - 10% = 0.3 ETH reserve
+            // - 5% = 0.15 ETH reserve
         });
     });
 
     describe("Threshold Scaling Examples", function () {
         it("Should document threshold and reserve progression", function () {
             // Threshold and Reserve Progression:
-            // Raffle #1 (index 0→1): threshold 0.001 ETH, reserve 0.0001 ETH (10%)
-            // Raffle #2 (index 1→2): threshold 0.005 ETH, reserve 0.0005 ETH (10%)
-            // Raffle #3 (index 2→3): threshold 0.02 ETH, reserve 0.002 ETH (10%)
-            // Raffle #4 (index 3→4): threshold 0.05 ETH, reserve 0.005 ETH (10%)
-            // Raffle #5 (index 4→5): threshold 0.25 ETH, reserve 0.025 ETH (10%)
-            // Raffle #6 (index 5→6): threshold 0.5 ETH, reserve 0.05 ETH (10%)
-            // Raffle #7 (index 6→7): threshold 0.75 ETH, reserve 0.075 ETH (10%)
-            // Raffle #8+ (index 7+→8+): threshold 1.0 ETH, reserve 0.10 ETH (capped)
+            // Raffle #1 (index 0→1): threshold 0.001 ETH, reserve 0.00005 ETH (5%)
+            // Raffle #2 (index 1→2): threshold 0.005 ETH, reserve 0.00025 ETH (5%)
+            // Raffle #3 (index 2→3): threshold 0.02 ETH, reserve 0.001 ETH (5%)
+            // Raffle #4 (index 3→4): threshold 0.05 ETH, reserve 0.0025 ETH (5%)
+            // Raffle #5 (index 4→5): threshold 0.25 ETH, reserve 0.0125 ETH (5%)
+            // Raffle #6 (index 5→6): threshold 0.5 ETH, reserve 0.025 ETH (5%)
+            // Raffle #7 (index 6→7): threshold 0.75 ETH, reserve 0.0375 ETH (5%)
+            // Raffle #8+ (index 7+→8+): threshold 1.0 ETH, reserve 0.05 ETH (capped)
 
             // Required enrollments at 0.0003 ETH (2.5% protocol share = 0.0000075):
             // Raffle #1: ~134 enrollments to reach 0.001 ETH

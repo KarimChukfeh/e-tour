@@ -1226,12 +1226,12 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Calculate threshold locally (reads from this contract's storage)
         threshold = _getRaffleThreshold();
-        reserve = (threshold * 10) / 100;  // 10% reserve
+        reserve = (threshold * 5) / 100;  // 5% reserve
 
         isReady = currentAccumulated >= threshold;
         raffleAmount = threshold - reserve;
-        ownerShare = (raffleAmount * 20) / 100;
-        winnerShare = (raffleAmount * 80) / 100;
+        ownerShare = (raffleAmount * 5) / 95;  // 5% of total
+        winnerShare = (raffleAmount * 90) / 95;  // 90% of total
 
         // Get eligible player count from module
         (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
