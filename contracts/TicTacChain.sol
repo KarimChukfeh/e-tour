@@ -193,21 +193,6 @@ contract TicTacChain is ETour_Storage {
     }
 
     /**
-     * @dev Get all historic raffle results - reads from local storage
-     * Returns array of all raffles executed (index 1 to currentRaffleIndex)
-     */
-    function getRaffleHistory() external view returns (RaffleResult[] memory) {
-        uint256 count = currentRaffleIndex;
-        RaffleResult[] memory history = new RaffleResult[](count);
-
-        for (uint256 i = 1; i <= count; i++) {
-            history[i - 1] = raffleResults[i];
-        }
-
-        return history;
-    }
-
-    /**
      * @dev Reset enrollment window (single player extends timeout)
      */
     function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external nonReentrant {
