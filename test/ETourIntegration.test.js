@@ -387,8 +387,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
             // Winning move completes tournament
-            await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2))
-;
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Tournament should reset to Enrolling
             const tournament = await game.tournaments(tierId, instanceId);

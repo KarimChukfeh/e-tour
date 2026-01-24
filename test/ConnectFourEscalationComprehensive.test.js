@@ -309,8 +309,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const balanceBefore = await ethers.provider.getBalance(currentPlayer.address);
 
-      await expect(connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0))
-;
+      await connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(status).to.equal(0); // Reset
@@ -439,8 +438,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const balanceBefore = await ethers.provider.getBalance(winner.address);
 
-      await expect(connectFour.connect(winner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 0, 1))
-;
+      await connectFour.connect(winner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 0, 1);
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0); // Reset
@@ -507,8 +505,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
 
       const otherWinner = finalsCurrentPlayer.address === w1.address ? w2 : w1;
-      await expect(connectFour.connect(otherWinner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 1, 0))
-;
+      await connectFour.connect(otherWinner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 1, 0);
 
       const [status] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0);
@@ -570,8 +567,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const balanceBefore = await ethers.provider.getBalance(outsider.address);
 
-      await expect(connectFour.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0))
-;
+      await connectFour.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(status).to.equal(0);
@@ -682,8 +678,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const balanceBefore = await ethers.provider.getBalance(outsider.address);
 
-      await expect(connectFour.connect(outsider).claimMatchSlotByReplacement(TIER1, INSTANCE_ID, 1, 0))
-;
+      await connectFour.connect(outsider).claimMatchSlotByReplacement(TIER1, INSTANCE_ID, 1, 0);
 
       const [status] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0);
