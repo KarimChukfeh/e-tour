@@ -407,6 +407,32 @@ abstract contract ETour_Storage is ReentrancyGuard {
     }
 
     /**
+     * @dev Create match record for a specific player (for ML2/ML3 escalations)
+     * PUBLIC for game contract access
+     */
+    function _createMatchRecordForPlayer(
+        address player,
+        bytes32 matchId,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        CompletionReason reason
+    ) public {
+        Match storage m = matches[matchId];
+        playerMatches[player].push();
+        _populateMatchRecord(
+            playerMatches[player][playerMatches[player].length - 1],
+            m,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber,
+            reason
+        );
+    }
+
+    /**
      * @dev Internal match completion handler
      * Extracted from all game contracts - coordinates match completion workflow
      * @param tierId Tournament tier ID
@@ -428,6 +454,11 @@ abstract contract ETour_Storage is ReentrancyGuard {
     ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage m = matches[matchId];
+
+        // Set winner BEFORE populating records so MatchRecord captures correct winner
+        m.winner = winner;
+        m.isDraw = isDraw;
+        m.status = MatchStatus.Completed;
 
         // Record match in both players' history inline to reduce stack depth
         playerMatches[m.player1].push();
@@ -921,6 +952,15 @@ abstract contract ETour_Storage is ReentrancyGuard {
      */
     function getPlayerStats() external view returns (int256 totalEarnings) {
         return playerEarnings[msg.sender];
+    }
+
+    /**
+     * @dev Get player's match history
+     * Returns all completed matches for the calling player
+     * Shared implementation for all games
+     */
+    function getPlayerMatches() external view returns (MatchRecord[] memory) {
+        return playerMatches[msg.sender];
     }
 
     /**

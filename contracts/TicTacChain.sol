@@ -237,6 +237,12 @@ contract TicTacChain is ETour_Storage {
             enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
         }
 
+        // Save original match players before delegatecall (for MatchRecord creation)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
+        address originalPlayer1 = m.player1;
+        address originalPlayer2 = m.player2;
+
         (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "forceEliminateStalledMatch(uint8,uint8,uint8,uint8)",
@@ -254,10 +260,12 @@ contract TicTacChain is ETour_Storage {
             }
         }
 
+        // Create MatchRecords for both eliminated players
+        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+
         // Emit MatchCompleted event from game contract (triggering player wins)
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
+        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -292,6 +300,12 @@ contract TicTacChain is ETour_Storage {
             enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
         }
 
+        // Save original match players before delegatecall (for MatchRecord creation)
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
+        address originalPlayer1 = m.player1;
+        address originalPlayer2 = m.player2;
+
         (bool success, bytes memory returnData) = MODULE_ESCALATION.delegatecall(
             abi.encodeWithSignature(
                 "claimMatchSlotByReplacement(uint8,uint8,uint8,uint8)",
@@ -309,10 +323,13 @@ contract TicTacChain is ETour_Storage {
             }
         }
 
+        // Create MatchRecords for all 3 affected players (original p1, p2, and replacement)
+        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _createMatchRecordForPlayer(msg.sender, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+
         // Emit MatchCompleted event from game contract (replacement player wins)
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
+        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
