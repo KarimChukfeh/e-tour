@@ -533,14 +533,12 @@ abstract contract ETour_Storage is ReentrancyGuard {
             emit Transfer(address(this), winners[i], prizes[i]);
         }
 
-        // Update earnings for the winner (if there is one)
-        if (tournamentWinner != address(0)) {
-            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
-                    tierId, instanceId, tournamentWinner)
-            );
-            require(earningsSuccess, "UE");
-        }
+        // Update earnings for all players (handles both single winner and all-draw scenarios)
+        (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                tierId, instanceId, tournamentWinner)
+        );
+        require(earningsSuccess, "UE");
 
         // Emit TournamentCompleted event with actual prize amount
         uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];

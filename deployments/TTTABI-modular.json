@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x525C7063E7C20997BaaE9bDa922159152D0e8417",
+  "address": "0xd6e1afe5cA8D00A2EFC01B89997abE2De47fdfAf",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T05:39:40.250Z",
+  "deployedAt": "2026-01-24T05:51:35.241Z",
   "modules": {
-    "core": "0x3aAde2dCD2Df6a8cAc689EE797591b2913658659",
-    "matches": "0xab16A69A5a8c12C732e0DEFF4BE56A70bb64c926",
-    "prizes": "0xE3011A37A904aB90C8881a99BD1F6E21401f1522",
-    "raffle": "0x1f10F3Ba7ACB61b2F50B9d6DdCf91a6f787C0E82",
-    "escalation": "0x457cCf29090fe5A24c19c1bc95F492168C0EaFdb"
+    "core": "0x2a810409872AfC346F9B5b26571Fd6eC42EA4849",
+    "matches": "0xb9bEECD1A582768711dE1EE7B0A1d582D9d72a6C",
+    "prizes": "0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8",
+    "raffle": "0x40918Ba7f132E0aCba2CE4de4c4baF9BD2D7D849",
+    "escalation": "0xF32D39ff9f6Aa7a7A64d7a4F00a54826Ef791a55"
   },
   "abi": [
     {
@@ -1531,6 +1531,40 @@
         }
       ],
       "name": "isMatchEscL3Available",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "stalledRoundNumber",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        }
+      ],
+      "name": "isPlayerInAdvancedRound",
       "outputs": [
         {
           "internalType": "bool",

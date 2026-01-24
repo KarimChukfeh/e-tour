@@ -86,12 +86,11 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
             expect(prizeEvents.length).to.equal(2); // Both players should receive prizes
 
-            // Verify both players received event with correct game name
+            // Verify both players received event
             for (const event of prizeEvents) {
                 const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect([player1.address, player2.address]).to.include(parsedEvent.args.to);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
 
             // After tournament completes, rankings are cleared but prizes persist
@@ -187,13 +186,12 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
 
             expect(prizeEvents.length).to.equal(4); // All 4 players should receive prizes
 
-            // Verify all players received event with correct game name
+            // Verify all players received event
             const playerAddresses = players.map(p => p.address);
             for (const event of prizeEvents) {
                 const parsedEvent = game.interface.parseLog(event);
                 expect(parsedEvent.args.from).to.equal(await game.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
 
             // Verify all 4 players have equal prizes

@@ -220,6 +220,15 @@ contract ETour_Raffle is ETour_Storage {
     }
 
     /**
+     * @dev Get count of unique eligible players for raffle
+     * Returns the number of unique players enrolled in active tournaments
+     */
+    function getEligiblePlayerCount() external view returns (uint256) {
+        (address[] memory players, , ) = this.getAllEnrolledPlayersWithWeights();
+        return players.length;
+    }
+
+    /**
      * @dev Internal helper to get all enrolled players with weights
      * EXACT COPY from ETour.sol lines 2763-2840
      */

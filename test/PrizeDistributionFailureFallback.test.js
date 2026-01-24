@@ -213,7 +213,6 @@ describe("Prize Distribution Failure Fallback", function () {
             const parsedEvent = game.interface.parseLog(prizeEvent);
             expect(parsedEvent.args.from).to.equal(await game.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
-            expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
 
             // Tournament should be completed and reset
             const tournament = await game.tournaments(tierId, instanceId);
