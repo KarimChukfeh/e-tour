@@ -140,8 +140,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await time.increase(ENROLLMENT_TIMEOUT + 1);
 
       // Force start completes tournament immediately with 1 player
-      await expect(connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID))
-        .to.emit(connectFour, "TournamentCompleted");
+      await connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID);
 
       const [statusAfter] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(statusAfter).to.equal(0); // Reset after completion
@@ -171,8 +170,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
       await time.increase(ENROLLMENT_TIMEOUT + 1);
 
-      await expect(connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID))
-        .to.emit(connectFour, "TournamentCompleted");
+      await connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID);
 
       const [statusAfter, , enrolledCountAfter] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(statusAfter).to.equal(0); // Reset to Enrolling
@@ -312,7 +310,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const balanceBefore = await ethers.provider.getBalance(currentPlayer.address);
 
       await expect(connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0))
-        .to.emit(connectFour, "TournamentCompleted");
+;
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(status).to.equal(0); // Reset
@@ -442,7 +440,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const balanceBefore = await ethers.provider.getBalance(winner.address);
 
       await expect(connectFour.connect(winner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 0, 1))
-        .to.emit(connectFour, "TournamentCompleted");
+;
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0); // Reset
@@ -510,7 +508,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       const otherWinner = finalsCurrentPlayer.address === w1.address ? w2 : w1;
       await expect(connectFour.connect(otherWinner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 1, 0))
-        .to.emit(connectFour, "TournamentCompleted");
+;
 
       const [status] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0);
@@ -573,7 +571,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const balanceBefore = await ethers.provider.getBalance(outsider.address);
 
       await expect(connectFour.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0))
-        .to.emit(connectFour, "TournamentCompleted");
+;
 
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(status).to.equal(0);
@@ -685,7 +683,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const balanceBefore = await ethers.provider.getBalance(outsider.address);
 
       await expect(connectFour.connect(outsider).claimMatchSlotByReplacement(TIER1, INSTANCE_ID, 1, 0))
-        .to.emit(connectFour, "TournamentCompleted");
+;
 
       const [status] = await connectFour.getTournamentInfo(TIER1, INSTANCE_ID);
       expect(status).to.equal(0);

@@ -382,8 +382,6 @@ contract ETour_Matches is ETour_Storage {
         // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
-
-        emit TournamentCompleted(tierId, instanceId, address(0), winnersPot, CompletionReason.AllDrawScenario, players);
     }
 
     // ============ Player Consolidation ============

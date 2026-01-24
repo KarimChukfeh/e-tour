@@ -298,7 +298,7 @@ contract ETour_Prizes is ETour_Storage {
         _onTournamentCompleted(tierId, instanceId, playersCopy);
 
         // ARCHITECTURE: Finals are treated like any other match - no special preservation
-        // Historical data is available via events (MatchCreated, MatchCompleted, TournamentCompleted)
+        // Historical data is available via events (MatchCreated, MatchCompleted)
         // This prevents stale data persistence issues and simplifies the codebase
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {

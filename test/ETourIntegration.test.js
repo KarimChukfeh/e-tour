@@ -288,10 +288,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 1);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Winning move - verify via TournamentCompleted event (2-player = finals)
+            // Winning move completes the finals (2-player tournament)
             await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2))
                 .to.emit(game, "MatchCompleted")
-                .and.to.emit(game, "TournamentCompleted");
+;
 
             // Winner's earnings should be updated
             const earnings = await game.connect(firstPlayer).getPlayerStats();
@@ -306,10 +306,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
-            // Winning move - verify via TournamentCompleted event
+            // Winning move completes the tournament
             await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 6))
                 .to.emit(game, "MatchCompleted")
-                .and.to.emit(game, "TournamentCompleted");
+;
 
             const earnings = await game.connect(firstPlayer).getPlayerStats();
             expect(earnings).to.be.gt(0);
@@ -323,10 +323,10 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 4);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // Winning move - verify via TournamentCompleted event
+            // Winning move completes the tournament
             await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8))
                 .to.emit(game, "MatchCompleted")
-                .and.to.emit(game, "TournamentCompleted");
+;
 
             const earnings = await game.connect(firstPlayer).getPlayerStats();
             expect(earnings).to.be.gt(0);
@@ -388,7 +388,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Winning move completes tournament
             await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2))
-                .to.emit(game, "TournamentCompleted");
+;
 
             // Tournament should reset to Enrolling
             const tournament = await game.tournaments(tierId, instanceId);
@@ -1414,21 +1414,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // First player claims timeout win - should win tournament
-            const tx = await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
-            const receipt = await tx.wait();
-
-            // Check TournamentCompleted event was emitted
-            const tournamentCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "TournamentCompleted"
-            );
-            expect(tournamentCompletedEvent).to.not.be.undefined;
-
-            // Winner should be the timeout claimer
-            expect(tournamentCompletedEvent.args.winner).to.equal(firstPlayer.address);
-
-            // Prize should be ~90% of total entry fees (2 * 0.01 ETH * 90% = 0.018 ETH)
-            const expectedPrize = (TIER_0_FEE * 2n * 90n) / 100n;
-            expect(tournamentCompletedEvent.args.prizeAmount).to.equal(expectedPrize);
+            await game.connect(firstPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
 
             // Verify leaderboard shows positive earnings for winner
             const leaderboard = await game.getLeaderboard();
@@ -1910,23 +1896,8 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             let match1 = await game.getMatch(tierId, instanceId, 0, 1);
             expect(match1.common.status).to.equal(1n, "Match 1 should still be InProgress after Match 0 draws");
 
-            // Play match 1 and verify TournamentCompleted event (all-draw scenario)
-            const tx = await playMatchToDraw(1);
-            const receipt = await tx.wait();
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedEvent = game.interface.parseLog(tournamentEvent);
-            expect(parsedEvent.args.winner).to.equal(hre.ethers.ZeroAddress); // All-draw has no single winner
-            expect(parsedEvent.args.prizeAmount).to.equal(prizePool); // Total prize pool
-            expect(parsedEvent.args.reason).to.equal(5); // AllDrawScenario
-            expect(parsedEvent.args.enrolledPlayers.length).to.equal(4); // All 4 players
+            // Play match 1 to complete the all-draw scenario
+            await playMatchToDraw(1);
 
             // After all-draw completion, tournament resets (match data is cleared)
             // But playerPrizes persists as historical record
@@ -2206,7 +2177,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
 
             // Step 4: ARCHITECTURE CHANGE - Finals cleared immediately on tournament completion
             // Match data should NO LONGER be queryable from storage
-            // Historical data available via events (MatchCompleted, TournamentCompleted)
+            // Historical data available via events (MatchCompleted)
 
             // Verify tournament completed and reset
             tournament = await game.tournaments(tierId, instanceId);
@@ -2217,7 +2188,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             expect(clearedMatchData.common.player1).to.equal(hre.ethers.ZeroAddress);
             expect(clearedMatchData.common.player2).to.equal(hre.ethers.ZeroAddress);
 
-            // Historical data verification should use events (MatchCompleted, TournamentCompleted)
+            // Historical data verification should use events (MatchCompleted)
             // This represents proper Web3 architecture where events are the source of truth
         });
 

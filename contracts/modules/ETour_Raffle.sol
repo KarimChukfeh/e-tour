@@ -439,19 +439,7 @@ contract ETour_Raffle is ETour_Storage {
             }
         }
 
-        // EFFECT 6: Emit event
-        emit ProtocolRaffleExecuted(
-            currentRaffleIndex,
-            winner,
-            msg.sender,
-            raffleAmount,
-            ownerAmount,
-            winnerAmount,
-            accumulatedProtocolShare,
-            winnerEnrollmentCount
-        );
-
-        // EFFECT 7: Store historic raffle result
+        // EFFECT 6: Store historic raffle result
         raffleResults[currentRaffleIndex] = RaffleResult({
             executor: msg.sender,
             timestamp: block.timestamp,

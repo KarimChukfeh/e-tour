@@ -211,56 +211,6 @@ describe("All-Draw Prize Distribution Edge Cases", function () {
             expect(remainder).to.be.gte(0n);
         });
 
-        it("Should emit TournamentCompleted event with correct parameters for all-draw scenario", async function () {
-            const tierId = 1;
-            const instanceId = 0;
-
-            const players = [player1, player2, player3, player4];
-            for (const player of players) {
-                await game.connect(player).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
-            }
-
-            const tournament = await game.tournaments(tierId, instanceId);
-            const prizePool = tournament.prizePool;
-
-            async function playMatchToDraw(matchNum) {
-                const match = await game.getMatch(tierId, instanceId, 0, matchNum);
-                const fp = players.find(p => p.address === match.currentTurn);
-                const sp = players.find(p => p.address === (match.common.player1 === match.currentTurn ? match.common.player2 : match.common.player1));
-
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 0);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 4);
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 2);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 1);
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 7);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 6);
-                await game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 3);
-                await game.connect(sp).makeMove(tierId, instanceId, 0, matchNum, 5);
-                return game.connect(fp).makeMove(tierId, instanceId, 0, matchNum, 8);
-            }
-
-            await playMatchToDraw(0);
-
-            const tx = await playMatchToDraw(1);
-            const receipt = await tx.wait();
-
-            // Verify TournamentCompleted event emitted with all-draw parameters
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedEvent = game.interface.parseLog(tournamentEvent);
-            expect(parsedEvent.args.winner).to.equal(hre.ethers.ZeroAddress); // All-draw has no single winner
-            expect(parsedEvent.args.prizeAmount).to.equal(prizePool); // Total prize pool
-            expect(parsedEvent.args.reason).to.equal(5); // AllDrawScenario
-            expect(parsedEvent.args.enrolledPlayers.length).to.equal(4); // All 4 players
-        });
-
         it("Should correctly set allDrawResolution and allDrawRound flags", async function () {
             const tierId = 1;
             const instanceId = 0;

@@ -3,7 +3,7 @@ import hre from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 /**
- * Comprehensive test suite for CompletionReason enum in MatchCompleted and TournamentCompleted events
+ * Comprehensive test suite for CompletionReason enum in MatchCompleted events
  *
  * Tests all 6 CompletionReason values:
  * 0: NormalWin - Normal gameplay win
@@ -103,35 +103,6 @@ describe("CompletionReason Event Verification", function () {
                     (board) => true // board state (any value)
                 );
         });
-
-        it("Should emit TournamentCompleted with NormalWin when tournament ends normally", async function () {
-            // Enroll 2 players
-            await game.connect(player1).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-            await game.connect(player2).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-
-            // Get match to determine who goes first
-            let match = await game.getMatch(TIER_2_PLAYER, INSTANCE_ID, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
-
-            // Play winning game
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 0);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 3);
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 1);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 4);
-
-            // Winning move should emit TournamentCompleted with CompletionReason.NormalWin (0)
-            await expect(game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 2))
-                .to.emit(game, "TournamentCompleted")
-                .withArgs(
-                    TIER_2_PLAYER,
-                    INSTANCE_ID,
-                    firstPlayer.address,
-                    (prizeAmount) => true, // prize amount (any value)
-                    0, // CompletionReason.NormalWin
-                    (players) => true // enrolled players array
-                );
-        });
     });
 
     describe("CompletionReason.Timeout (1)", function () {
@@ -164,36 +135,6 @@ describe("CompletionReason Event Verification", function () {
                     false, // not a draw
                     1,     // CompletionReason.Timeout
                     (board) => true
-                );
-        });
-
-        it("Should emit TournamentCompleted with NormalWin when tournament ends via timeout", async function () {
-            // Note: Even though match ends via timeout, tournament completionReason is set to NormalWin
-            // This is by design in ETour_Escalation.sol:728
-
-            await game.connect(player1).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-            await game.connect(player2).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-
-            let match = await game.getMatch(TIER_2_PLAYER, INSTANCE_ID, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
-
-            // First player makes a move - secondPlayer becomes current turn
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 0);
-
-            // Advance time past secondPlayer's time bank
-            await time.increase(MATCH_TIME + 1);
-
-            // First player claims timeout in finals - should complete tournament with NormalWin (not Timeout)
-            await expect(game.connect(firstPlayer).claimTimeoutWin(TIER_2_PLAYER, INSTANCE_ID, 0, 0))
-                .to.emit(game, "TournamentCompleted")
-                .withArgs(
-                    TIER_2_PLAYER,
-                    INSTANCE_ID,
-                    firstPlayer.address, // firstPlayer wins by timeout
-                    (prizeAmount) => true,
-                    0, // CompletionReason.NormalWin (tournament level treats timeout as normal win)
-                    (players) => true
                 );
         });
     });
@@ -234,39 +175,6 @@ describe("CompletionReason Event Verification", function () {
                     true,  // is a draw
                     2,     // CompletionReason.Draw
                     (board) => true
-                );
-        });
-
-        it("Should emit TournamentCompleted with Draw when finals ends in a draw", async function () {
-            await game.connect(player1).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-            await game.connect(player2).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-
-            let match = await game.getMatch(TIER_2_PLAYER, INSTANCE_ID, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
-
-            // Play a draw game
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 0);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 1);
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 2);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 4);
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 3);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 5);
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 7);
-            await game.connect(secondPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 6);
-
-            // Finals draw should emit TournamentCompleted with CompletionReason.Draw (2)
-            // Note: tournament.winner is set to finalPlayer1 (from match) for draw scenarios
-            const tx = await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 8);
-            await expect(tx)
-                .to.emit(game, "TournamentCompleted")
-                .withArgs(
-                    TIER_2_PLAYER,
-                    INSTANCE_ID,
-                    (winner) => winner === match.common.player1, // Winner set to player1 from match (not necessarily firstPlayer)
-                    (prizeAmount) => true,
-                    2, // CompletionReason.Draw
-                    (players) => true
                 );
         });
     });
@@ -314,10 +222,6 @@ describe("CompletionReason Event Verification", function () {
                     (board) => true
                 );
         });
-
-        // Note: TournamentCompleted with ForceElimination is tested in ML2ComprehensiveTests.test.js
-        // The scenario requires complex setup: both finalists get double-eliminated by advanced player
-        // This results in tournament completing with no winner and ForceElimination reason
     });
 
     describe("CompletionReason.Replacement (4)", function () {
@@ -347,105 +251,6 @@ describe("CompletionReason Event Verification", function () {
                     false, // not a draw
                     4,     // CompletionReason.Replacement
                     (board) => true
-                );
-        });
-
-        it("Should emit TournamentCompleted with Replacement when finals is won via ML3", async function () {
-            // Enroll 2 players for finals
-            await game.connect(player1).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-            await game.connect(player2).enrollInTournament(TIER_2_PLAYER, INSTANCE_ID, { value: TIER_2_FEE });
-
-            // First player makes a move, then stalls
-            let match = await game.getMatch(TIER_2_PLAYER, INSTANCE_ID, 0, 0);
-            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
-            await game.connect(firstPlayer).makeMove(TIER_2_PLAYER, INSTANCE_ID, 0, 0, 0);
-
-            // Advance time past timeout + L3 delay
-            await time.increase(MATCH_TIME + L3_DELAY + 1);
-
-            // External player claims finals via ML3 - should complete tournament with Replacement
-            await expect(game.connect(outsider1).claimMatchSlotByReplacement(TIER_2_PLAYER, INSTANCE_ID, 0, 0))
-                .to.emit(game, "TournamentCompleted")
-                .withArgs(
-                    TIER_2_PLAYER,
-                    INSTANCE_ID,
-                    outsider1.address, // External player wins tournament
-                    (prizeAmount) => true,
-                    4, // CompletionReason.Replacement (FIXED: was incorrectly 0 before bug fix)
-                    (players) => true
-                );
-        });
-    });
-
-    describe("CompletionReason.AllDrawScenario (5)", function () {
-        it("Should emit TournamentCompleted with AllDrawScenario when all matches in a round draw", async function () {
-            // This scenario requires all matches in a round to draw
-            // For a 4-player tournament, we need both semi-final matches to draw
-
-            await game.connect(player1).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
-            await game.connect(player2).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
-            await game.connect(player3).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
-            await game.connect(player4).enrollInTournament(TIER_4_PLAYER, INSTANCE_ID, { value: TIER_4_FEE });
-
-            // Helper to get the current turn player as a signer
-            async function getCurrentTurnPlayer(match) {
-                if (match.currentTurn === player1.address) return player1;
-                if (match.currentTurn === player2.address) return player2;
-                if (match.currentTurn === player3.address) return player3;
-                if (match.currentTurn === player4.address) return player4;
-                throw new Error("Unknown current turn player");
-            }
-
-            // Helper to get the other player
-            async function getOtherPlayer(match, currentPlayer) {
-                const otherAddress = match.common.player1 === currentPlayer.address ?
-                    match.common.player2 : match.common.player1;
-                if (otherAddress === player1.address) return player1;
-                if (otherAddress === player2.address) return player2;
-                if (otherAddress === player3.address) return player3;
-                if (otherAddress === player4.address) return player4;
-                throw new Error("Unknown other player");
-            }
-
-            // Play match 0 to a draw: X O X / X O O / O X X
-            let match0 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 0);
-            let p0First = await getCurrentTurnPlayer(match0);
-            let p0Second = await getOtherPlayer(match0, p0First);
-
-            await game.connect(p0First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 0);
-            await game.connect(p0Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 1);
-            await game.connect(p0First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 2);
-            await game.connect(p0Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 4);
-            await game.connect(p0First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 3);
-            await game.connect(p0Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 5);
-            await game.connect(p0First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 7);
-            await game.connect(p0Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 6);
-            await game.connect(p0First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 0, 8); // Draw
-
-            // Play match 1 to a draw - last move should trigger AllDrawScenario
-            let match1 = await game.getMatch(TIER_4_PLAYER, INSTANCE_ID, 0, 1);
-            let p1First = await getCurrentTurnPlayer(match1);
-            let p1Second = await getOtherPlayer(match1, p1First);
-
-            await game.connect(p1First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 0);
-            await game.connect(p1Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 1);
-            await game.connect(p1First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 2);
-            await game.connect(p1Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 4);
-            await game.connect(p1First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 3);
-            await game.connect(p1Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 5);
-            await game.connect(p1First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 7);
-            await game.connect(p1Second).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 6);
-
-            // Last move completes second draw - should trigger AllDrawScenario
-            await expect(game.connect(p1First).makeMove(TIER_4_PLAYER, INSTANCE_ID, 0, 1, 8))
-                .to.emit(game, "TournamentCompleted")
-                .withArgs(
-                    TIER_4_PLAYER,
-                    INSTANCE_ID,
-                    hre.ethers.ZeroAddress, // no single winner
-                    (prizeAmount) => true,
-                    5, // CompletionReason.AllDrawScenario
-                    (players) => true
                 );
         });
     });
