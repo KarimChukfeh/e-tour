@@ -422,15 +422,6 @@ contract TicTacChain is ETour_Storage {
         _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
-    // Note: isMatchEscL2Available(), isMatchEscL3Available(), isPlayerInAdvancedRound(),
-    //       claimTimeoutWin() are all inherited from ETour_Storage
-
-    /**
-     * @dev Internal match completion handler
-     * Coordinates with Escalation and Matches modules
-     */
-    // Note: _completeMatchInternal() is now inherited from ETour_Storage
-
     // ============ Board Helper Functions ============
 
     /**
@@ -533,15 +524,6 @@ contract TicTacChain is ETour_Storage {
         matchData.packedBoard = 0;
     }
 
-    /**
-     * @dev Check if match is active (exists and not completed)
-     */
-    // Note: _isMatchActive() uses default implementation from ETour_Storage
-
-    /**
-     * @dev Complete match with result
-     */
-    /**
      * @dev Mark match as complete in TicTacToe Match storage
      * Implements hook from ETour_Storage
      */
@@ -606,8 +588,6 @@ contract TicTacChain is ETour_Storage {
         return (matchData.player1, matchData.player2);
     }
 
-    // Note: _setMatchPlayer() is now inherited from ETour_Storage
-
     /**
      * @dev Initialize match for play - wrapper for modules
      */
@@ -670,9 +650,6 @@ contract TicTacChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    /**
-     * @dev Get active match data - for modules that need CommonMatchData
-     */
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 tierId,
@@ -709,10 +686,6 @@ contract TicTacChain is ETour_Storage {
 
     // ============ Game Logic (Tic-Tac-Toe Specific) ============
 
-    /**
-     * @dev Make a move on the Tic-Tac-Toe board
-     * Handles time bank updates with Fischer increment
-     */
     function makeMove(
         uint8 tierId,
         uint8 instanceId,
@@ -778,9 +751,6 @@ contract TicTacChain is ETour_Storage {
 
     // ============ View Functions ============
 
-    /**
-     * @dev Get complete match data
-     */
     function getMatch(
         uint8 tierId,
         uint8 instanceId,
@@ -832,19 +802,6 @@ contract TicTacChain is ETour_Storage {
         return emptyData;
     }
 
-    // Note: getPlayerStats(), getPlayerEnrollingTournaments(), getPlayerActiveTournaments()
-    // are all inherited from ETour_Storage
-
-    /**
-     * @dev Tier configuration - access via inherited getTierConfig() from ETour_Storage
-     */
-
-    // Note: getTournamentInfo(), getRoundInfo(), getLeaderboard(), getRaffleInfo()
-    // are all inherited from ETour_Storage
-
-    // Note: _onPlayerEnrolled(), _onTournamentStarted(), _onPlayerEliminatedFromTournament(),
-    //       _onExternalPlayerReplacement(), and _onTournamentCompleted() use default implementations from ETour_Storage
-
     // ============ Game-Specific Overrides ============
 
     /**
@@ -861,8 +818,3 @@ contract TicTacChain is ETour_Storage {
         emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
 
-    // ============ Player Tracking Helper Functions ============
-
-    // Note: Player tracking functions (_addPlayerEnrollingTournament, _removePlayerEnrollingTournament,
-    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Storage
-}

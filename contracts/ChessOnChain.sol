@@ -414,8 +414,6 @@ contract ChessOnChain is ETour_Storage {
         }
     }
 
-
-
     // ============ IETourGame Interface ============
 
     function _createMatchGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
