@@ -224,7 +224,7 @@ contract ETour_Raffle is ETour_Storage {
      * Returns the number of unique players enrolled in active tournaments
      */
     function getEligiblePlayerCount() external view returns (uint256) {
-        (address[] memory players, , ) = this.getAllEnrolledPlayersWithWeights();
+        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
         return players.length;
     }
 

@@ -422,29 +422,8 @@ contract TicTacChain is ETour_Storage {
         _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
 
-    // Note: isMatchEscL2Available(), isMatchEscL3Available(), claimTimeoutWin()
-    //       are inherited from ETour_Storage
-    // Note: isPlayerInAdvancedRound() delegates to MODULE_MATCHES below
-
-    /**
-     * @dev Check if player has advanced past a given round
-     * Delegates to MODULE_MATCHES for implementation
-     */
-    function isPlayerInAdvancedRound(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 stalledRoundNumber,
-        address player
-    ) external view returns (bool) {
-        (bool success, bytes memory result) = MODULE_MATCHES.staticcall(
-            abi.encodeWithSignature(
-                "isPlayerInAdvancedRound(uint8,uint8,uint8,address)",
-                tierId, instanceId, stalledRoundNumber, player
-            )
-        );
-        require(success, "IPAR");
-        return abi.decode(result, (bool));
-    }
+    // Note: isMatchEscL2Available(), isMatchEscL3Available(), isPlayerInAdvancedRound(),
+    //       claimTimeoutWin() are all inherited from ETour_Storage
 
     /**
      * @dev Internal match completion handler

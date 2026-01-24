@@ -283,57 +283,8 @@ contract ETour_Escalation is ETour_Storage {
 
     // ============ Advanced Player Checking ============
 
-    /**
-     * @dev Check if a player has advanced in the tournament
-     * EXACT COPY from ETour.sol lines 1822-1866
-     */
-    function isPlayerInAdvancedRound(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 stalledRoundNumber,
-        address player
-    ) external view returns (bool) {
-        if (!isEnrolled[tierId][instanceId][player]) {
-            return false;
-        }
-
-        IETourGame gameContract = IETourGame(address(this));
-
-        // Check 1: Has player won a match in any round up to and including the stalled round?
-        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
-            Round storage round = rounds[tierId][instanceId][r];
-
-            for (uint8 m = 0; m < round.totalMatches; m++) {
-                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
-
-                if (status == MatchStatus.Completed &&
-                    winner == player &&
-                    !isDraw) {
-                    return true;
-                }
-            }
-        }
-
-        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
-        // This catches walkover/auto-advanced players
-        TierConfig storage config = _tierConfigs[tierId];
-        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
-            Round storage round = rounds[tierId][instanceId][r];
-            if (!round.initialized) continue;
-
-            for (uint8 m = 0; m < round.totalMatches; m++) {
-                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address p1, address p2) = gameContract._getMatchPlayers(matchId);
-
-                if (p1 == player || p2 == player) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
+    // Note: isPlayerInAdvancedRound() is now implemented in ETour_Storage for direct storage access
+    // The internal _isPlayerInAdvancedRound() helper below is still used within this module
 
     /**
      * @dev Internal helper for checking if player is in advanced round
