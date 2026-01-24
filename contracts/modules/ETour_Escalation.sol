@@ -490,8 +490,8 @@ contract ETour_Escalation is ETour_Storage {
     }
 
     // ============ Escalation Availability Helpers (Public View) ============
-    // Note: isMatchEscL2Available() and isMatchEscL3Available() are now inherited from ETour_Storage
-
+    // Note: All escalation view functions and claimTimeoutWin kept in ETour_Storage
+    // to avoid stack depth issues and preserve error messages
 
     // ============ Helper Functions for Escalation ============
 

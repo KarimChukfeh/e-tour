@@ -1024,14 +1024,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if Level 2 escalation is available for a stalled match
      * Level 2 allows advanced players (those in later rounds) to claim the match
-     * Shared implementation for all games
+     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
      */
     function isMatchEscL2Available(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (bool) {
+    ) external view virtual returns (bool) {
         // SECURITY: Tournament must be in progress for escalation
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         if (tournament.status != TournamentStatus.InProgress) {
@@ -1074,14 +1074,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if Level 3 escalation is available for a stalled match
      * Level 3 allows any external player to claim the match
-     * Shared implementation for all games
+     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
      */
     function isMatchEscL3Available(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) external view returns (bool) {
+    ) external view virtual returns (bool) {
         // SECURITY: Tournament must be in progress for escalation
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         if (tournament.status != TournamentStatus.InProgress) {
@@ -1124,7 +1124,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Claim timeout win against stalled opponent
      * Non-active player can claim win if opponent's time has expired
-     * Shared implementation for all games
+     * Kept inline to preserve error messages and avoid stack depth issues
      */
     function claimTimeoutWin(
         uint8 tierId,
@@ -1163,14 +1163,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if player has advanced past a given round
      * Used for ML2 escalation eligibility
-     * Shared implementation for all games
+     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
      */
     function isPlayerInAdvancedRound(
         uint8 tierId,
         uint8 instanceId,
         uint8 stalledRoundNumber,
         address player
-    ) external view returns (bool hasAdvanced) {
+    ) external view virtual returns (bool hasAdvanced) {
         // Must be enrolled to be advanced
         if (!isEnrolled[tierId][instanceId][player]) {
             return false;
