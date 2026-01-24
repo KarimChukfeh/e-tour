@@ -2,16 +2,16 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-01-24T08:48:35.962Z",
-  "blockNumber": 20472,
+  "timestamp": "2026-01-24T09:07:02.061Z",
+  "blockNumber": 21578,
   "modules": {
-    "ETour_Core": "0x1D8D70AD07C8E7E442AD78E4AC0A16f958Eba7F0",
-    "ETour_Matches": "0xA9e6Bfa2BF53dE88FEb19761D9b2eE2e821bF1Bf",
-    "ETour_Prizes": "0x1E3b98102e19D3a164d239BdD190913C2F02E756",
-    "ETour_Raffle": "0x3fdc08D815cc4ED3B7F69Ee246716f2C8bCD6b07",
-    "ETour_Escalation": "0x286B8DecD5ED79c962b2d8F4346CD97FF0E2C352"
+    "ETour_Core": "0x9849832a1d8274aaeDb1112ad9686413461e7101",
+    "ETour_Matches": "0xa4E00CB342B36eC9fDc4B50b3d527c3643D4C49e",
+    "ETour_Prizes": "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE",
+    "ETour_Raffle": "0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B",
+    "ETour_Escalation": "0x4eaB29997D332A666c3C366217Ab177cF9A7C436"
   },
   "contracts": {
-    "TicTacChain": "0xb868Cc77A95a65F42611724AF05Aa2d3B6Ec05F2"
+    "TicTacChain": "0x5Ffe31E4676D3466268e28a75E51d1eFa4298620"
   }
 }

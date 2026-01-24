@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x9338CA7d556248055f5751d85cDA7aD6eF254433",
+  "address": "0xF342E904702b1D021F03f519D6D9614916b03f37",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T08:48:42.961Z",
+  "deployedAt": "2026-01-24T08:53:09.004Z",
   "modules": {
-    "core": "0x1D8D70AD07C8E7E442AD78E4AC0A16f958Eba7F0",
-    "matches": "0xA9e6Bfa2BF53dE88FEb19761D9b2eE2e821bF1Bf",
-    "prizes": "0x1E3b98102e19D3a164d239BdD190913C2F02E756",
-    "raffle": "0x3fdc08D815cc4ED3B7F69Ee246716f2C8bCD6b07",
-    "escalation": "0x286B8DecD5ED79c962b2d8F4346CD97FF0E2C352"
+    "core": "0x9c65f85425c619A6cB6D29fF8d57ef696323d188",
+    "matches": "0x7Cf4be31f546c04787886358b9486ca3d62B9acf",
+    "prizes": "0x33E45b187da34826aBCEDA1039231Be46f1b05Af",
+    "raffle": "0x0c626FC4A447b01554518550e30600136864640B",
+    "escalation": "0xA21DDc1f17dF41589BC6A5209292AED2dF61Cc94"
   },
   "abi": [
     {

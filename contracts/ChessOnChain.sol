@@ -448,8 +448,6 @@ contract ChessOnChain is ETour_Storage {
         return (m.winner, m.isDraw, m.status);
     }
 
-    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
-
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage m = matches[matchId];
         m.status = MatchStatus.InProgress;
