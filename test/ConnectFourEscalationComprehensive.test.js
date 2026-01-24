@@ -181,23 +181,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const balanceAfter = await ethers.provider.getBalance(player1.address);
       expect(balanceAfter).to.be.closeTo(balanceBefore - ENTRY_FEE + expectedPrize, ethers.parseEther("0.001"));
     });
-
-    it("Should clear player activity after solo force start completion", async function () {
-      await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
-
-      // After enrolling, player should be in enrolling tournaments, not active
-      let enrollingBefore = await connectFour.getPlayerEnrollingTournaments(player1.address);
-      expect(enrollingBefore.length).to.equal(1);
-
-      await time.increase(ENROLLMENT_TIMEOUT + 1);
-      await connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID);
-
-      // After force start and completion, player should be cleared from all lists
-      let enrollingAfter = await connectFour.getPlayerEnrollingTournaments(player1.address);
-      let activeAfter = await connectFour.getPlayerActiveTournaments(player1.address);
-      expect(enrollingAfter.length).to.equal(0);
-      expect(activeAfter.length).to.equal(0);
-    });
   });
 
   describe("EL2: Enrollment External Claim", function () {
@@ -242,20 +225,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       const [status, , enrolledCount] = await connectFour.getTournamentInfo(TIER, INSTANCE_ID);
       expect(status).to.equal(0); // Enrolling
       expect(enrolledCount).to.equal(0);
-    });
-
-    it("Should clear all player activity entries after EL2 claim", async function () {
-      // Use only 1 player to avoid auto-start
-      await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
-
-      await time.increase(ENROLLMENT_TIMEOUT + ENROLLMENT_ESC_L2 + 1);
-      await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);
-
-      const active1 = await connectFour.getPlayerActiveTournaments(player1.address);
-      const activeOutsider = await connectFour.getPlayerActiveTournaments(outsider.address);
-
-      expect(active1.length).to.equal(0);
-      expect(activeOutsider.length).to.equal(0);
     });
 
     it("Should allow new tournament to start after EL2 claim and reset", async function () {
@@ -321,23 +290,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.001"));
     });
 
-    it("Should clear player activity after ML1 tournament completion", async function () {
-      await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
-      await connectFour.connect(player2).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
-
-      const match = await connectFour.getMatch(TIER, INSTANCE_ID, 0, 0);
-      const currentPlayer = match.currentTurn === player1.address ? player1 : player2;
-
-      await makeMove(currentPlayer, 0);
-      await time.increase(MATCH_TIMEOUT + 1);
-      await connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
-
-      const active1 = await connectFour.getPlayerActiveTournaments(player1.address);
-      const active2 = await connectFour.getPlayerActiveTournaments(player2.address);
-
-      expect(active1.length).to.equal(0);
-      expect(active2.length).to.equal(0);
-    });
 
     it("Should reject timeout claim before timeout period", async function () {
       await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
@@ -469,15 +421,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + 1);
       await connectFour.connect(winner).forceEliminateStalledMatch(TIER1, INSTANCE_ID, 0, 1);
 
-      const active1 = await connectFour.getPlayerActiveTournaments(player1.address);
-      const active2 = await connectFour.getPlayerActiveTournaments(player2.address);
-      const active3 = await connectFour.getPlayerActiveTournaments(player3.address);
-      const active4 = await connectFour.getPlayerActiveTournaments(player4.address);
-
-      expect(active1.length).to.equal(0);
-      expect(active2.length).to.equal(0);
-      expect(active3.length).to.equal(0);
-      expect(active4.length).to.equal(0);
     });
 
     it("Should handle ML2 on finals match (both players eliminated)", async function () {
@@ -590,13 +533,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await time.increase(MATCH_TIMEOUT + MATCH_ESC_L2 + MATCH_ESC_L3 + 1);
       await connectFour.connect(outsider).claimMatchSlotByReplacement(TIER, INSTANCE_ID, 0, 0);
 
-      const active1 = await connectFour.getPlayerActiveTournaments(player1.address);
-      const active2 = await connectFour.getPlayerActiveTournaments(player2.address);
-      const activeOutsider = await connectFour.getPlayerActiveTournaments(outsider.address);
-
-      expect(active1.length).to.equal(0);
-      expect(active2.length).to.equal(0);
-      expect(activeOutsider.length).to.equal(0);
     });
 
     it("Should allow ML3 claimer to advance in tournament", async function () {
@@ -772,8 +708,6 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await connectFour.connect(player1).enrollInTournament(TIER, INSTANCE_ID, { value: ENTRY_FEE });
 
       // Check enrolling tournaments, not active (player hasn't started yet)
-      let enrollingBefore = await connectFour.getPlayerEnrollingTournaments(player1.address);
-      expect(enrollingBefore.length).to.equal(1);
 
       await time.increase(ENROLLMENT_TIMEOUT + ENROLLMENT_ESC_L2 + 1);
       await connectFour.connect(outsider).claimAbandonedEnrollmentPool(TIER, INSTANCE_ID);

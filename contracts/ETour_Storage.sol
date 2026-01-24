@@ -224,7 +224,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     // Tier configuration - set by implementing contract
     uint8 public tierCount;
     mapping(uint8 => TierConfig) internal _tierConfigs;
-    // REMOVED: _tierPrizeDistribution - Prize distribution simplified to 100% for first place
 
     // Accumulated protocol share from failed prize distributions
     uint256 public accumulatedProtocolShare;
@@ -242,8 +241,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     mapping(uint8 => mapping(uint8 => mapping(uint8 => Round))) public rounds;
 
     // Player data
-    mapping(address => bytes32[]) public playerActiveMatches;
-    mapping(address => mapping(bytes32 => uint256)) public playerMatchIndex;
     mapping(uint8 => mapping(uint8 => mapping(address => uint8))) public playerRanking;
     mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerPrizes;
     mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(address => bool))))) public drawParticipants;
@@ -258,16 +255,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // Match data shared across all games
     mapping(bytes32 => Match) public matches;
-
-    // ============ Player Tracking Module Storage ============
-
-    // Track tournaments where player is enrolled but not yet started
-    mapping(address => TournamentRef[]) public playerEnrollingTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) internal playerEnrollingIndex;
-
-    // Track tournaments where player is actively competing
-    mapping(address => TournamentRef[]) public playerActiveTournaments;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) internal playerActiveIndex;
 
     // ============ Events ============
 
@@ -342,75 +329,10 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * @return Current raffle threshold in wei
      */
     function _getRaffleThreshold() internal view returns (uint256) {
-        if (raffleThresholds.length == 0) {
-            return 3 ether;
-        }
         if (currentRaffleIndex < raffleThresholds.length) {
             return raffleThresholds[currentRaffleIndex];
         }
         return raffleThresholdFinal;
-    }
-
-    /**
-     * @dev Add player to enrolling tournaments tracking array
-     * Shared helper - extracts duplicate logic from all game contracts
-     */
-    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) internal {
-        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
-        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
-    }
-
-    /**
-     * @dev Remove player from enrolling tournaments tracking array
-     * Uses swap-and-pop pattern for gas efficiency
-     */
-    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) internal {
-        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
-            playerEnrollingTournaments[player][index] = lastRef;
-            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
-        }
-
-        playerEnrollingTournaments[player].pop();
-        delete playerEnrollingIndex[player][tierId][instanceId];
-    }
-
-    /**
-     * @dev Add player to active tournaments tracking array
-     * Shared helper - extracts duplicate logic from all game contracts
-     */
-    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) internal {
-        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
-        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
-    }
-
-    /**
-     * @dev Remove player from active tournaments tracking array
-     * Uses swap-and-pop pattern for gas efficiency
-     */
-    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) internal {
-        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerActiveTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
-            playerActiveTournaments[player][index] = lastRef;
-            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
-        }
-
-        playerActiveTournaments[player].pop();
-        delete playerActiveIndex[player][tierId][instanceId];
     }
 
     /**
@@ -462,13 +384,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
         // Call game-specific hook to emit MatchCompleted event with board data
         _emitMatchCompletedEvent(matchId, winner, isDraw, reason);
-
-        // Call elimination hook for loser (if not a draw)
-        if (!isDraw) {
-            (address player1, address player2) = _getMatchPlayers(matchId);
-            address loser = (winner == player1) ? player2 : player1;
-            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
-        }
 
         // Check if tournament completed and handle prize distribution/reset
         _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
@@ -539,9 +454,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
                 tierId, instanceId)
         );
         require(resetSuccess, "RT");
-
-        // Call tournament completion hook
-        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
     }
 
     // ============ Abstract Functions (Implemented by Game Contracts) ============
@@ -682,56 +594,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     // ============ Hooks (Optional overrides by Game Contracts) ============
 
     /**
-     * @dev Hook called when player enrolls in tournament
-     * Default implementation tracks player in enrolling tournaments
-     * Override only if game needs custom logic
-     */
-    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal virtual {
-        _addPlayerEnrollingTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook called when tournament transitions from Enrolling to InProgress
-     * Default implementation moves players from enrolling to active tracking
-     * Override only if game needs custom logic
-     */
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal virtual {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _addPlayerActiveTournament(player, tierId, instanceId);
-        }
-    }
-
-    /**
-     * @dev Hook called when player is eliminated from tournament
-     * Default implementation removes player from active tracking
-     * Override only if game needs custom logic
-     */
-    function _onPlayerEliminatedFromTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber
-    ) internal virtual {
-        _removePlayerActiveTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook called when external player replaces stalled players (L3 escalation)
-     * Default implementation adds player to active tracking
-     * Override only if game needs custom logic
-     */
-    function _onExternalPlayerReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal virtual {
-        _addPlayerActiveTournament(player, tierId, instanceId);
-    }
-
-    /**
      * @dev Hook to mark match as complete in game-specific Match storage
      * MUST be overridden in each game contract to update game-specific Match struct
      * Default implementation reverts (modules don't use this)
@@ -762,22 +624,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
     }
 
     /**
-     * @dev Hook called when tournament completes and resets
-     * Default implementation removes players from enrolling and active tracking
-     * Override only if game needs custom cleanup logic
-     */
-    function _onTournamentCompleted(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory players
-    ) internal virtual {
-        for (uint256 i = 0; i < players.length; i++) {
-            _removePlayerEnrollingTournament(players[i], tierId, instanceId);
-            _removePlayerActiveTournament(players[i], tierId, instanceId);
-        }
-    }
-
-    /**
      * @dev Hook called BEFORE tournament reset (for ChessOnChain elite match archival)
      * Override in ChessOnChain to archive finals matches
      */
@@ -803,10 +649,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         );
         require(success, "Enrollment failed");
 
-        _onPlayerEnrolled(tierId, instanceId, msg.sender);
-
         if (oldStatus == TournamentStatus.Enrolling && tournaments[tierId][instanceId].status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
     }
@@ -829,7 +672,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         if (oldStatus != TournamentStatus.Enrolling) return;
 
         if (newStatus == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
             return;
         }
@@ -851,8 +693,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(success, "Reset failed");
-
-        _onTournamentCompleted(tierId, instanceId, singlePlayer);
     }
 
     /**
@@ -1003,22 +843,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
      */
     function getPlayerStats() external view returns (int256 totalEarnings) {
         return playerEarnings[msg.sender];
-    }
-
-    /**
-     * @dev Get tournaments where player is enrolled but not yet started
-     * Shared implementation for all games
-     */
-    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) {
-        return playerEnrollingTournaments[player];
-    }
-
-    /**
-     * @dev Get tournaments where player is actively competing
-     * Shared implementation for all games
-     */
-    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
-        return playerActiveTournaments[player];
     }
 
     /**

@@ -93,10 +93,6 @@ contract ETour_Matches is ETour_Storage {
                 require(p1 != address(0) && p2 != address(0), "Invalid player addresses");
 
                 this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
-
-                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                addPlayerActiveMatch(p1, matchId);
-                addPlayerActiveMatch(p2, matchId);
             }
 
             if (walkoverPlayer != address(0)) {
@@ -121,11 +117,6 @@ contract ETour_Matches is ETour_Storage {
         bool isDraw
     ) public {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Remove match from both players' active match lists
-        (address player1, address player2) = this._getMatchPlayers(matchId);
-        removePlayerActiveMatch(player1, matchId);
-        removePlayerActiveMatch(player2, matchId);
 
         // Note: Escalation state is cleared by the game contract before calling completeMatch
         // No need to clear again here to avoid double clearing
@@ -198,9 +189,6 @@ contract ETour_Matches is ETour_Storage {
         if (p1 != address(0) && p2 != address(0) && status == MatchStatus.NotStarted) {
             require(p1 != p2, "Cannot match player against themselves");
             this._initializeMatchForPlay(nextMatchId, tierId);
-
-            addPlayerActiveMatch(p1, nextMatchId);
-            addPlayerActiveMatch(p2, nextMatchId);
         }
     }
 
@@ -733,40 +721,6 @@ contract ETour_Matches is ETour_Storage {
         uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
 
         return winnersFromPrevRound / 2;
-    }
-
-    // ============ Player Active Match Tracking ============
-
-    /**
-     * @dev Add match to player's active matches
-     * EXACT COPY from ETour.sol lines 979-984
-     */
-    function addPlayerActiveMatch(address player, bytes32 matchId) public {
-        playerActiveMatches[player].push(matchId);
-        playerMatchIndex[player][matchId] = playerActiveMatches[player].length - 1;
-    }
-
-    /**
-     * @dev Remove match from player's active matches
-     * EXACT COPY from ETour.sol lines 986-997
-     */
-    function removePlayerActiveMatch(address player, bytes32 matchId) public {
-        // Safety check: if player has no active matches, return early
-        if (playerActiveMatches[player].length == 0) {
-            return;
-        }
-
-        uint256 index = playerMatchIndex[player][matchId];
-        uint256 lastIndex = playerActiveMatches[player].length - 1;
-
-        if (index != lastIndex) {
-            bytes32 lastMatchId = playerActiveMatches[player][lastIndex];
-            playerActiveMatches[player][index] = lastMatchId;
-            playerMatchIndex[player][lastMatchId] = index;
-        }
-
-        playerActiveMatches[player].pop();
-        delete playerMatchIndex[player][matchId];
     }
 
     // ============ Player Advancement Detection ============

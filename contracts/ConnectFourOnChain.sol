@@ -148,12 +148,6 @@ contract ConnectFourOnChain is ETour_Storage {
                 address player1 = players[i * 2];
                 address player2 = players[i * 2 + 1];
                 _createMatchGame(tierId, instanceId, roundNumber, i, player1, player2);
-
-                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                playerActiveMatches[player1].push(matchId);
-                playerMatchIndex[player1][matchId] = playerActiveMatches[player1].length - 1;
-                playerActiveMatches[player2].push(matchId);
-                playerMatchIndex[player2][matchId] = playerActiveMatches[player2].length - 1;
             }
 
             if (walkoverPlayer != address(0)) {
@@ -297,9 +291,6 @@ contract ConnectFourOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage m = matches[matchId];
         emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
-
-        // Hook for external player replacement
-        _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -732,12 +723,10 @@ contract ConnectFourOnChain is ETour_Storage {
         return emptyData;
     }
 
-    // Note: getPlayerStats(), getPlayerEnrollingTournaments(), getPlayerActiveTournaments(),
-    //       getTournamentInfo(), getRoundInfo(), getLeaderboard(), getRaffleInfo()
+    // Note: getPlayerStats(), getTournamentInfo(), getRoundInfo(), getLeaderboard(), getRaffleInfo()
     //       are all inherited from ETour_Storage
 
-    // Note: _onPlayerEnrolled(), _onTournamentStarted(), _onPlayerEliminatedFromTournament(), _onExternalPlayerReplacement(),
-    //       and _onTournamentCompleted() use default implementations from ETour_Storage
+    // Note: Player tracking hooks removed - all tracking now done client-side
 
     // ============ Game-Specific Overrides ============
 

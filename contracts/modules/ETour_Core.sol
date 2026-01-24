@@ -140,7 +140,6 @@ contract ETour_Core is ETour_Storage {
         tournament.enrolledCount++;
         tournament.prizePool += participantsShare;
 
-        // Note: _onPlayerEnrolled hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == config.playerCount) {
             startTournament(tierId, instanceId);
@@ -275,7 +274,6 @@ contract ETour_Core is ETour_Storage {
         tournament.startTime = block.timestamp;
         tournament.currentRound = 0;
 
-        // Note: _onTournamentStarted hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];

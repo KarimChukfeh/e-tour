@@ -174,8 +174,6 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             expect(tournamentInfo.prizePool).to.equal(0n); // Reset
 
             // Advanced player should no longer be in active tournaments
-            const activeTournaments = await game.getPlayerActiveTournaments(advancedPlayer.address);
-            expect(activeTournaments.length).to.equal(0);
         });
 
         it("Should reject force elimination from non-advanced player", async function () {
@@ -383,8 +381,6 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             expect(tournament[3]).to.equal(0n); // Prize pool reset
 
             // Winner should no longer be in active tournaments
-            const activeTournaments = await game.getPlayerActiveTournaments(winnerMatch1.address);
-            expect(activeTournaments.length).to.equal(0);
         });
 
         it("Should allow replacement player to advance in tournament", async function () {

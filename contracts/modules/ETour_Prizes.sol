@@ -294,9 +294,6 @@ contract ETour_Prizes is ETour_Storage {
         }
         delete enrolledPlayers[tierId][instanceId];
 
-        // Notify tracking systems of tournament completion
-        _onTournamentCompleted(tierId, instanceId, playersCopy);
-
         // ARCHITECTURE: Finals are treated like any other match - no special preservation
         // Historical data is available via events (MatchCreated, MatchCompleted)
         // This prevents stale data persistence issues and simplifies the codebase

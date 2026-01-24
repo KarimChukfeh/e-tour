@@ -135,13 +135,7 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             expect(percentDiff).to.be.lt(1, "Prize should be within 1% of prize pool");
             console.log(`Prize accuracy: ${100 - percentDiff}% (difference: ${hre.ethers.formatEther(difference)} ETH)`);
 
-            // Step 7: Verify external player is removed from active tournaments
-            console.log("\nStep 8: Verifying external player tracking cleanup...");
-            const outsiderActiveTournaments = await game.getPlayerActiveTournaments(outsider.address);
-            expect(outsiderActiveTournaments.length).to.equal(0, "External player should be removed from active tournaments");
-            console.log("✓ External player (ML3 activator) properly removed from active tournaments");
-
-            // Step 9: Verify players can enroll in new tournament
+            // Step 7: Verify players can enroll in new tournament
             console.log("\nStep 9: Verifying new tournament can start...");
             await game.connect(players[0]).enrollInTournament(TIER_ID, INSTANCE_ID, { value: TIER_FEE });
             tournament = await game.getTournamentInfo(TIER_ID, INSTANCE_ID);

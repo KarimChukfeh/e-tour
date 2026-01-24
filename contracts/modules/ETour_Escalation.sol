@@ -357,12 +357,6 @@ contract ETour_Escalation is ETour_Storage {
         _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
         _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
 
-        // Remove player active match tracking (inline instead of delegatecall)
-        _removePlayerFromActiveMatch(player1, matchId);
-        _removePlayerFromActiveMatch(player2, matchId);
-
-        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
-        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
@@ -401,12 +395,6 @@ contract ETour_Escalation is ETour_Storage {
         _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
         _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
 
-        // Remove player active match tracking (inline instead of delegatecall)
-        _removePlayerFromActiveMatch(player1, matchId);
-        _removePlayerFromActiveMatch(player2, matchId);
-
-        _onPlayerEliminatedFromTournament(player1, tierId, instanceId, roundNumber);
-        _onPlayerEliminatedFromTournament(player2, tierId, instanceId, roundNumber);
 
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[tierId][instanceId][replacementPlayer]) {
@@ -414,7 +402,6 @@ contract ETour_Escalation is ETour_Storage {
             isEnrolled[tierId][instanceId][replacementPlayer] = true;
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             tournament.enrolledCount++;
-            _onExternalPlayerReplacement(tierId, instanceId, replacementPlayer);
         }
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
@@ -494,23 +481,6 @@ contract ETour_Escalation is ETour_Storage {
     // to avoid stack depth issues and preserve error messages
 
     // ============ Helper Functions for Escalation ============
-
-    /**
-     * @dev Remove player from active match tracking
-     */
-    function _removePlayerFromActiveMatch(address player, bytes32 matchId) internal {
-        bytes32[] storage activeMatches = playerActiveMatches[player];
-        uint256 length = activeMatches.length;
-
-        for (uint256 i = 0; i < length; i++) {
-            if (activeMatches[i] == matchId) {
-                // Swap with last element and pop
-                activeMatches[i] = activeMatches[length - 1];
-                activeMatches.pop();
-                break;
-            }
-        }
-    }
 
     /**
      * @dev Advance winner to next round

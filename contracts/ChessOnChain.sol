@@ -133,12 +133,6 @@ contract ChessOnChain is ETour_Storage {
                 address p1 = players[i * 2];
                 address p2 = players[i * 2 + 1];
                 _createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
-
-                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                playerActiveMatches[p1].push(matchId);
-                playerMatchIndex[p1][matchId] = playerActiveMatches[p1].length - 1;
-                playerActiveMatches[p2].push(matchId);
-                playerMatchIndex[p2][matchId] = playerActiveMatches[p2].length - 1;
             }
 
             if (walkoverPlayer != address(0)) {
@@ -275,8 +269,6 @@ contract ChessOnChain is ETour_Storage {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage m = matches[matchId];
         emit MatchCompleted(matchId, m.player1, m.player2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
-
-        _onExternalPlayerReplacement(tierId, instanceId, msg.sender);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
