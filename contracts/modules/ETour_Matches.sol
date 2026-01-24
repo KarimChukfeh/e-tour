@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
-import "../interfaces/IETourGame.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Matches
@@ -25,10 +24,10 @@ import "../interfaces/IETourGame.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Matches is ETour_Storage {
+contract ETour_Matches is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Empty implementations for module deployment) ============
     // During delegatecall, game contract's implementations are called via this.function()
@@ -701,5 +700,5 @@ contract ETour_Matches is ETour_Storage {
      *
      * EXTRACTION: Removes ~45 lines of duplicate code from each game contract
      */
-    // Note: isPlayerInAdvancedRound() is now implemented in ETour_Storage for direct storage access
+    // Note: isPlayerInAdvancedRound() is now implemented in ETour_Base for direct storage access
 }

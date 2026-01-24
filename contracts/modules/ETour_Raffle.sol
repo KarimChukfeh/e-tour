@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Raffle
@@ -25,22 +25,22 @@ import "../ETour_Storage.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Raffle is ETour_Storage {
+contract ETour_Raffle is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    // This is a bit of a hack - modules inherit ETour_Storage for type definitions
+    // This is a bit of a hack - modules inherit ETour_Base for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
-    // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
-    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
-    function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Use IETourGame"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Use IETourGame"); }
+    // ============ Abstract Function Stubs (Never Called - Modules call directly via inheritance) ============
+    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Call directly"); }
+    function _resetMatchGame(bytes32) public override { revert("Module: Call directly"); }
+    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Call directly"); }
+    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Call directly"); }
+    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Call directly"); }
+    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Call directly"); }
+    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Call directly"); }
+    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Call directly"); }
 
     // ============ Raffle Configuration Functions ============
 
@@ -498,5 +498,5 @@ contract ETour_Raffle is ETour_Storage {
         );
     }
 
-    // Note: getRaffleInfo() function is now inherited from ETour_Storage
+    // Note: getRaffleInfo() function is now inherited from ETour_Base
 }

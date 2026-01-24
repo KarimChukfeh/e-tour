@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./interfaces/IETourGame.sol";
 
 /**
  * @title ETour_Base
@@ -1103,16 +1102,13 @@ abstract contract ETour_Base is ReentrancyGuard {
             return false;
         }
 
-        // Use IETourGame interface to access game-specific match data
-        IETourGame gameContract = IETourGame(address(this));
-
         // Check 1: Has player won a match in any round up to and including the stalled round?
         for (uint8 r = 0; r <= stalledRoundNumber; r++) {
             Round storage round = rounds[tierId][instanceId][r];
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = _getMatchResult(matchId);
 
                 // Check if player won this match
                 if (status == MatchStatus.Completed &&
@@ -1132,7 +1128,7 @@ abstract contract ETour_Base is ReentrancyGuard {
 
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
-                (address player1, address player2) = gameContract._getMatchPlayers(matchId);
+                (address player1, address player2) = _getMatchPlayers(matchId);
 
                 if (player1 == player || player2 == player) {
                     return true;

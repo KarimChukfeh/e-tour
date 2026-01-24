@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETour_Storage.sol";
+import "./ETour_Base.sol";
 
 /**
  * @title TicTacChain
@@ -9,14 +9,14 @@ import "./ETour_Storage.sol";
  * Simple, solved game used as the lowest-barrier demonstration of the ETour protocol.
  *
  * This contract demonstrates modular ETour integration by:
- * 1. Inheriting ETour_Storage for shared tournament state
+ * 1. Inheriting ETour_Base for shared tournament state
  * 2. Delegating to specialized modules (Core, Matches, Prizes, etc.)
- * 3. Implementing IETourGame interface (8 abstract functions)
+ * 3. Implementing abstract functions from ETour_Base (8 functions)
  * 4. Managing game-specific logic (board state, win detection, time banks)
  *
  * Part of the RW3 (Reclaim Web3) movement.
  */
-contract TicTacChain is ETour_Storage {
+contract TicTacChain is ETour_Base {
 
     // ============ Game-Specific Structs ============
 
@@ -25,7 +25,7 @@ contract TicTacChain is ETour_Storage {
      * Board is packed: 2 bits per cell (0=empty, 1=player1, 2=player2)
      * Total 9 cells = 18 bits (fits in uint256 with room to spare)
      */
-    // Note: Match struct moved to ETour_Storage for consistency across all games
+    // Note: Match struct moved to ETour_Base for consistency across all games
 
     /**
      * @dev Extended match data for TicTacToe including common fields and game-specific state
@@ -44,10 +44,10 @@ contract TicTacChain is ETour_Storage {
 
     // ============ Game-Specific Storage ============
 
-    // Note: matches mapping moved to ETour_Storage for consistency across all games
+    // Note: matches mapping moved to ETour_Base for consistency across all games
 
     // ============ Module Addresses ============
-    // (All ETour modules inherited from ETour_Storage, game logic is built-in)
+    // (All ETour modules inherited from ETour_Base, game logic is built-in)
 
     // ============ Events ============
 
@@ -61,7 +61,7 @@ contract TicTacChain is ETour_Storage {
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
         address _moduleEscalationAddress
-    ) ETour_Storage(
+    ) ETour_Base(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
@@ -174,7 +174,7 @@ contract TicTacChain is ETour_Storage {
 
     // ============ Public ETour Function Wrappers (Delegatecall to Modules) ============
 
-    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Base
 
     /**
      * @dev Execute protocol raffle - delegates to Raffle module
@@ -412,7 +412,7 @@ contract TicTacChain is ETour_Storage {
         return true;
     }
 
-    // ============ IETourGame Interface Implementation ============
+    // ============ Abstract Functions (ETour_Base Implementation) ============
 
     /**
      * @dev Create new match - called by initializeRound
@@ -464,11 +464,11 @@ contract TicTacChain is ETour_Storage {
     /**
      * @dev Check if match is active (exists and not completed)
      */
-    // Note: _isMatchActive() uses default implementation from ETour_Storage
+    // Note: _isMatchActive() uses default implementation from ETour_Base
 
     /**
      * @dev Mark match as complete in TicTacToe Match storage
-     * Implements hook from ETour_Storage
+     * Implements hook from ETour_Base
      */
     function _completeMatchGameSpecific(
         uint8 tierId,
@@ -523,7 +523,7 @@ contract TicTacChain is ETour_Storage {
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
-    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
+    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Base
 
     /**
      * @dev Initialize match for play - wrapper for modules
@@ -587,7 +587,7 @@ contract TicTacChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    // Note: _getActiveMatchData() is now inherited from ETour_Storage
+    // Note: _getActiveMatchData() is now inherited from ETour_Base
 
     // ============ Game Logic (Tic-Tac-Toe Specific) ============
 
@@ -715,7 +715,7 @@ contract TicTacChain is ETour_Storage {
 
     /**
      * @dev Emit MatchCompleted event with TicTacToe board data
-     * Implements abstract function from ETour_Storage
+     * Implements abstract function from ETour_Base
      */
     function _emitMatchCompletedEvent(
         bytes32 matchId,

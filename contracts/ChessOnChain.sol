@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETour_Storage.sol";
+import "./ETour_Base.sol";
 
 interface IChessRules {
     function processMove(uint256 board, uint256 state, uint8 from, uint8 to, uint8 promotion, bool isWhite) external pure returns (bool valid, uint256 newBoard, uint256 newState, uint8 gameEnd);
 }
 
-contract ChessOnChain is ETour_Storage {
+contract ChessOnChain is ETour_Base {
 
     IChessRules public immutable CHESS_RULES;
 
@@ -16,7 +16,7 @@ contract ChessOnChain is ETour_Storage {
 
     // ============ Game-Specific Structs ============
 
-    // Note: Match struct moved to ETour_Storage for consistency across all games
+    // Note: Match struct moved to ETour_Base for consistency across all games
 
     struct ChessMatchData {
         CommonMatchData common;
@@ -28,11 +28,11 @@ contract ChessOnChain is ETour_Storage {
         uint256 player2TimeRemaining;
         string moves;                  // Move history (algebraic notation for replay)
     }
-    // Note: LeaderboardEntry struct now inherited from ETour_Storage
+    // Note: LeaderboardEntry struct now inherited from ETour_Base
 
     // ============ Game-Specific Storage ============
 
-    // Note: matches mapping moved to ETour_Storage for consistency across all games
+    // Note: matches mapping moved to ETour_Base for consistency across all games
 
     // Threefold repetition tracking: matchId -> positionHash -> occurrenceCount
     // Position hash incorporates gameNonce to invalidate counts on match reset
@@ -55,7 +55,7 @@ contract ChessOnChain is ETour_Storage {
         address _moduleRaffleAddress,
         address _moduleEscalationAddress,
         address _moduleChessRulesAddress
-    ) ETour_Storage(
+    ) ETour_Base(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
@@ -183,7 +183,7 @@ contract ChessOnChain is ETour_Storage {
 
     // ============ Public ETour Function Wrappers ============
 
-    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Base
 
     function executeProtocolRaffle() external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
@@ -312,7 +312,7 @@ contract ChessOnChain is ETour_Storage {
         _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
     // Note: isMatchEscL2Available(), isMatchEscL3Available(), isPlayerInAdvancedRound(),
-    //       claimTimeoutWin() are all inherited from ETour_Storage
+    //       claimTimeoutWin() are all inherited from ETour_Base
 
     // ============ Chess Gameplay ============
 
@@ -376,7 +376,7 @@ contract ChessOnChain is ETour_Storage {
         }
     }
 
-    // ============ IETourGame Interface ============
+    // ============ Abstract Functions (ETour_Base Implementation) ============
 
     function _createMatchGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
         require(player1 != player2 && player1 != address(0) && player2 != address(0), "IP");
@@ -410,11 +410,11 @@ contract ChessOnChain is ETour_Storage {
         _positionCounts[matchId][initialPositionHash] = 1;
     }
 
-    // Note: _isMatchActive() uses default implementation from ETour_Storage
+    // Note: _isMatchActive() uses default implementation from ETour_Base
 
     /**
      * @dev Mark match as complete in Chess Match storage
-     * Implements hook from ETour_Storage
+     * Implements hook from ETour_Base
      */
     function _completeMatchGameSpecific(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal override {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
@@ -483,7 +483,7 @@ contract ChessOnChain is ETour_Storage {
         return elapsed >= time;
     }
 
-    // Note: _getActiveMatchData() is now inherited from ETour_Storage
+    // Note: _getActiveMatchData() is now inherited from ETour_Base
 
     // ============ View Functions ============
 
@@ -506,7 +506,7 @@ contract ChessOnChain is ETour_Storage {
 
     /**
      * @dev Hook called BEFORE tournament reset to archive elite matches
-     * Override from ETour_Storage for ChessOnChain-specific archival logic
+     * Override from ETour_Base for ChessOnChain-specific archival logic
      */
     function _onTournamentCompletedBeforeReset(uint8 tierId, uint8 instanceId) internal override {
         // Archive elite tournament finals (Tier 3 or Tier 7)
@@ -521,7 +521,7 @@ contract ChessOnChain is ETour_Storage {
 
     /**
      * @dev Emit MatchCompleted event with Chess board data
-     * Implements abstract function from ETour_Storage
+     * Implements abstract function from ETour_Base
      */
     function _emitMatchCompletedEvent(
         bytes32 matchId,
@@ -535,5 +535,5 @@ contract ChessOnChain is ETour_Storage {
 
 
     // Note: Player tracking functions (_addPlayerEnrollingTournament, _removePlayerEnrollingTournament,
-    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Storage
+    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Base
 }

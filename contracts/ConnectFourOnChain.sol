@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETour_Storage.sol";
+import "./ETour_Base.sol";
 
 // ConnectFourOnChain - ETour tournament protocol
-contract ConnectFourOnChain is ETour_Storage {
+contract ConnectFourOnChain is ETour_Base {
 
     error InvalidColumn();
     error MatchNotActive();
@@ -30,7 +30,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
     // ============ Game-Specific Storage ============
 
-    // Note: matches mapping moved to ETour_Storage for consistency across all games
+    // Note: matches mapping moved to ETour_Base for consistency across all games
 
     // ============ Events ============
 
@@ -44,7 +44,7 @@ contract ConnectFourOnChain is ETour_Storage {
         address _modulePrizesAddress,
         address _moduleRaffleAddress,
         address _moduleEscalationAddress
-    ) ETour_Storage(
+    ) ETour_Base(
         _moduleCoreAddress,
         _moduleMatchesAddress,
         _modulePrizesAddress,
@@ -159,7 +159,7 @@ contract ConnectFourOnChain is ETour_Storage {
     /**
      * @dev Enroll in tournament - delegates to Core module
      */
-    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Base
 
 
     function executeProtocolRaffle() external nonReentrant {
@@ -311,11 +311,11 @@ contract ConnectFourOnChain is ETour_Storage {
         _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
     // Note: isMatchEscL2Available(), isMatchEscL3Available(), isPlayerInAdvancedRound(),
-    //       claimTimeoutWin() are all inherited from ETour_Storage
+    //       claimTimeoutWin() are all inherited from ETour_Base
 
-    // Note: _handleTournamentCompletion() is now inherited from ETour_Storage
+    // Note: _handleTournamentCompletion() is now inherited from ETour_Base
 
-    // Note: _completeMatchInternal() is now inherited from ETour_Storage
+    // Note: _completeMatchInternal() is now inherited from ETour_Base
 
     // ============ Board Helper Functions ============
 
@@ -439,7 +439,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return false;
     }
 
-    // ============ IETourGame Interface Implementation ============
+    // ============ Abstract Functions (ETour_Base Implementation) ============
 
     /**
      * @dev Create new match - called by initializeRound
@@ -487,11 +487,11 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
 
-    // Note: _isMatchActive() uses default implementation from ETour_Storage
+    // Note: _isMatchActive() uses default implementation from ETour_Base
 
     /**
      * @dev Mark match as complete in ConnectFour Match storage
-     * Implements hook from ETour_Storage
+     * Implements hook from ETour_Base
      */
     function _completeMatchGameSpecific(
         uint8 tierId,
@@ -536,7 +536,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
-    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
+    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Base
 
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage matchData = matches[matchId];
@@ -588,7 +588,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    // Note: _getActiveMatchData() is now inherited from ETour_Storage
+    // Note: _getActiveMatchData() is now inherited from ETour_Base
 
     // ============ Game Logic (Connect Four Specific) ============
 
@@ -726,7 +726,7 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     // Note: getPlayerStats(), getTournamentInfo(), getRoundInfo(), getLeaderboard(), getRaffleInfo()
-    //       are all inherited from ETour_Storage
+    //       are all inherited from ETour_Base
 
     // Note: Player tracking hooks removed - all tracking now done client-side
 
@@ -734,7 +734,7 @@ contract ConnectFourOnChain is ETour_Storage {
 
     /**
      * @dev Emit MatchCompleted event with ConnectFour board data
-     * Implements abstract function from ETour_Storage
+     * Implements abstract function from ETour_Base
      */
     function _emitMatchCompletedEvent(
         bytes32 matchId,
@@ -747,5 +747,5 @@ contract ConnectFourOnChain is ETour_Storage {
     }
 
     // Note: Player tracking functions (_addPlayerEnrollingTournament, _removePlayerEnrollingTournament,
-    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Storage
+    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Base
 }

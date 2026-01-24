@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T21:36:20.731Z",
+  "deployedAt": "2026-01-24T22:50:13.257Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "core": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+    "matches": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c",
+    "prizes": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+    "raffle": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+    "escalation": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
   },
   "abi": [
     {
@@ -83,7 +83,7 @@
         },
         {
           "indexed": false,
-          "internalType": "enum ETour_Storage.CompletionReason",
+          "internalType": "enum ETour_Base.CompletionReason",
           "name": "reason",
           "type": "uint8"
         },
@@ -391,7 +391,7 @@
               "type": "address"
             },
             {
-              "internalType": "enum ETour_Storage.MatchStatus",
+              "internalType": "enum ETour_Base.MatchStatus",
               "name": "status",
               "type": "uint8"
             },
@@ -436,7 +436,7 @@
               "type": "bool"
             }
           ],
-          "internalType": "struct ETour_Storage.CommonMatchData",
+          "internalType": "struct ETour_Base.CommonMatchData",
           "name": "",
           "type": "tuple"
         }
@@ -489,7 +489,7 @@
           "type": "bool"
         },
         {
-          "internalType": "enum ETour_Storage.MatchStatus",
+          "internalType": "enum ETour_Base.MatchStatus",
           "name": "status",
           "type": "uint8"
         }
@@ -882,7 +882,7 @@
               "type": "int256"
             }
           ],
-          "internalType": "struct ETour_Storage.LeaderboardEntry[]",
+          "internalType": "struct ETour_Base.LeaderboardEntry[]",
           "name": "",
           "type": "tuple[]"
         }
@@ -940,7 +940,7 @@
                   "type": "address"
                 },
                 {
-                  "internalType": "enum ETour_Storage.MatchStatus",
+                  "internalType": "enum ETour_Base.MatchStatus",
                   "name": "status",
                   "type": "uint8"
                 },
@@ -985,7 +985,7 @@
                   "type": "bool"
                 }
               ],
-              "internalType": "struct ETour_Storage.CommonMatchData",
+              "internalType": "struct ETour_Base.CommonMatchData",
               "name": "common",
               "type": "tuple"
             },
@@ -1109,7 +1109,7 @@
               "type": "address"
             },
             {
-              "internalType": "enum ETour_Storage.MatchStatus",
+              "internalType": "enum ETour_Base.MatchStatus",
               "name": "status",
               "type": "uint8"
             },
@@ -1139,7 +1139,7 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum ETour_Storage.CompletionReason",
+              "internalType": "enum ETour_Base.CompletionReason",
               "name": "completionReason",
               "type": "uint8"
             },
@@ -1149,7 +1149,7 @@
               "type": "string"
             }
           ],
-          "internalType": "struct ETour_Storage.MatchRecord[]",
+          "internalType": "struct ETour_Base.MatchRecord[]",
           "name": "",
           "type": "tuple[]"
         }
@@ -1278,7 +1278,7 @@
       "name": "getTournamentInfo",
       "outputs": [
         {
-          "internalType": "enum ETour_Storage.TournamentStatus",
+          "internalType": "enum ETour_Base.TournamentStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -1514,7 +1514,7 @@
           "type": "uint256"
         },
         {
-          "internalType": "enum ETour_Storage.EscalationLevel",
+          "internalType": "enum ETour_Base.EscalationLevel",
           "name": "activeEscalation",
           "type": "uint8"
         },
@@ -1563,7 +1563,7 @@
           "type": "address"
         },
         {
-          "internalType": "enum ETour_Storage.MatchStatus",
+          "internalType": "enum ETour_Base.MatchStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -1822,7 +1822,7 @@
           "type": "uint8"
         },
         {
-          "internalType": "enum ETour_Storage.TournamentStatus",
+          "internalType": "enum ETour_Base.TournamentStatus",
           "name": "status",
           "type": "uint8"
         },
@@ -1867,7 +1867,7 @@
           "type": "uint8"
         },
         {
-          "internalType": "enum ETour_Storage.CompletionReason",
+          "internalType": "enum ETour_Base.CompletionReason",
           "name": "completionReason",
           "type": "uint8"
         },
@@ -1884,7 +1884,7 @@
               "type": "uint256"
             },
             {
-              "internalType": "enum ETour_Storage.EscalationLevel",
+              "internalType": "enum ETour_Base.EscalationLevel",
               "name": "activeEscalation",
               "type": "uint8"
             },
@@ -1894,7 +1894,7 @@
               "type": "uint256"
             }
           ],
-          "internalType": "struct ETour_Storage.EnrollmentTimeoutState",
+          "internalType": "struct ETour_Base.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
         }
