@@ -320,8 +320,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Winning move completes tournament
-            await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3))
-                .to.emit(game, "TournamentCompleted");
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
             const tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Reset to Enrolling

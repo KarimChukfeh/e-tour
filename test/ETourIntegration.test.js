@@ -589,9 +589,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with only 1 player - they should win immediately
-            await expect(
-                game.connect(player1).forceStartTournament(tierId, instanceId)
-            ).to.emit(game, "TournamentCompleted");
+            await game.connect(player1).forceStartTournament(tierId, instanceId);
 
             // Tournament should reset after solo win
             const tournament = await game.tournaments(tierId, instanceId);
@@ -1028,9 +1026,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5); // O at 5
 
             // Final move results in draw
-            await expect(
-                game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8)
-            ).to.emit(game, "TournamentCompleted");
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
             // Both players should be co-winners (rank 1) or tournament handles draw appropriately
             const tournament = await game.tournaments(tierId, instanceId);

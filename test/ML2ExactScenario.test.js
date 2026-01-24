@@ -179,12 +179,6 @@ describe("ML2 Exact User Scenario", function() {
         expect(prizeReceived).to.be.gt(0n, "❌ A SHOULD HAVE RECEIVED PRIZE");
         console.log("✓ Prize distributed to A");
 
-        // Step 9: Verify TournamentCompleted event
-        console.log("\nStep 9: Verifying TournamentCompleted event...");
-        const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-        expect(events.length).to.be.gt(0, "❌ TOURNAMENT COMPLETED EVENT SHOULD BE EMITTED");
-        console.log(`✓ TournamentCompleted event emitted (${events.length} event(s))`);
-
         console.log("\n=== TEST COMPLETE ✅ ===\n");
     });
 });

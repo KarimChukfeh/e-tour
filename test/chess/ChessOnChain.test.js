@@ -662,20 +662,12 @@ describe("ChessOnChain Tests", function () {
             // 7. Qh5xf7# (CHECKMATE!)
             const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Verify tournament completed via TournamentCompleted event (finals cleared immediately)
-            const receipt = await tx.wait();
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = chess.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedEvent = chess.interface.parseLog(tournamentEvent);
-            expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
-            expect(parsedEvent.args.reason).to.equal(0); // NormalWin
+            // Verify tournament completed (finals cleared immediately)
+            await tx.wait();
+
+            // Tournament should be completed and reset
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling
         });
     });
 

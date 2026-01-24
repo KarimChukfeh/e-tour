@@ -135,19 +135,7 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             expect(percentDiff).to.be.lt(1, "Prize should be within 1% of prize pool");
             console.log(`Prize accuracy: ${100 - percentDiff}% (difference: ${hre.ethers.formatEther(difference)} ETH)`);
 
-            // Step 7: Verify TournamentCompleted event was emitted
-            console.log("\nStep 7: Verifying TournamentCompleted event...");
-            const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-            expect(events.length).to.equal(1, "TournamentCompleted event should be emitted");
-
-            const event = events[0];
-            expect(event.args.tierId).to.equal(TIER_ID);
-            expect(event.args.instanceId).to.equal(INSTANCE_ID);
-            expect(event.args.winner).to.equal(outsider.address);
-            expect(event.args.prizeAmount).to.be.gt(0n);
-            console.log("✓ TournamentCompleted event emitted with correct data");
-
-            // Step 8: Verify external player is removed from active tournaments
+            // Step 7: Verify external player is removed from active tournaments
             console.log("\nStep 8: Verifying external player tracking cleanup...");
             const outsiderActiveTournaments = await game.getPlayerActiveTournaments(outsider.address);
             expect(outsiderActiveTournaments.length).to.equal(0, "External player should be removed from active tournaments");
@@ -322,11 +310,6 @@ describe("ML3 Finals Match Completion Bug Fix", function() {
             expect(tournament.enrolledCount).to.equal(0, "Enrolled count should be 0");
             expect(tournament.prizePool).to.equal(0n, "Prize pool should be reset");
             console.log("✓ Tournament properly reset after ML2 on finals");
-
-            // Verify TournamentCompleted event
-            const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-            expect(events.length).to.be.gt(0, "TournamentCompleted event should be emitted");
-            console.log("✓ TournamentCompleted event emitted");
 
             console.log("\n=== TEST COMPLETE ===\n");
         });

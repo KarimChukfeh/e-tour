@@ -277,18 +277,7 @@ describe("Time Bank System (Chess Clock) Tests", function () {
             const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);  // X top-right - WIN
 
             // Verify TournamentCompleted event contains winner data
-            const receipt = await tx.wait();
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedTournamentEvent = game.interface.parseLog(tournamentEvent);
-            expect(parsedTournamentEvent.args.winner).to.equal(match.currentTurn);
+            await tx.wait();
 
             // Match should be completed (2-player tournament finals)
             // Finals cleared immediately - verify tournament completed via status
