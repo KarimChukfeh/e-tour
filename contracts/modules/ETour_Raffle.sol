@@ -67,25 +67,6 @@ contract ETour_Raffle is ETour_Storage {
     }
 
     /**
-     * @dev Internal helper for getting raffle threshold
-     * EXACT COPY from ETour.sol lines 534-547
-     */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        // If no raffle thresholds configured, use default
-        if (raffleThresholds.length == 0) {
-            return 1 ether;
-        }
-
-        // If currentRaffleIndex is within the configured array, use that value
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-
-        // Otherwise, use the final threshold
-        return raffleThresholdFinal;
-    }
-
-    /**
      * @dev Returns the reserve amount to keep after raffle execution
      * EXACT COPY from ETour.sol lines 555-558
      */

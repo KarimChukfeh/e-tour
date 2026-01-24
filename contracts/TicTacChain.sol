@@ -694,62 +694,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Internal match completion handler
      * Coordinates with Escalation and Matches modules
      */
-    function _completeMatchInternal(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw,
-        CompletionReason reason
-    ) private {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Mark match as complete in game-specific storage and cache it
-        _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
-
-        // Clear any escalation state - inlined
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-        timeout.isStalled = false;
-        timeout.escalation1Start = 0;
-        timeout.escalation2Start = 0;
-        timeout.activeEscalation = EscalationLevel.None;
-
-        // Save enrolled players before delegatecall (in case tournament completes and resets)
-        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
-        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
-            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
-        }
-
-        // Delegate to Matches module for advancement logic
-        // Note: MODULE_MATCHES calls _onPlayerEliminatedFromTournament internally,
-        // but it's an empty stub in the module's bytecode.
-        // We must call the real hook here after the delegatecall.
-        (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature(
-                "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
-                tierId, instanceId, roundNumber, matchNumber, winner, isDraw
-            )
-        );
-        require(completeSuccess, "CM");
-
-        // Emit MatchCompleted event from game contract
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
-
-        // Call elimination hook for loser (if not a draw)
-        if (!isDraw) {
-            Match storage matchData = matches[matchId];
-            address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
-            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
-        }
-
-        // Check if tournament completed and handle prize distribution/reset
-        // MODULE_MATCHES.completeMatch() sets status to Completed but doesn't distribute prizes
-        // (nested delegatecalls to MODULE_PRIZES don't work since modules have MODULE_PRIZES = address(0))
-        // So we must call prize distribution directly from TicTacChain
-        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
-    }
+    // Note: _completeMatchInternal() is now inherited from ETour_Storage
 
     // ============ Board Helper Functions ============
 
@@ -856,24 +801,23 @@ contract TicTacChain is ETour_Storage {
     /**
      * @dev Check if match is active (exists and not completed)
      */
-    function _isMatchActive(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
-        // Active if player1 assigned and not completed
-        return matchData.player1 != address(0) &&
-               matchData.status != MatchStatus.Completed;
-    }
+    // Note: _isMatchActive() uses default implementation from ETour_Storage
 
     /**
      * @dev Complete match with result
      */
-    function _completeMatchWithResult(
+    /**
+     * @dev Mark match as complete in TicTacToe Match storage
+     * Implements hook from ETour_Storage
+     */
+    function _completeMatchGameSpecific(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber,
         address winner,
         bool isDraw
-    ) internal {
+    ) internal override {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
@@ -1106,70 +1050,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Handle tournament completion: distribute prizes, update earnings, emit event, reset
      * Called after tournament status is set to Completed by modules
      */
-    function _handleTournamentCompletion(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory enrolledPlayersCopy
-    ) internal {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        // Only proceed if tournament is actually completed
-        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
-            return;
-        }
-
-        address tournamentWinner = tournament.winner;
-        uint256 winnersPot = tournament.prizePool;
-
-        // Distribute prizes based on completion type
-        address[] memory winners;
-        uint256[] memory prizes;
-
-        if (tournament.allDrawResolution) {
-            // All-draw: distribute equal prizes to all remaining players
-            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
-                    tierId, instanceId, enrolledPlayersCopy, winnersPot, "TicTacToe Reward")
-            );
-            require(distributeSuccess, "DP");
-            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
-        } else {
-            // Normal completion: distribute prizes based on ranking
-            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
-                    tierId, instanceId, winnersPot, "TicTacToe Reward")
-            );
-            require(distributeSuccess, "DP");
-            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
-        }
-
-        // Emit Transfer events for each winner
-        for (uint256 i = 0; i < winners.length; i++) {
-            emit Transfer(address(this), winners[i], prizes[i], "TicTacToe Reward");
-        }
-
-        // Update earnings for all players with prizes
-        (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
-                tierId, instanceId, tournamentWinner)
-        );
-        require(earningsSuccess, "UE");
-
-        // Emit TournamentCompleted event with actual prize amount
-        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
-        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
-            tournament.completionReason, enrolledPlayersCopy);
-
-        // Reset tournament state
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
-                tierId, instanceId)
-        );
-        require(resetSuccess, "RT");
-
-        // Call tournament completion hook
-        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
-    }
+    // Note: _handleTournamentCompletion() is now inherited from ETour_Storage
 
     // ============ Player Tracking View Functions ============
 
@@ -1277,18 +1158,7 @@ contract TicTacChain is ETour_Storage {
         }
     }
 
-    /**
-     * @dev Get current raffle threshold - reads from contract's storage
-     */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        if (raffleThresholds.length == 0) {
-            return 3 ether;
-        }
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-        return raffleThresholdFinal;
-    }
+    // Note: _getRaffleThreshold() is now inherited from ETour_Storage
 
     // ============ Player Tracking Hooks (Built-in Implementation) ============
 
@@ -1307,106 +1177,27 @@ contract TicTacChain is ETour_Storage {
      * @dev Hook: Called when tournament starts
      * Atomic transition: Move ALL enrolled players from enrolling → active
      */
-    function _onTournamentStarted(
-        uint8 tierId,
-        uint8 instanceId
-    ) internal override {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
+    // Note: _onTournamentStarted(), _onPlayerEliminatedFromTournament(), _onExternalPlayerReplacement(),
+    //       and _onTournamentCompleted() use default implementations from ETour_Storage
 
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _addPlayerActiveTournament(player, tierId, instanceId);
-        }
-    }
+    // ============ Game-Specific Overrides ============
 
     /**
-     * @dev Hook: Called when player is eliminated from tournament
-     * Only removes if player has NO remaining active matches
+     * @dev Emit MatchCompleted event with TicTacToe board data
+     * Implements abstract function from ETour_Storage
      */
-    function _onPlayerEliminatedFromTournament(
-        address player,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber
+    function _emitMatchCompletedEvent(
+        bytes32 matchId,
+        address winner,
+        bool isDraw,
+        CompletionReason reason
     ) internal override {
-        // Always remove from active tournaments after losing (player is eliminated)
-        _removePlayerActiveTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook: Called when external player replaces stalled player (L3 escalation)
-     */
-    function _onExternalPlayerReplacement(
-        uint8 tierId,
-        uint8 instanceId,
-        address player
-    ) internal override {
-        // External player joins mid-tournament, goes directly to active (skip enrolling)
-        _addPlayerActiveTournament(player, tierId, instanceId);
-    }
-
-    /**
-     * @dev Hook: Called when tournament completes
-     * Clean up ALL player tracking for this tournament
-     */
-    function _onTournamentCompleted(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory players
-    ) internal override {
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            _removePlayerEnrollingTournament(player, tierId, instanceId);
-            _removePlayerActiveTournament(player, tierId, instanceId);
-        }
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
 
     // ============ Player Tracking Helper Functions ============
 
-    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
-        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
-        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
-    }
-
-    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
-            playerEnrollingTournaments[player][index] = lastRef;
-            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
-        }
-
-        playerEnrollingTournaments[player].pop();
-        delete playerEnrollingIndex[player][tierId][instanceId];
-    }
-
-    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
-        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
-    }
-
-    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) private {
-        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
-        if (indexPlusOne == 0) return;
-
-        uint256 index = indexPlusOne - 1;
-        uint256 lastIndex = playerActiveTournaments[player].length - 1;
-
-        if (index != lastIndex) {
-            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
-            playerActiveTournaments[player][index] = lastRef;
-            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
-        }
-
-        playerActiveTournaments[player].pop();
-        delete playerActiveIndex[player][tierId][instanceId];
-    }
+    // Note: Player tracking functions (_addPlayerEnrollingTournament, _removePlayerEnrollingTournament,
+    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Storage
 }

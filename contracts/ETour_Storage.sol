@@ -255,13 +255,11 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * @param from The game contract address distributing the prize
      * @param to The player receiving the prize
      * @param value The prize amount in wei
-     * @param gameName The name of the game reward (e.g., "TicTacToe Reward")
      */
     event Transfer(
         address indexed from,
         address indexed to,
-        uint256 value,
-        string gameName
+        uint256 value
     );
 
     // ============ Constructor ============
@@ -312,6 +310,221 @@ abstract contract ETour_Storage is ReentrancyGuard {
             result++;
         }
         return result;
+    }
+
+    /**
+     * @dev Get current raffle threshold
+     * Shared helper for all game contracts - extracts duplicate logic
+     * @return Current raffle threshold in wei
+     */
+    function _getRaffleThreshold() internal view returns (uint256) {
+        if (raffleThresholds.length == 0) {
+            return 3 ether;
+        }
+        if (currentRaffleIndex < raffleThresholds.length) {
+            return raffleThresholds[currentRaffleIndex];
+        }
+        return raffleThresholdFinal;
+    }
+
+    /**
+     * @dev Add player to enrolling tournaments tracking array
+     * Shared helper - extracts duplicate logic from all game contracts
+     */
+    function _addPlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) internal {
+        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
+        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+    }
+
+    /**
+     * @dev Remove player from enrolling tournaments tracking array
+     * Uses swap-and-pop pattern for gas efficiency
+     */
+    function _removePlayerEnrollingTournament(address player, uint8 tierId, uint8 instanceId) internal {
+        uint256 indexPlusOne = playerEnrollingIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerEnrollingTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerEnrollingTournaments[player][lastIndex];
+            playerEnrollingTournaments[player][index] = lastRef;
+            playerEnrollingIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerEnrollingTournaments[player].pop();
+        delete playerEnrollingIndex[player][tierId][instanceId];
+    }
+
+    /**
+     * @dev Add player to active tournaments tracking array
+     * Shared helper - extracts duplicate logic from all game contracts
+     */
+    function _addPlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) internal {
+        if (playerActiveIndex[player][tierId][instanceId] != 0) return;
+        playerActiveTournaments[player].push(TournamentRef(tierId, instanceId));
+        playerActiveIndex[player][tierId][instanceId] = playerActiveTournaments[player].length;
+    }
+
+    /**
+     * @dev Remove player from active tournaments tracking array
+     * Uses swap-and-pop pattern for gas efficiency
+     */
+    function _removePlayerActiveTournament(address player, uint8 tierId, uint8 instanceId) internal {
+        uint256 indexPlusOne = playerActiveIndex[player][tierId][instanceId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = playerActiveTournaments[player].length - 1;
+
+        if (index != lastIndex) {
+            TournamentRef memory lastRef = playerActiveTournaments[player][lastIndex];
+            playerActiveTournaments[player][index] = lastRef;
+            playerActiveIndex[player][lastRef.tierId][lastRef.instanceId] = indexPlusOne;
+        }
+
+        playerActiveTournaments[player].pop();
+        delete playerActiveIndex[player][tierId][instanceId];
+    }
+
+    /**
+     * @dev Internal match completion handler
+     * Extracted from all game contracts - coordinates match completion workflow
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     * @param roundNumber Round number
+     * @param matchNumber Match number
+     * @param winner Winner address (or address(0) if draw)
+     * @param isDraw Whether match ended in a draw
+     * @param reason Completion reason for event emission
+     */
+    function _completeMatchInternal(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw,
+        CompletionReason reason
+    ) internal {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+
+        // Mark match as complete in game-specific storage (calls internal game-specific function)
+        _completeMatchGameSpecific(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
+
+        // Clear any escalation state - inlined for gas efficiency
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+
+        // Save enrolled players before delegatecall (in case tournament completes and resets)
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
+        // Delegate to Matches module for advancement logic
+        (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
+            abi.encodeWithSignature(
+                "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
+                tierId, instanceId, roundNumber, matchNumber, winner, isDraw
+            )
+        );
+        require(completeSuccess, "CM");
+
+        // Call game-specific hook to emit MatchCompleted event with board data
+        _emitMatchCompletedEvent(matchId, winner, isDraw, reason);
+
+        // Call elimination hook for loser (if not a draw)
+        if (!isDraw) {
+            (address player1, address player2) = _getMatchPlayers(matchId);
+            address loser = (winner == player1) ? player2 : player1;
+            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
+        }
+
+        // Check if tournament completed and handle prize distribution/reset
+        _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
+    }
+
+    /**
+     * @dev Handle tournament completion: distribute prizes, emit events, reset state
+     * Extracted from all game contracts - single source of truth for tournament completion workflow
+     * @param tierId Tournament tier ID
+     * @param instanceId Tournament instance ID
+     * @param enrolledPlayersCopy Copy of enrolled players array
+     */
+    function _handleTournamentCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Only proceed if tournament is actually completed
+        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
+            return;
+        }
+
+        address tournamentWinner = tournament.winner;
+        uint256 winnersPot = tournament.prizePool;
+
+        // Distribute prizes based on completion type
+        address[] memory winners;
+        uint256[] memory prizes;
+
+        if (tournament.allDrawResolution) {
+            // All-draw: distribute equal prizes to all remaining players
+            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
+                    tierId, instanceId, enrolledPlayersCopy, winnersPot, "")
+            );
+            require(distributeSuccess, "DP");
+            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
+        } else {
+            // Normal completion: distribute prizes based on ranking
+            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
+                    tierId, instanceId, winnersPot, "")
+            );
+            require(distributeSuccess, "DP");
+            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
+        }
+
+        // Emit Transfer events for each winner
+        for (uint256 i = 0; i < winners.length; i++) {
+            emit Transfer(address(this), winners[i], prizes[i]);
+        }
+
+        // Update earnings for the winner (if there is one)
+        if (tournamentWinner != address(0)) {
+            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
+                    tierId, instanceId, tournamentWinner)
+            );
+            require(earningsSuccess, "UE");
+        }
+
+        // Emit TournamentCompleted event with actual prize amount
+        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
+        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
+            tournament.completionReason, enrolledPlayersCopy);
+
+        // Call hook BEFORE reset (for ChessOnChain elite match archival)
+        _onTournamentCompletedBeforeReset(tierId, instanceId);
+
+        // Reset tournament state
+        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
+                tierId, instanceId)
+        );
+        require(resetSuccess, "RT");
+
+        // Call tournament completion hook
+        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
     }
 
     // ============ Abstract Functions (Implemented by Game Contracts) ============
@@ -388,10 +601,14 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     /**
      * @dev Check if match is active
-     * Called by modules to verify match state
-     * PUBLIC for delegatecall access (view functions don't need onlyInternal)
+     * Default implementation uses _getMatchPlayers and _getMatchResult
+     * Override only if game needs custom logic
      */
-    function _isMatchActive(bytes32 matchId) public view virtual returns (bool);
+    function _isMatchActive(bytes32 matchId) public view virtual returns (bool) {
+        (address player1, ) = _getMatchPlayers(matchId);
+        (, , MatchStatus status) = _getMatchResult(matchId);
+        return player1 != address(0) && status != MatchStatus.Completed;
+    }
 
     /**
      * @dev Get active match data
@@ -416,38 +633,98 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     /**
      * @dev Hook called when tournament transitions from Enrolling to InProgress
-     * Override in game contracts to track status changes for all enrolled players
+     * Default implementation moves players from enrolling to active tracking
+     * Override only if game needs custom logic
      */
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal virtual {}
+    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal virtual {
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            _removePlayerEnrollingTournament(player, tierId, instanceId);
+            _addPlayerActiveTournament(player, tierId, instanceId);
+        }
+    }
 
     /**
      * @dev Hook called when player is eliminated from tournament
-     * Override in game contracts to track player elimination
+     * Default implementation removes player from active tracking
+     * Override only if game needs custom logic
      */
     function _onPlayerEliminatedFromTournament(
         address player,
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber
-    ) internal virtual {}
+    ) internal virtual {
+        _removePlayerActiveTournament(player, tierId, instanceId);
+    }
 
     /**
      * @dev Hook called when external player replaces stalled players (L3 escalation)
-     * Override in game contracts to track mid-tournament player additions
+     * Default implementation adds player to active tracking
+     * Override only if game needs custom logic
      */
     function _onExternalPlayerReplacement(
         uint8 tierId,
         uint8 instanceId,
         address player
-    ) internal virtual {}
+    ) internal virtual {
+        _addPlayerActiveTournament(player, tierId, instanceId);
+    }
+
+    /**
+     * @dev Hook to mark match as complete in game-specific Match storage
+     * MUST be overridden in each game contract to update game-specific Match struct
+     * Default implementation reverts (modules don't use this)
+     */
+    function _completeMatchGameSpecific(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw
+    ) internal virtual {
+        revert("ETour_Storage: _completeMatchGameSpecific must be implemented by game contract");
+    }
+
+    /**
+     * @dev Hook to emit MatchCompleted event with game-specific board data
+     * MUST be overridden in each game contract to emit event with correct board format
+     * Default implementation reverts (modules don't use this)
+     */
+    function _emitMatchCompletedEvent(
+        bytes32 matchId,
+        address winner,
+        bool isDraw,
+        CompletionReason reason
+    ) internal virtual {
+        revert("ETour_Storage: _emitMatchCompletedEvent must be implemented by game contract");
+    }
 
     /**
      * @dev Hook called when tournament completes and resets
-     * Override in game contracts to clean up player tracking
+     * Default implementation removes players from enrolling and active tracking
+     * Override only if game needs custom cleanup logic
      */
     function _onTournamentCompleted(
         uint8 tierId,
         uint8 instanceId,
         address[] memory players
+    ) internal virtual {
+        for (uint256 i = 0; i < players.length; i++) {
+            _removePlayerEnrollingTournament(players[i], tierId, instanceId);
+            _removePlayerActiveTournament(players[i], tierId, instanceId);
+        }
+    }
+
+    /**
+     * @dev Hook called BEFORE tournament reset (for ChessOnChain elite match archival)
+     * Override in ChessOnChain to archive finals matches
+     */
+    function _onTournamentCompletedBeforeReset(
+        uint8 tierId,
+        uint8 instanceId
     ) internal virtual {}
+
 }

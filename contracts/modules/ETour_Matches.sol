@@ -759,4 +759,75 @@ contract ETour_Matches is ETour_Storage {
         playerActiveMatches[player].pop();
         delete playerMatchIndex[player][matchId];
     }
+
+    // ============ Player Advancement Detection ============
+
+    /**
+     * @dev Check if a player has advanced past the stalled round
+     *
+     * Used by Level 2 escalation to determine if a player can force-eliminate stalled players.
+     * A player is "advanced" if they either:
+     * 1. Won a match in rounds 0 to stalledRoundNumber (inclusive), OR
+     * 2. Are assigned to a match in a round after stalledRoundNumber
+     *
+     * This is a VIEW function called via staticcall from ETour_Escalation module.
+     *
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param stalledRoundNumber Round number of the stalled match
+     * @param player Address to check
+     * @return hasAdvanced True if player is in an advanced round
+     *
+     * EXTRACTION: Removes ~45 lines of duplicate code from each game contract
+     */
+    function isPlayerInAdvancedRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 stalledRoundNumber,
+        address player
+    ) external view returns (bool hasAdvanced) {
+        // Must be enrolled to be advanced
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Use IETourGame interface to access game-specific match data
+        IETourGame gameContract = IETourGame(address(this));
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address winner, bool isDraw, MatchStatus status) = gameContract._getMatchResult(matchId);
+
+                // Check if player won this match
+                if (status == MatchStatus.Completed &&
+                    winner == player &&
+                    !isDraw) {
+                    return true;
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address player1, address player2) = gameContract._getMatchPlayers(matchId);
+
+                if (player1 == player || player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

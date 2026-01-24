@@ -594,108 +594,6 @@ contract ChessOnChain is ETour_Storage {
         _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
     }
 
-    function _handleTournamentCompletion(
-        uint8 tierId,
-        uint8 instanceId,
-        address[] memory enrolledPlayersCopy
-    ) internal {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        if (tournament.status != TournamentStatus.Completed || enrolledPlayersCopy.length == 0) {
-            return;
-        }
-
-        address tournamentWinner = tournament.winner;
-        uint256 winnersPot = tournament.prizePool;
-
-        // Distribute prizes based on completion type
-        address[] memory winners;
-        uint256[] memory prizes;
-
-        if (tournament.allDrawResolution) {
-            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
-                    tierId, instanceId, enrolledPlayersCopy, winnersPot, "Chess Reward")
-            );
-            require(distributeSuccess, "DP");
-            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
-        } else {
-            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
-                    tierId, instanceId, winnersPot, "Chess Reward")
-            );
-            require(distributeSuccess, "DP");
-            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
-        }
-
-        // Emit Transfer events for each winner
-        for (uint256 i = 0; i < winners.length; i++) {
-            emit Transfer(address(this), winners[i], prizes[i], "Chess Reward");
-        }
-
-        // Update earnings for the winner (if there is one)
-        if (tournamentWinner != address(0)) {
-            (bool earningsSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("updatePlayerEarnings(uint8,uint8,address)",
-                    tierId, instanceId, tournamentWinner)
-            );
-        }
-
-        // Emit TournamentCompleted event with actual prize amount
-        uint256 winnerPrize = playerPrizes[tierId][instanceId][tournamentWinner];
-        emit TournamentCompleted(tierId, instanceId, tournamentWinner, winnerPrize,
-            tournament.completionReason, enrolledPlayersCopy);
-
-        // Archive elite tournament finals match (Tier 3 or Tier 7) - BEFORE reset
-        if (tierId == 3 || tierId == 7) {
-            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, tournament.currentRound, 0);
-            eliteMatches.push(matches[finalsMatchId]);
-        }
-
-        // Reset tournament
-        MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-        );
-
-        // Call completion hook
-        _onTournamentCompleted(tierId, instanceId, enrolledPlayersCopy);
-    }
-
-    function _completeMatchInternal(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw, CompletionReason reason) private {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        _completeMatchWithResult(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
-
-        // Clear escalation state - inlined
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-        timeout.isStalled = false;
-        timeout.escalation1Start = 0;
-        timeout.escalation2Start = 0;
-        timeout.activeEscalation = EscalationLevel.None;
-
-        address[] memory epc = new address[](enrolledPlayers[tierId][instanceId].length);
-        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
-            epc[i] = enrolledPlayers[tierId][instanceId][i];
-        }
-
-        MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("completeMatch(uint8,uint8,uint8,uint8,address,bool)", tierId, instanceId, roundNumber, matchNumber, winner, isDraw)
-        );
-
-        // Emit MatchCompleted event from game contract
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
-
-        if (!isDraw) {
-            Match storage matchData = matches[matchId];
-            address loser = (winner == matchData.player1) ? matchData.player2 : matchData.player1;
-            _onPlayerEliminatedFromTournament(loser, tierId, instanceId, roundNumber);
-        }
-
-        // Check if tournament completed and handle prize distribution/reset
-        _handleTournamentCompletion(tierId, instanceId, epc);
-    }
-
     // ============ IETourGame Interface ============
 
     function _createMatchGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
@@ -730,12 +628,13 @@ contract ChessOnChain is ETour_Storage {
         _positionCounts[matchId][initialPositionHash] = 1;
     }
 
-    function _isMatchActive(bytes32 matchId) public view override returns (bool) {
-        Match storage matchData = matches[matchId];
-        return matchData.player1 != address(0) && matchData.status != MatchStatus.Completed;
-    }
+    // Note: _isMatchActive() uses default implementation from ETour_Storage
 
-    function _completeMatchWithResult(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal {
+    /**
+     * @dev Mark match as complete in Chess Match storage
+     * Implements hook from ETour_Storage
+     */
+    function _completeMatchGameSpecific(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal override {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
         matchData.status = MatchStatus.Completed;
@@ -880,18 +779,7 @@ contract ChessOnChain is ETour_Storage {
         eligiblePlayerCount = s ? uint32(abi.decode(d, (uint256))) : 0;
     }
 
-    /**
-     * @dev Get current raffle threshold - reads from contract's storage
-     */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        if (raffleThresholds.length == 0) {
-            return 3 ether;
-        }
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-        return raffleThresholdFinal;
-    }
+    // Note: _getRaffleThreshold() is now inherited from ETour_Storage
 
     function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {
         Match storage m = eliteMatches[index];
@@ -901,64 +789,42 @@ contract ChessOnChain is ETour_Storage {
     // ============ Player Tracking Hooks ============
 
     function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal override {
-        if (playerEnrollingIndex[player][tierId][instanceId] != 0) return;
-        playerEnrollingTournaments[player].push(TournamentRef(tierId, instanceId));
-        playerEnrollingIndex[player][tierId][instanceId] = playerEnrollingTournaments[player].length;
+        _addPlayerEnrollingTournament(player, tierId, instanceId);
     }
 
-    function _onTournamentStarted(uint8 tierId, uint8 instanceId) internal override {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-        for (uint256 i = 0; i < players.length; i++) {
-            address p = players[i];
-            _removeEnrolling(p, tierId, instanceId);
-            _addActive(p, tierId, instanceId);
+    // Note: _onTournamentStarted(), _onPlayerEliminatedFromTournament(), _onExternalPlayerReplacement(),
+    //       and _onTournamentCompleted() use default implementations from ETour_Storage
+
+    /**
+     * @dev Hook called BEFORE tournament reset to archive elite matches
+     * Override from ETour_Storage for ChessOnChain-specific archival logic
+     */
+    function _onTournamentCompletedBeforeReset(uint8 tierId, uint8 instanceId) internal override {
+        // Archive elite tournament finals (Tier 3 or Tier 7)
+        if (tierId == 3 || tierId == 7) {
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, tournament.currentRound, 0);
+            eliteMatches.push(matches[finalsMatchId]);
         }
     }
 
-    function _onPlayerEliminatedFromTournament(address player, uint8 tierId, uint8 instanceId, uint8) internal override {
-        _removeActive(player, tierId, instanceId);
+    // ============ Game-Specific Overrides ============
+
+    /**
+     * @dev Emit MatchCompleted event with Chess board data
+     * Implements abstract function from ETour_Storage
+     */
+    function _emitMatchCompletedEvent(
+        bytes32 matchId,
+        address winner,
+        bool isDraw,
+        CompletionReason reason
+    ) internal override {
+        Match storage m = matches[matchId];
+        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
 
-    function _onExternalPlayerReplacement(uint8 tierId, uint8 instanceId, address player) internal override {
-        _addActive(player, tierId, instanceId);
-    }
 
-    function _onTournamentCompleted(uint8 tierId, uint8 instanceId, address[] memory players) internal override {
-        for (uint256 i = 0; i < players.length; i++) {
-            _removeEnrolling(players[i], tierId, instanceId);
-            _removeActive(players[i], tierId, instanceId);
-        }
-    }
-
-    function _removeEnrolling(address p, uint8 t, uint8 i) private {
-        uint256 idx = playerEnrollingIndex[p][t][i];
-        if (idx == 0) return;
-        uint256 last = playerEnrollingTournaments[p].length - 1;
-        if (idx - 1 != last) {
-            TournamentRef memory r = playerEnrollingTournaments[p][last];
-            playerEnrollingTournaments[p][idx - 1] = r;
-            playerEnrollingIndex[p][r.tierId][r.instanceId] = idx;
-        }
-        playerEnrollingTournaments[p].pop();
-        delete playerEnrollingIndex[p][t][i];
-    }
-
-    function _addActive(address p, uint8 t, uint8 i) private {
-        if (playerActiveIndex[p][t][i] != 0) return;
-        playerActiveTournaments[p].push(TournamentRef(t, i));
-        playerActiveIndex[p][t][i] = playerActiveTournaments[p].length;
-    }
-
-    function _removeActive(address p, uint8 t, uint8 i) private {
-        uint256 idx = playerActiveIndex[p][t][i];
-        if (idx == 0) return;
-        uint256 last = playerActiveTournaments[p].length - 1;
-        if (idx - 1 != last) {
-            TournamentRef memory r = playerActiveTournaments[p][last];
-            playerActiveTournaments[p][idx - 1] = r;
-            playerActiveIndex[p][r.tierId][r.instanceId] = idx;
-        }
-        playerActiveTournaments[p].pop();
-        delete playerActiveIndex[p][t][i];
-    }
+    // Note: Player tracking functions (_addPlayerEnrollingTournament, _removePlayerEnrollingTournament,
+    //       _addPlayerActiveTournament, _removePlayerActiveTournament) are now inherited from ETour_Storage
 }
