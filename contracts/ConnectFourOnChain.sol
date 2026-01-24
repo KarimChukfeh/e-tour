@@ -486,6 +486,9 @@ contract ConnectFourOnChain is ETour_Storage {
         matchData.player2TimeRemaining = config.timeouts.matchTimePerPlayer;
 
         matchData.packedBoard = 0;
+
+        // Initialize move history
+        matchData.moves = "";
     }
 
 
@@ -643,6 +646,9 @@ contract ConnectFourOnChain is ETour_Storage {
 
         uint8 cellIndex = _getCellIndex(targetRow, column);
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, piece);
+
+        // Store move in history as compact bytes: each move is 1 byte (column)
+        matchData.moves = string(abi.encodePacked(matchData.moves, column));
 
         // Clear any escalation state since a move was made (match is no longer stalled)
         (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(

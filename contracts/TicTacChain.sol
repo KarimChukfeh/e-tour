@@ -438,6 +438,9 @@ contract TicTacChain is ETour_Storage {
 
         // Clear board
         matchData.packedBoard = 0;
+
+        // Initialize move history
+        matchData.moves = "";
     }
 
     /**
@@ -605,6 +608,9 @@ contract TicTacChain is ETour_Storage {
         // Make move: Set cell to player's symbol (1 or 2)
         uint8 symbol = (msg.sender == matchData.player1) ? 1 : 2;
         matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, symbol);
+
+        // Store move in history as compact bytes: each move is 1 byte (cellIndex)
+        matchData.moves = string(abi.encodePacked(matchData.moves, cellIndex));
 
         // Clear any escalation state since a move was made (match is no longer stalled) - inlined
         MatchTimeoutState storage timeout = matchTimeouts[matchId];

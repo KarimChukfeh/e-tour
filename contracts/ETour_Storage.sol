@@ -153,7 +153,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint256 lastMoveTime;         // Timestamp of the last move
         uint256 player1TimeRemaining; // Time bank for player1
         uint256 player2TimeRemaining; // Time bank for player2
-        string moves;                 // Move history (Chess: algebraic notation, TicTacToe/ConnectFour: future use)
+        string moves;                 // Move history (encoded representation of all moves for match replay)
     }
 
     /**
@@ -201,6 +201,41 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
         // Data Source Indicator
         bool isCached;          // true = from cache, false = from active storage
+    }
+
+    /**
+     * @dev Complete record of a finished match
+     * Stores all essential data for a completed match including move history
+     * Added to both players' match history arrays when match completes
+     */
+    struct MatchRecord {
+        // Tournament context
+        uint8 tierId;
+        uint8 instanceId;
+        uint8 roundNumber;
+        uint8 matchNumber;
+
+        // Player info
+        address player1;
+        address player2;
+        address winner;
+        address firstPlayer;
+
+        // Match state (at completion)
+        MatchStatus status;         // Should always be Completed
+        bool isDraw;
+        uint256 packedBoard;        // Final board state
+        uint256 packedState;        // Final game state (Chess: castling, en passant, etc.)
+
+        // Timing
+        uint256 startTime;
+        uint256 endTime;            // When match completed
+
+        // Completion details
+        CompletionReason completionReason;
+
+        // Move history (encoded representation of all MoveMade events)
+        string moves;
     }
 
     /**
@@ -255,6 +290,11 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // Match data shared across all games
     mapping(bytes32 => Match) public matches;
+
+    // Player match history - complete records of all finished matches
+    // Internal to avoid stack depth issues with auto-generated getter
+    // Access via events or client-side indexing
+    mapping(address => MatchRecord[]) internal playerMatches;
 
     // ============ Events ============
 
@@ -336,6 +376,37 @@ abstract contract ETour_Storage is ReentrancyGuard {
     }
 
     /**
+     * @dev Helper to populate match record fields
+     * Minimal stack usage version
+     */
+    function _populateMatchRecord(
+        MatchRecord storage r,
+        Match storage m,
+        uint8 t,
+        uint8 i,
+        uint8 rn,
+        uint8 mn,
+        CompletionReason cr
+    ) private {
+        r.tierId = t;
+        r.instanceId = i;
+        r.roundNumber = rn;
+        r.matchNumber = mn;
+        r.player1 = m.player1;
+        r.player2 = m.player2;
+        r.winner = m.winner;
+        r.firstPlayer = m.firstPlayer;
+        r.status = m.status;
+        r.isDraw = m.isDraw;
+        r.packedBoard = m.packedBoard;
+        r.packedState = m.packedState;
+        r.startTime = m.startTime;
+        r.endTime = block.timestamp;
+        r.completionReason = cr;
+        r.moves = m.moves;
+    }
+
+    /**
      * @dev Internal match completion handler
      * Extracted from all game contracts - coordinates match completion workflow
      * @param tierId Tournament tier ID
@@ -356,6 +427,13 @@ abstract contract ETour_Storage is ReentrancyGuard {
         CompletionReason reason
     ) internal {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
+
+        // Record match in both players' history inline to reduce stack depth
+        playerMatches[m.player1].push();
+        playerMatches[m.player2].push();
+        _populateMatchRecord(playerMatches[m.player1][playerMatches[m.player1].length - 1], m, tierId, instanceId, roundNumber, matchNumber, reason);
+        _populateMatchRecord(playerMatches[m.player2][playerMatches[m.player2].length - 1], m, tierId, instanceId, roundNumber, matchNumber, reason);
 
         // Mark match as complete in game-specific storage (calls internal game-specific function)
         _completeMatchGameSpecific(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
