@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IETourGame.sol";
 
 /**
- * @title ETour_Storage
- * @dev Abstract contract defining ALL storage layout for ETour protocol
+ * @title ETour_Base
+ * @dev Abstract base contract defining ALL storage layout and core functionality for ETour protocol
  *
  * CRITICAL: Storage layout must remain IDENTICAL to original ETour.sol
  * - Game contracts inherit this to define their storage
@@ -14,11 +14,11 @@ import "./interfaces/IETourGame.sol";
  * - NEVER reorder variables or add variables between existing ones
  *
  * Part of the modular ETour architecture where:
- * - This contract: Defines storage layout (no logic)
+ * - This contract: Defines storage layout and shared logic
  * - Module contracts: Pure logic (no storage)
  * - Game contracts: Own storage + delegate to modules
  */
-abstract contract ETour_Storage is ReentrancyGuard {
+abstract contract ETour_Base is ReentrancyGuard {
 
     // ============ Module Addresses (Immutable) ============
 
@@ -700,7 +700,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         address winner,
         bool isDraw
     ) internal virtual {
-        revert("ETour_Storage: _completeMatchGameSpecific must be implemented by game contract");
+        revert("ETour_Base: _completeMatchGameSpecific must be implemented by game contract");
     }
 
     /**
@@ -714,7 +714,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         bool isDraw,
         CompletionReason reason
     ) internal virtual {
-        revert("ETour_Storage: _emitMatchCompletedEvent must be implemented by game contract");
+        revert("ETour_Base: _emitMatchCompletedEvent must be implemented by game contract");
     }
 
     /**
@@ -951,7 +951,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if Level 2 escalation is available for a stalled match
      * Level 2 allows advanced players (those in later rounds) to claim the match
-     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
+     * Kept in ETour_Base to avoid stack depth issues with delegatecall
      */
     function isMatchEscL2Available(
         uint8 tierId,
@@ -1001,7 +1001,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if Level 3 escalation is available for a stalled match
      * Level 3 allows any external player to claim the match
-     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
+     * Kept in ETour_Base to avoid stack depth issues with delegatecall
      */
     function isMatchEscL3Available(
         uint8 tierId,
@@ -1090,7 +1090,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     /**
      * @dev Check if player has advanced past a given round
      * Used for ML2 escalation eligibility
-     * Kept in ETour_Storage to avoid stack depth issues with delegatecall
+     * Kept in ETour_Base to avoid stack depth issues with delegatecall
      */
     function isPlayerInAdvancedRound(
         uint8 tierId,
