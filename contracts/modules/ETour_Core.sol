@@ -36,14 +36,11 @@ contract ETour_Core is ETour_Storage {
     function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
     function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
     function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _getMatchPlayers(bytes32) public view override returns (address, address) { revert("Module: Use IETourGame"); }
-    function _setMatchPlayer(bytes32, uint8, address) public override { revert("Module: Use IETourGame"); }
     function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
     function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Use IETourGame"); }
     function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Use IETourGame"); }
 
     // ============ Tier Configuration ============
 
@@ -101,8 +98,9 @@ contract ETour_Core is ETour_Storage {
     /**
      * @dev Enroll in tournament with entry fee
      * EXACT COPY from ETour.sol lines 562-611
+     * Module implementation - called via delegatecall from game contracts
      */
-    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable {
+    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable override {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -152,8 +150,9 @@ contract ETour_Core is ETour_Storage {
     /**
      * @dev Force start tournament if enrollment window expired
      * EXACT COPY from ETour.sol lines 613-631
+     * Module implementation - called via delegatecall from game contracts
      */
-    function forceStartTournament(uint8 tierId, uint8 instanceId) external {
+    function forceStartTournament(uint8 tierId, uint8 instanceId) external override {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");

@@ -114,7 +114,7 @@ contract ConnectFourOnChain is ETour_Storage {
      * @dev Initialize round and create matches
      * Called when tournament starts or when advancing to next round
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -178,51 +178,7 @@ contract ConnectFourOnChain is ETour_Storage {
     /**
      * @dev Enroll in tournament - delegates to Core module
      */
-    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "E");
-
-        _onPlayerEnrolled(tierId, instanceId, msg.sender);
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-    }
-
-    
-    function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "FS");
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
-            address winner = tournament.winner;
-            address[] memory singlePlayer = new address[](1);
-            singlePlayer[0] = winner;
-
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            _onTournamentCompleted(tierId, instanceId, singlePlayer);
-        }
-    }
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
 
 
     function executeProtocolRaffle() external nonReentrant {
@@ -598,13 +554,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
-    
-    function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
-        Match storage matchData = matches[matchId];
-        return (matchData.player1, matchData.player2);
-    }
-
-    // Note: _setMatchPlayer() is now inherited from ETour_Storage
+    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
 
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage matchData = matches[matchId];
@@ -656,39 +606,7 @@ contract ConnectFourOnChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    
-    function _getActiveMatchData(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view override returns (CommonMatchData memory) {
-        Match storage matchData = matches[matchId];
-
-        address loser = address(0);
-        if (!matchData.isDraw && matchData.winner != address(0)) {
-            loser = (matchData.winner == matchData.player1)
-                ? matchData.player2
-                : matchData.player1;
-        }
-
-        return CommonMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            winner: matchData.winner,
-            loser: loser,
-            status: matchData.status,
-            isDraw: matchData.isDraw,
-            startTime: matchData.startTime,
-            lastMoveTime: matchData.lastMoveTime,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isCached: false
-        });
-    }
+    // Note: _getActiveMatchData() is now inherited from ETour_Storage
 
     // ============ Game Logic (Connect Four Specific) ============
 

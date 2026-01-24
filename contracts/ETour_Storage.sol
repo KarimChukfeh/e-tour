@@ -594,8 +594,12 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * @dev Get match players from game-specific storage
      * Called by modules to retrieve player addresses
      * PUBLIC for delegatecall access (view functions don't need onlyInternal)
+     * Default implementation uses shared Match struct - override only if needed
      */
-    function _getMatchPlayers(bytes32 matchId) public view virtual returns (address player1, address player2);
+    function _getMatchPlayers(bytes32 matchId) public view virtual returns (address player1, address player2) {
+        Match storage matchData = matches[matchId];
+        return (matchData.player1, matchData.player2);
+    }
 
     /**
      * @dev Set player in match slot
@@ -656,6 +660,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * @dev Get active match data
      * Called by modules to retrieve match information
      * PUBLIC for delegatecall access (view functions don't need onlyInternal)
+     * Default implementation uses shared Match struct - override only if needed
      */
     function _getActiveMatchData(
         bytes32 matchId,
@@ -663,7 +668,32 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view virtual returns (CommonMatchData memory);
+    ) public view virtual returns (CommonMatchData memory) {
+        Match storage matchData = matches[matchId];
+
+        address loser = address(0);
+        if (!matchData.isDraw && matchData.winner != address(0)) {
+            loser = (matchData.winner == matchData.player1)
+                ? matchData.player2
+                : matchData.player1;
+        }
+
+        return CommonMatchData({
+            player1: matchData.player1,
+            player2: matchData.player2,
+            winner: matchData.winner,
+            loser: loser,
+            status: matchData.status,
+            isDraw: matchData.isDraw,
+            startTime: matchData.startTime,
+            lastMoveTime: matchData.lastMoveTime,
+            tierId: tierId,
+            instanceId: instanceId,
+            roundNumber: roundNumber,
+            matchNumber: matchNumber,
+            isCached: false
+        });
+    }
 
     // ============ Hooks (Optional overrides by Game Contracts) ============
 
@@ -771,6 +801,70 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 tierId,
         uint8 instanceId
     ) internal virtual {}
+
+    // ============ Public Tournament Functions (Shared Across All Games) ============
+
+    /**
+     * @dev Enroll in tournament - delegates to Core module and handles hooks
+     * Shared implementation for all games - override only if custom logic needed
+     * IMPORTANT: Game contracts must mark this as payable and nonReentrant
+     */
+    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable virtual {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TournamentStatus oldStatus = tournament.status;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "E");
+
+        _onPlayerEnrolled(tierId, instanceId, msg.sender);
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
+            initializeRound(tierId, instanceId, 0);
+        }
+    }
+
+    /**
+     * @dev Force start tournament - delegates to Core module and handles hooks
+     * Shared implementation for all games - override only if custom logic needed
+     * IMPORTANT: Game contracts must mark this as nonReentrant
+     */
+    function forceStartTournament(uint8 tierId, uint8 instanceId) external virtual {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TournamentStatus oldStatus = tournament.status;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "FS");
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+            _onTournamentStarted(tierId, instanceId);
+            initializeRound(tierId, instanceId, 0);
+        }
+
+        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
+            address winner = tournament.winner;
+            address[] memory singlePlayer = new address[](1);
+            singlePlayer[0] = winner;
+
+            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            );
+            require(resetSuccess, "RT");
+
+            _onTournamentCompleted(tierId, instanceId, singlePlayer);
+        }
+    }
+
+    /**
+     * @dev Initialize round - must be implemented by game contract
+     * Called after tournament starts or when round completes
+     * PUBLIC for delegatecall access and for hooks
+     */
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public virtual;
 
     // ============ Public View Functions (Shared Across All Games) ============
 

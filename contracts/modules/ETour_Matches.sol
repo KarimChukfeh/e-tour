@@ -53,8 +53,9 @@ contract ETour_Matches is ETour_Storage {
     /**
      * @dev Initialize a new round with matches
      * EXACT COPY from ETour.sol lines 869-911
+     * Module implementation - called via delegatecall from game contracts
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];

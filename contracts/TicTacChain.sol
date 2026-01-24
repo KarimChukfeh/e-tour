@@ -107,7 +107,7 @@ contract TicTacChain is ETour_Storage {
      * @dev Initialize round and create matches
      * Called when tournament starts or when advancing to next round
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -172,74 +172,7 @@ contract TicTacChain is ETour_Storage {
 
     // ============ Public ETour Function Wrappers (Delegatecall to Modules) ============
 
-    /**
-     * @dev Enroll in tournament - delegates to Core module
-     */
-    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        // MODULE_CORE handles enrollment logic via delegatecall
-        // Note: MODULE_CORE calls _onPlayerEnrolled/_onTournamentStarted internally,
-        // but those are empty stubs in the module's bytecode.
-        // We must call the real hooks here after the delegatecall.
-        (bool success, bytes memory returnData) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
-        );
-        if (!success) {
-            if (returnData.length > 0) {
-                assembly {
-                    revert(add(32, returnData), mload(returnData))
-                }
-            } else {
-                revert("Enrollment delegatecall failed");
-            }
-        }
-
-        // Call player enrolled hook (always call, module checks if already enrolled)
-        _onPlayerEnrolled(tierId, instanceId, msg.sender);
-
-        // If tournament auto-started, call hooks and initialize round
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-    }
-
-    /**
-     * @dev Force start tournament - delegates to Core module
-     */
-    function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "FS");
-
-        // If tournament started with multiple players
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-
-        // If single-player tournament completed immediately
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
-            address winner = tournament.winner;
-            address[] memory singlePlayer = new address[](1);
-            singlePlayer[0] = winner;
-
-            // Reset tournament (modules can't do nested delegatecalls)
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            // Call completion hook
-            _onTournamentCompleted(tierId, instanceId, singlePlayer);
-        }
-    }
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
 
     /**
      * @dev Execute protocol raffle - delegates to Raffle module
@@ -586,13 +519,7 @@ contract TicTacChain is ETour_Storage {
         return (matchData.winner, matchData.isDraw, matchData.status);
     }
 
-    /**
-     * @dev Get match players - wrapper for modules
-     */
-    function _getMatchPlayers(bytes32 matchId) public view override returns (address player1, address player2) {
-        Match storage matchData = matches[matchId];
-        return (matchData.player1, matchData.player2);
-    }
+    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
 
     /**
      * @dev Initialize match for play - wrapper for modules
@@ -656,39 +583,7 @@ contract TicTacChain is ETour_Storage {
         return elapsed >= currentPlayerTime;
     }
 
-    function _getActiveMatchData(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public view override returns (CommonMatchData memory) {
-        Match storage matchData = matches[matchId];
-
-        // Derive loser
-        address loser = address(0);
-        if (!matchData.isDraw && matchData.winner != address(0)) {
-            loser = (matchData.winner == matchData.player1)
-                ? matchData.player2
-                : matchData.player1;
-        }
-
-        return CommonMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            winner: matchData.winner,
-            loser: loser,
-            status: matchData.status,
-            isDraw: matchData.isDraw,
-            startTime: matchData.startTime,
-            lastMoveTime: matchData.lastMoveTime,
-            tierId: tierId,
-            instanceId: instanceId,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isCached: false
-        });
-    }
+    // Note: _getActiveMatchData() is now inherited from ETour_Storage
 
     // ============ Game Logic (Tic-Tac-Toe Specific) ============
 

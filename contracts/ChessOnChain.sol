@@ -104,7 +104,7 @@ contract ChessOnChain is ETour_Storage {
 
     // ============ Initialization ============
 
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId);
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
@@ -178,50 +178,7 @@ contract ChessOnChain is ETour_Storage {
 
     // ============ Public ETour Function Wrappers ============
 
-    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "E");
-
-        _onPlayerEnrolled(tierId, instanceId, msg.sender);
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-    }
-
-    function forceStartTournament(uint8 tierId, uint8 instanceId) external nonReentrant {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
-
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
-        );
-        require(success, "FS");
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
-            _onTournamentStarted(tierId, instanceId);
-            initializeRound(tierId, instanceId, 0);
-        }
-
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
-            address winner = tournament.winner;
-            address[] memory singlePlayer = new address[](1);
-            singlePlayer[0] = winner;
-
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            _onTournamentCompleted(tierId, instanceId, singlePlayer);
-        }
-    }
+    // Note: enrollInTournament() and forceStartTournament() are now inherited from ETour_Storage
 
     function executeProtocolRaffle() external nonReentrant {
         (bool success, ) = MODULE_RAFFLE.delegatecall(
@@ -481,12 +438,7 @@ contract ChessOnChain is ETour_Storage {
         return (m.winner, m.isDraw, m.status);
     }
 
-    function _getMatchPlayers(bytes32 matchId) public view override returns (address, address) {
-        Match storage m = matches[matchId];
-        return (m.player1, m.player2);
-    }
-
-    // Note: _setMatchPlayer() is now inherited from ETour_Storage
+    // Note: _getMatchPlayers() and _setMatchPlayer() are now inherited from ETour_Storage
 
     function _initializeMatchForPlay(bytes32 matchId, uint8 tierId) public override {
         Match storage m = matches[matchId];
@@ -528,11 +480,7 @@ contract ChessOnChain is ETour_Storage {
         return elapsed >= time;
     }
 
-    function _getActiveMatchData(bytes32 matchId, uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) public view override returns (CommonMatchData memory) {
-        Match storage m = matches[matchId];
-        address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
-        return CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false);
-    }
+    // Note: _getActiveMatchData() is now inherited from ETour_Storage
 
     // ============ View Functions ============
 
@@ -558,20 +506,6 @@ contract ChessOnChain is ETour_Storage {
         uint256 packed = matches[matchId].packedBoard;
         for (uint8 i = 0; i < 64; i++) board[i] = _getPiece(packed, i);
     }
-
-    // Note: getPlayerStats(), getPlayerEnrollingTournaments(), getPlayerActiveTournaments(),
-    //       getTournamentInfo(), getRoundInfo(), getLeaderboard(), getRaffleInfo()
-    //       are all inherited from ETour_Storage
-
-    function getEliteMatch(uint256 index) external view returns (address, address, address, address, address, MatchStatus, bool, uint256, uint256, uint256, uint256, uint256, uint256, bytes memory) {
-        Match storage m = eliteMatches[index];
-        return (m.player1, m.player2, m.winner, m.currentTurn, m.firstPlayer, m.status, m.isDraw, m.packedBoard, m.packedState, m.startTime, m.lastMoveTime, m.player1TimeRemaining, m.player2TimeRemaining, bytes(m.moves));
-    }
-
-    // Note: _onPlayerEnrolled() uses default implementation from ETour_Storage
-
-    // Note: _onTournamentStarted(), _onPlayerEliminatedFromTournament(), _onExternalPlayerReplacement(),
-    //       and _onTournamentCompleted() use default implementations from ETour_Storage
 
     /**
      * @dev Hook called BEFORE tournament reset to archive elite matches

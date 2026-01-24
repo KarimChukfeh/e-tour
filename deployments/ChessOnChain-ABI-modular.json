@@ -1,16 +1,16 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0xc582Bc0317dbb0908203541971a358c44b1F3766",
+  "address": "0x67aD6EA566BA6B0fC52e97Bc25CE46120fdAc04c",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T06:15:39.310Z",
+  "deployedAt": "2026-01-24T07:33:17.571Z",
   "modules": {
-    "core": "0x96F3Ce39Ad2BfDCf92C0F6E2C2CAbF83874660Fc",
-    "matches": "0x986aaa537b8cc170761FDAC6aC4fc7F9d8a20A8C",
-    "prizes": "0xde2Bd2ffEA002b8E84ADeA96e5976aF664115E2c",
-    "raffle": "0xefc1aB2475ACb7E60499Efb171D173be19928a05",
-    "escalation": "0x870526b7973b56163a6997bB7C886F5E4EA53638",
-    "chessRules": "0xe1Fd27F4390DcBE165f4D60DBF821e4B9Bb02dEd"
+    "core": "0x359570B3a0437805D0a71457D61AD26a28cAC9A2",
+    "matches": "0xc9952Fc93Fa9bE383ccB39008c786b9f94eAc95d",
+    "prizes": "0xDde063eBe8E85D666AD99f731B4Dbf8C98F29708",
+    "raffle": "0xD5724171C2b7f0AA717a324626050BD05767e2C6",
+    "escalation": "0x70eE76691Bdd9696552AF8d4fd634b3cF79DD529",
+    "chessRules": "0x162700d1613DfEC978032A909DE02643bC55df1A"
   },
   "abi": [
     {
@@ -579,12 +579,12 @@
       "outputs": [
         {
           "internalType": "address",
-          "name": "",
+          "name": "player1",
           "type": "address"
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "player2",
           "type": "address"
         }
       ],
@@ -1101,90 +1101,6 @@
           "internalType": "uint8[64]",
           "name": "board",
           "type": "uint8[64]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "index",
-          "type": "uint256"
-        }
-      ],
-      "name": "getEliteMatch",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "enum ETour_Storage.MatchStatus",
-          "name": "",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "",
-          "type": "bytes"
         }
       ],
       "stateMutability": "view",
