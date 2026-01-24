@@ -690,6 +690,84 @@ contract ConnectFourOnChain is ETour_Storage {
         });
     }
 
+    // ============ Game Logic (Connect Four Specific) ============
+
+    /**
+     * @dev Make a move on the Connect Four board
+     * Handles gravity (piece drops to lowest available row), time bank updates with Fischer increment
+     */
+    function makeMove(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 column
+    ) external nonReentrant {
+        require(column < COLS, "IC");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender == matchData.currentTurn, "NT");
+
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        if (matchData.currentTurn == matchData.player1) {
+            matchData.player1TimeRemaining = (matchData.player1TimeRemaining > elapsed)
+                ? matchData.player1TimeRemaining - elapsed
+                : 0;
+            matchData.player1TimeRemaining += _getTimeIncrement();
+        } else {
+            matchData.player2TimeRemaining = (matchData.player2TimeRemaining > elapsed)
+                ? matchData.player2TimeRemaining - elapsed
+                : 0;
+            matchData.player2TimeRemaining += _getTimeIncrement();
+        }
+        matchData.lastMoveTime = block.timestamp;
+
+        uint8 targetRow = ROWS;
+        for (uint8 row = ROWS; row > 0; row--) {
+            uint8 checkCell = _getCellIndex(row - 1, column);
+            if (_getCell(matchData.packedBoard, checkCell) == 0) {
+                targetRow = row - 1;
+                break;
+            }
+        }
+
+        require(targetRow < ROWS, "CF");
+
+        uint8 piece = (msg.sender == matchData.player1) ? 1 : 2;
+
+        uint8 cellIndex = _getCellIndex(targetRow, column);
+        matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, piece);
+
+        // Clear any escalation state since a move was made (match is no longer stalled)
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
+        );
+        require(clearSuccess, "CE");
+
+        emit MoveMade(matchId, msg.sender, column, targetRow);
+
+        // Check for win
+        if (_checkWin(matchData.packedBoard, piece, targetRow, column)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+            return;
+        }
+
+        // Check for draw (board full)
+        if (_isBoardFull(matchData.packedBoard)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            return;
+        }
+
+        // Switch turn
+        matchData.currentTurn = (matchData.currentTurn == matchData.player1)
+            ? matchData.player2
+            : matchData.player1;
+    }
+
     // ============ View Functions ============
 
     /**

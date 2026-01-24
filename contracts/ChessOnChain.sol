@@ -353,6 +353,70 @@ contract ChessOnChain is ETour_Storage {
     //       claimTimeoutWin() are all inherited from ETour_Storage
 
 
+    // ============ Chess Gameplay ============
+
+    function makeMove(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, uint8 from, uint8 to, uint8 promotion) external nonReentrant {
+        require(from < 64 && to < 64 && from != to, "IS");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage m = matches[matchId];
+
+        require(m.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == m.player1 || msg.sender == m.player2, "NP");
+        require(msg.sender == m.currentTurn, "NT");
+
+        bool isWhite = (msg.sender == m.player1);
+        uint8 piece = _getPiece(m.packedBoard, from);
+        require(isWhite ? _isWhitePiece(piece) : _isBlackPiece(piece), "NYP");
+
+        // Single call to module for validation, execution, and game-end detection
+        (bool valid, uint256 newBoard, uint256 newState, uint8 gameEnd) = CHESS_RULES.processMove(m.packedBoard, m.packedState, from, to, promotion, isWhite);
+        require(valid, "IM");
+
+        // Update time bank
+        uint256 elapsed = block.timestamp - m.lastMoveTime;
+        if (isWhite) {
+            m.player1TimeRemaining = m.player1TimeRemaining > elapsed ? m.player1TimeRemaining - elapsed + 15 : 15;
+        } else {
+            m.player2TimeRemaining = m.player2TimeRemaining > elapsed ? m.player2TimeRemaining - elapsed + 15 : 15;
+        }
+        m.lastMoveTime = block.timestamp;
+        m.packedBoard = newBoard;
+        m.packedState = newState;
+
+        // Store move in history as compact bytes: each move is 2 bytes (from, to)
+        m.moves = string(abi.encodePacked(m.moves, from, to));
+
+        // Track position for threefold repetition (position after move, opponent's turn)
+        bytes32 positionHash = _computePositionHash(newBoard, newState, !isWhite, _gameNonce[matchId]);
+        uint8 positionCount = ++_positionCounts[matchId][positionHash];
+
+        // Clear any escalation state since a move was made (match is no longer stalled) - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+
+        emit MoveMade(matchId, msg.sender, from, to);
+
+        if (gameEnd == 1) { // checkmate
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+        } else if (gameEnd == 2) { // stalemate
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (gameEnd == 3) { // fifty-move rule
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (gameEnd == 4) { // insufficient material
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else if (positionCount >= 3) { // threefold repetition
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+        } else {
+            m.currentTurn = isWhite ? m.player2 : m.player1;
+        }
+    }
+
+
+
     // ============ IETourGame Interface ============
 
     function _createMatchGame(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {

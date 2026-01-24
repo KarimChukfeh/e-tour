@@ -707,6 +707,75 @@ contract TicTacChain is ETour_Storage {
         });
     }
 
+    // ============ Game Logic (Tic-Tac-Toe Specific) ============
+
+    /**
+     * @dev Make a move on the Tic-Tac-Toe board
+     * Handles time bank updates with Fischer increment
+     */
+    function makeMove(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 cellIndex
+    ) external nonReentrant {
+        require(cellIndex < 9, "IC");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender == matchData.currentTurn, "NT");
+        require(_getCell(matchData.packedBoard, cellIndex) == 0, "CO");
+
+        // Update time bank for current player
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        if (matchData.currentTurn == matchData.player1) {
+            matchData.player1TimeRemaining = (matchData.player1TimeRemaining > elapsed)
+                ? matchData.player1TimeRemaining - elapsed
+                : 0;
+            matchData.player1TimeRemaining += _getTimeIncrement();
+        } else {
+            matchData.player2TimeRemaining = (matchData.player2TimeRemaining > elapsed)
+                ? matchData.player2TimeRemaining - elapsed
+                : 0;
+            matchData.player2TimeRemaining += _getTimeIncrement();
+        }
+        matchData.lastMoveTime = block.timestamp;
+
+        // Make move: Set cell to player's symbol (1 or 2)
+        uint8 symbol = (msg.sender == matchData.player1) ? 1 : 2;
+        matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, symbol);
+
+        // Clear any escalation state since a move was made (match is no longer stalled) - inlined
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+        timeout.isStalled = false;
+        timeout.escalation1Start = 0;
+        timeout.escalation2Start = 0;
+        timeout.activeEscalation = EscalationLevel.None;
+
+        emit MoveMade(matchId, msg.sender, cellIndex);
+
+        // Check for win
+        if (_checkWin(matchData.packedBoard, symbol)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+            return;
+        }
+
+        // Check for draw
+        if (_checkDraw(matchData.packedBoard)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            return;
+        }
+
+        // Switch turn
+        matchData.currentTurn = (matchData.currentTurn == matchData.player1)
+            ? matchData.player2
+            : matchData.player1;
+    }
+
     // ============ View Functions ============
 
     /**
