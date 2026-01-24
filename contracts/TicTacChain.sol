@@ -524,6 +524,12 @@ contract TicTacChain is ETour_Storage {
         matchData.packedBoard = 0;
     }
 
+    /**
+     * @dev Check if match is active (exists and not completed)
+     */
+    // Note: _isMatchActive() uses default implementation from ETour_Storage
+
+    /**
      * @dev Mark match as complete in TicTacToe Match storage
      * Implements hook from ETour_Storage
      */
@@ -817,4 +823,4 @@ contract TicTacChain is ETour_Storage {
         Match storage m = matches[matchId];
         emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
-
+}
