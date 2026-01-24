@@ -134,12 +134,43 @@ abstract contract ETour_Storage is ReentrancyGuard {
     }
 
     /**
+     * @dev Standardized match structure shared across all games
+     * All games use this same structure for consistency
+     * Game-specific fields (packedState, moves) may be unused in some games
+     */
+    struct Match {
+        address player1;              // First player (White in Chess, X in TicTacToe, Red in ConnectFour)
+        address player2;              // Second player (Black in Chess, O in TicTacToe, Yellow in ConnectFour)
+        address winner;               // Winner address (address(0) if not determined)
+        address currentTurn;          // Whose turn it is
+        address firstPlayer;          // Who made the first move
+        MatchStatus status;           // Current match status
+        bool isDraw;                  // Whether match ended in a draw
+        uint256 packedBoard;          // Packed board representation (game-specific encoding)
+        uint256 packedState;          // Additional packed state (Chess-specific: castling rights, en passant, etc.)
+        uint256 startTime;            // When the match started
+        uint256 lastMoveTime;         // Timestamp of the last move
+        uint256 player1TimeRemaining; // Time bank for player1
+        uint256 player2TimeRemaining; // Time bank for player2
+        string moves;                 // Move history (Chess: algebraic notation, TicTacToe/ConnectFour: future use)
+    }
+
+    /**
      * @dev Minimal tournament reference for player tracking
      * Gas-optimized: 2 bytes total (tierId + instanceId)
      */
     struct TournamentRef {
         uint8 tierId;
         uint8 instanceId;
+    }
+
+    /**
+     * @dev Leaderboard entry for player earnings display
+     * Used by getLeaderboard() view function
+     */
+    struct LeaderboardEntry {
+        address player;
+        int256 earnings;
     }
 
     /**
@@ -223,6 +254,9 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     // Match-level timeout tracking for anti-stalling escalation
     mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
+
+    // Match data shared across all games
+    mapping(bytes32 => Match) public matches;
 
     // ============ Player Tracking Module Storage ============
 
@@ -568,8 +602,17 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * @dev Set player in match slot
      * Called by Escalation module when replacing players
      * PUBLIC for module delegatecall access
+     * Shared implementation for all games
      */
-    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual;
+    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual {
+        Match storage matchData = matches[matchId];
+
+        if (slot == 0) {
+            matchData.player1 = player;
+        } else {
+            matchData.player2 = player;
+        }
+    }
 
     /**
      * @dev Initialize match for play
@@ -627,9 +670,12 @@ abstract contract ETour_Storage is ReentrancyGuard {
 
     /**
      * @dev Hook called when player enrolls in tournament
-     * Override in game contracts to track player activity
+     * Default implementation tracks player in enrolling tournaments
+     * Override only if game needs custom logic
      */
-    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal virtual {}
+    function _onPlayerEnrolled(uint8 tierId, uint8 instanceId, address player) internal virtual {
+        _addPlayerEnrollingTournament(player, tierId, instanceId);
+    }
 
     /**
      * @dev Hook called when tournament transitions from Enrolling to InProgress
@@ -726,5 +772,260 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 tierId,
         uint8 instanceId
     ) internal virtual {}
+
+    // ============ Public View Functions (Shared Across All Games) ============
+
+    /**
+     * @dev Get tournament information
+     * Shared implementation for all games
+     */
+    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
+        TournamentStatus status,
+        uint8 currentRound,
+        uint8 enrolledCount,
+        uint256 prizePool,
+        address winner
+    ) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        return (
+            tournament.status,
+            tournament.currentRound,
+            tournament.enrolledCount,
+            tournament.prizePool,
+            tournament.winner
+        );
+    }
+
+    /**
+     * @dev Get round information
+     * Shared implementation for all games
+     */
+    function getRoundInfo(uint8 tierId, uint8 instanceId, uint8 roundNumber) external view returns (
+        uint8 totalMatches,
+        uint8 completedMatches,
+        bool initialized
+    ) {
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        return (
+            round.totalMatches,
+            round.completedMatches,
+            round.initialized
+        );
+    }
+
+    /**
+     * @dev Get leaderboard entries
+     * Shared implementation for all games
+     */
+    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
+        LeaderboardEntry[] memory entries = new LeaderboardEntry[](_leaderboardPlayers.length);
+        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
+            entries[i] = LeaderboardEntry({
+                player: _leaderboardPlayers[i],
+                earnings: playerEarnings[_leaderboardPlayers[i]]
+            });
+        }
+        return entries;
+    }
+
+    /**
+     * @dev Get raffle information
+     * Shared implementation for all games
+     */
+    function getRaffleInfo() external view returns (
+        uint256 raffleIndex,
+        bool isReady,
+        uint256 currentAccumulated,
+        uint256 threshold,
+        uint256 reserve,
+        uint256 raffleAmount,
+        uint256 ownerShare,
+        uint256 winnerShare,
+        uint256 eligiblePlayerCount
+    ) {
+        raffleIndex = currentRaffleIndex;
+        currentAccumulated = accumulatedProtocolShare;
+
+        // Calculate threshold using inherited helper
+        threshold = _getRaffleThreshold();
+
+        // Calculate raffle amounts (5% reserve from threshold)
+        reserve = (threshold * 5) / 100;
+        isReady = currentAccumulated >= threshold;
+        raffleAmount = threshold - reserve;
+
+        // 5% to owner, 90% to winner (95% total)
+        ownerShare = (raffleAmount * 5) / 95;
+        winnerShare = (raffleAmount * 90) / 95;
+
+        // Get eligible player count from raffle module
+        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
+            abi.encodeWithSignature("getEligiblePlayerCount()")
+        );
+        eligiblePlayerCount = success ? abi.decode(data, (uint256)) : 0;
+    }
+
+    /**
+     * @dev Get player earnings (stats)
+     * Shared implementation for all games
+     */
+    function getPlayerStats() external view returns (int256 totalEarnings) {
+        return playerEarnings[msg.sender];
+    }
+
+    /**
+     * @dev Get tournaments where player is enrolled but not yet started
+     * Shared implementation for all games
+     */
+    function getPlayerEnrollingTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerEnrollingTournaments[player];
+    }
+
+    /**
+     * @dev Get tournaments where player is actively competing
+     * Shared implementation for all games
+     */
+    function getPlayerActiveTournaments(address player) external view returns (TournamentRef[] memory) {
+        return playerActiveTournaments[player];
+    }
+
+    /**
+     * @dev Check if Level 2 escalation is available for a stalled match
+     * Level 2 allows advanced players (those in later rounds) to claim the match
+     * Shared implementation for all games
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation is available for a stalled match
+     * Level 3 allows any external player to claim the match
+     * Shared implementation for all games
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
+    }
+
+    /**
+     * @dev Claim timeout win against stalled opponent
+     * Non-active player can claim win if opponent's time has expired
+     * Shared implementation for all games
+     */
+    function claimTimeoutWin(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender != matchData.currentTurn, "OT");
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 opponentTimeRemaining = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        require(elapsed >= opponentTimeRemaining, "TO");
+
+        // Mark match as stalled (enables L2/L3 escalation later if needed)
+        (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature(
+                "markMatchStalled(bytes32,uint8,uint256)",
+                matchId, tierId, block.timestamp
+            )
+        );
+        require(markSuccess, "MS");
+
+        // Complete match with timeout winner
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
+    }
 
 }

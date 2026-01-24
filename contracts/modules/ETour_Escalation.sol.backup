@@ -542,8 +542,106 @@ contract ETour_Escalation is ETour_Storage {
     }
 
     // ============ Escalation Availability Helpers (Public View) ============
-    // Note: isMatchEscL2Available() and isMatchEscL3Available() are now inherited from ETour_Storage
 
+    /**
+     * @dev Check if Level 2 escalation (advanced player force eliminate) is available
+     * EXACT COPY from ETour.sol lines 2007-2044
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        IETourGame gameContract = IETourGame(address(this));
+
+        // Check if match is active
+        if (!gameContract._isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!gameContract._hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation (external player replacement) is available
+     * EXACT COPY from ETour.sol lines 2050-2087
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool available) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        IETourGame gameContract = IETourGame(address(this));
+
+        // Check if match is active
+        if (!gameContract._isMatchActive(matchId)) {
+            return false;
+        }
+
+        // Get match data
+        CommonMatchData memory matchData = gameContract._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
+        if (matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        if (!gameContract._hasCurrentPlayerTimedOut(matchId)) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
+    }
 
     // ============ Helper Functions for Escalation ============
 

@@ -447,25 +447,7 @@ contract ETour_Core is ETour_Storage {
         return _tierConfigs[tierId].playerCount;
     }
 
-    /**
-     * @dev Get comprehensive tournament information
-     */
-    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
-        TournamentStatus status,
-        uint8 currentRound,
-        uint8 enrolledCount,
-        uint256 prizePool,
-        address winner
-    ) {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        return (
-            tournament.status,
-            tournament.currentRound,
-            tournament.enrolledCount,
-            tournament.prizePool,
-            tournament.winner
-        );
-    }
+    // Note: getTournamentInfo() function is now inherited from ETour_Storage
 
     /**
      * @dev Get total player capacity across all tiers

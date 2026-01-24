@@ -348,29 +348,8 @@ contract ETour_Prizes is ETour_Storage {
 
     // ============ Leaderboard Getters ============
 
-    /**
-     * @dev Leaderboard entry struct
-     * EXACT COPY from ETour.sol lines 2422-2425
-     */
-    struct LeaderboardEntry {
-        address player;
-        int256 earnings;
-    }
-
-    /**
-     * @dev Get all leaderboard entries
-     * EXACT COPY from ETour.sol lines 2427-2436
-     */
-    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
-        LeaderboardEntry[] memory entries = new LeaderboardEntry[](_leaderboardPlayers.length);
-        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
-            entries[i] = LeaderboardEntry({
-                player: _leaderboardPlayers[i],
-                earnings: playerEarnings[_leaderboardPlayers[i]]
-            });
-        }
-        return entries;
-    }
+    // Note: LeaderboardEntry struct and getLeaderboard() function
+    // are now inherited from ETour_Storage
 
     /**
      * @dev Get count of players on leaderboard

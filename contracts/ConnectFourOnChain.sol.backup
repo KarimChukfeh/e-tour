@@ -98,16 +98,13 @@ contract ConnectFourOnChain is ETour_Storage {
 
         // Tier 0 (different timeout)
         timeouts.enrollmentWindow = 300;
-        (bool s0, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.001 ether, timeouts));
-        require(s0, "RT");
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 0, 2, 100, 0.001 ether, timeouts));
 
         // Tiers 1 & 2 share timeout
         timeouts.enrollmentWindow = 600;
-        (bool s1, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.002 ether, timeouts));
-        require(s1, "RT");
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 1, 4, 50, 0.002 ether, timeouts));
         timeouts.enrollmentWindow = 900;
-        (bool s2, ) = MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.004 ether, timeouts));
-        require(s2, "RT");
+        MODULE_CORE.delegatecall(abi.encodeWithSignature("registerTier(uint8,uint8,uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256))", 2, 8, 25, 0.004 ether, timeouts));
     }
 
     /**
@@ -310,13 +307,12 @@ contract ConnectFourOnChain is ETour_Storage {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (round.completedMatches == round.totalMatches) {
             // Consolidate next round if ML2 left odd number of winners
-            (bool success, ) = MODULE_MATCHES.delegatecall(
+            MODULE_MATCHES.delegatecall(
                 abi.encodeWithSignature(
                     "consolidateAndStartOddRound(uint8,uint8,uint8)",
                     tierId, instanceId, roundNumber
                 )
             );
-            require(success, "CO");
         }
 
         // Check if tournament completed and handle prize distribution/reset
@@ -356,13 +352,12 @@ contract ConnectFourOnChain is ETour_Storage {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (round.completedMatches == round.totalMatches) {
             // Consolidate next round if ML3 left odd number of winners
-            (bool s, ) = MODULE_MATCHES.delegatecall(
+            MODULE_MATCHES.delegatecall(
                 abi.encodeWithSignature(
                     "consolidateAndStartOddRound(uint8,uint8,uint8)",
                     tierId, instanceId, roundNumber
                 )
             );
-            require(s, "CO");
         }
 
         // Add external player to cleanup list for tournament completion
@@ -375,8 +370,271 @@ contract ConnectFourOnChain is ETour_Storage {
         // Check if tournament completed and handle prize distribution/reset
         _handleTournamentCompletion(tierId, instanceId, allPlayers);
     }
-    // Note: isMatchEscL2Available(), isMatchEscL3Available(), isPlayerInAdvancedRound(),
-    //       claimTimeoutWin() are all inherited from ETour_Storage
+
+    /**
+     * @dev Check if Level 2 escalation is available (advanced player force eliminate)
+     * Implementation directly in ConnectFour to avoid delegatecall in view function
+     */
+    function isMatchEscL2Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L2 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l2Start = timeoutOccurredAt + config.timeouts.matchLevel2Delay;
+            return block.timestamp >= l2Start;
+        }
+
+        // If already marked as stalled, check if L2 window is active
+        return block.timestamp >= timeout.escalation1Start;
+    }
+
+    /**
+     * @dev Check if Level 3 escalation is available (external player replacement)
+     * Implementation directly in ConnectFour to avoid delegatecall in view function
+     */
+    function isMatchEscL3Available(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (bool) {
+        // SECURITY: Tournament must be in progress for escalation
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        if (tournament.status != TournamentStatus.InProgress) {
+            return false;
+        }
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        // Check if match is active and in progress
+        if (matchData.player1 == address(0) || matchData.status != MatchStatus.InProgress) {
+            return false;
+        }
+
+        // Check if current player has timed out
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 currentPlayerTime = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        if (elapsed < currentPlayerTime) {
+            return false;
+        }
+
+        // Check timeout state
+        MatchTimeoutState storage timeout = matchTimeouts[matchId];
+
+        // If not marked as stalled yet, calculate when L3 would start
+        if (!timeout.isStalled) {
+            TierConfig storage config = _tierConfigs[tierId];
+            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
+            uint256 l3Start = timeoutOccurredAt + config.timeouts.matchLevel3Delay;
+            return block.timestamp >= l3Start;
+        }
+
+        // If already marked as stalled, check if L3 window is active
+        return block.timestamp >= timeout.escalation2Start;
+    }
+
+    /**
+     * @dev Check if a player has advanced in the tournament
+     */
+    function isPlayerInAdvancedRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 stalledRoundNumber,
+        address player
+    ) external view returns (bool) {
+        if (!isEnrolled[tierId][instanceId][player]) {
+            return false;
+        }
+
+        // Check 1: Has player won a match in any round up to and including the stalled round?
+        for (uint8 r = 0; r <= stalledRoundNumber; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                // Check active storage first
+                // Check active storage
+                if (matchData.status == MatchStatus.Completed &&
+                    matchData.winner == player &&
+                    !matchData.isDraw) {
+                    return true;
+                }
+            }
+        }
+
+        // Check 2: Is player assigned to a match in a round AFTER the stalled round?
+        // This catches walkover/auto-advanced players
+        TierConfig storage config = _tierConfigs[tierId];
+        for (uint8 r = stalledRoundNumber + 1; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                Match storage matchData = matches[matchId];
+
+                if (matchData.player1 == player || matchData.player2 == player) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // ============ Game Logic (Connect Four Specific) ============
+
+    /**
+     * @dev Make a move on the Connect Four board
+     * Handles gravity (piece drops to lowest available row), time bank updates with Fischer increment
+     */
+    function makeMove(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 column
+    ) external nonReentrant {
+        require(column < COLS, "IC");
+
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender == matchData.currentTurn, "NT");
+
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        if (matchData.currentTurn == matchData.player1) {
+            matchData.player1TimeRemaining = (matchData.player1TimeRemaining > elapsed)
+                ? matchData.player1TimeRemaining - elapsed
+                : 0;
+            matchData.player1TimeRemaining += _getTimeIncrement();
+        } else {
+            matchData.player2TimeRemaining = (matchData.player2TimeRemaining > elapsed)
+                ? matchData.player2TimeRemaining - elapsed
+                : 0;
+            matchData.player2TimeRemaining += _getTimeIncrement();
+        }
+        matchData.lastMoveTime = block.timestamp;
+
+        uint8 targetRow = ROWS;
+        for (uint8 row = ROWS; row > 0; row--) {
+            uint8 checkCell = _getCellIndex(row - 1, column);
+            if (_getCell(matchData.packedBoard, checkCell) == 0) {
+                targetRow = row - 1;
+                break;
+            }
+        }
+
+        require(targetRow < ROWS, "CF");
+
+        uint8 piece = (msg.sender == matchData.player1) ? 1 : 2;
+
+        uint8 cellIndex = _getCellIndex(targetRow, column);
+        matchData.packedBoard = _setCell(matchData.packedBoard, cellIndex, piece);
+
+        // Clear any escalation state since a move was made (match is no longer stalled)
+        (bool clearSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature("clearEscalationState(bytes32)", matchId)
+        );
+        require(clearSuccess, "CE");
+
+        emit MoveMade(matchId, msg.sender, column, targetRow);
+
+        // Check for win
+        if (_checkWin(matchData.packedBoard, piece, targetRow, column)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+            return;
+        }
+
+        // Check for draw (board full)
+        if (_isBoardFull(matchData.packedBoard)) {
+            _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            return;
+        }
+
+        // Switch turn
+        matchData.currentTurn = (matchData.currentTurn == matchData.player1)
+            ? matchData.player2
+            : matchData.player1;
+    }
+
+    /**
+     * @dev Claim timeout victory when opponent runs out of time
+     * This is Escalation Level 1 (player-initiated)
+     */
+    function claimTimeoutWin(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external nonReentrant {
+        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
+
+        require(matchData.status == MatchStatus.InProgress, "MA");
+        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
+        require(msg.sender != matchData.currentTurn, "OT");
+
+        uint256 elapsed = block.timestamp - matchData.lastMoveTime;
+        uint256 opponentTimeRemaining = (matchData.currentTurn == matchData.player1)
+            ? matchData.player1TimeRemaining
+            : matchData.player2TimeRemaining;
+
+        require(elapsed >= opponentTimeRemaining, "TO");
+
+        (bool markSuccess, ) = MODULE_ESCALATION.delegatecall(
+            abi.encodeWithSignature(
+                "markMatchStalled(bytes32,uint8,uint256)",
+                matchId, tierId, block.timestamp
+            )
+        );
+        require(markSuccess, "MS");
+
+        address loser = (msg.sender == matchData.player1) ? matchData.player2 : matchData.player1;
+
+        // Complete match with timeout winner
+        _completeMatchInternal(tierId, instanceId, roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
+    }
 
     // Note: _handleTournamentCompletion() is now inherited from ETour_Storage
 

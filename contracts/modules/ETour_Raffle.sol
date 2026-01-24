@@ -504,55 +504,5 @@ contract ETour_Raffle is ETour_Storage {
         );
     }
 
-    /**
-     * @dev Returns detailed raffle state information for client display
-     * EXACT COPY from ETour.sol lines 2465-2510
-     */
-    function getRaffleInfo()
-        external
-        view
-        returns (
-            uint256 raffleIndex,
-            bool isReady,
-            uint256 currentAccumulated,
-            uint256 threshold,
-            uint256 reserve,
-            uint256 raffleAmount,
-            uint256 ownerShare,
-            uint256 winnerShare,
-            uint256 eligiblePlayerCount
-        )
-    {
-        raffleIndex = currentRaffleIndex;
-        currentAccumulated = accumulatedProtocolShare;
-
-        // Use virtual functions for threshold and reserve
-        threshold = _getRaffleThreshold();
-        reserve = _getRaffleReserve();
-
-        isReady = currentAccumulated >= threshold;
-
-        // Always calculate what the distribution WILL BE at threshold
-        // This allows clients to display: "When 3 ETH reached, 2 ETH distributed, 1 ETH kept"
-        // even before the threshold is reached
-        raffleAmount = threshold - reserve;
-        ownerShare = (raffleAmount * 5) / 95;
-        winnerShare = (raffleAmount * 90) / 95;
-
-        // Count eligible players
-        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
-        eligiblePlayerCount = players.length;
-
-        return (
-            raffleIndex,
-            isReady,
-            currentAccumulated,
-            threshold,
-            reserve,
-            raffleAmount,
-            ownerShare,
-            winnerShare,
-            eligiblePlayerCount
-        );
-    }
+    // Note: getRaffleInfo() function is now inherited from ETour_Storage
 }
