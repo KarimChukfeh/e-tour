@@ -511,12 +511,6 @@ contract ChessOnChain is ETour_Storage {
         return emptyData;
     }
 
-    function getBoard(uint8 tierId, uint8 instanceId, uint8 roundNumber, uint8 matchNumber) external view returns (uint8[64] memory board) {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-        uint256 packed = matches[matchId].packedBoard;
-        for (uint8 i = 0; i < 64; i++) board[i] = _getPiece(packed, i);
-    }
-
     /**
      * @dev Hook called BEFORE tournament reset to archive elite matches
      * Override from ETour_Storage for ChessOnChain-specific archival logic
