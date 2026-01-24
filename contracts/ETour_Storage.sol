@@ -857,11 +857,54 @@ abstract contract ETour_Storage is ReentrancyGuard {
         ownerShare = (raffleAmount * 5) / 95;
         winnerShare = (raffleAmount * 90) / 95;
 
-        // Get eligible player count from raffle module
-        (bool success, bytes memory data) = MODULE_RAFFLE.staticcall(
-            abi.encodeWithSignature("getEligiblePlayerCount()")
-        );
-        eligiblePlayerCount = success ? abi.decode(data, (uint256)) : 0;
+        // Get eligible player count by counting unique enrolled players
+        eligiblePlayerCount = _getEligiblePlayerCount();
+    }
+
+    /**
+     * @dev Internal helper to count unique eligible players for raffle
+     * Shared implementation for all games
+     */
+    function _getEligiblePlayerCount() internal view returns (uint256) {
+        // Use temporary array to track unique players (max 1000)
+        address[] memory tempPlayers = new address[](1000);
+        uint256 uniqueCount = 0;
+
+        // Iterate through all active tournaments
+        for (uint8 tierId = 0; tierId < tierCount; tierId++) {
+            TierConfig storage config = _tierConfigs[tierId];
+
+            for (uint8 instanceId = 0; instanceId < config.instanceCount; instanceId++) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+                // Only count Enrolling and InProgress tournaments
+                if (tournament.status == TournamentStatus.Enrolling ||
+                    tournament.status == TournamentStatus.InProgress) {
+
+                    address[] storage enrolled = enrolledPlayers[tierId][instanceId];
+
+                    for (uint256 i = 0; i < enrolled.length; i++) {
+                        address player = enrolled[i];
+                        bool found = false;
+
+                        // Check if player already counted
+                        for (uint256 j = 0; j < uniqueCount; j++) {
+                            if (tempPlayers[j] == player) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            tempPlayers[uniqueCount] = player;
+                            uniqueCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return uniqueCount;
     }
 
     /**
