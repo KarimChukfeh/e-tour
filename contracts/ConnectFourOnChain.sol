@@ -3,44 +3,21 @@ pragma solidity ^0.8.20;
 
 import "./ETour_Storage.sol";
 
-/**
- * @title ConnectFourOnChain
- * @dev Classic Connect Four game implementing ETour tournament protocol (Modular Architecture)
- * Strategic column-drop game where players compete to connect 4 pieces in a row.
- *
- * This contract demonstrates modular ETour integration by:
- * 1. Inheriting ETour_Storage for shared tournament state
- * 2. Delegating to specialized modules (Core, Matches, Prizes, etc.)
- * 3. Implementing IETourGame interface (8 abstract functions)
- * 4. Managing game-specific logic (gravity-based drops, win detection, time banks)
- *
- * Board optimization: 42 cells × 2 bits = 84 bits (packed in single uint256)
- * Cell encoding: 0=Empty, 1=Red (Player1), 2=Yellow (Player2)
- *
- * Part of the RW3 (Reclaim Web3) movement.
- */
+// ConnectFourOnChain - ETour tournament protocol
 contract ConnectFourOnChain is ETour_Storage {
 
-    // ============ Game-Specific Constants ============
+    error InvalidColumn();
+    error MatchNotActive();
+    error NotPlayer();
+    error NotYourTurn();
+    error ColumnFull();
+    error OperationFailed();
 
     uint8 private constant ROWS = 6;
     uint8 private constant COLS = 7;
     uint8 private constant TOTAL_CELLS = 42;
     uint8 private constant CONNECT_COUNT = 4;
 
-    // ============ Game-Specific Structs ============
-
-    /**
-     * @dev Match storage structure for active Connect Four games
-     * Board is packed: 2 bits per cell (0=empty, 1=Red, 2=Yellow)
-     * Total 42 cells = 84 bits (fits in uint256 with room to spare)
-     */
-    // Note: Match struct moved to ETour_Storage for consistency across all games
-
-    /**
-     * @dev Extended match data for ConnectFour including common fields and game-specific state
-     * Used for view functions to return complete match information
-     */
     struct ConnectFourMatchData {
         CommonMatchData common;        // Standardized tournament match data
         uint256 packedBoard;           // Game-specific: packed board state
@@ -251,8 +228,8 @@ contract ConnectFourOnChain is ETour_Storage {
         require(success, "FE");
 
         // Create MatchRecords for both eliminated players
-        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
-        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+        _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+        _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
 
         // Emit MatchCompleted event from game contract (triggering player wins)
         emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
@@ -267,7 +244,7 @@ contract ConnectFourOnChain is ETour_Storage {
                     tierId, instanceId, roundNumber
                 )
             );
-            require(success, "CO");
+            require(success, "CS");
         }
 
         // Check if tournament completed and handle prize distribution/reset
@@ -301,10 +278,10 @@ contract ConnectFourOnChain is ETour_Storage {
         );
         require(success, "CR");
 
-        // Create MatchRecords for all 3 affected players (original p1, p2, and replacement)
-        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-        _createMatchRecordForPlayer(msg.sender, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        // Create MatchRecords for all 3 affected players
+        _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _addMatchRecord(msg.sender, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
 
         // Emit MatchCompleted event from game contract (replacement player wins)
         emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
@@ -319,7 +296,7 @@ contract ConnectFourOnChain is ETour_Storage {
                     tierId, instanceId, roundNumber
                 )
             );
-            require(s, "CO");
+            require(s, "CS");
         }
 
         // Add external player to cleanup list for tournament completion
@@ -625,14 +602,14 @@ contract ConnectFourOnChain is ETour_Storage {
         uint8 matchNumber,
         uint8 column
     ) external nonReentrant {
-        require(column < COLS, "IC");
+        if (column >= COLS) revert InvalidColumn();
 
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        require(matchData.status == MatchStatus.InProgress, "MA");
-        require(msg.sender == matchData.player1 || msg.sender == matchData.player2, "NP");
-        require(msg.sender == matchData.currentTurn, "NT");
+        if (matchData.status != MatchStatus.InProgress) revert MatchNotActive();
+        if (msg.sender != matchData.player1 && msg.sender != matchData.player2) revert NotPlayer();
+        if (msg.sender != matchData.currentTurn) revert NotYourTurn();
 
         uint256 elapsed = block.timestamp - matchData.lastMoveTime;
         if (matchData.currentTurn == matchData.player1) {
@@ -657,7 +634,7 @@ contract ConnectFourOnChain is ETour_Storage {
             }
         }
 
-        require(targetRow < ROWS, "CF");
+        if (targetRow >= ROWS) revert ColumnFull();
 
         uint8 piece = (msg.sender == matchData.player1) ? 1 : 2;
 

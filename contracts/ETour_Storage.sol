@@ -276,7 +276,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
     mapping(uint8 => mapping(uint8 => mapping(uint8 => Round))) public rounds;
 
     // Player data
-    mapping(uint8 => mapping(uint8 => mapping(address => uint8))) public playerRanking;
+    // Removed: playerRanking (no longer needed with winner-takes-all distribution)
     mapping(uint8 => mapping(uint8 => mapping(address => uint256))) public playerPrizes;
     mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(uint8 => mapping(address => bool))))) public drawParticipants;
 
@@ -375,10 +375,6 @@ abstract contract ETour_Storage is ReentrancyGuard {
         return raffleThresholdFinal;
     }
 
-    /**
-     * @dev Helper to populate match record fields
-     * Minimal stack usage version
-     */
     function _populateMatchRecord(
         MatchRecord storage r,
         Match storage m,
@@ -387,7 +383,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 rn,
         uint8 mn,
         CompletionReason cr
-    ) private {
+    ) internal {
         r.tierId = t;
         r.instanceId = i;
         r.roundNumber = rn;
@@ -406,43 +402,24 @@ abstract contract ETour_Storage is ReentrancyGuard {
         r.moves = m.moves;
     }
 
-    /**
-     * @dev Create match record for a specific player (for ML2/ML3 escalations)
-     * PUBLIC for game contract access
-     */
-    function _createMatchRecordForPlayer(
+    // Wrapper to add match record (simplifies 2-step push/populate pattern)
+    function _addMatchRecord(
         address player,
-        bytes32 matchId,
+        Match storage m,
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         uint8 matchNumber,
         CompletionReason reason
-    ) public {
-        Match storage m = matches[matchId];
+    ) internal {
         playerMatches[player].push();
         _populateMatchRecord(
             playerMatches[player][playerMatches[player].length - 1],
-            m,
-            tierId,
-            instanceId,
-            roundNumber,
-            matchNumber,
-            reason
+            m, tierId, instanceId, roundNumber, matchNumber, reason
         );
     }
 
-    /**
-     * @dev Internal match completion handler
-     * Extracted from all game contracts - coordinates match completion workflow
-     * @param tierId Tournament tier ID
-     * @param instanceId Tournament instance ID
-     * @param roundNumber Round number
-     * @param matchNumber Match number
-     * @param winner Winner address (or address(0) if draw)
-     * @param isDraw Whether match ended in a draw
-     * @param reason Completion reason for event emission
-     */
+    // Internal match completion handler
     function _completeMatchInternal(
         uint8 tierId,
         uint8 instanceId,
@@ -460,11 +437,9 @@ abstract contract ETour_Storage is ReentrancyGuard {
         m.isDraw = isDraw;
         m.status = MatchStatus.Completed;
 
-        // Record match in both players' history inline to reduce stack depth
-        playerMatches[m.player1].push();
-        playerMatches[m.player2].push();
-        _populateMatchRecord(playerMatches[m.player1][playerMatches[m.player1].length - 1], m, tierId, instanceId, roundNumber, matchNumber, reason);
-        _populateMatchRecord(playerMatches[m.player2][playerMatches[m.player2].length - 1], m, tierId, instanceId, roundNumber, matchNumber, reason);
+        // Record match in both players' history
+        _addMatchRecord(m.player1, m, tierId, instanceId, roundNumber, matchNumber, reason);
+        _addMatchRecord(m.player2, m, tierId, instanceId, roundNumber, matchNumber, reason);
 
         // Mark match as complete in game-specific storage (calls internal game-specific function)
         _completeMatchGameSpecific(tierId, instanceId, roundNumber, matchNumber, winner, isDraw);
@@ -498,13 +473,7 @@ abstract contract ETour_Storage is ReentrancyGuard {
         _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
     }
 
-    /**
-     * @dev Handle tournament completion: distribute prizes, emit events, reset state
-     * Extracted from all game contracts - single source of truth for tournament completion workflow
-     * @param tierId Tournament tier ID
-     * @param instanceId Tournament instance ID
-     * @param enrolledPlayersCopy Copy of enrolled players array
-     */
+    // Handle tournament completion: prizes, events, reset
     function _handleTournamentCompletion(
         uint8 tierId,
         uint8 instanceId,
@@ -532,8 +501,22 @@ abstract contract ETour_Storage is ReentrancyGuard {
             );
             require(distributeSuccess, "DP");
             (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
+        } else if (tournament.finalsWasDraw) {
+            // Finals draw: split prize equally between 2 finalists
+            TierConfig storage config = _tierConfigs[tierId];
+            bytes32 finalMatchId = _getMatchId(tierId, instanceId, config.totalRounds - 1, 0);
+            Match storage finalMatch = matches[finalMatchId];
+            address[] memory finalists = new address[](2);
+            finalists[0] = finalMatch.player1;
+            finalists[1] = finalMatch.player2;
+            (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
+                abi.encodeWithSignature("distributeEqualPrizes(uint8,uint8,address[],uint256,string)",
+                    tierId, instanceId, finalists, winnersPot, "")
+            );
+            require(distributeSuccess, "DP");
+            (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
         } else {
-            // Normal completion: distribute prizes based on ranking
+            // Normal completion: winner-takes-all
             (bool distributeSuccess, bytes memory returnData) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("distributePrizes(uint8,uint8,uint256,string)",
                     tierId, instanceId, winnersPot, "")
@@ -542,9 +525,11 @@ abstract contract ETour_Storage is ReentrancyGuard {
             (winners, prizes) = abi.decode(returnData, (address[], uint256[]));
         }
 
-        // Emit Transfer events for each winner
+        // Emit Transfer events for each winner (only if prize was successfully sent)
         for (uint256 i = 0; i < winners.length; i++) {
-            emit Transfer(address(this), winners[i], prizes[i]);
+            if (prizes[i] > 0) {
+                emit Transfer(address(this), winners[i], prizes[i]);
+            }
         }
 
         // Update earnings for all players (handles both single winner and all-draw scenarios)

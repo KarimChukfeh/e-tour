@@ -209,7 +209,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should reject move when not your turn", async function () {
             await expect(
                 game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 0)
-            ).to.be.reverted; // Changed error code to "NT"
+            ).to.be.revertedWithCustomError(game, "NotYourTurn");
         });
 
         it("Should reject move to full column", async function () {
@@ -222,13 +222,13 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Column 0 is now full, try to add another piece
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0)
-            ).to.be.reverted; // Changed error code to "CF"
+            ).to.be.revertedWithCustomError(game, "ColumnFull");
         });
 
         it("Should reject invalid column", async function () {
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 7)
-            ).to.be.reverted; // Changed error code to "IC"
+            ).to.be.revertedWithCustomError(game, "InvalidColumn");
         });
     });
 
@@ -402,7 +402,7 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
         it("Should reject early timeout claim", async function () {
             await expect(
                 game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0)
-            ).to.be.reverted; // Changed error code to "TO"
+            ).to.be.revertedWith("TO");
         });
     });
 

@@ -261,8 +261,8 @@ contract TicTacChain is ETour_Storage {
         }
 
         // Create MatchRecords for both eliminated players
-        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
-        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+        _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
+        _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
 
         // Emit MatchCompleted event from game contract (triggering player wins)
         emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
@@ -323,10 +323,10 @@ contract TicTacChain is ETour_Storage {
             }
         }
 
-        // Create MatchRecords for all 3 affected players (original p1, p2, and replacement)
-        _createMatchRecordForPlayer(originalPlayer1, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-        _createMatchRecordForPlayer(originalPlayer2, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-        _createMatchRecordForPlayer(msg.sender, matchId, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        // Create MatchRecords for all 3 affected players
+        _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
+        _addMatchRecord(msg.sender, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
 
         // Emit MatchCompleted event from game contract (replacement player wins)
         emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);

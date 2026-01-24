@@ -427,8 +427,7 @@ contract ETour_Escalation is ETour_Storage {
     }
 
     /**
-     * @dev Assign ranking to player when eliminated
-     * EXACT COPY from ETour.sol lines 1367-1386
+     * @dev Assign ranking to player when eliminated (no-op with winner-takes-all)
      */
     function assignRankingOnElimination(
         uint8 tierId,
@@ -436,24 +435,11 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         address player
     ) external {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TierConfig storage config = _tierConfigs[tierId];
-        uint8 playerCount = tournament.enrolledCount;
-
-        uint8 baseRank;
-        if (roundNumber == config.totalRounds - 1) {
-            baseRank = 2;
-        } else {
-            uint8 remainingAfterRound = playerCount / uint8(2 ** (roundNumber + 1));
-            baseRank = remainingAfterRound + 1;
-        }
-
-        playerRanking[tierId][instanceId][player] = baseRank;
+        // No-op: Rankings removed with winner-takes-all distribution
     }
 
     /**
-     * @dev Internal helper for assigning ranking on elimination
-     * EXACT COPY from ETour.sol lines 1367-1386
+     * @dev Internal helper for assigning ranking on elimination (no-op with winner-takes-all)
      */
     function _assignRankingOnElimination(
         uint8 tierId,
@@ -461,19 +447,7 @@ contract ETour_Escalation is ETour_Storage {
         uint8 roundNumber,
         address player
     ) internal {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TierConfig storage config = _tierConfigs[tierId];
-        uint8 playerCount = tournament.enrolledCount;
-
-        uint8 baseRank;
-        if (roundNumber == config.totalRounds - 1) {
-            baseRank = 2;
-        } else {
-            uint8 remainingAfterRound = playerCount / uint8(2 ** (roundNumber + 1));
-            baseRank = remainingAfterRound + 1;
-        }
-
-        playerRanking[tierId][instanceId][player] = baseRank;
+        // No-op: Rankings removed with winner-takes-all distribution
     }
 
     // ============ Escalation Availability Helpers (Public View) ============
@@ -553,16 +527,13 @@ contract ETour_Escalation is ETour_Storage {
                 }
                 tournament.winner = winner;
                 tournament.status = TournamentStatus.Completed;
-                playerRanking[tierId][instanceId][winner] = 1;
+                // Removed: Ranking assignment (no longer needed with winner-takes-all)
             } else if (isDraw) {
                 // Draw in finals
                 tournament.finalsWasDraw = true;
                 tournament.completionReason = CompletionReason.Draw;
                 tournament.status = TournamentStatus.Completed;
-
-                (address p1, address p2) = gameContract._getMatchPlayers(finalsMatchId);
-                playerRanking[tierId][instanceId][p1] = 1;
-                playerRanking[tierId][instanceId][p2] = 1;
+                // Removed: Ranking assignments for draw (no longer needed)
             } else if (!isDraw && winner == address(0)) {
                 // Both finalists were eliminated (ML2 double elimination)
                 // Set all-draw resolution to distribute prizes equally to any remaining eligible players
@@ -594,7 +565,7 @@ contract ETour_Escalation is ETour_Storage {
                 tournament.winner = lastWinner;
                 tournament.status = TournamentStatus.Completed;
                 tournament.completionReason = CompletionReason.NormalWin;
-                playerRanking[tierId][instanceId][lastWinner] = 1;
+                // Removed: Ranking assignment (no longer needed with winner-takes-all)
 
                 // NOTE: Prize distribution, earnings update, event emission, and reset
                 // are handled by the game contract (TicTacChain) after detecting completion.

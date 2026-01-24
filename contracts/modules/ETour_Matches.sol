@@ -215,8 +215,6 @@ contract ETour_Matches is ETour_Storage {
                 tournament.finalsWasDraw = true;
                 tournament.completionReason = CompletionReason.Draw;
                 tournament.winner = finalPlayer1;
-                playerRanking[tierId][instanceId][finalPlayer1] = 1;
-                playerRanking[tierId][instanceId][finalPlayer2] = 1;
                 completeTournament(tierId, instanceId, finalPlayer1);
             } else {
                 tournament.completionReason = CompletionReason.NormalWin;
@@ -226,26 +224,7 @@ contract ETour_Matches is ETour_Storage {
             address[] memory remainingPlayers = getRemainingPlayers(tierId, instanceId, roundNumber);
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
         } else {
-            // Assign rankings to losers based on round (for prize distribution)
-            // Finals loser gets rank 2 (handled in completeTournament)
-            // Semi-finals losers get ranks 3-4, quarters losers get ranks 5-8, etc.
-            uint8 roundsFromEnd = config.totalRounds - roundNumber - 1;
-            if (roundsFromEnd > 0 && roundsFromEnd <= 3) { // Only rank semi (1) and quarters (2) losers
-                uint8 baseRank = uint8(1 + (1 << roundsFromEnd)); // Semi=3, Quarters=5
-                uint8 currentRank = baseRank;
-                for (uint8 i = 0; i < round.totalMatches; i++) {
-                    bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
-                    if (matchStatus == MatchStatus.Completed && !matchIsDraw && matchWinner != address(0)) {
-                        (address p1, address p2) = this._getMatchPlayers(matchId);
-                        address loser = (matchWinner == p1) ? p2 : p1;
-                        if (loser != address(0) && playerRanking[tierId][instanceId][loser] == 0) {
-                            playerRanking[tierId][instanceId][loser] = currentRank++;
-                        }
-                    }
-                }
-            }
-
+            // Removed: Ranking assignments (no longer needed with winner-takes-all)
             tournament.currentRound = roundNumber + 1;
             consolidateScatteredPlayers(tierId, instanceId, roundNumber + 1);
 
@@ -291,17 +270,7 @@ contract ETour_Matches is ETour_Storage {
                     (address pm0p1, address pm0p2) = this._getMatchPlayers(prevMatchId0);
                     (address pm1p1, address pm1p2) = this._getMatchPlayers(prevMatchId1);
 
-                    address runnerUp = address(0);
-                    if (pm0Winner == walkoverWinner && !pm0Draw) {
-                        runnerUp = pm0p1 == walkoverWinner ? pm0p2 : pm0p1;
-                    } else if (pm1Winner == walkoverWinner && !pm1Draw) {
-                        runnerUp = pm1p1 == walkoverWinner ? pm1p2 : pm1p1;
-                    }
-
-                    if (runnerUp != address(0)) {
-                        playerRanking[tierId][instanceId][runnerUp] = 2;
-                    }
-
+                    // Removed: RunnerUp ranking (no longer needed with winner-takes-all)
                     completeTournament(tierId, instanceId, walkoverWinner);
                 }
             }
@@ -322,18 +291,7 @@ contract ETour_Matches is ETour_Storage {
 
         if (tournament.winner == address(0)) {
             tournament.winner = winner;
-            playerRanking[tierId][instanceId][winner] = 1;
-
-            // Assign rank 2 to finals loser (if not a draw)
-            if (!tournament.finalsWasDraw) {
-                uint8 finalRound = config.totalRounds - 1;
-                bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
-                (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalsMatchId);
-                address finalsLoser = (winner == finalPlayer1) ? finalPlayer2 : finalPlayer1;
-                if (finalsLoser != address(0)) {
-                    playerRanking[tierId][instanceId][finalsLoser] = 2;
-                }
-            }
+            // Removed: Ranking assignments (no longer needed with winner-takes-all)
         }
 
         uint256 winnersPot = tournament.prizePool;

@@ -280,7 +280,7 @@ contract ETour_Core is ETour_Storage {
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Completed;
             tournament.completionReason = CompletionReason.NormalWin;
-            playerRanking[tierId][instanceId][soloWinner] = 1;
+            // Removed: Ranking assignment (no longer needed with winner-takes-all)
 
             uint256 winnersPot = tournament.prizePool;
             playerPrizes[tierId][instanceId][soloWinner] = winnersPot;
