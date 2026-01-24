@@ -108,7 +108,7 @@ contract TicTacChain is ETour_Storage {
      * Called when tournament starts or when advancing to next round
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId);
+        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
@@ -137,7 +137,7 @@ contract TicTacChain is ETour_Storage {
                 players[tournament.enrolledCount - 1] = walkoverPlayer;
             }
 
-            // Create matches directly - this is the key fix!
+            // Create matches directly
             for (uint8 i = 0; i < matchCount; i++) {
                 address player1 = players[i * 2];
                 address player2 = players[i * 2 + 1];
@@ -164,10 +164,18 @@ contract TicTacChain is ETour_Storage {
     /**
      * @dev Get match count for round - helper function
      */
-    function getMatchCountForRound(uint8 tierId, uint8 instanceId) public view returns (uint8) {
-        TierConfig storage config = _tierConfigs[tierId];
+    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        return tournament.enrolledCount / 2;
+        uint8 playerCount = tournament.enrolledCount;
+
+        if (roundNumber == 0) {
+            return playerCount / 2;
+        }
+
+        Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+
+        return winnersFromPrevRound / 2;
     }
 
     // ============ Public ETour Function Wrappers (Delegatecall to Modules) ============

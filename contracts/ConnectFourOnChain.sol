@@ -115,7 +115,7 @@ contract ConnectFourOnChain is ETour_Storage {
      * Called when tournament starts or when advancing to next round
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId);
+        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
@@ -168,9 +168,18 @@ contract ConnectFourOnChain is ETour_Storage {
     /**
      * @dev Get match count for round - helper function
      */
-    function getMatchCountForRound(uint8 tierId, uint8 instanceId) public view returns (uint8) {
+    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        return tournament.enrolledCount / 2;
+        uint8 playerCount = tournament.enrolledCount;
+
+        if (roundNumber == 0) {
+            return playerCount / 2;
+        }
+
+        Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+
+        return winnersFromPrevRound / 2;
     }
 
     // ============ Public ETour Function Wrappers (Delegatecall to Modules) ============

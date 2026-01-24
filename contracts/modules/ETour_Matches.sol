@@ -57,6 +57,7 @@ contract ETour_Matches is ETour_Storage {
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+        require(matchCount > 0 || roundNumber > 0, "Invalid match count");
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
@@ -67,6 +68,7 @@ contract ETour_Matches is ETour_Storage {
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            require(players.length >= 2, "Not enough players");
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
@@ -86,7 +88,15 @@ contract ETour_Matches is ETour_Storage {
             }
 
             for (uint8 i = 0; i < matchCount; i++) {
-                this._createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
+                address p1 = players[i * 2];
+                address p2 = players[i * 2 + 1];
+                require(p1 != address(0) && p2 != address(0), "Invalid player addresses");
+
+                this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
+
+                bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+                addPlayerActiveMatch(p1, matchId);
+                addPlayerActiveMatch(p2, matchId);
             }
 
             if (walkoverPlayer != address(0)) {
