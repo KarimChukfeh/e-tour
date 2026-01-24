@@ -632,20 +632,20 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             await enrollPlayers(tierId, instanceId, 2, fee);
             const winnerAddr = await playScholarsMate(tierId, instanceId, 0, 0);
 
-            // Access eliteMatches array via custom getters
-            const [player1, player2, winner, currentTurn, firstPlayer, status, isDraw, packedBoard, packedState, startTime, lastMoveTime, p1Time, p2Time, movesBytes] = await chess.getEliteMatch(0);
+            // Access eliteMatches array via public getter
+            const match = await chess.eliteMatches(0);
 
             // Verify match data is stored correctly
-            expect(player1).to.not.equal(hre.ethers.ZeroAddress);
-            expect(player2).to.not.equal(hre.ethers.ZeroAddress);
-            expect(winner).to.equal(winnerAddr);
-            expect(isDraw).to.be.false;
-            expect(status).to.equal(MatchStatus.Completed);
-            expect(startTime).to.be.gt(0);
-            expect(packedBoard).to.be.gt(0);
+            expect(match.player1).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.player2).to.not.equal(hre.ethers.ZeroAddress);
+            expect(match.winner).to.equal(winnerAddr);
+            expect(match.isDraw).to.be.false;
+            expect(match.status).to.equal(MatchStatus.Completed);
+            expect(match.startTime).to.be.gt(0);
+            expect(match.packedBoard).to.be.gt(0);
 
             // Verify moves are stored (should have multiple moves)
-            expect(movesBytes.length).to.be.gte(7 * 2); // At least 7 moves
+            expect(match.moves.length).to.be.gte(7 * 2); // At least 7 moves (2 bytes each)
         });
 
         it("Should store Tier 7 finals match in eliteMatches array", async function () {
@@ -739,7 +739,8 @@ describe("ChessOnChain 8-Tier System Tests", function () {
             expect(match.lastMoveTime).to.be.gt(match.startTime);
 
             // Parse moves (format: compact bytes, 2 bytes per move)
-            const movesData = hre.ethers.getBytes(match.moves);
+            // Solidity string comes back as a JavaScript string with raw byte values
+            const movesData = Array.from(match.moves).map(c => c.charCodeAt(0));
             const numMoves = movesData.length / 2;
             expect(numMoves).to.equal(7); // Scholar's Mate has 7 moves
 

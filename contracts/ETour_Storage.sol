@@ -802,6 +802,8 @@ abstract contract ETour_Storage is ReentrancyGuard {
         uint8 instanceId
     ) internal virtual {}
 
+    // Note: Helper functions removed to minimize stack depth
+
     // ============ Public Tournament Functions (Shared Across All Games) ============
 
     /**
@@ -810,17 +812,16 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * IMPORTANT: Game contracts must mark this as payable and nonReentrant
      */
     function enrollInTournament(uint8 tierId, uint8 instanceId) external payable virtual {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
+        TournamentStatus oldStatus = tournaments[tierId][instanceId].status;
 
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("enrollInTournament(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "E");
+        require(success, "Enrollment failed");
 
         _onPlayerEnrolled(tierId, instanceId, msg.sender);
 
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+        if (oldStatus == TournamentStatus.Enrolling && tournaments[tierId][instanceId].status == TournamentStatus.InProgress) {
             _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
         }
@@ -832,31 +833,42 @@ abstract contract ETour_Storage is ReentrancyGuard {
      * IMPORTANT: Game contracts must mark this as nonReentrant
      */
     function forceStartTournament(uint8 tierId, uint8 instanceId) external virtual {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TournamentStatus oldStatus = tournament.status;
+        TournamentStatus oldStatus = tournaments[tierId][instanceId].status;
 
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("forceStartTournament(uint8,uint8)", tierId, instanceId)
         );
-        require(success, "FS");
+        require(success, "Force start failed");
 
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.InProgress) {
+        TournamentStatus newStatus = tournaments[tierId][instanceId].status;
+
+        if (oldStatus != TournamentStatus.Enrolling) return;
+
+        if (newStatus == TournamentStatus.InProgress) {
             _onTournamentStarted(tierId, instanceId);
             initializeRound(tierId, instanceId, 0);
+            return;
         }
 
-        if (oldStatus == TournamentStatus.Enrolling && tournament.status == TournamentStatus.Completed) {
-            address winner = tournament.winner;
-            address[] memory singlePlayer = new address[](1);
-            singlePlayer[0] = winner;
-
-            (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-                abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
-            );
-            require(resetSuccess, "RT");
-
-            _onTournamentCompleted(tierId, instanceId, singlePlayer);
+        if (newStatus == TournamentStatus.Completed) {
+            _handleSinglePlayerCompletion(tierId, instanceId);
         }
+    }
+
+    /**
+     * @dev Handle single-player tournament completion
+     * Separate function to reduce stack depth
+     */
+    function _handleSinglePlayerCompletion(uint8 tierId, uint8 instanceId) private {
+        address[] memory singlePlayer = new address[](1);
+        singlePlayer[0] = tournaments[tierId][instanceId].winner;
+
+        (bool success, ) = MODULE_PRIZES.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        );
+        require(success, "Reset failed");
+
+        _onTournamentCompleted(tierId, instanceId, singlePlayer);
     }
 
     /**

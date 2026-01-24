@@ -153,7 +153,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       await expect(
         connectFour.connect(player1).forceStartTournament(TIER, INSTANCE_ID)
-      ).to.be.revertedWith("FS");
+      ).to.be.revertedWith("Force start failed");
     });
 
     it("Should reject force start from non-enrolled player", async function () {
@@ -162,7 +162,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
 
       await expect(
         connectFour.connect(outsider).forceStartTournament(TIER, INSTANCE_ID)
-      ).to.be.revertedWith("FS");
+      ).to.be.revertedWith("Force start failed");
     });
 
     it("Should complete tournament immediately if only one player enrolled and force starts", async function () {

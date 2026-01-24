@@ -67,7 +67,7 @@ describe("Enrollment Window Reset", function () {
             // Verify forceStartTournament now fails (window not expired yet)
             await expect(
                 game.connect(player1).forceStartTournament(TIER_0, instanceId)
-            ).to.be.revertedWith("FS"); // Short error code for force start failure
+            ).to.be.revertedWith("Force start failed");
         });
     });
 
