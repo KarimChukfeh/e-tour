@@ -25,6 +25,7 @@ contract ConnectFourOnChain is ETour_Storage {
         address firstPlayer;           // Who started the match
         uint256 player1TimeRemaining;  // Time bank for player1
         uint256 player2TimeRemaining;  // Time bank for player2
+        string moves;                  // Move history (column numbers for replay)
     }
 
     // ============ Game-Specific Storage ============
@@ -714,6 +715,7 @@ contract ConnectFourOnChain is ETour_Storage {
             fullData.firstPlayer = matchData.firstPlayer;
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
+            fullData.moves = matchData.moves;
 
             return fullData;
         }

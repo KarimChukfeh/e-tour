@@ -1,16 +1,16 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0xfc073209b7936A771F77F63D42019a3a93311869",
+  "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T17:07:47.976Z",
+  "deployedAt": "2026-01-24T21:37:21.805Z",
   "modules": {
-    "core": "0x9CC8B5379C40E24F374cd55973c138fff83ed214",
-    "matches": "0xd3b893cd083f07Fe371c1a87393576e7B01C52C6",
-    "prizes": "0x3BFbbf82657577668144921b96aAb72BC170646C",
-    "raffle": "0x930b218f3e63eE452c13561057a8d5E61367d5b7",
-    "escalation": "0x721d8077771Ebf9B931733986d619aceea412a1C",
-    "chessRules": "0xDC57724Ea354ec925BaFfCA0cCf8A1248a8E5CF1"
+    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "chessRules": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
   },
   "abi": [
     {
@@ -1127,6 +1127,11 @@
               "internalType": "uint256",
               "name": "player2TimeRemaining",
               "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "moves",
+              "type": "string"
             }
           ],
           "internalType": "struct ChessOnChain.ChessMatchData",

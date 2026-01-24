@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0xb4e9A5BC64DC07f890367F72941403EEd7faDCbB",
+  "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-24T17:07:50.976Z",
+  "deployedAt": "2026-01-24T21:37:23.809Z",
   "modules": {
-    "core": "0x9CC8B5379C40E24F374cd55973c138fff83ed214",
-    "matches": "0xd3b893cd083f07Fe371c1a87393576e7B01C52C6",
-    "prizes": "0x3BFbbf82657577668144921b96aAb72BC170646C",
-    "raffle": "0x930b218f3e63eE452c13561057a8d5E61367d5b7",
-    "escalation": "0x721d8077771Ebf9B931733986d619aceea412a1C"
+    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "raffle": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
   },
   "abi": [
     {
@@ -1049,6 +1049,11 @@
               "internalType": "uint256",
               "name": "player2TimeRemaining",
               "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "moves",
+              "type": "string"
             }
           ],
           "internalType": "struct ConnectFourOnChain.ConnectFourMatchData",

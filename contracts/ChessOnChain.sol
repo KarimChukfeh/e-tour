@@ -26,6 +26,7 @@ contract ChessOnChain is ETour_Storage {
         address firstPlayer;
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
+        string moves;                  // Move history (algebraic notation for replay)
     }
     // Note: LeaderboardEntry struct now inherited from ETour_Storage
 
@@ -494,7 +495,7 @@ contract ChessOnChain is ETour_Storage {
             address loser = (!m.isDraw && m.winner != address(0)) ? (m.winner == m.player1 ? m.player2 : m.player1) : address(0);
             return ChessMatchData(
                 CommonMatchData(m.player1, m.player2, m.winner, loser, m.status, m.isDraw, m.startTime, m.lastMoveTime, tierId, instanceId, roundNumber, matchNumber, false),
-                m.packedBoard, m.packedState, m.currentTurn, m.firstPlayer, m.player1TimeRemaining, m.player2TimeRemaining
+                m.packedBoard, m.packedState, m.currentTurn, m.firstPlayer, m.player1TimeRemaining, m.player2TimeRemaining, m.moves
             );
         }
 

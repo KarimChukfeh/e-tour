@@ -39,6 +39,7 @@ contract TicTacChain is ETour_Storage {
         uint256 player1TimeRemaining;  // Time bank for player1
         uint256 player2TimeRemaining;  // Time bank for player2
         uint256 lastMoveTimestamp;     // When last move was made
+        string moves;                  // Move history (cell positions for replay)
     }
 
     // ============ Game-Specific Storage ============
@@ -700,6 +701,7 @@ contract TicTacChain is ETour_Storage {
             fullData.player1TimeRemaining = matchData.player1TimeRemaining;
             fullData.player2TimeRemaining = matchData.player2TimeRemaining;
             fullData.lastMoveTimestamp = matchData.lastMoveTime;
+            fullData.moves = matchData.moves;
 
             return fullData;
         }
