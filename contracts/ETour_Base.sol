@@ -297,6 +297,7 @@ abstract contract ETour_Base is ReentrancyGuard {
 
     // ============ Events ============
 
+    event TournamentEnrolled(address indexed player, uint8 tierId, uint8 instanceId);
     event MatchCompleted(bytes32 indexed matchId, address indexed player1, address indexed player2, address winner, bool isDraw, CompletionReason reason, uint256 board);
 
     /**

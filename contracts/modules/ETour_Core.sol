@@ -139,6 +139,7 @@ contract ETour_Core is ETour_Base {
         tournament.enrolledCount++;
         tournament.prizePool += participantsShare;
 
+        emit TournamentEnrolled(msg.sender, tierId, instanceId);
 
         if (tournament.enrolledCount == config.playerCount) {
             startTournament(tierId, instanceId);
