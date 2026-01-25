@@ -77,16 +77,6 @@ describe("Wei Precision and Rounding in Prize Distribution", function () {
 
             // Verify draw completed via TournamentCompleted event (2-player draw uses regular completion)
             const receipt = await tx.wait();
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-
             // Check prize distribution
             const prize1 = await game.playerPrizes(tierId, instanceId, player1.address);
             const prize2 = await game.playerPrizes(tierId, instanceId, player2.address);

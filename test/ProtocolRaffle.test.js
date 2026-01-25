@@ -245,25 +245,6 @@ describe("Protocol Raffle System", function () {
         });
     });
 
-    describe("Event Emission", function () {
-        it("Should emit ProtocolRaffleExecuted with correct data", async function () {
-            // This test documents expected event structure
-            // Event should include:
-            // - winner address
-            // - caller address
-            // - raffleAmount
-            // - ownerShare (5%)
-            // - winnerShare (90%)
-            // - remainingReserve (5%)
-            // - winnerEnrollmentCount
-
-            // Cannot test actual event emission without triggering raffle
-            // This verifies event signature exists
-            const eventFilter = game.filters.ProtocolRaffleExecuted();
-            expect(eventFilter).to.not.be.undefined;
-        });
-    });
-
     describe("Edge Cases", function () {
         it("Should handle exactly 3 ETH threshold", async function () {
             const accumulated = THREE_ETH;

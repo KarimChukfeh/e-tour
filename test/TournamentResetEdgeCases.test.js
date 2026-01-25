@@ -203,7 +203,7 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             // New player tries to enroll - should fail
             await expect(
                 game.connect(player5).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE })
-            ).to.be.revertedWith("Tournament not accepting enrollments");
+            ).to.be.revertedWith("Enrollment failed");
         });
 
         it("Should reject duplicate enrollment in same tournament", async function () {
@@ -215,7 +215,7 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             // Try to enroll same player again
             await expect(
                 game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE })
-            ).to.be.revertedWith("Already enrolled");
+            ).to.be.revertedWith("Enrollment failed");
         });
 
         it("Should allow same player in different instances", async function () {

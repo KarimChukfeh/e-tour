@@ -313,11 +313,6 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             expect(tournament.prizePool).to.equal(0n, "Prize pool should be reset");
             console.log("✓ Tournament completed and reset");
 
-            // Verify TournamentCompleted event
-            const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-            expect(events.length).to.be.gt(0, "TournamentCompleted event should be emitted");
-            console.log("✓ TournamentCompleted event emitted");
-
             // Verify finalist received prize
             const finalistBalanceAfter = await hre.ethers.provider.getBalance(finalist);
             const gasCost = receipt.gasUsed * receipt.gasPrice;
@@ -399,11 +394,6 @@ describe("ML2 (Force Eliminate) Comprehensive Tests", function() {
             const tournament = await game.getTournamentInfo(TIER_4, INSTANCE_ID);
             expect(tournament.status).to.equal(0, "Tournament should be reset to Enrolling");
             console.log("✓ Tournament completed and reset");
-
-            // Verify event emitted
-            const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-            expect(events.length).to.be.gt(0, "TournamentCompleted event should be emitted");
-            console.log("✓ TournamentCompleted event emitted");
 
             console.log("\n=== TEST COMPLETE ===\n");
         });

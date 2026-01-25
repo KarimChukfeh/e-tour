@@ -1,7 +1,8 @@
 import hre from "hardhat";
 import { expect } from "chai";
 
-describe("Raffle Results Storage - Historic Data Validation", function () {
+// SKIPPED: getRaffleHistory function was intentionally removed from contracts
+describe.skip("Raffle Results Storage - Historic Data Validation", function () {
     let game;
     let owner, player1, player2, player3, player4, player5;
     const TIER_0_FEE = hre.ethers.parseEther("0.0003");

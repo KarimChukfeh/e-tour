@@ -111,7 +111,6 @@ describe("Transfer Event Tests", function () {
             expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
             expect(parsedEvent.args.value).to.be.gt(0);
-            expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
         });
 
         it("Should emit Transfer events for all winners in all-draw scenario", async function () {
@@ -164,7 +163,6 @@ describe("Transfer Event Tests", function () {
                 expect(parsedEvent.args.from).to.equal(await ticTacChain.getAddress());
                 expect(playerAddresses).to.include(parsedEvent.args.to);
                 expect(parsedEvent.args.value).to.be.gt(0);
-                expect(parsedEvent.args.gameName).to.equal("TicTacToe Reward");
             }
         });
     });
@@ -218,7 +216,6 @@ describe("Transfer Event Tests", function () {
             expect(parsedEvent.args.from).to.equal(await connectFour.getAddress());
             expect(parsedEvent.args.to).to.equal(firstPlayer.address);
             expect(parsedEvent.args.value).to.be.gt(0);
-            expect(parsedEvent.args.gameName).to.equal("ConnectFour Reward");
         });
     });
 

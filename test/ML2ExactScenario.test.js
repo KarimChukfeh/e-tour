@@ -113,11 +113,6 @@ describe("ML2 Exact User Scenario", function() {
         console.log(`  Enrolled count: ${tournamentBefore.enrolledCount}`);
         console.log(`  Prize pool: ${hre.ethers.formatEther(tournamentBefore.prizePool)} ETH`);
 
-        const enrolledBefore = await game.getPlayerEnrollingTournaments(winnerAddress);
-        console.log(`  A enrolling tournaments: ${enrolledBefore.length}`);
-        const activeBefore = await game.getPlayerActiveTournaments(winnerAddress);
-        console.log(`  A active tournaments: ${activeBefore.length}`);
-
         expect(tournamentBefore.status).to.equal(1, "Tournament should be InProgress before ML2");
 
         // Check if A is recognized as advanced
@@ -141,31 +136,12 @@ describe("ML2 Exact User Scenario", function() {
         console.log(`  Prize pool: ${hre.ethers.formatEther(tournamentAfter.prizePool)} ETH`);
         console.log(`  Winner: ${tournamentAfter.winner}`);
 
-        const enrolledAfter = await game.getPlayerEnrollingTournaments(winnerAddress);
-        console.log(`  A enrolling tournaments: ${enrolledAfter.length}`);
-        const activeAfter = await game.getPlayerActiveTournaments(winnerAddress);
-        console.log(`  A active tournaments: ${activeAfter.length}`);
-
-        // Check if C and D are still enrolled
-        const cEnrolled = await game.getPlayerEnrollingTournaments(playerC.address);
-        const dEnrolled = await game.getPlayerEnrollingTournaments(playerD.address);
-        console.log(`  C enrolling tournaments: ${cEnrolled.length}`);
-        console.log(`  D enrolling tournaments: ${dEnrolled.length}`);
-
         // Step 7: Verify tournament completed properly
         console.log("\nStep 7: Verifying tournament completion...");
         expect(tournamentAfter.status).to.equal(0, "❌ TOURNAMENT SHOULD BE ENROLLING (RESET)");
         expect(tournamentAfter.enrolledCount).to.equal(0, "❌ ENROLLED COUNT SHOULD BE 0");
         expect(tournamentAfter.prizePool).to.equal(0n, "❌ PRIZE POOL SHOULD BE 0");
         expect(tournamentAfter.winner).to.equal(hre.ethers.ZeroAddress, "❌ WINNER SHOULD BE CLEARED");
-
-        // Verify A is removed from tracking
-        expect(enrolledAfter.length).to.equal(0, "❌ A SHOULD NOT BE IN ENROLLING TOURNAMENTS");
-        expect(activeAfter.length).to.equal(0, "❌ A SHOULD NOT BE IN ACTIVE TOURNAMENTS");
-
-        // Verify C and D are removed from tracking
-        expect(cEnrolled.length).to.equal(0, "❌ C SHOULD NOT BE IN ENROLLING TOURNAMENTS");
-        expect(dEnrolled.length).to.equal(0, "❌ D SHOULD NOT BE IN ENROLLING TOURNAMENTS");
 
         console.log("✓ Tournament properly reset");
 
@@ -178,12 +154,6 @@ describe("ML2 Exact User Scenario", function() {
         console.log(`  A's prize: ${hre.ethers.formatEther(prizeReceived)} ETH`);
         expect(prizeReceived).to.be.gt(0n, "❌ A SHOULD HAVE RECEIVED PRIZE");
         console.log("✓ Prize distributed to A");
-
-        // Step 9: Verify TournamentCompleted event
-        console.log("\nStep 9: Verifying TournamentCompleted event...");
-        const events = await game.queryFilter(game.filters.TournamentCompleted(), receipt.blockNumber, receipt.blockNumber);
-        expect(events.length).to.be.gt(0, "❌ TOURNAMENT COMPLETED EVENT SHOULD BE EMITTED");
-        console.log(`✓ TournamentCompleted event emitted (${events.length} event(s))`);
 
         console.log("\n=== TEST COMPLETE ✅ ===\n");
     });

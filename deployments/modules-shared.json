@@ -1,12 +1,12 @@
 {
   "network": "arbitrum",
   "chainId": null,
-  "timestamp": "2026-01-21T11:19:47.220Z",
+  "timestamp": "2026-01-25T02:46:51.643Z",
   "modules": {
-    "core": "0x3482FF20f8DD75B513e76C7196D28E16DbcbaB6D",
-    "matches": "0x46224F906AeC25EF15A1c1F457354aE370eF7341",
-    "prizes": "0x11A3e6471Ae0CE371a28Db16Cf4fF29fbEC132e2",
-    "raffle": "0xDa0E129DbD8B29455645863d427216515aD60AD2",
-    "escalation": "0xA0B7DA390af992173e0b76acA5C8C53E20f00dAf"
+    "core": "0x39A403997c5A33508c0DB4b35DD6aCC8179D623c",
+    "matches": "0x2c6145aaa5D1c015e4Fa678F3aa9eBEf7889D8f5",
+    "prizes": "0xB15Ee6bB89Fb419aCCFBf05514ce7549e18d8c5b",
+    "raffle": "0x8a7255A5b9bfD237D522539DC276e459D7CA099e",
+    "escalation": "0x303aA52B6b1b984e2423225afE4dD4D4902EA507"
   }
 }

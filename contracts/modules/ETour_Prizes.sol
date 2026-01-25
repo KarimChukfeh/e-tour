@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
-import "../interfaces/IETourGame.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Prizes
@@ -26,25 +25,22 @@ import "../interfaces/IETourGame.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Prizes is ETour_Storage {
+contract ETour_Prizes is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    // This is a bit of a hack - modules inherit ETour_Storage for type definitions
+    // This is a bit of a hack - modules inherit ETour_Base for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
-    // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
-    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
-    function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _getMatchPlayers(bytes32) public view override returns (address, address) { revert("Module: Use IETourGame"); }
-    function _setMatchPlayer(bytes32, uint8, address) public override { revert("Module: Use IETourGame"); }
-    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Use IETourGame"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    // ============ Abstract Function Stubs (Never Called - Modules call directly via inheritance) ============
+    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Call directly"); }
+    function _resetMatchGame(bytes32) public override { revert("Module: Call directly"); }
+    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Call directly"); }
+    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Call directly"); }
+    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Call directly"); }
+    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Call directly"); }
+    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Call directly"); }
+    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Call directly"); }
 
     // ============ Prize Distribution Functions ============
 
@@ -59,7 +55,7 @@ contract ETour_Prizes is ETour_Storage {
         uint8 instanceId,
         string memory gameName
     ) public returns (bool success) {
-        require(amount > 0, "Amount must be greater than 0");
+        require(amount > 0, "AM");
 
         // Attempt to send the prize once
         (bool sent, ) = payable(recipient).call{value: amount}("");
@@ -75,8 +71,8 @@ contract ETour_Prizes is ETour_Storage {
     }
 
     /**
-     * @dev Distribute prizes based on player rankings
-     * EXACT COPY from ETour.sol lines 1238-1274
+     * @dev Distribute prize to tournament winner (winner-takes-all)
+     * Simplified from ranking-based distribution
      * @return winners Array of addresses that received prizes
      * @return prizes Array of prize amounts corresponding to each winner
      */
@@ -84,56 +80,17 @@ contract ETour_Prizes is ETour_Storage {
         external
         returns (address[] memory winners, uint256[] memory prizes)
     {
-        address[] storage players = enrolledPlayers[tierId][instanceId];
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        address winner = tournaments[tierId][instanceId].winner;
+        playerPrizes[tierId][instanceId][winner] = winnersPot;
 
-        uint8 enrolledCount = tournament.enrolledCount;
-        uint8 maxRank = enrolledCount > 0 ? enrolledCount : _tierConfigs[tierId].playerCount;
-        uint8[] memory rankCounts = new uint8[](maxRank + 1);
+        // Attempt to send prize with fallback to protocol pool if failed
+        bool sent = sendPrizeWithFallback(winner, winnersPot, tierId, instanceId, gameName);
 
-        for (uint256 i = 0; i < players.length; i++) {
-            uint8 ranking = playerRanking[tierId][instanceId][players[i]];
-            if (ranking > 0 && ranking <= maxRank) {
-                rankCounts[ranking]++;
-            }
-        }
-
-        // Use temporary arrays with max possible size
-        address[] memory tempWinners = new address[](players.length);
-        uint256[] memory tempPrizes = new uint256[](players.length);
-        uint256 successCount = 0;
-
-        for (uint256 i = 0; i < players.length; i++) {
-            address player = players[i];
-            uint8 ranking = playerRanking[tierId][instanceId][player];
-
-            if (ranking > 0 && ranking <= maxRank) {
-                uint256 prizeAmount = _calculatePrizeForRank(tierId, ranking, rankCounts[ranking], winnersPot);
-
-                if (prizeAmount > 0) {
-                    playerPrizes[tierId][instanceId][player] = prizeAmount;
-
-                    // Attempt to send prize with fallback to protocol pool if failed
-                    // Call directly as internal function (no nested delegatecall needed)
-                    bool sent = sendPrizeWithFallback(player, prizeAmount, tierId, instanceId, gameName);
-
-                    // Only add to return arrays if prize was successfully sent
-                    if (sent) {
-                        tempWinners[successCount] = player;
-                        tempPrizes[successCount] = prizeAmount;
-                        successCount++;
-                    }
-                }
-            }
-        }
-
-        // Create properly sized return arrays
-        winners = new address[](successCount);
-        prizes = new uint256[](successCount);
-        for (uint256 i = 0; i < successCount; i++) {
-            winners[i] = tempWinners[i];
-            prizes[i] = tempPrizes[i];
-        }
+        // Return arrays (always single winner)
+        winners = new address[](1);
+        prizes = new uint256[](1);
+        winners[0] = winner;
+        prizes[0] = sent ? winnersPot : 0;
     }
 
     /**
@@ -158,7 +115,6 @@ contract ETour_Prizes is ETour_Storage {
 
         for (uint256 i = 0; i < remainingPlayers.length; i++) {
             address player = remainingPlayers[i];
-            playerRanking[tierId][instanceId][player] = 0;
             playerPrizes[tierId][instanceId][player] = prizePerPlayer;
 
             // Attempt to send prize with fallback to protocol pool if failed
@@ -182,39 +138,7 @@ contract ETour_Prizes is ETour_Storage {
         }
     }
 
-    /**
-     * @dev Calculate prize amount for a specific rank
-     * Simplified: First place gets 100%, everyone else gets 0%
-     */
-    function calculatePrizeForRank(
-        uint8 tierId,
-        uint8 ranking,
-        uint8 playersAtRank,
-        uint256 winnersPot
-    ) external pure returns (uint256) {
-        if (ranking == 1) {
-            return winnersPot / uint256(playersAtRank);
-        }
-        return 0;
-    }
-
-    // ============ Internal Prize Calculation Helper ============
-
-    /**
-     * @dev Internal helper for prize calculation (called by distributePrizes)
-     * Simplified: First place gets 100%, everyone else gets 0%
-     */
-    function _calculatePrizeForRank(
-        uint8 tierId,
-        uint8 ranking,
-        uint8 playersAtRank,
-        uint256 winnersPot
-    ) internal pure returns (uint256) {
-        if (ranking == 1) {
-            return winnersPot / uint256(playersAtRank);
-        }
-        return 0;
-    }
+    // Removed: calculatePrizeForRank and _calculatePrizeForRank (no longer needed with winner-takes-all)
 
     // ============ Earnings & Leaderboard Functions ============
 
@@ -292,16 +216,12 @@ contract ETour_Prizes is ETour_Storage {
         for (uint256 i = 0; i < players.length; i++) {
             address player = players[i];
             isEnrolled[tierId][instanceId][player] = false;
-            delete playerRanking[tierId][instanceId][player];
             // Note: playerPrizes is intentionally NOT deleted - it's permanent historical record
         }
         delete enrolledPlayers[tierId][instanceId];
 
-        // Notify tracking systems of tournament completion
-        _onTournamentCompleted(tierId, instanceId, playersCopy);
-
         // ARCHITECTURE: Finals are treated like any other match - no special preservation
-        // Historical data is available via events (MatchCreated, MatchCompleted, TournamentCompleted)
+        // Historical data is available via events (MatchCreated, MatchCompleted)
         // This prevents stale data persistence issues and simplifies the codebase
 
         for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
@@ -348,29 +268,8 @@ contract ETour_Prizes is ETour_Storage {
 
     // ============ Leaderboard Getters ============
 
-    /**
-     * @dev Leaderboard entry struct
-     * EXACT COPY from ETour.sol lines 2422-2425
-     */
-    struct LeaderboardEntry {
-        address player;
-        int256 earnings;
-    }
-
-    /**
-     * @dev Get all leaderboard entries
-     * EXACT COPY from ETour.sol lines 2427-2436
-     */
-    function getLeaderboard() external view returns (LeaderboardEntry[] memory) {
-        LeaderboardEntry[] memory entries = new LeaderboardEntry[](_leaderboardPlayers.length);
-        for (uint256 i = 0; i < _leaderboardPlayers.length; i++) {
-            entries[i] = LeaderboardEntry({
-                player: _leaderboardPlayers[i],
-                earnings: playerEarnings[_leaderboardPlayers[i]]
-            });
-        }
-        return entries;
-    }
+    // Note: LeaderboardEntry struct and getLeaderboard() function
+    // are now inherited from ETour_Base
 
     /**
      * @dev Get count of players on leaderboard

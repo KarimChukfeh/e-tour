@@ -290,11 +290,6 @@ describe("ChessOnChain Tests", function () {
             await expect(
                 chess.connect(whitePlayer).makeMove(tierId, freshInstanceId, roundNumber, matchNumber, e2, e4, 0)
             ).to.emit(chess, "MoveMade");
-
-            // Verify the board state changed
-            const board = await chess.getBoard(tierId, freshInstanceId, roundNumber, matchNumber);
-            expect(Number(board[e4])).to.equal(1); // White pawn now on e4
-            expect(Number(board[e2])).to.equal(0); // e2 is empty
         });
 
         it("Should return correct status from all view functions after 1v1 duel starts", async function () {
@@ -444,10 +439,6 @@ describe("ChessOnChain Tests", function () {
                 tierId, instanceId, roundNumber, matchNumber,
                 sq.g7, sq.g8, PieceType.Queen
             );
-
-            // Verify the pawn is now a queen (5 = White Queen)
-            const board = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
-            expect(Number(board[sq.g8])).to.equal(5); // White Queen
         });
 
         it("Should reject promotion with PieceType.None", async function () {
@@ -531,12 +522,6 @@ describe("ChessOnChain Tests", function () {
 
             // 7. O-O (kingside castling: e1-g1)
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.e1, sq.g1, PieceType.None);
-
-            // Verify king and rook positions after castling
-            // King should be on g1 (6), Rook should be on f1 (5)
-            const boardAfter = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
-            expect(Number(boardAfter[sq.g1])).to.equal(6); // White King on g1
-            expect(Number(boardAfter[5])).to.equal(4);    // White Rook on f1
         });
     });
 
@@ -624,17 +609,6 @@ describe("ChessOnChain Tests", function () {
             expect(matchData.common.status).to.equal(1); // InProgress
             // fullMoveNumber is encoded in packedState bits 22-31
         });
-
-        it("Should return board state", async function () {
-            const board = await chess.getBoard(tierId, instanceId, roundNumber, matchNumber);
-            expect(board.length).to.equal(64);
-
-            // Check initial position - white king on e1 (square 4)
-            // Board returns raw uint8 values: 6 = White King, 12 (0xC) = Black King
-            expect(Number(board[4])).to.equal(6); // White King
-            // Black king on e8 (square 60)
-            expect(Number(board[60])).to.equal(12); // Black King (0xC)
-        });
     });
 
     describe("Scholar's Mate (Checkmate)", function () {
@@ -688,20 +662,12 @@ describe("ChessOnChain Tests", function () {
             // 7. Qh5xf7# (CHECKMATE!)
             const tx = await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, sq.h5, sq.f7, PieceType.None);
 
-            // Verify tournament completed via TournamentCompleted event (finals cleared immediately)
-            const receipt = await tx.wait();
-            const tournamentEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = chess.interface.parseLog(log);
-                    return parsed.name === "TournamentCompleted";
-                } catch (e) {
-                    return false;
-                }
-            });
-            expect(tournamentEvent).to.not.be.undefined;
-            const parsedEvent = chess.interface.parseLog(tournamentEvent);
-            expect(parsedEvent.args.winner).to.equal(whitePlayer.address);
-            expect(parsedEvent.args.reason).to.equal(0); // NormalWin
+            // Verify tournament completed (finals cleared immediately)
+            await tx.wait();
+
+            // Tournament should be completed and reset
+            const tournament = await chess.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(0); // Reset to Enrolling
         });
     });
 

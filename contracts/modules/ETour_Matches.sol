@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
-import "../interfaces/IETourGame.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Matches
@@ -25,10 +24,10 @@ import "../interfaces/IETourGame.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Matches is ETour_Storage {
+contract ETour_Matches is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
     // ============ Abstract Function Stubs (Empty implementations for module deployment) ============
     // During delegatecall, game contract's implementations are called via this.function()
@@ -53,9 +52,11 @@ contract ETour_Matches is ETour_Storage {
     /**
      * @dev Initialize a new round with matches
      * EXACT COPY from ETour.sol lines 869-911
+     * Module implementation - called via delegatecall from game contracts
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+        require(matchCount > 0 || roundNumber > 0, "Invalid match count");
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
@@ -66,6 +67,7 @@ contract ETour_Matches is ETour_Storage {
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
+            require(players.length >= 2, "Not enough players");
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
@@ -85,7 +87,11 @@ contract ETour_Matches is ETour_Storage {
             }
 
             for (uint8 i = 0; i < matchCount; i++) {
-                this._createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
+                address p1 = players[i * 2];
+                address p2 = players[i * 2 + 1];
+                require(p1 != address(0) && p2 != address(0), "Invalid player addresses");
+
+                this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
             }
 
             if (walkoverPlayer != address(0)) {
@@ -110,11 +116,6 @@ contract ETour_Matches is ETour_Storage {
         bool isDraw
     ) public {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
-        // Remove match from both players' active match lists
-        (address player1, address player2) = this._getMatchPlayers(matchId);
-        removePlayerActiveMatch(player1, matchId);
-        removePlayerActiveMatch(player2, matchId);
 
         // Note: Escalation state is cleared by the game contract before calling completeMatch
         // No need to clear again here to avoid double clearing
@@ -187,9 +188,6 @@ contract ETour_Matches is ETour_Storage {
         if (p1 != address(0) && p2 != address(0) && status == MatchStatus.NotStarted) {
             require(p1 != p2, "Cannot match player against themselves");
             this._initializeMatchForPlay(nextMatchId, tierId);
-
-            addPlayerActiveMatch(p1, nextMatchId);
-            addPlayerActiveMatch(p2, nextMatchId);
         }
     }
 
@@ -216,8 +214,6 @@ contract ETour_Matches is ETour_Storage {
                 tournament.finalsWasDraw = true;
                 tournament.completionReason = CompletionReason.Draw;
                 tournament.winner = finalPlayer1;
-                playerRanking[tierId][instanceId][finalPlayer1] = 1;
-                playerRanking[tierId][instanceId][finalPlayer2] = 1;
                 completeTournament(tierId, instanceId, finalPlayer1);
             } else {
                 tournament.completionReason = CompletionReason.NormalWin;
@@ -227,26 +223,7 @@ contract ETour_Matches is ETour_Storage {
             address[] memory remainingPlayers = getRemainingPlayers(tierId, instanceId, roundNumber);
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
         } else {
-            // Assign rankings to losers based on round (for prize distribution)
-            // Finals loser gets rank 2 (handled in completeTournament)
-            // Semi-finals losers get ranks 3-4, quarters losers get ranks 5-8, etc.
-            uint8 roundsFromEnd = config.totalRounds - roundNumber - 1;
-            if (roundsFromEnd > 0 && roundsFromEnd <= 3) { // Only rank semi (1) and quarters (2) losers
-                uint8 baseRank = uint8(1 + (1 << roundsFromEnd)); // Semi=3, Quarters=5
-                uint8 currentRank = baseRank;
-                for (uint8 i = 0; i < round.totalMatches; i++) {
-                    bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
-                    if (matchStatus == MatchStatus.Completed && !matchIsDraw && matchWinner != address(0)) {
-                        (address p1, address p2) = this._getMatchPlayers(matchId);
-                        address loser = (matchWinner == p1) ? p2 : p1;
-                        if (loser != address(0) && playerRanking[tierId][instanceId][loser] == 0) {
-                            playerRanking[tierId][instanceId][loser] = currentRank++;
-                        }
-                    }
-                }
-            }
-
+            // Removed: Ranking assignments (no longer needed with winner-takes-all)
             tournament.currentRound = roundNumber + 1;
             consolidateScatteredPlayers(tierId, instanceId, roundNumber + 1);
 
@@ -292,17 +269,7 @@ contract ETour_Matches is ETour_Storage {
                     (address pm0p1, address pm0p2) = this._getMatchPlayers(prevMatchId0);
                     (address pm1p1, address pm1p2) = this._getMatchPlayers(prevMatchId1);
 
-                    address runnerUp = address(0);
-                    if (pm0Winner == walkoverWinner && !pm0Draw) {
-                        runnerUp = pm0p1 == walkoverWinner ? pm0p2 : pm0p1;
-                    } else if (pm1Winner == walkoverWinner && !pm1Draw) {
-                        runnerUp = pm1p1 == walkoverWinner ? pm1p2 : pm1p1;
-                    }
-
-                    if (runnerUp != address(0)) {
-                        playerRanking[tierId][instanceId][runnerUp] = 2;
-                    }
-
+                    // Removed: RunnerUp ranking (no longer needed with winner-takes-all)
                     completeTournament(tierId, instanceId, walkoverWinner);
                 }
             }
@@ -323,18 +290,7 @@ contract ETour_Matches is ETour_Storage {
 
         if (tournament.winner == address(0)) {
             tournament.winner = winner;
-            playerRanking[tierId][instanceId][winner] = 1;
-
-            // Assign rank 2 to finals loser (if not a draw)
-            if (!tournament.finalsWasDraw) {
-                uint8 finalRound = config.totalRounds - 1;
-                bytes32 finalsMatchId = _getMatchId(tierId, instanceId, finalRound, 0);
-                (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalsMatchId);
-                address finalsLoser = (winner == finalPlayer1) ? finalPlayer2 : finalPlayer1;
-                if (finalsLoser != address(0)) {
-                    playerRanking[tierId][instanceId][finalsLoser] = 2;
-                }
-            }
+            // Removed: Ranking assignments (no longer needed with winner-takes-all)
         }
 
         uint256 winnersPot = tournament.prizePool;
@@ -371,8 +327,6 @@ contract ETour_Matches is ETour_Storage {
         // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
         // from MODULE_MATCHES -> MODULE_PRIZES don't work (MODULE_PRIZES = address(0) in module bytecode)
-
-        emit TournamentCompleted(tierId, instanceId, address(0), winnersPot, CompletionReason.AllDrawScenario, players);
     }
 
     // ============ Player Consolidation ============
@@ -726,37 +680,25 @@ contract ETour_Matches is ETour_Storage {
         return winnersFromPrevRound / 2;
     }
 
-    // ============ Player Active Match Tracking ============
+    // ============ Player Advancement Detection ============
 
     /**
-     * @dev Add match to player's active matches
-     * EXACT COPY from ETour.sol lines 979-984
+     * @dev Check if a player has advanced past the stalled round
+     *
+     * Used by Level 2 escalation to determine if a player can force-eliminate stalled players.
+     * A player is "advanced" if they either:
+     * 1. Won a match in rounds 0 to stalledRoundNumber (inclusive), OR
+     * 2. Are assigned to a match in a round after stalledRoundNumber
+     *
+     * This is a VIEW function called via staticcall from ETour_Escalation module.
+     *
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param stalledRoundNumber Round number of the stalled match
+     * @param player Address to check
+     * @return hasAdvanced True if player is in an advanced round
+     *
+     * EXTRACTION: Removes ~45 lines of duplicate code from each game contract
      */
-    function addPlayerActiveMatch(address player, bytes32 matchId) public {
-        playerActiveMatches[player].push(matchId);
-        playerMatchIndex[player][matchId] = playerActiveMatches[player].length - 1;
-    }
-
-    /**
-     * @dev Remove match from player's active matches
-     * EXACT COPY from ETour.sol lines 986-997
-     */
-    function removePlayerActiveMatch(address player, bytes32 matchId) public {
-        // Safety check: if player has no active matches, return early
-        if (playerActiveMatches[player].length == 0) {
-            return;
-        }
-
-        uint256 index = playerMatchIndex[player][matchId];
-        uint256 lastIndex = playerActiveMatches[player].length - 1;
-
-        if (index != lastIndex) {
-            bytes32 lastMatchId = playerActiveMatches[player][lastIndex];
-            playerActiveMatches[player][index] = lastMatchId;
-            playerMatchIndex[player][lastMatchId] = index;
-        }
-
-        playerActiveMatches[player].pop();
-        delete playerMatchIndex[player][matchId];
-    }
+    // Note: isPlayerInAdvancedRound() is now implemented in ETour_Base for direct storage access
 }

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
-import "../interfaces/IETourGame.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Core
@@ -25,25 +24,22 @@ import "../interfaces/IETourGame.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Core is ETour_Storage {
+contract ETour_Core is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    // This is a bit of a hack - modules inherit ETour_Storage for type definitions
+    // This is a bit of a hack - modules inherit ETour_Base for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
-    // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
-    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
-    function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _getMatchPlayers(bytes32) public view override returns (address, address) { revert("Module: Use IETourGame"); }
-    function _setMatchPlayer(bytes32, uint8, address) public override { revert("Module: Use IETourGame"); }
-    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Use IETourGame"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    // ============ Abstract Function Stubs (Never Called - Modules call directly via inheritance) ============
+    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Call directly"); }
+    function _resetMatchGame(bytes32) public override { revert("Module: Call directly"); }
+    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Call directly"); }
+    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Call directly"); }
+    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Call directly"); }
+    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Call directly"); }
+    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Call directly"); }
+    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Call directly"); }
 
     // ============ Tier Configuration ============
 
@@ -101,8 +97,9 @@ contract ETour_Core is ETour_Storage {
     /**
      * @dev Enroll in tournament with entry fee
      * EXACT COPY from ETour.sol lines 562-611
+     * Module implementation - called via delegatecall from game contracts
      */
-    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable {
+    function enrollInTournament(uint8 tierId, uint8 instanceId) external payable override {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -142,7 +139,7 @@ contract ETour_Core is ETour_Storage {
         tournament.enrolledCount++;
         tournament.prizePool += participantsShare;
 
-        // Note: _onPlayerEnrolled hook is called by game contract after delegatecall returns
+        emit TournamentEnrolled(msg.sender, tierId, instanceId);
 
         if (tournament.enrolledCount == config.playerCount) {
             startTournament(tierId, instanceId);
@@ -152,8 +149,9 @@ contract ETour_Core is ETour_Storage {
     /**
      * @dev Force start tournament if enrollment window expired
      * EXACT COPY from ETour.sol lines 613-631
+     * Module implementation - called via delegatecall from game contracts
      */
-    function forceStartTournament(uint8 tierId, uint8 instanceId) external {
+    function forceStartTournament(uint8 tierId, uint8 instanceId) external override {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -276,14 +274,13 @@ contract ETour_Core is ETour_Storage {
         tournament.startTime = block.timestamp;
         tournament.currentRound = 0;
 
-        // Note: _onTournamentStarted hook is called by game contract after delegatecall returns
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Completed;
             tournament.completionReason = CompletionReason.NormalWin;
-            playerRanking[tierId][instanceId][soloWinner] = 1;
+            // Removed: Ranking assignment (no longer needed with winner-takes-all)
 
             uint256 winnersPot = tournament.prizePool;
             playerPrizes[tierId][instanceId][soloWinner] = winnersPot;
@@ -299,11 +296,6 @@ contract ETour_Core is ETour_Storage {
                     accumulatedProtocolShare += winnersPot;
                 }
             }
-
-            // Create enrolled players array for event
-            address[] memory singlePlayerArray = new address[](1);
-            singlePlayerArray[0] = soloWinner;
-            emit TournamentCompleted(tierId, instanceId, soloWinner, winnersPot, CompletionReason.NormalWin, singlePlayerArray);
 
             // Update player earnings inline (avoid nested delegatecall)
             if (winnersPot > 0) {
@@ -447,25 +439,7 @@ contract ETour_Core is ETour_Storage {
         return _tierConfigs[tierId].playerCount;
     }
 
-    /**
-     * @dev Get comprehensive tournament information
-     */
-    function getTournamentInfo(uint8 tierId, uint8 instanceId) external view returns (
-        TournamentStatus status,
-        uint8 currentRound,
-        uint8 enrolledCount,
-        uint256 prizePool,
-        address winner
-    ) {
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        return (
-            tournament.status,
-            tournament.currentRound,
-            tournament.enrolledCount,
-            tournament.prizePool,
-            tournament.winner
-        );
-    }
+    // Note: getTournamentInfo() function is now inherited from ETour_Base
 
     /**
      * @dev Get total player capacity across all tiers

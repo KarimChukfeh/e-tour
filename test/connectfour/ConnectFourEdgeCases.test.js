@@ -69,7 +69,7 @@ describe("ConnectFour Edge Cases", function () {
             // Try to place 7th piece in same column - should fail (column full)
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3)
-            ).to.be.reverted; // Error code is "CF" now
+            ).to.be.revertedWithCustomError(game, "ColumnFull");
         });
 
         it("Should allow moves to other columns when one column is full", async function () {
@@ -93,7 +93,7 @@ describe("ConnectFour Edge Cases", function () {
             // Column 0 should be full - verify by checking move fails
             await expect(
                 game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0)
-            ).to.be.reverted;
+            ).to.be.revertedWithCustomError(game, "ColumnFull");
 
             // Column 1 should still be available - verify successful move
             await expect(

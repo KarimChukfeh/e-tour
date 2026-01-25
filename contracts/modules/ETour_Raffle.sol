@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETour_Storage.sol";
+import "../ETour_Base.sol";
 
 /**
  * @title ETour_Raffle
@@ -25,25 +25,22 @@ import "../ETour_Storage.sol";
  * STATELESS: This contract declares NO storage variables of its own.
  * All storage access is to the game contract's storage via delegatecall context.
  */
-contract ETour_Raffle is ETour_Storage {
+contract ETour_Raffle is ETour_Base {
 
     // Constructor - modules need to set module addresses even though they're stateless
-    // This is a bit of a hack - modules inherit ETour_Storage for type definitions
+    // This is a bit of a hack - modules inherit ETour_Base for type definitions
     // but their storage is never used (delegatecall uses game contract's storage)
-    constructor() ETour_Storage(address(0), address(0), address(0), address(0), address(0)) {}
+    constructor() ETour_Base(address(0), address(0), address(0), address(0), address(0)) {}
 
-    // ============ Abstract Function Stubs (Never Called - Modules Use IETourGame Interface) ============
-    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Use IETourGame"); }
-    function _resetMatchGame(bytes32) public override { revert("Module: Use IETourGame"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Use IETourGame"); }
-    function _getMatchPlayers(bytes32) public view override returns (address, address) { revert("Module: Use IETourGame"); }
-    function _setMatchPlayer(bytes32, uint8, address) public override { revert("Module: Use IETourGame"); }
-    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Use IETourGame"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Use IETourGame"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Use IETourGame"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _isMatchActive(bytes32) public view override returns (bool) { revert("Module: Use IETourGame"); }
-    function _getActiveMatchData(bytes32, uint8, uint8, uint8, uint8) public view override returns (CommonMatchData memory) { revert("Module: Use IETourGame"); }
+    // ============ Abstract Function Stubs (Never Called - Modules call directly via inheritance) ============
+    function _createMatchGame(uint8, uint8, uint8, uint8, address, address) public override { revert("Module: Call directly"); }
+    function _resetMatchGame(bytes32) public override { revert("Module: Call directly"); }
+    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module: Call directly"); }
+    function _initializeMatchForPlay(bytes32, uint8) public override { revert("Module: Call directly"); }
+    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module: Call directly"); }
+    function _getTimeIncrement() public view override returns (uint256) { revert("Module: Call directly"); }
+    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module: Call directly"); }
+    function initializeRound(uint8, uint8, uint8) public override { revert("Module: Call directly"); }
 
     // ============ Raffle Configuration Functions ============
 
@@ -55,25 +52,6 @@ contract ETour_Raffle is ETour_Storage {
         // If no raffle thresholds configured, use default
         if (raffleThresholds.length == 0) {
             return 3 ether;
-        }
-
-        // If currentRaffleIndex is within the configured array, use that value
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-
-        // Otherwise, use the final threshold
-        return raffleThresholdFinal;
-    }
-
-    /**
-     * @dev Internal helper for getting raffle threshold
-     * EXACT COPY from ETour.sol lines 534-547
-     */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        // If no raffle thresholds configured, use default
-        if (raffleThresholds.length == 0) {
-            return 1 ether;
         }
 
         // If currentRaffleIndex is within the configured array, use that value
@@ -236,6 +214,15 @@ contract ETour_Raffle is ETour_Storage {
         }
 
         return (players, weights, totalWeight);
+    }
+
+    /**
+     * @dev Get count of unique eligible players for raffle
+     * Returns the number of unique players enrolled in active tournaments
+     */
+    function getEligiblePlayerCount() external view returns (uint256) {
+        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
+        return players.length;
     }
 
     /**
@@ -452,19 +439,7 @@ contract ETour_Raffle is ETour_Storage {
             }
         }
 
-        // EFFECT 6: Emit event
-        emit ProtocolRaffleExecuted(
-            currentRaffleIndex,
-            winner,
-            msg.sender,
-            raffleAmount,
-            ownerAmount,
-            winnerAmount,
-            accumulatedProtocolShare,
-            winnerEnrollmentCount
-        );
-
-        // EFFECT 7: Store historic raffle result
+        // EFFECT 6: Store historic raffle result
         raffleResults[currentRaffleIndex] = RaffleResult({
             executor: msg.sender,
             timestamp: block.timestamp,
@@ -523,55 +498,5 @@ contract ETour_Raffle is ETour_Storage {
         );
     }
 
-    /**
-     * @dev Returns detailed raffle state information for client display
-     * EXACT COPY from ETour.sol lines 2465-2510
-     */
-    function getRaffleInfo()
-        external
-        view
-        returns (
-            uint256 raffleIndex,
-            bool isReady,
-            uint256 currentAccumulated,
-            uint256 threshold,
-            uint256 reserve,
-            uint256 raffleAmount,
-            uint256 ownerShare,
-            uint256 winnerShare,
-            uint256 eligiblePlayerCount
-        )
-    {
-        raffleIndex = currentRaffleIndex;
-        currentAccumulated = accumulatedProtocolShare;
-
-        // Use virtual functions for threshold and reserve
-        threshold = _getRaffleThreshold();
-        reserve = _getRaffleReserve();
-
-        isReady = currentAccumulated >= threshold;
-
-        // Always calculate what the distribution WILL BE at threshold
-        // This allows clients to display: "When 3 ETH reached, 2 ETH distributed, 1 ETH kept"
-        // even before the threshold is reached
-        raffleAmount = threshold - reserve;
-        ownerShare = (raffleAmount * 5) / 95;
-        winnerShare = (raffleAmount * 90) / 95;
-
-        // Count eligible players
-        (address[] memory players, , ) = _getAllEnrolledPlayersWithWeights();
-        eligiblePlayerCount = players.length;
-
-        return (
-            raffleIndex,
-            isReady,
-            currentAccumulated,
-            threshold,
-            reserve,
-            raffleAmount,
-            ownerShare,
-            winnerShare,
-            eligiblePlayerCount
-        );
-    }
+    // Note: getRaffleInfo() function is now inherited from ETour_Base
 }
