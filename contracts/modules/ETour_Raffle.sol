@@ -308,36 +308,8 @@ contract ETour_Raffle is ETour_Base {
         return (players, weights, totalWeight);
     }
 
-    /**
-     * @dev Selects winner using weighted random selection (cumulative probability method)
-     * EXACT COPY from ETour.sol lines 2850-2875
-     */
-    function selectWeightedWinner(
-        address[] memory players,
-        uint256[] memory weights,
-        uint256 totalWeight,
-        uint256 randomness
-    ) external pure returns (address winner) {
-        require(players.length > 0, "No players available");
-        require(players.length == weights.length, "Array length mismatch");
-
-        // Generate random position in [0, totalWeight)
-        uint256 randomPosition = randomness % totalWeight;
-
-        // Find winner using cumulative probability
-        uint256 cumulativeWeight = 0;
-
-        for (uint256 i = 0; i < players.length; i++) {
-            cumulativeWeight += weights[i];
-
-            if (randomPosition < cumulativeWeight) {
-                return players[i];
-            }
-        }
-
-        // Fallback (should never reach here)
-        return players[players.length - 1];
-    }
+    // REMOVED: selectWeightedWinner() external - Duplicate of internal version, never used
+    // Only internal _selectWeightedWinner() is needed
 
     /**
      * @dev Internal helper for weighted winner selection

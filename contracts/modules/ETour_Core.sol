@@ -53,7 +53,7 @@ contract ETour_Core is ETour_Base {
         uint8 instanceCount,
         uint256 entryFee,
         TimeoutConfig memory timeouts
-    ) external {
+    ) external onlyDelegateCall {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
         require(playerCount >= 2, "Need at least 2 players");
         require(instanceCount >= 1, "Need at least 1 instance");
@@ -73,24 +73,8 @@ contract ETour_Core is ETour_Base {
         }
     }
 
-    /**
-     * @dev Register raffle threshold configuration
-     * EXACT COPY from ETour.sol lines 307-320
-     */
-    function registerRaffleThresholds(
-        uint256[] memory thresholds,
-        uint256 finalThreshold
-    ) external {
-        require(raffleThresholds.length == 0, "Raffle thresholds already registered");
-        require(finalThreshold > 0, "Final threshold must be greater than 0");
-
-        for (uint256 i = 0; i < thresholds.length; i++) {
-            require(thresholds[i] > 0, "Threshold must be greater than 0");
-            raffleThresholds.push(thresholds[i]);
-        }
-
-        raffleThresholdFinal = finalThreshold;
-    }
+    // REMOVED: registerRaffleThresholds() - Never called anywhere in codebase
+    // Raffle thresholds would need to be configured differently if needed
 
     // ============ Enrollment Functions ============
 
@@ -270,8 +254,9 @@ contract ETour_Core is ETour_Base {
     /**
      * @dev Start tournament (handles solo winner case, delegates to Matches module for multi-player)
      * EXACT COPY from ETour.sol lines 831-867 with delegatecall to MODULE_MATCHES
+     * INTERNAL: Only called from enrollInTournament and forceStartTournament
      */
-    function startTournament(uint8 tierId, uint8 instanceId) public onlyDelegateCall {
+    function startTournament(uint8 tierId, uint8 instanceId) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         tournament.status = TournamentStatus.InProgress;
         tournament.startTime = block.timestamp;
@@ -323,13 +308,14 @@ contract ETour_Core is ETour_Base {
     /**
      * @dev Update earnings for abandoned enrollment claim
      * EXACT COPY from ETour.sol lines 2128-2142
+     * INTERNAL: Only called from claimAbandonedEnrollmentPool
      */
     function updateAbandonedEarnings(
         uint8 tierId,
         uint8 instanceId,
         address claimer,
         uint256 claimAmount
-    ) public {
+    ) internal {
         // Only track the claimer if they receive a claim amount
         // Enrolled players who abandoned don't receive anything, so don't track them
         if (claimAmount > 0) {
@@ -401,17 +387,7 @@ contract ETour_Core is ETour_Base {
 
     // ============ Additional Getters (Extracted from Game Contracts) ============
 
-    /**
-     * @dev Generate unique match identifier
-     */
-    function getMatchId(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public pure returns (bytes32) {
-        return _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-    }
+    // REMOVED: getMatchId() - Redundant wrapper around _getMatchId() from ETour_Base, never called
 
     /**
      * @dev Get full tier configuration struct

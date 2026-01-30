@@ -109,50 +109,8 @@ contract ETour_Escalation is ETour_Base {
         timeout.activeEscalation = EscalationLevel.None;
     }
 
-    /**
-     * @dev Check if a match should be marked as stalled and mark it if needed
-     * EXACT COPY from ETour.sol lines 1709-1748
-     */
-    function checkAndMarkStalled(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external returns (bool) {
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-
-        // If already marked as stalled, return true
-        if (timeout.isStalled) {
-            return true;
-        }
-
-        // Check if match is active
-        if (!this._isMatchActive(matchId)) {
-            return false;
-        }
-
-        // Get match common data to check status
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
-        if (matchData.status != MatchStatus.InProgress) {
-            return false;
-        }
-
-        // Check if current player has run out of time (using game-specific time bank logic)
-        if (this._hasCurrentPlayerTimedOut(matchId)) {
-            TierConfig storage config = _tierConfigs[tierId];
-
-            // Calculate when the timeout occurred for accurate escalation timing
-            // Timeout occurs at: lastMoveTime + currentPlayer's timeRemaining
-            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
-
-            // Mark as stalled with escalation timers starting from timeout occurrence
-            _markMatchStalled(matchId, tierId, timeoutOccurredAt);
-            return true;
-        }
-
-        return false;
-    }
+    // REMOVED: checkAndMarkStalled() external - Never called via delegatecall
+    // Only internal version _checkAndMarkStalled() is used
 
     /**
      * @dev Internal helper for checking and marking stalled
@@ -384,10 +342,7 @@ contract ETour_Escalation is ETour_Base {
 
         this._completeMatchWithResult(matchId, address(0), false);
 
-        // Assign rankings directly
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
-
+        // Note: Ranking assignments removed (winner-takes-all distribution)
 
         // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
@@ -421,10 +376,7 @@ contract ETour_Escalation is ETour_Base {
 
         this._completeMatchWithResult(matchId, replacementPlayer, false);
 
-        // Assign rankings directly
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
-
+        // Note: Ranking assignments removed (winner-takes-all distribution)
 
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[tierId][instanceId][replacementPlayer]) {
@@ -456,29 +408,8 @@ contract ETour_Escalation is ETour_Base {
         _clearEscalationState(matchId);
     }
 
-    /**
-     * @dev Assign ranking to player when eliminated (no-op with winner-takes-all)
-     */
-    function assignRankingOnElimination(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        address player
-    ) external {
-        // No-op: Rankings removed with winner-takes-all distribution
-    }
-
-    /**
-     * @dev Internal helper for assigning ranking on elimination (no-op with winner-takes-all)
-     */
-    function _assignRankingOnElimination(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        address player
-    ) internal {
-        // No-op: Rankings removed with winner-takes-all distribution
-    }
+    // REMOVED: assignRankingOnElimination() and _assignRankingOnElimination()
+    // Both were no-ops since rankings were removed with winner-takes-all distribution
 
     // ============ Escalation Availability Helpers (Public View) ============
     // Note: All escalation view functions and claimTimeoutWin kept in ETour_Base

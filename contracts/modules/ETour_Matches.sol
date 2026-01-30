@@ -340,8 +340,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Complete tournament and distribute prizes
      * EXACT COPY from ETour.sol lines 1142-1172
+     * INTERNAL: Only called from within this module
      */
-    function completeTournament(uint8 tierId, uint8 instanceId, address winner) public onlyDelegateCall {
+    function completeTournament(uint8 tierId, uint8 instanceId, address winner) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
@@ -359,13 +360,14 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Complete tournament with all-draw resolution
      * EXACT COPY from ETour.sol lines 1174-1199
+     * INTERNAL: Only called from within this module
      */
     function completeTournamentAllDraw(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         address[] memory remainingPlayers
-    ) public onlyDelegateCall {
+    ) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
@@ -475,7 +477,7 @@ contract ETour_Matches is ETour_Base {
         uint8 tierId,
         uint8 instanceId,
         uint8 completedRound
-    ) public {
+    ) public onlyDelegateCall {
         Round storage completedRoundStruct = rounds[tierId][instanceId][completedRound];
         if (!completedRoundStruct.initialized) {
             return;
@@ -547,8 +549,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Check if round has orphaned winners
      * REFACTORED: Using helper to reduce duplication
+     * INTERNAL: Only called from within this module
      */
-    function hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (bool) {
+    function hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (bool) {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
         for (uint8 i = 0; i < matchCount;) {
@@ -615,8 +618,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Get remaining players in a round
      * OPTIMIZED: Single allocation, no temp array
+     * INTERNAL: Only called from within this module
      */
-    function getRemainingPlayers(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (address[] memory) {
+    function getRemainingPlayers(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (address[] memory) {
         Round storage round = rounds[tierId][instanceId][roundNumber];
 
         // First pass: count players
@@ -648,12 +652,13 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Check if tournament should complete with sole winner after orphan processing
      * REFACTORED: Early returns and simplified logic
+     * INTERNAL: Only called from within this module
      */
     function checkForSoleWinnerCompletion(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber
-    ) public {
+    ) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         if (tournament.status == TournamentStatus.Completed) {
             return;
@@ -698,8 +703,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Get match count for a round
      * EXACT COPY from ETour.sol lines 914-930
+     * INTERNAL: Only called from within this module (game contracts have their own implementations)
      */
-    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
+    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         uint8 playerCount = tournament.enrolledCount;
 
