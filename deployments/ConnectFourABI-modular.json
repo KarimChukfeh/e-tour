@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0x389EdB7B87E45E0550A9C2f646fEA0a3bB6Cbf4b",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-01-25T02:47:08.320Z",
+  "address": "0xffa7CA1AEEEbBc30C874d32C7e22F052BbEa0429",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-01-30T10:32:13.103Z",
   "modules": {
-    "core": "0x39A403997c5A33508c0DB4b35DD6aCC8179D623c",
-    "matches": "0x2c6145aaa5D1c015e4Fa678F3aa9eBEf7889D8f5",
-    "prizes": "0xB15Ee6bB89Fb419aCCFBf05514ce7549e18d8c5b",
-    "raffle": "0x8a7255A5b9bfD237D522539DC276e459D7CA099e",
-    "escalation": "0x303aA52B6b1b984e2423225afE4dD4D4902EA507"
+    "core": "0x07882Ae1ecB7429a84f1D53048d35c4bB2056877",
+    "matches": "0x22753E4264FDDc6181dc7cce468904A80a363E44",
+    "prizes": "0xA7c59f010700930003b33aB25a7a0679C860f29c",
+    "raffle": "0xfaAddC93baf78e89DCf37bA67943E1bE8F37Bb8c",
+    "escalation": "0x276C216D241856199A83bf27b2286659e5b877D3"
   },
   "abi": [
     {
