@@ -27,6 +27,12 @@ abstract contract ETour_Base is ReentrancyGuard {
     address public immutable MODULE_RAFFLE;
     address public immutable MODULE_ESCALATION;
 
+    // ============ Delegatecall Protection ============
+
+    /// @dev Stores the address of this contract for delegatecall detection
+    /// Used by modules to ensure they're only called via delegatecall
+    address private immutable _self;
+
     // ============ Constants & Immutables ============
 
     address public immutable owner;
@@ -328,6 +334,22 @@ abstract contract ETour_Base is ReentrancyGuard {
         MODULE_PRIZES = _modulePrizesAddress;
         MODULE_RAFFLE = _moduleRaffleAddress;
         MODULE_ESCALATION = _moduleEscalationAddress;
+        _self = address(this);
+    }
+
+    // ============ Modifiers ============
+
+    /**
+     * @dev Ensures function is only called via delegatecall from main contract
+     * When called via delegatecall: address(this) = main contract, _self = module address ✓
+     * When called directly: address(this) = module address, _self = module address ✗
+     *
+     * This prevents accidental or malicious direct calls to module functions
+     * that should only be executed in the context of the main contract.
+     */
+    modifier onlyDelegateCall() {
+        require(address(this) != _self, "Function must be called via delegatecall");
+        _;
     }
 
     // ============ Helper Functions (Shared across modules) ============

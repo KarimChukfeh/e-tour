@@ -176,7 +176,7 @@ contract ETour_Core is ETour_Base {
      * @dev Claim abandoned enrollment pool
      * EXACT COPY from ETour.sol lines 633-661
      */
-    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external {
+    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -209,7 +209,7 @@ contract ETour_Core is ETour_Base {
      * @dev Reset enrollment window for solo enrolled player
      * EXACT COPY from ETour.sol lines 670-706
      */
-    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external {
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -271,7 +271,7 @@ contract ETour_Core is ETour_Base {
      * @dev Start tournament (handles solo winner case, delegates to Matches module for multi-player)
      * EXACT COPY from ETour.sol lines 831-867 with delegatecall to MODULE_MATCHES
      */
-    function startTournament(uint8 tierId, uint8 instanceId) public {
+    function startTournament(uint8 tierId, uint8 instanceId) public onlyDelegateCall {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         tournament.status = TournamentStatus.InProgress;
         tournament.startTime = block.timestamp;
@@ -464,7 +464,7 @@ contract ETour_Core is ETour_Base {
      * MOVED from ETour_Prizes.sol - Tournament lifecycle belongs in Core module
      * EXACT COPY from ETour.sol lines 2186-2282
      */
-    function resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) external {
+    function resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
 

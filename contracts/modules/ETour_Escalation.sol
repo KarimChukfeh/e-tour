@@ -49,7 +49,7 @@ contract ETour_Escalation is ETour_Base {
      * @dev Mark a match as stalled when timeout is claimable
      * EXACT COPY from ETour.sol lines 1669-1683
      */
-    function markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) external {
+    function markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) external onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         if (!timeout.isStalled) {
             timeout.isStalled = true;
@@ -89,7 +89,7 @@ contract ETour_Escalation is ETour_Base {
      * @dev Clear escalation state for a match after it completes
      * EXACT COPY from ETour.sol lines 1696-1702
      */
-    function clearEscalationState(bytes32 matchId) external {
+    function clearEscalationState(bytes32 matchId) external onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         timeout.isStalled = false;
         timeout.escalation1Start = 0;

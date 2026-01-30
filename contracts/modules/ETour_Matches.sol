@@ -54,7 +54,7 @@ contract ETour_Matches is ETour_Base {
      * EXACT COPY from ETour.sol lines 869-911
      * Module implementation - called via delegatecall from game contracts
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override onlyDelegateCall {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
         require(matchCount > 0 || roundNumber > 0, "Invalid match count");
 
@@ -114,7 +114,7 @@ contract ETour_Matches is ETour_Base {
         uint8 matchNumber,
         address winner,
         bool isDraw
-    ) public {
+    ) public onlyDelegateCall {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
 
         // Note: Escalation state is cleared by the game contract before calling completeMatch
@@ -164,6 +164,7 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Advance winner to next round
      * EXACT COPY from ETour.sol lines 937-977
+     * INTERNAL - Only called within this module
      */
     function advanceWinner(
         uint8 tierId,
@@ -171,7 +172,7 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner
-    ) public {
+    ) internal {
         uint8 nextRound = roundNumber + 1;
         uint8 nextMatchNumber = matchNumber / 2;
 
@@ -202,8 +203,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Complete a round and handle tournament progression
      * EXACT COPY from ETour.sol lines 1049-1140
+     * INTERNAL - Only called within this module by completeMatch
      */
-    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
@@ -327,7 +329,7 @@ contract ETour_Matches is ETour_Base {
      * @dev Complete tournament and distribute prizes
      * EXACT COPY from ETour.sol lines 1142-1172
      */
-    function completeTournament(uint8 tierId, uint8 instanceId, address winner) public {
+    function completeTournament(uint8 tierId, uint8 instanceId, address winner) public onlyDelegateCall {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
@@ -355,7 +357,7 @@ contract ETour_Matches is ETour_Base {
         uint8 instanceId,
         uint8 roundNumber,
         address[] memory remainingPlayers
-    ) public {
+    ) public onlyDelegateCall {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
@@ -379,12 +381,13 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Consolidate scattered players into complete matches
      * EXACT COPY from ETour.sol lines 1527-1628
+     * INTERNAL - Only called within this module by completeRound and processOrphanedWinners
      */
     function consolidateScatteredPlayers(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber
-    ) public {
+    ) internal {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (!round.initialized) {
             return;
@@ -597,8 +600,9 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Process orphaned winners by advancing them
      * EXACT COPY from ETour.sol lines 1422-1448
+     * INTERNAL - Only called within this module by completeMatch
      */
-    function processOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function processOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber >= config.totalRounds - 1) {
             return;

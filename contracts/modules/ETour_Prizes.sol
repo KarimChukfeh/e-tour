@@ -47,6 +47,7 @@ contract ETour_Prizes is ETour_Base {
     /**
      * @dev Attempts to send prize to a recipient with fallback to protocol pool if failed
      * EXACT COPY from ETour.sol lines 1214-1236
+     * INTERNAL - Only called within this module by distributePrizes/distributeEqualPrizes
      */
     function sendPrizeWithFallback(
         address recipient,
@@ -54,7 +55,7 @@ contract ETour_Prizes is ETour_Base {
         uint8 tierId,
         uint8 instanceId,
         string memory gameName
-    ) public returns (bool success) {
+    ) internal returns (bool success) {
         require(amount > 0, "AM");
 
         // Attempt to send the prize once
@@ -78,6 +79,7 @@ contract ETour_Prizes is ETour_Base {
      */
     function distributePrizes(uint8 tierId, uint8 instanceId, uint256 winnersPot, string memory gameName)
         external
+        onlyDelegateCall
         returns (address[] memory winners, uint256[] memory prizes)
     {
         address winner = tournaments[tierId][instanceId].winner;
@@ -105,7 +107,7 @@ contract ETour_Prizes is ETour_Base {
         address[] memory remainingPlayers,
         uint256 winnersPot,
         string memory gameName
-    ) external returns (address[] memory winners, uint256[] memory prizes) {
+    ) external onlyDelegateCall returns (address[] memory winners, uint256[] memory prizes) {
         uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
 
         // Use temporary arrays with max possible size
@@ -146,7 +148,7 @@ contract ETour_Prizes is ETour_Base {
      * @dev Update player earnings after tournament completion
      * EXACT COPY from ETour.sol lines 2109-2126
      */
-    function updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) external {
+    function updatePlayerEarnings(uint8 tierId, uint8 instanceId, address winner) external onlyDelegateCall {
         address[] storage players = enrolledPlayers[tierId][instanceId];
 
         // Only track players who actually won prizes on the leaderboard
@@ -168,8 +170,9 @@ contract ETour_Prizes is ETour_Base {
     /**
      * @dev Track player on leaderboard if not already tracked
      * EXACT COPY from ETour.sol lines 2144-2149
+     * INTERNAL - Only called within this module by updatePlayerEarnings
      */
-    function trackOnLeaderboard(address player) public {
+    function trackOnLeaderboard(address player) internal {
         if (!_isOnLeaderboard[player]) {
             _isOnLeaderboard[player] = true;
             _leaderboardPlayers.push(player);
