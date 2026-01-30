@@ -257,20 +257,14 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // Winning move - check event with winner address (isDraw = false)
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
-            const receipt = await tx.wait();
+            // Winning move
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
-            // Find MatchCompleted event
-            const matchCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "MatchCompleted"
-            );
-            expect(matchCompletedEvent).to.not.be.undefined;
-
-            // Check winner and isDraw from event args
-            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
-            expect(winner).to.equal(firstPlayer.address);
-            expect(isDraw).to.be.false;
+            // Verify match completed with winner
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(match.common.winner).to.equal(firstPlayer.address);
+            expect(match.common.isDraw).to.be.false;
+            expect(match.common.status).to.equal(2); // Completed
         });
 
         it("Should detect vertical win", async function () {
@@ -284,17 +278,12 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 1);
 
             // Winning move
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
-            const receipt = await tx.wait();
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
 
-            // Find MatchCompleted event
-            const matchCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "MatchCompleted"
-            );
-            expect(matchCompletedEvent).to.not.be.undefined;
-
-            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
-            expect(winner).to.equal(firstPlayer.address);
+            // Verify match completed with winner
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(match.common.winner).to.equal(firstPlayer.address);
+            expect(match.common.status).to.equal(2); // Completed
         });
 
     });

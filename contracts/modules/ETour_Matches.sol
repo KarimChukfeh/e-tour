@@ -120,7 +120,6 @@ contract ETour_Matches is ETour_Base {
         bool isDraw
     ) public onlyDelegateCall {
         // Note: Escalation state is cleared by the game contract before calling completeMatch
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         if (!isDraw) {
             TierConfig storage config = _tierConfigs[tierId];

@@ -277,9 +277,6 @@ contract TicTacChain is ETour_Base {
         _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
         _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
 
-        // Emit MatchCompleted event from game contract (triggering player wins)
-        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
-
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (round.completedMatches == round.totalMatches) {
@@ -340,9 +337,6 @@ contract TicTacChain is ETour_Base {
         _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
         _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
         _addMatchRecord(msg.sender, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-
-        // Emit MatchCompleted event from game contract (replacement player wins)
-        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -725,21 +719,5 @@ contract TicTacChain is ETour_Base {
         // Match not found in active storage - return empty data
         TicTacToeMatchData memory emptyData;
         return emptyData;
-    }
-
-    // ============ Game-Specific Overrides ============
-
-    /**
-     * @dev Emit MatchCompleted event with TicTacToe board data
-     * Implements abstract function from ETour_Base
-     */
-    function _emitMatchCompletedEvent(
-        bytes32 matchId,
-        address winner,
-        bool isDraw,
-        CompletionReason reason
-    ) internal override {
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
 }

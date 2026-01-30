@@ -257,8 +257,7 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       await time.increase(MATCH_TIMEOUT + 1);
 
       // Claim timeout - completes match and tournament
-      await expect(connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0))
-        .to.emit(connectFour, "MatchCompleted");
+      await connectFour.connect(currentPlayer).claimTimeoutWin(TIER, INSTANCE_ID, 0, 0);
 
       // ARCHITECTURE CHANGE: Finals cleared immediately on tournament completion
       // Verify tournament completed by checking status

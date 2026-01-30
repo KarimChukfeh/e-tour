@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x04C89607413713Ec9775E14b954286519d836FEf",
+  "address": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-01-30T19:13:19.744Z",
+  "deployedAt": "2026-01-30T20:41:38.565Z",
   "modules": {
-    "core": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
-    "matches": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-    "prizes": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
-    "raffle": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d",
-    "escalation": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6"
+    "core": "0xc351628EB244ec633d5f21fBD6621e1a683B1181",
+    "matches": "0xFD471836031dc5108809D173A067e8486B9047A3",
+    "prizes": "0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc",
+    "raffle": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+    "escalation": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07"
   },
   "abi": [
     {
@@ -47,55 +47,6 @@
       "inputs": [],
       "name": "ReentrancyGuardReentrantCall",
       "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "matchId",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "player1",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "player2",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isDraw",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum ETour_Base.CompletionReason",
-          "name": "reason",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "board",
-          "type": "uint256"
-        }
-      ],
-      "name": "MatchCompleted",
-      "type": "event"
     },
     {
       "anonymous": false,

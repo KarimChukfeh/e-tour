@@ -344,8 +344,6 @@ contract ETour_Escalation is ETour_Base {
 
         // Note: Ranking assignments removed (winner-takes-all distribution)
 
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
-
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
 
@@ -385,8 +383,6 @@ contract ETour_Escalation is ETour_Base {
             TournamentInstance storage tournament = tournaments[tierId][instanceId];
             tournament.enrolledCount++;
         }
-
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         TierConfig storage config = _tierConfigs[tierId];
         if (roundNumber < config.totalRounds - 1) {

@@ -2,17 +2,17 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-01-30T19:13:22.750Z",
-  "blockNumber": 7416,
+  "timestamp": "2026-01-30T20:41:44.575Z",
+  "blockNumber": 3414,
   "modules": {
-    "ETour_Core": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
-    "ETour_Matches": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-    "ETour_Prizes": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
-    "ETour_Raffle": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d",
-    "ETour_Escalation": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6",
-    "ChessRulesModule": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584"
+    "ETour_Core": "0xc351628EB244ec633d5f21fBD6621e1a683B1181",
+    "ETour_Matches": "0xFD471836031dc5108809D173A067e8486B9047A3",
+    "ETour_Prizes": "0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc",
+    "ETour_Raffle": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+    "ETour_Escalation": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07",
+    "ChessRulesModule": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe"
   },
   "contracts": {
-    "ChessOnChain": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823"
+    "ChessOnChain": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f"
   }
 }

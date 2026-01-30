@@ -323,7 +323,6 @@ abstract contract ETour_Base is ReentrancyGuard {
     // ============ Events ============
 
     event TournamentEnrolled(address indexed player, uint8 tierId, uint8 instanceId);
-    event MatchCompleted(bytes32 indexed matchId, address indexed player1, address indexed player2, address winner, bool isDraw, CompletionReason reason, uint256 board);
 
     /**
      * @dev Emitted when a prize is distributed to a player
@@ -506,9 +505,6 @@ abstract contract ETour_Base is ReentrancyGuard {
             )
         );
         require(completeSuccess, "CM");
-
-        // Call game-specific hook to emit MatchCompleted event with board data
-        _emitMatchCompletedEvent(matchId, winner, isDraw, reason);
 
         // Check if tournament completed and handle prize distribution/reset
         _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
@@ -742,20 +738,6 @@ abstract contract ETour_Base is ReentrancyGuard {
         bool isDraw
     ) internal virtual {
         revert("ETour_Base: _completeMatchGameSpecific must be implemented by game contract");
-    }
-
-    /**
-     * @dev Hook to emit MatchCompleted event with game-specific board data
-     * MUST be overridden in each game contract to emit event with correct board format
-     * Default implementation reverts (modules don't use this)
-     */
-    function _emitMatchCompletedEvent(
-        bytes32 matchId,
-        address winner,
-        bool isDraw,
-        CompletionReason reason
-    ) internal virtual {
-        revert("ETour_Base: _emitMatchCompletedEvent must be implemented by game contract");
     }
 
     /**
@@ -1140,7 +1122,7 @@ abstract contract ETour_Base is ReentrancyGuard {
     /**
      * @dev Check if player has advanced past a given round
      * Used for ML2 escalation eligibility
-     * Kept in ETour_Base to avoid stack depth issues with delegatecall
+     * Same implementation as _isPlayerInAdvancedRound in Escalation module
      */
     function isPlayerInAdvancedRound(
         uint8 tierId,

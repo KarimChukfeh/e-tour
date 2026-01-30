@@ -289,9 +289,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
             // Winning move completes the finals (2-player tournament)
-            await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2))
-                .to.emit(game, "MatchCompleted")
-;
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Winner's earnings should be updated
             const earnings = await game.connect(firstPlayer).getPlayerStats();
@@ -307,9 +305,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 4);
 
             // Winning move completes the tournament
-            await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 6))
-                .to.emit(game, "MatchCompleted")
-;
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 6);
 
             const earnings = await game.connect(firstPlayer).getPlayerStats();
             expect(earnings).to.be.gt(0);
@@ -324,9 +320,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
             // Winning move completes the tournament
-            await expect(game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8))
-                .to.emit(game, "MatchCompleted")
-;
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
             const earnings = await game.connect(firstPlayer).getPlayerStats();
             expect(earnings).to.be.gt(0);
@@ -348,21 +342,13 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);  // X at 3
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 5); // O at 5
 
-            // Final move results in draw - emits MatchCompleted with isDraw=true via event args
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
-            const receipt = await tx.wait();
+            // Final move results in draw
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
-            // Find MatchCompleted event and verify isDraw
-            const matchCompletedEvent = receipt.logs.find(log => {
-                try {
-                    const parsed = game.interface.parseLog(log);
-                    return parsed?.name === "MatchCompleted";
-                } catch { return false; }
-            });
-
-            expect(matchCompletedEvent).to.not.be.undefined;
-            const parsedEvent = game.interface.parseLog(matchCompletedEvent);
-            expect(parsedEvent.args.isDraw).to.be.true;
+            // Verify match ended in draw by checking match state
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(match.common.isDraw).to.be.true;
+            expect(match.common.status).to.equal(2); // Completed
         });
     });
 

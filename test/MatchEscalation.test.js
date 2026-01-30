@@ -262,9 +262,7 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player (player5, not in tournament) claims the slot
-            await expect(
-                game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0)
-            ).to.emit(game, "MatchCompleted");
+            await game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 0);
 
             // Match should be completed with player5 as winner
             const completedMatch = await game.getMatch(tierId, instanceId, 0, 0);
