@@ -109,17 +109,29 @@ contract TicTacChain is ETour_Base {
      * Called when tournament starts or when advancing to next round
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Calculate playerCount for this round
+        uint8 playerCount;
+        if (roundNumber == 0) {
+            playerCount = tournament.enrolledCount;
+        } else {
+            Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+            // Winners from matches + bye player if previous round had odd players
+            playerCount = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
+        }
+
+        uint8 matchCount = playerCount / 2;
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
+        round.playerCount = playerCount;
 
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
@@ -160,14 +172,14 @@ contract TicTacChain is ETour_Base {
      */
     function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        uint8 playerCount = tournament.enrolledCount;
 
         if (roundNumber == 0) {
-            return playerCount / 2;
+            return tournament.enrolledCount / 2;
         }
 
         Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
-        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+        // Winners from matches + bye player if previous round had odd players
+        uint8 winnersFromPrevRound = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
 
         return winnersFromPrevRound / 2;
     }

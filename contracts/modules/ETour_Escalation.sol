@@ -518,36 +518,55 @@ contract ETour_Escalation is ETour_Base {
                 }
             }
 
-            // If only one winner, check if they're truly the sole remaining player
-            if (winnersCount == 1 && lastWinner != address(0)) {
-                // BUG FIX: Check if next round has any players (from walkovers)
-                // before declaring sole winner. This prevents premature tournament
-                // completion when walkover players are already in the next round.
-                uint8 nextRound = roundNumber + 1;
-                Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
+            // Check for sole remaining player (either from matches or as bye)
+            // BUG FIX: Check if next round has any players (from walkovers)
+            // before declaring sole winner. This prevents premature tournament
+            // completion when walkover players are already in the next round.
+            uint8 nextRound = roundNumber + 1;
+            Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
 
-                uint8 playersInNextRound = 0;
-                if (nextRoundStruct.initialized) {
-                    for (uint8 m = 0; m < nextRoundStruct.totalMatches; m++) {
-                        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
-                        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
-                        if (p1 != address(0)) playersInNextRound++;
-                        if (p2 != address(0)) playersInNextRound++;
+            uint8 playersInNextRound = 0;
+            address solePlayerInNextRound = address(0);
+            if (nextRoundStruct.initialized) {
+                for (uint8 m = 0; m < nextRoundStruct.totalMatches; m++) {
+                    bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+                    (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                    if (p1 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = p1;
+                    }
+                    if (p2 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = p2;
                     }
                 }
-
-                // Only complete tournament if no players in next round
-                if (playersInNextRound == 0) {
-                    TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                    tournament.winner = lastWinner;
-                    tournament.status = TournamentStatus.Completed;
-                    tournament.completionReason = CompletionReason.NormalWin;
-                    // Removed: Ranking assignment (no longer needed with winner-takes-all)
-
-                    // NOTE: Prize distribution, earnings update, event emission, and reset
-                    // are handled by the game contract (TicTacChain) after detecting completion.
-                    // This is the same pattern used by MODULE_MATCHES.completeTournament()
+                // Check for bye player (odd players in next round)
+                if (nextRoundStruct.playerCount % 2 == 1) {
+                    bytes32 byeMatchId = _getMatchId(tierId, instanceId, nextRound, nextRoundStruct.totalMatches);
+                    (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+                    if (byeP1 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = byeP1;
+                    }
+                    if (byeP2 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = byeP2;
+                    }
                 }
+            }
+
+            // Complete tournament if exactly 1 player remains (either from matches or bye)
+            if ((winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0)) ||
+                (winnersCount == 0 && playersInNextRound == 1 && solePlayerInNextRound != address(0))) {
+                TournamentInstance storage tournament = tournaments[tierId][instanceId];
+                tournament.winner = winnersCount == 1 ? lastWinner : solePlayerInNextRound;
+                tournament.status = TournamentStatus.Completed;
+                tournament.completionReason = CompletionReason.NormalWin;
+                // Removed: Ranking assignment (no longer needed with winner-takes-all)
+
+                // NOTE: Prize distribution, earnings update, event emission, and reset
+                // are handled by the game contract (TicTacChain) after detecting completion.
+                // This is the same pattern used by MODULE_MATCHES.completeTournament()
             }
         }
     }

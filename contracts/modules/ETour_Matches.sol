@@ -55,7 +55,19 @@ contract ETour_Matches is ETour_Base {
      * Module implementation - called via delegatecall from game contracts
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override onlyDelegateCall {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Calculate playerCount for this round
+        uint8 playerCount;
+        if (roundNumber == 0) {
+            playerCount = tournament.enrolledCount;
+        } else {
+            Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+            // Winners from matches + bye player if previous round had odd players
+            playerCount = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
+        }
+
+        uint8 matchCount = playerCount / 2;
         require(matchCount > 0 || roundNumber > 0, "Invalid match count");
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -63,10 +75,10 @@ contract ETour_Matches is ETour_Base {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
+        round.playerCount = playerCount;
 
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
             require(players.length >= 2, "Not enough players");
 
             address walkoverPlayer = address(0);
@@ -439,6 +451,7 @@ contract ETour_Matches is ETour_Base {
         }
 
         // Handle walkover if odd number of players
+        uint8 originalPlayerCount = playerCount;  // Save before walkover selection
         address walkoverPlayer = address(0);
         if (playerCount % 2 == 1) {
             (walkoverPlayer, playerCount) = _selectWalkoverPlayer(
@@ -451,6 +464,7 @@ contract ETour_Matches is ETour_Base {
         round.totalMatches = newMatchCount;
         round.completedMatches = 0;
         round.drawCount = 0;
+        round.playerCount = originalPlayerCount;
 
         for (uint8 i = 0; i < newMatchCount;) {
             this._createMatchGame(
@@ -517,6 +531,7 @@ contract ETour_Matches is ETour_Base {
         nextRoundStruct.totalMatches = properMatchCount;
         nextRoundStruct.completedMatches = 0;
         nextRoundStruct.drawCount = 0;
+        nextRoundStruct.playerCount = winnersCount;
 
         // Select walkover player
         address walkoverPlayer;
@@ -693,6 +708,20 @@ contract ETour_Matches is ETour_Base {
             unchecked { i++; }
         }
 
+        // Check for bye player (odd players in next round)
+        if (nextRoundData.playerCount % 2 == 1) {
+            bytes32 byeMatchId = _getMatchId(tierId, instanceId, nextRound, nextRoundData.totalMatches);
+            (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+            if (byeP1 != address(0)) {
+                soleWinner = byeP1;
+                advancedPlayerCount++;
+            }
+            if (byeP2 != address(0)) {
+                soleWinner = byeP2;
+                advancedPlayerCount++;
+            }
+        }
+
         if (advancedPlayerCount == 1) {
             completeTournament(tierId, instanceId, soleWinner);
         }
@@ -707,14 +736,14 @@ contract ETour_Matches is ETour_Base {
      */
     function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        uint8 playerCount = tournament.enrolledCount;
 
         if (roundNumber == 0) {
-            return playerCount / 2;
+            return tournament.enrolledCount / 2;
         }
 
         Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
-        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+        // Winners from matches + bye player if previous round had odd players
+        uint8 winnersFromPrevRound = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
 
         return winnersFromPrevRound / 2;
     }

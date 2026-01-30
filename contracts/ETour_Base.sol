@@ -119,6 +119,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         uint8 completedMatches;
         bool initialized;
         uint8 drawCount;
+        uint8 playerCount;  // Number of players entering this round (including bye players)
     }
 
     struct EnrollmentTimeoutState {
