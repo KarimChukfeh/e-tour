@@ -477,13 +477,17 @@ contract ConnectFourOnChain is ETour_Base {
         matchData.startTime = block.timestamp;
         matchData.isDraw = false;
 
-        // Random starting player
+        // Improved randomness using multiple entropy sources
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
+            block.number,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber,
             player1,
-            player2,
-            matchId
+            player2
         )));
         matchData.currentTurn = (randomness % 2 == 0) ? player1 : player2;
         matchData.firstPlayer = matchData.currentTurn;
@@ -560,14 +564,14 @@ contract ConnectFourOnChain is ETour_Base {
         matchData.isDraw = false;
         matchData.winner = address(0);
 
-        // Re-randomize starting player
+        // Improved randomness using multiple entropy sources
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
-            matchData.player1,
-            matchData.player2,
+            block.number,
             matchId,
-            "replay"
+            matchData.player1,
+            matchData.player2
         )));
         matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
         matchData.firstPlayer = matchData.currentTurn;

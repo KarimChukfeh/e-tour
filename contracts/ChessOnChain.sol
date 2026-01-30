@@ -397,12 +397,25 @@ contract ChessOnChain is ETour_Base {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        matchData.player1 = player2;
-        matchData.player2 = player1;
+        // Improved randomness using multiple entropy sources
+        uint256 randomness = uint256(keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            block.number,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber,
+            player1,
+            player2
+        )));
 
-        if (block.prevrandao % 2 == 0) {
+        if (randomness % 2 == 0) {
             matchData.player1 = player1;
             matchData.player2 = player2;
+        } else {
+            matchData.player1 = player2;
+            matchData.player2 = player1;
         }
 
         matchData.currentTurn = matchData.player1;
@@ -466,7 +479,17 @@ contract ChessOnChain is ETour_Base {
         m.isDraw = false;
         m.winner = address(0);
 
-        if (block.prevrandao % 2 == 1) {
+        // Improved randomness using multiple entropy sources
+        uint256 randomness = uint256(keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            block.number,
+            matchId,
+            m.player1,
+            m.player2
+        )));
+
+        if (randomness % 2 == 1) {
             (m.player1, m.player2) = (m.player2, m.player1);
         }
         m.currentTurn = m.player1;
