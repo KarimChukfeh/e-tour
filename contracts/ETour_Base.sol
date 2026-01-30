@@ -580,21 +580,13 @@ abstract contract ETour_Base is ReentrancyGuard {
         );
         require(earningsSuccess, "UE");
 
-        // Record tournament completion in permanent storage
-        TournamentRecord storage record = recentInstances[tierId][instanceId];
-        record.players = enrolledPlayersCopy;
-        record.endTime = block.timestamp;
-        record.prizePool = winnersPot;
-        record.winner = tournamentWinner;
-        record.completionReason = tournament.completionReason;
-
         // Call hook BEFORE reset (for ChessOnChain elite match archival)
         _onTournamentCompletedBeforeReset(tierId, instanceId);
 
-        // Reset tournament state
+        // Reset tournament state (MODULE_CORE records completion in recentInstances)
         (bool resetSuccess, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
-                tierId, instanceId)
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])",
+                tierId, instanceId, enrolledPlayersCopy)
         );
         require(resetSuccess, "RT");
     }
@@ -995,6 +987,15 @@ abstract contract ETour_Base is ReentrancyGuard {
      */
     function getPlayerMatches() external view returns (MatchRecord[] memory) {
         return playerMatches[msg.sender];
+    }
+
+    /**
+     * @dev Get most recent completed tournament record with full player list
+     * Required because auto-generated getter omits dynamic arrays
+     * Shared implementation for all games
+     */
+    function getTournamentRecord(uint8 tierId, uint8 instanceId) external view returns (TournamentRecord memory) {
+        return recentInstances[tierId][instanceId];
     }
 
     /**

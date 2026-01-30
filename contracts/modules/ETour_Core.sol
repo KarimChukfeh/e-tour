@@ -436,11 +436,41 @@ contract ETour_Core is ETour_Base {
     // ============ Tournament Reset ============
 
     /**
-     * @dev Reset tournament state after completion
+     * @dev Reset tournament state after completion (with recording)
      * MOVED from ETour_Prizes.sol - Tournament lifecycle belongs in Core module
-     * EXACT COPY from ETour.sol lines 2186-2282
+     * Records tournament completion in recentInstances before resetting
+     */
+    function resetTournamentAfterCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) external onlyDelegateCall {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Record tournament completion in permanent storage BEFORE reset
+        TournamentRecord storage record = recentInstances[tierId][instanceId];
+        record.players = enrolledPlayersCopy;
+        record.endTime = block.timestamp;
+        record.prizePool = tournament.prizePool;
+        record.winner = tournament.winner;
+        record.completionReason = tournament.completionReason;
+
+        // Call internal reset logic
+        _resetTournamentInternal(tierId, instanceId);
+    }
+
+    /**
+     * @dev Reset tournament state without recording (for abandonment/single player)
+     * Used when tournament is abandoned or single player force start
      */
     function resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
+        _resetTournamentInternal(tierId, instanceId);
+    }
+
+    /**
+     * @dev Internal reset logic shared by both overloads
+     */
+    function _resetTournamentInternal(uint8 tierId, uint8 instanceId) private {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
 
