@@ -52,7 +52,7 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
     }
 
     // Helper function to generate HTML report
-    function generateHTMLReport() {
+    async function generateHTMLReport() {
         const htmlContent = `
             <h2>Tournament Reset Edge Cases - Detailed Match Visualization</h2>
             <p style="margin: 20px 0; font-size: 1.1em;">
@@ -101,37 +101,59 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             }).join('')}
 
             <div class="summary-box">
-                <h3>Player Match History Across All 3 Tournaments</h3>
-                <p>Complete recentMatches data for every player who participated in any of the 3 tournaments:</p>
+                <h3>Player Match History Across All 3 Tournaments (from Contract getPlayerMatches)</h3>
+                <p>Complete match data fetched directly from the contract for every player who participated:</p>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin: 20px 0;">
-                ${Array.from(playerStats.values()).map(player => `
+                ${await Promise.all(Array.from(playerStats.keys()).map(async (playerAddr) => {
+                    const recentMatches = await game.connect(await hre.ethers.getSigner(playerAddr)).getPlayerMatches();
+                    const player = playerStats.get(playerAddr);
+                    return `
                 <div class="test-suite" style="padding: 20px;">
                     <h4 style="color: #8b9dff; margin-top: 0;">Player: <code>${player.address}</code></h4>
                     <div style="font-size: 0.95em;">
-                        <strong>Total Matches:</strong> ${player.matches.length}
+                        <strong>Total Matches (from contract):</strong> ${recentMatches.length}
                         <br>
-                        <strong>Wins:</strong> ${player.matches.filter(m => m.result === 'WIN').length}
+                        <strong>Wins:</strong> ${recentMatches.filter(m => m.winner.toLowerCase() === playerAddr.toLowerCase()).length}
                         <br>
-                        <strong>Losses:</strong> ${player.matches.filter(m => m.result === 'LOSS').length}
+                        <strong>Losses:</strong> ${recentMatches.filter(m => m.winner.toLowerCase() !== playerAddr.toLowerCase() && m.winner !== hre.ethers.ZeroAddress).length}
                     </div>
                     <div style="margin-top: 15px;">
-                        <strong>Match History:</strong>
+                        <strong>Recent Matches (from Contract getPlayerMatches):</strong>
+                        ${recentMatches.length === 0 ? '<p style="color: #888; font-size: 0.9em; margin-top: 10px;">No matches recorded</p>' : ''}
                         <div style="margin-top: 10px;">
-                            ${player.matches.map((match, idx) => `
-                            <div style="margin: 5px 0; padding: 8px; background: ${match.result === 'WIN' ? '#1b3d1b' : '#3d1b1b'}; border-radius: 4px; font-size: 0.9em;">
-                                <strong>${idx + 1}.</strong> ${match.match} vs <code>${match.opponent}</code>
+                            ${recentMatches.map((match, idx) => {
+                                const isWinner = match.winner.toLowerCase() === playerAddr.toLowerCase();
+                                const opponent = match.player1.toLowerCase() === playerAddr.toLowerCase() ? match.player2 : match.player1;
+                                const completionReasonMap = {
+                                    0: 'Normal Win',
+                                    1: 'Timeout',
+                                    2: 'Draw',
+                                    3: 'Force Elimination',
+                                    4: 'Replacement',
+                                    5: 'All Draw Scenario'
+                                };
+                                const reason = completionReasonMap[Number(match.completionReason)] || 'Unknown';
+                                return `
+                            <div style="margin: 5px 0; padding: 8px; background: ${isWinner ? '#1b3d1b' : '#3d1b1b'}; border-radius: 4px; font-size: 0.9em;">
+                                <strong>${idx + 1}.</strong> T${match.tierId}-I${match.instanceId}-R${match.roundNumber}-M${match.matchNumber}
+                                <br>
+                                <span style="font-size: 0.85em;">vs <code>${opponent.slice(0, 6)}</code></span>
                                 <span style="float: right;">
-                                    <span class="badge ${match.result === 'WIN' ? 'success' : 'warning'}">${match.result}</span>
-                                    <span style="margin-left: 5px; font-size: 0.85em; color: #b0b0b0;">${match.condition}</span>
+                                    <span class="badge ${isWinner ? 'success' : 'warning'}">${isWinner ? 'WIN' : 'LOSS'}</span>
+                                    <span style="margin-left: 5px; font-size: 0.85em; color: #b0b0b0;">${reason}</span>
                                 </span>
+                                <br>
+                                <span style="font-size: 0.8em; color: #888;">Winner: <code>${match.winner.slice(0, 6)}</code></span>
                             </div>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </div>
                     </div>
                 </div>
-                `).join('')}
+                `;
+                })).then(results => results.join(''))}
             </div>
 
             <div class="summary-box">
@@ -500,6 +522,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
 
             console.log(`${firstPlayer.address.slice(0, 6)} wins first tournament`);
 
+            // Record Tournament 1 match
+            recordMatch(1, 0, 0, match1.common.player1, match1.common.player2, firstPlayer.address, 'Normal gameplay');
+
             // Verify tournament completed and reset
             tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling (auto-reset)
@@ -589,6 +614,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
 
             console.log(`${playerB.address.slice(0, 6)} (B) wins semifinal 0-0`);
             console.log(`${playerA.address.slice(0, 6)} (A) LOSES semifinal 0-0`);
+
+            // Record Tournament 2 semifinal 0-0
+            recordMatch(2, 0, 0, semifinal1.common.player1, semifinal1.common.player2, playerB.address, 'Normal gameplay');
 
             // ============================================
             // BUG CHECK: Check for stale match data
@@ -682,6 +710,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(semi2FirstIncomplete).makeMove(tierId, instanceId, 0, 1, 2); // semi2FirstIncomplete wins
             console.log(`Semifinal 0-1 completed: ${semi2FirstIncomplete.address.slice(0, 6)} wins`);
 
+            // Record Tournament 2 semifinal 0-1
+            recordMatch(2, 0, 1, semi2Incomplete.common.player1, semi2Incomplete.common.player2, semi2FirstIncomplete.address, 'Normal gameplay');
+
             // Complete the finals
             const finals2 = await game.getMatch(tierId, instanceId, 1, 0);
             const finalsP1T2 = [player1, player2, player3, player4].find(p => p.address === finals2.common.player1);
@@ -695,6 +726,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(finalsSecondT2).makeMove(tierId, instanceId, 1, 0, 4);
             await game.connect(finalsFirstT2).makeMove(tierId, instanceId, 1, 0, 2); // finalsFirstT2 wins
             console.log(`${finalsFirstT2.address.slice(0, 6)} wins second tournament`);
+
+            // Record Tournament 2 finals
+            recordMatch(2, 1, 0, finals2.common.player1, finals2.common.player2, finalsFirstT2.address, 'Normal gameplay');
 
             // Verify second tournament completed and reset
             const tournament2Complete = await game.tournaments(tierId, instanceId);
@@ -732,6 +766,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 2); // firstMover wins
             console.log(`${firstMover.address.slice(0, 6)} wins semifinal 0-0 and becomes advanced player`);
 
+            // Record Tournament 3 semifinal 0-0
+            recordMatch(3, 0, 0, semi1T3.common.player1, semi1T3.common.player2, firstMover.address, 'Normal gameplay');
+
             // Semifinal 0-1 starts but gets stalled after one move
             const semi2T3 = await game.getMatch(tierId, instanceId, 0, 1);
             const semi2P1 = [player1, player2, player3, player4].find(p => p.address === semi2T3.common.player1);
@@ -767,6 +804,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             console.log(`Match 0-1 status after ML3: Completed`);
             console.log(`Winner: ${semi2AfterML3.common.winner.slice(0, 6)}`);
 
+            // Record Tournament 3 semifinal 0-1 (ended via ML3)
+            recordMatch(3, 0, 1, semi2T3.common.player1, semi2T3.common.player2, player5.address, 'ML3 Replacement (stalled match)');
+
             // Verify finals was created with the winners
             const round1T3 = await game.rounds(tierId, instanceId, 1);
             expect(round1T3.initialized).to.be.true;
@@ -789,12 +829,18 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 2); // Wins
             console.log(`${finalsFirstT3.address.slice(0, 6)} wins third tournament`);
 
+            // Record Tournament 3 finals
+            recordMatch(3, 1, 0, finalsT3.common.player1, finalsT3.common.player2, finalsFirstT3.address, 'Normal gameplay');
+
             // Verify tournament completed and reset after ML3 scenario
             const tournamentT3Final = await game.tournaments(tierId, instanceId);
             expect(tournamentT3Final.status).to.equal(0); // Enrolling (auto-reset)
             expect(tournamentT3Final.enrolledCount).to.equal(0);
             console.log("\n✓ Third tournament completed and reset successfully");
             console.log("✓ ML3 match-ending scenario validated across 3 tournaments");
+
+            // Generate HTML report
+            await generateHTMLReport();
         });
     });
 });
