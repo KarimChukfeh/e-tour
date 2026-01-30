@@ -164,7 +164,7 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Advance winner to next round
      * EXACT COPY from ETour.sol lines 937-977
-     * INTERNAL - Only called within this module
+     * PUBLIC - Called via delegatecall from game contracts (for walkover players)
      */
     function advanceWinner(
         uint8 tierId,
@@ -172,7 +172,7 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner
-    ) internal {
+    ) public onlyDelegateCall {
         uint8 nextRound = roundNumber + 1;
         uint8 nextMatchNumber = matchNumber / 2;
 
