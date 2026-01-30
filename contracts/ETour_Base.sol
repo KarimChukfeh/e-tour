@@ -245,6 +245,20 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     /**
+     * @dev Complete record of a finished tournament
+     * Stores all essential data for a completed tournament instance
+     * Stored permanently in recentInstances[tierId][instanceId]
+     * Note: tierId/instanceId are implicit from mapping keys
+     */
+    struct TournamentRecord {
+        address[] players;              // Full list of enrolled players
+        uint256 endTime;                // When tournament completed
+        uint256 prizePool;
+        address winner;
+        CompletionReason completionReason;
+    }
+
+    /**
      * @dev Historic data for a single raffle execution
      * Stores complete information about each raffle for historical tracking
      */
@@ -301,6 +315,10 @@ abstract contract ETour_Base is ReentrancyGuard {
     // Internal to avoid stack depth issues with auto-generated getter
     // Access via events or client-side indexing
     mapping(address => MatchRecord[]) internal playerMatches;
+
+    // Tournament history - most recent completed tournament per tier/instance
+    // Stores permanent record of last tournament completion with full player list
+    mapping(uint8 => mapping(uint8 => TournamentRecord)) public recentInstances;
 
     // ============ Events ============
 
@@ -561,6 +579,14 @@ abstract contract ETour_Base is ReentrancyGuard {
                 tierId, instanceId, tournamentWinner)
         );
         require(earningsSuccess, "UE");
+
+        // Record tournament completion in permanent storage
+        TournamentRecord storage record = recentInstances[tierId][instanceId];
+        record.players = enrolledPlayersCopy;
+        record.endTime = block.timestamp;
+        record.prizePool = winnersPot;
+        record.winner = tournamentWinner;
+        record.completionReason = tournament.completionReason;
 
         // Call hook BEFORE reset (for ChessOnChain elite match archival)
         _onTournamentCompletedBeforeReset(tierId, instanceId);
