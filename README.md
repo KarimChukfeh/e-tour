@@ -1483,3 +1483,27 @@ Step 4: Deploy Modules + ChessOnChain
 npx hardhat run scripts/deploy-tictacchain-modular.js --network localhost
 npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
 npx hardhat run scripts/deploy-connectfour-modular.js --network localhost
+
+
+
+-----
+
+
+npx hardhat verify --network arbitrum 0xF49389392eE2b0f06816ecA0C036A18c04c5ba38 
+
+npx hardhat verify --network arbitrum 0x7D84E5B8452D453f53CB7cdF413466E20Cb0b727
+
+npx hardhat verify --network arbitrum 0x2E5f4C0369532BFa2611d948a782f3b91fe237b8
+
+npx hardhat verify --network arbitrum 0x1D570677D1B5A086E77f10D199ce26AdeC9AA9c8 
+
+npx hardhat verify --network arbitrum 0x89314245efA93686e28cBB7eB9fe4Ed1555873Be
+
+npx hardhat verify --network arbitrum 0x5F1566A11b72602742e7DC5f5B99FaF084E33DD2
+
+
+npx hardhat verify --network arbitrum 0x9E71a561998481AD056867b89E7bCE9C238595f6 "0xF49389392eE2b0f06816ecA0C036A18c04c5ba38" "0x7D84E5B8452D453f53CB7cdF413466E20Cb0b727" "0x2E5f4C0369532BFa2611d948a782f3b91fe237b8" "0x1D570677D1B5A086E77f10D199ce26AdeC9AA9c8" "0x89314245efA93686e28cBB7eB9fe4Ed1555873Be" 
+                                                                                                    
+npx hardhat verify --network arbitrum 0xd64e5D7F0a33C9f62a63c44260D3b8742530C25b "0xF49389392eE2b0f06816ecA0C036A18c04c5ba38" "0x7D84E5B8452D453f53CB7cdF413466E20Cb0b727" "0x2E5f4C0369532BFa2611d948a782f3b91fe237b8" "0x1D570677D1B5A086E77f10D199ce26AdeC9AA9c8" "0x89314245efA93686e28cBB7eB9fe4Ed1555873Be" "0x5F1566A11b72602742e7DC5f5B99FaF084E33DD2"
+
+npx hardhat verify --network arbitrum 0xEB6866ee5C916699Fa79D6Bd16129270b57755Cc "0xF49389392eE2b0f06816ecA0C036A18c04c5ba38" "0x7D84E5B8452D453f53CB7cdF413466E20Cb0b727" "0x2E5f4C0369532BFa2611d948a782f3b91fe237b8" "0x1D570677D1B5A086E77f10D199ce26AdeC9AA9c8" "0x89314245efA93686e28cBB7eB9fe4Ed1555873Be" 
