@@ -519,7 +519,8 @@ describe("ConnectFourOnChain Comprehensive Escalation Tests", function () {
       // Verify prize
       const expectedPrize = (ENTRY_FEE * 2n * 90n) / 100n;
       const balanceAfter = await ethers.provider.getBalance(outsider.address);
-      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.001"));
+      // Increased tolerance to account for recentInstances storage writes
+      expect(balanceAfter).to.be.closeTo(balanceBefore + expectedPrize, ethers.parseEther("0.002"));
     });
 
     it("Should clear all player activity after ML3 tournament completion", async function () {
