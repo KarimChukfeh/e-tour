@@ -266,6 +266,10 @@ contract ETour_Escalation is ETour_Base {
         bool isAdvanced = _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender);
         require(!isAdvanced, "Advanced players cannot claim L3");
 
+        // Prevent players currently in an active match from claiming
+        bool inActiveMatch = _isPlayerInActiveMatch(tierId, instanceId, msg.sender);
+        require(!inActiveMatch, "Cannot claim while in active match");
+
         // Mark escalation level and complete match with replacement winner
         timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
 
@@ -277,6 +281,40 @@ contract ETour_Escalation is ETour_Base {
 
     // Note: isPlayerInAdvancedRound() is now implemented in ETour_Base for direct storage access
     // The internal _isPlayerInAdvancedRound() helper below is still used within this module
+
+    /**
+     * @dev Internal helper for checking if player is currently in an active match
+     */
+    function _isPlayerInActiveMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal view returns (bool) {
+        TierConfig storage config = _tierConfigs[tierId];
+
+        // Check all rounds in this tournament
+        for (uint8 r = 0; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            // Check all matches in this round
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address p1, address p2) = this._getMatchPlayers(matchId);
+
+                // Check if player is in this match
+                if (p1 == player || p2 == player) {
+                    // Check if match is in progress
+                    (, , MatchStatus status) = this._getMatchResult(matchId);
+                    if (status == MatchStatus.InProgress) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     /**
      * @dev Internal helper for checking if player is in advanced round
