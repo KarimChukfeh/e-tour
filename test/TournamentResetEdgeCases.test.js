@@ -77,19 +77,20 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                         <div class="test-category">
                             <h4>Round ${r} ${r === 0 ? '(Semifinals)' : '(Finals)'}</h4>
                             ${roundMatches.map(match => `
-                            <div class="scenario-section" style="margin: 10px 0; padding: 15px; background: ${match.condition.includes('ML3') ? '#2d1f3d' : match.condition === 'Normal gameplay' ? '#1a2f1a' : '#2a2a2a'}; border-left-color: ${match.condition.includes('ML3') ? '#b794f6' : match.condition === 'Normal gameplay' ? '#4caf50' : '#ffb74d'};">
+                            <div class="scenario-section" style="margin: 10px 0; padding: 15px; background: ${match.condition.includes('ML3') ? '#2d1f3d' : match.condition.includes('ML2') ? '#3d2d1f' : match.condition.includes('Draw') ? '#1f2d3d' : match.condition === 'Normal gameplay' ? '#1a2f1a' : '#2a2a2a'}; border-left: 4px solid ${match.condition.includes('ML3') ? '#b794f6' : match.condition.includes('ML2') ? '#ffb74d' : match.condition.includes('Draw') ? '#5ca8ff' : match.condition === 'Normal gameplay' ? '#4caf50' : '#888'};">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div style="flex: 1;">
                                         <strong>Match ${r}-${match.matchNum}:</strong>
                                         <code>${match.player1}</code> vs <code>${match.player2}</code>
+                                        ${match.condition.includes('Draw') ? '<br><span style="color: #5ca8ff; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">⚖️ DRAW - No Winner</span>' : ''}
+                                        ${match.condition.includes('ML2') ? '<br><span style="color: #ffb74d; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">⚡ ML2 - Force Elimination by Advanced Player</span>' : ''}
+                                        ${match.condition.includes('ML3') ? '<br><span style="color: #b794f6; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">🔄 ML3 - External Player Replacement</span>' : ''}
                                     </div>
                                     <div style="flex: 1; text-align: center;">
-                                        <span class="badge ${match.condition.includes('ML3') ? 'warning' : 'success'}">${match.condition}</span>
+                                        <span class="badge ${match.condition.includes('ML3') || match.condition.includes('ML2') ? 'warning' : match.condition.includes('Draw') ? 'info' : 'success'}">${match.condition}</span>
                                     </div>
                                     <div style="flex: 1; text-align: right;">
-                                        <strong style="color: #4caf50;">Winner:</strong> <code>${match.winner}</code>
-                                        <br>
-                                        <strong style="color: #f44336;">Loser:</strong> <code>${match.loser}</code>
+                                        ${match.winner !== '0x0000' ? `<strong style="color: #4caf50;">Winner:</strong> <code>${match.winner}</code><br><strong style="color: #f44336;">Loser:</strong> <code>${match.loser}</code>` : '<strong style="color: #888;">No Winner (Draw/Both Eliminated)</strong>'}
                                     </div>
                                 </div>
                             </div>
@@ -106,13 +107,13 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                 <p>Complete match data fetched directly from the contract for every player who participated:</p>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin: 20px 0;">
+            <div style="margin: 20px 0;">
                 ${await Promise.all(Array.from(playerStats.keys()).map(async (playerAddr) => {
                     const recentMatches = await game.connect(await hre.ethers.getSigner(playerAddr)).getPlayerMatches();
                     const player = playerStats.get(playerAddr);
                     return `
-                <div class="test-suite" style="padding: 20px;">
-                    <h4 style="color: #8b9dff; margin-top: 0;">Player: <code>${player.address}</code></h4>
+                <div class="test-suite" style="padding: 20px; margin-bottom: 20px; width: 100%;">
+                    <h4 style="color: #8b9dff; margin-top: 0; font-size: 1.2em;">Player: <code style="font-size: 1.1em;">${player.address}</code></h4>
                     <div style="font-size: 0.95em;">
                         <strong>Total Matches (from contract):</strong> ${recentMatches.length}
                         <br>
@@ -130,23 +131,33 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                                 const completionReasonMap = {
                                     0: 'Normal Win',
                                     1: 'Timeout',
-                                    2: 'Draw',
-                                    3: 'Force Elimination',
-                                    4: 'Replacement',
+                                    2: '⚖️ DRAW',
+                                    3: '⚡ ML2: Force Elimination',
+                                    4: '🔄 ML3: Replacement',
                                     5: 'All Draw Scenario'
                                 };
                                 const reason = completionReasonMap[Number(match.completionReason)] || 'Unknown';
+                                const isDraw = Number(match.completionReason) === 2;
+                                const isML2 = Number(match.completionReason) === 3;
+                                const isML3 = Number(match.completionReason) === 4;
+                                const bgColor = isDraw ? '#1f2d3d' : isML2 ? '#3d2d1f' : isML3 ? '#2d1f3d' : (isWinner ? '#1b3d1b' : '#3d1b1b');
+                                const borderColor = isDraw ? '#5ca8ff' : isML2 ? '#ffb74d' : isML3 ? '#b794f6' : (isWinner ? '#4caf50' : '#f44336');
                                 return `
-                            <div style="margin: 5px 0; padding: 8px; background: ${isWinner ? '#1b3d1b' : '#3d1b1b'}; border-radius: 4px; font-size: 0.9em;">
-                                <strong>${idx + 1}.</strong> T${match.tierId}-I${match.instanceId}-R${match.roundNumber}-M${match.matchNumber}
-                                <br>
-                                <span style="font-size: 0.85em;">vs <code>${opponent.slice(0, 6)}</code></span>
-                                <span style="float: right;">
-                                    <span class="badge ${isWinner ? 'success' : 'warning'}">${isWinner ? 'WIN' : 'LOSS'}</span>
-                                    <span style="margin-left: 5px; font-size: 0.85em; color: #b0b0b0;">${reason}</span>
-                                </span>
-                                <br>
-                                <span style="font-size: 0.8em; color: #888;">Winner: <code>${match.winner.slice(0, 6)}</code></span>
+                            <div style="margin: 5px 0; padding: 10px; background: ${bgColor}; border-left: 3px solid ${borderColor}; border-radius: 4px; font-size: 0.9em;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <strong>${idx + 1}.</strong> T${match.tierId}-I${match.instanceId}-R${match.roundNumber}-M${match.matchNumber}
+                                        <br>
+                                        <span style="font-size: 0.85em; margin-top: 3px; display: inline-block;">vs <code>${opponent.slice(0, 6)}</code></span>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span class="badge ${isWinner ? 'success' : isDraw ? 'info' : 'warning'}">${isWinner ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 5px; font-size: 0.85em;">
+                                    <span style="color: ${isDraw ? '#5ca8ff' : isML2 ? '#ffb74d' : isML3 ? '#b794f6' : '#b0b0b0'}; font-weight: ${isDraw || isML2 || isML3 ? 'bold' : 'normal'};">${reason}</span>
+                                    ${!isDraw ? `<br><span style="color: #888; font-size: 0.9em;">Winner: <code>${match.winner.slice(0, 6)}</code></span>` : ''}
+                                </div>
                             </div>
                             `;
                             }).join('')}
