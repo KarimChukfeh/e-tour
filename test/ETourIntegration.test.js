@@ -1829,9 +1829,14 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             }
 
             // Play finals if needed
+            // Note: With odd player counts, round1.totalMatches may be 0 due to consolidation,
+            // but a match may still exist if both players have been assigned
             const round1 = await game.rounds(tierId, instanceId, 1);
-            if (round1.initialized && round1.totalMatches > 0) {
-                await playMatchToWin(1, 0);
+            if (round1.initialized) {
+                const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
+                if (finalsMatch.common.status === 1n) { // InProgress
+                    await playMatchToWin(1, 0);
+                }
             }
 
             // Tournament should complete
@@ -2178,7 +2183,7 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
 
-            // Verify finals match is cleared (returns empty data after tournament completion)
+            // Match data is cleared IMMEDIATELY on reset (security fix)
             const clearedMatchData = await game.getMatch(tierId, instanceId, roundNumber, matchNumber);
             expect(clearedMatchData.common.player1).to.equal(hre.ethers.ZeroAddress);
             expect(clearedMatchData.common.player2).to.equal(hre.ethers.ZeroAddress);

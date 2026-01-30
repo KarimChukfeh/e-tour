@@ -195,7 +195,7 @@ contract ConnectFourOnChain is ETour_Base {
         );
         require(success, "CAE");
 
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+        (bool resetSuccess, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(resetSuccess, "RT");

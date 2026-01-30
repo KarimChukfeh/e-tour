@@ -549,17 +549,36 @@ contract ETour_Escalation is ETour_Base {
                 }
             }
 
-            // If only one winner, they win the tournament
+            // If only one winner, check if they're truly the sole remaining player
             if (winnersCount == 1 && lastWinner != address(0)) {
-                TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                tournament.winner = lastWinner;
-                tournament.status = TournamentStatus.Completed;
-                tournament.completionReason = CompletionReason.NormalWin;
-                // Removed: Ranking assignment (no longer needed with winner-takes-all)
+                // BUG FIX: Check if next round has any players (from walkovers)
+                // before declaring sole winner. This prevents premature tournament
+                // completion when walkover players are already in the next round.
+                uint8 nextRound = roundNumber + 1;
+                Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
 
-                // NOTE: Prize distribution, earnings update, event emission, and reset
-                // are handled by the game contract (TicTacChain) after detecting completion.
-                // This is the same pattern used by MODULE_MATCHES.completeTournament()
+                uint8 playersInNextRound = 0;
+                if (nextRoundStruct.initialized) {
+                    for (uint8 m = 0; m < nextRoundStruct.totalMatches; m++) {
+                        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+                        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                        if (p1 != address(0)) playersInNextRound++;
+                        if (p2 != address(0)) playersInNextRound++;
+                    }
+                }
+
+                // Only complete tournament if no players in next round
+                if (playersInNextRound == 0) {
+                    TournamentInstance storage tournament = tournaments[tierId][instanceId];
+                    tournament.winner = lastWinner;
+                    tournament.status = TournamentStatus.Completed;
+                    tournament.completionReason = CompletionReason.NormalWin;
+                    // Removed: Ranking assignment (no longer needed with winner-takes-all)
+
+                    // NOTE: Prize distribution, earnings update, event emission, and reset
+                    // are handled by the game contract (TicTacChain) after detecting completion.
+                    // This is the same pattern used by MODULE_MATCHES.completeTournament()
+                }
             }
         }
     }

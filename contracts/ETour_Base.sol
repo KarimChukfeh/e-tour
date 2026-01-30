@@ -543,7 +543,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         _onTournamentCompletedBeforeReset(tierId, instanceId);
 
         // Reset tournament state
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+        (bool resetSuccess, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
                 tierId, instanceId)
         );
@@ -783,7 +783,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         address[] memory singlePlayer = new address[](1);
         singlePlayer[0] = tournaments[tierId][instanceId].winner;
 
-        (bool success, ) = MODULE_PRIZES.delegatecall(
+        (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(success, "Reset failed");

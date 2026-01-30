@@ -142,7 +142,13 @@ contract ETour_Matches is ETour_Base {
             round.drawCount++;
         }
 
-        if (round.completedMatches == round.totalMatches) {
+        // BUG FIX: Handle consolidation scenario where totalMatches = 0
+        // Round is complete when completedMatches == totalMatches, OR
+        // when totalMatches = 0 and we have 1 completed match (consolidation finals)
+        bool isRoundComplete = (round.completedMatches == round.totalMatches) ||
+                              (round.totalMatches == 0 && round.completedMatches == 1);
+
+        if (isRoundComplete) {
             if (hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 processOrphanedWinners(tierId, instanceId, roundNumber);
                 // After processing orphaned winners, check if tournament can complete
@@ -202,8 +208,29 @@ contract ETour_Matches is ETour_Base {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         TierConfig storage config = _tierConfigs[tierId];
 
+        // BUG FIX: Don't treat a round as finals if players are waiting in next round
+        // A round appears to be finals if:
+        // 1. It has exactly 1 match that completed, OR
+        // 2. It has totalMatches=0 but 1 match completed (consolidation scenario)
+        bool appearsToBeFinalsMatch = (roundNumber > 0 && round.completedMatches == 1 &&
+                                      (round.totalMatches == 1 || round.totalMatches == 0));
+        bool hasPlayersWaitingInNextRound = false;
+
+        if (appearsToBeFinalsMatch && roundNumber < config.totalRounds - 1) {
+            // Check if next round has any players (from walkovers)
+            uint8 nextRound = roundNumber + 1;
+            for (uint8 m = 0; m < 4; m++) {
+                bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+                (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                if (p1 != address(0) || p2 != address(0)) {
+                    hasPlayersWaitingInNextRound = true;
+                    break;
+                }
+            }
+        }
+
         bool isActualFinals = (roundNumber == config.totalRounds - 1) ||
-                             (roundNumber > 0 && round.totalMatches == 1 && round.completedMatches == 1);
+                             (appearsToBeFinalsMatch && !hasPlayersWaitingInNextRound);
 
         if (isActualFinals) {
             bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
@@ -246,8 +273,26 @@ contract ETour_Matches is ETour_Base {
                 }
 
                 if (winnerCount == 1) {
-                    completeTournament(tierId, instanceId, soleWinner);
-                    return;
+                    // BUG FIX: Check next round for walkover players
+                    // Even with totalMatches == 0, walkover players may be assigned to match slots
+                    uint8 playersInNextRound = 0;
+                    uint8 nextRound = roundNumber + 1;
+
+                    // Check all potential match slots in next round (up to 4 for safety)
+                    for (uint8 m = 0; m < 4; m++) {
+                        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+                        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                        if (p1 != address(0)) playersInNextRound++;
+                        if (p2 != address(0)) playersInNextRound++;
+                        // Stop checking if we hit empty slots
+                        if (p1 == address(0) && p2 == address(0)) break;
+                    }
+
+                    // Only complete if truly no other players
+                    if (playersInNextRound == 0) {
+                        completeTournament(tierId, instanceId, soleWinner);
+                        return;
+                    }
                 }
             }
 

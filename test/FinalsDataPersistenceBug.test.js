@@ -84,15 +84,15 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             const tournament1 = await game.getTournamentInfo(tierId, instanceId);
             console.log(`✓ Tournament status: ${tournament1.status} (0=Enrolling)`);
 
-            // NEW ARCHITECTURE: Finals cleared immediately on reset
-            console.log("\nNEW CYCLE: Verifying finals cleared immediately...");
+            // NEW ARCHITECTURE: Finals cleared IMMEDIATELY on reset (security fix)
+            console.log("\nNEW CYCLE: Verifying immediate match data clearing...");
 
-            // Finals should be cleared immediately (returns empty data)
-            const staleFinals = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
+            // Finals should be cleared immediately after reset
+            const clearedFinals = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ FINALS CLEARED IMMEDIATELY ON RESET`);
-            console.log(`  - No stale data window`);
+            console.log(`  - Security gap closed`);
             console.log(`  - Historical data available via events`);
 
             // First enrollment in new cycle
@@ -100,8 +100,8 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             console.log("✓ Player3 enrolled in new cycle");
 
             // Finals should still be cleared (empty data until new match starts)
-            const clearedFinals = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(clearedFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
+            const finalsStillCleared = await game.getMatch(tierId, instanceId, 0, 0);
+            expect(finalsStillCleared.common.player1).to.equal(hre.ethers.ZeroAddress);
             console.log(`✓ Finals remain cleared (as expected)`)
 
             console.log("\n=== TEST COMPLETE ===\n");
@@ -169,16 +169,16 @@ describe("Finals Data Persistence Bug (TDD)", function () {
             const tournament1 = await game.getTournamentInfo(tierId, instanceId);
             console.log(`✓ Tournament status: ${tournament1.status} (0=Enrolling)`);
 
-            // NEW ARCHITECTURE: Finals cleared immediately on reset (no waiting for enrollment)
-            console.log("\nNEW CYCLE: Verifying immediate finals clearing...");
+            // NEW ARCHITECTURE: Finals cleared IMMEDIATELY on reset (security fix)
+            console.log("\nNEW CYCLE: Verifying immediate match data clearing...");
 
-            // Finals should be cleared immediately after reset (returns empty data)
-            const staleFinals = await game.getMatch(tierId, instanceId, 1, 0);
-            expect(staleFinals.common.player1).to.equal(hre.ethers.ZeroAddress);
-            expect(staleFinals.common.player2).to.equal(hre.ethers.ZeroAddress);
-            console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY`);
+            // Finals should be cleared immediately after reset
+            const clearedFinalsAfterReset = await game.getMatch(tierId, instanceId, 1, 0);
+            expect(clearedFinalsAfterReset.common.player1).to.equal(hre.ethers.ZeroAddress);
+            expect(clearedFinalsAfterReset.common.player2).to.equal(hre.ethers.ZeroAddress);
+            console.log(`✓ DOUBLE-ELIMINATION FINALS CLEARED IMMEDIATELY ON RESET`);
             console.log(`  - winner=0x0 case handled properly`);
-            console.log(`  - No stale data vulnerability`);
+            console.log(`  - Security gap closed`);
 
             // Enroll new player for Cycle 2
             const newPlayer1 = attacker;

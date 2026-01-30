@@ -217,7 +217,7 @@ contract TicTacChain is ETour_Base {
         require(success, "CAE");
 
         // Reset tournament after claiming abandoned pool (modules can't do nested delegatecalls)
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
+        (bool resetSuccess, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
         );
         require(resetSuccess, "RT");
