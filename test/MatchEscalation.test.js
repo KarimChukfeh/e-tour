@@ -89,6 +89,36 @@ describe("Match-Level Escalation (Anti-Stalling) Tests", function () {
             const tournament = await game.getTournamentInfo(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling (reset after completion)
         });
+
+        it("Should reflect ML1 timeout as CompletionReason.Timeout in recentInstances", async function () {
+            const tierId = 0;
+            const instanceId = 1;
+
+            // Enroll and start tournament
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_0_FEE });
+
+            // Determine who goes first using currentTurn
+            const match = await game.getMatch(tierId, instanceId, 0, 0);
+            const firstPlayer = match.currentTurn === player1.address ? player1 : player2;
+            const secondPlayer = match.currentTurn === player1.address ? player2 : player1;
+
+            // First player's time runs out
+            await hre.ethers.provider.send("evm_increaseTime", [TIER_0_MATCH_TIME + 1]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // Second player claims timeout - this completes match and tournament
+            await game.connect(secondPlayer).claimTimeoutWin(tierId, instanceId, 0, 0);
+
+            // Get the tournament record from recentInstances
+            const record = await game.getTournamentRecord(tierId, instanceId);
+
+            // CRITICAL: Verify completion reason is Timeout (enum value 1)
+            expect(record.completionReason).to.equal(1); // CompletionReason.Timeout
+            expect(record.winner).to.equal(secondPlayer.address);
+            expect(record.players.length).to.equal(2);
+            expect(record.endTime).to.be.greaterThan(0);
+        });
     });
 
     describe("Level 2: Advanced Player Force Elimination", function () {

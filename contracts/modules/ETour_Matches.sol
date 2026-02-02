@@ -117,7 +117,8 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner,
-        bool isDraw
+        bool isDraw,
+        CompletionReason reason
     ) public onlyDelegateCall {
         // Note: Escalation state is cleared by the game contract before calling completeMatch
 
@@ -154,7 +155,7 @@ contract ETour_Matches is ETour_Base {
                 // This handles the case where only one winner remains after force elimination
                 checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
-            completeRound(tierId, instanceId, roundNumber);
+            completeRound(tierId, instanceId, roundNumber, reason);
         }
     }
 
@@ -196,9 +197,9 @@ contract ETour_Matches is ETour_Base {
      * @dev Complete a round and handle tournament progression
      * REFACTORED: Broken down into smaller helper functions
      */
-    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
+    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber, CompletionReason reason) internal {
         if (_isActualFinalsRound(tierId, instanceId, roundNumber)) {
-            _handleFinalsCompletion(tierId, instanceId, roundNumber);
+            _handleFinalsCompletion(tierId, instanceId, roundNumber, reason);
             return;
         }
 
@@ -275,7 +276,8 @@ contract ETour_Matches is ETour_Base {
     function _handleFinalsCompletion(
         uint8 tierId,
         uint8 instanceId,
-        uint8 roundNumber
+        uint8 roundNumber,
+        CompletionReason reason
     ) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
@@ -288,7 +290,8 @@ contract ETour_Matches is ETour_Base {
             tournament.winner = finalPlayer1;
             completeTournament(tierId, instanceId, finalPlayer1);
         } else {
-            tournament.completionReason = CompletionReason.NormalWin;
+            // Use the passed completion reason (e.g., Timeout for ML1)
+            tournament.completionReason = reason;
             completeTournament(tierId, instanceId, finalWinner);
         }
     }

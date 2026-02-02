@@ -502,8 +502,8 @@ abstract contract ETour_Base is ReentrancyGuard {
         // Delegate to Matches module for advancement logic
         (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature(
-                "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
-                tierId, instanceId, roundNumber, matchNumber, winner, isDraw
+                "completeMatch(uint8,uint8,uint8,uint8,address,bool,uint8)",
+                tierId, instanceId, roundNumber, matchNumber, winner, isDraw, reason
             )
         );
         require(completeSuccess, "CM");
