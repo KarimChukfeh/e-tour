@@ -179,10 +179,12 @@ describe("Chess Threefold Repetition Rule", function () {
                 squares.f6, squares.g8, PieceType.None
             );
 
-            // Verify match ended in draw
-            matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.isDraw).to.be.true;
-            expect(matchData.common.status).to.equal(2); // Completed
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.isDraw).to.be.true;
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should trigger draw on third repetition of non-starting position", async function () {
@@ -214,10 +216,12 @@ describe("Chess Threefold Repetition Rule", function () {
                 squares.c6, squares.b8, PieceType.None
             );
 
-            // Verify match ended in draw
-            const finalMatchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(finalMatchData.common.isDraw).to.be.true;
-            expect(finalMatchData.common.status).to.equal(2); // Completed
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.isDraw).to.be.true;
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should NOT trigger draw after only two repetitions", async function () {
@@ -330,10 +334,12 @@ describe("Chess Threefold Repetition Rule", function () {
                 squares.f6, squares.g8, PieceType.None
             );
 
-            // Verify match ended in draw
-            const matchData = await chess.getMatch(tierId, instanceId, roundNumber, matchNumber);
-            expect(matchData.common.isDraw).to.be.true;
-            expect(matchData.common.status).to.equal(2); // Completed
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.isDraw).to.be.true;
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should allow pawn moves without resetting position counts", async function () {

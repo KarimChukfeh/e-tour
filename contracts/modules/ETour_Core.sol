@@ -185,7 +185,12 @@ contract ETour_Core is ETour_Base {
 
         updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
 
-        // NOTE: Tournament reset is handled by game contract after this function returns
+        // Mark tournament as completed with abandoned claim reason
+        tournament.status = TournamentStatus.Completed;
+        tournament.completionReason = CompletionReason.AbandonedTournamentClaimed;
+        tournament.winner = msg.sender;  // EL2 claimant is the winner
+
+        // NOTE: Tournament reset with recording is handled by game contract after this function returns
         // (nested delegatecall to MODULE_PRIZES doesn't work)
     }
 
@@ -267,7 +272,7 @@ contract ETour_Core is ETour_Base {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Completed;
-            tournament.completionReason = CompletionReason.NormalWin;
+            tournament.completionReason = CompletionReason.SoloEnrollForceStart;
             // Removed: Ranking assignment (no longer needed with winner-takes-all)
 
             uint256 winnersPot = tournament.prizePool;

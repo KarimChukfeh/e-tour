@@ -345,10 +345,12 @@ describe("TicTacChain (ETour Protocol) Tests", function () {
             // Final move results in draw
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 8);
 
-            // Verify match ended in draw by checking match state
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.isDraw).to.be.true;
-            expect(match.common.status).to.equal(2); // Completed
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.isDraw).to.be.true;
+            expect(lastMatch.status).to.equal(2); // Completed
         });
     });
 

@@ -60,12 +60,14 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     enum CompletionReason {
-        NormalWin,              // 0: Normal gameplay win
-        Timeout,                // 1: Win by opponent timeout (ML1)
-        Draw,                   // 2: Match/finals ended in a draw
-        ForceElimination,       // 3: ML2 - Advanced players force eliminated both players
-        Replacement,            // 4: ML3 - External player replaced stalled players
-        AllDrawScenario         // 5: All matches in a round resulted in draws (tournament only)
+        NormalWin,                  // 0: Normal gameplay win
+        Timeout,                    // 1: Win by opponent timeout (ML1)
+        Draw,                       // 2: Match/finals ended in a draw
+        ForceElimination,           // 3: ML2 - Advanced players force eliminated both players
+        Replacement,                // 4: ML3 - External player replaced stalled players
+        AllDrawScenario,            // 5: All matches in a round resulted in draws (tournament only)
+        SoloEnrollForceStart,       // 6: Solo enroller force started tournament (EL1)
+        AbandonedTournamentClaimed  // 7: Abandoned tournament claimed by external player (EL2)
     }
 
     // ============ Configuration Structs ============
@@ -803,11 +805,13 @@ abstract contract ETour_Base is ReentrancyGuard {
      * Separate function to reduce stack depth
      */
     function _handleSinglePlayerCompletion(uint8 tierId, uint8 instanceId) private {
-        address[] memory singlePlayer = new address[](1);
-        singlePlayer[0] = tournaments[tierId][instanceId].winner;
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
 
         (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])", tierId, instanceId, enrolledPlayersCopy)
         );
         require(success, "Reset failed");
     }

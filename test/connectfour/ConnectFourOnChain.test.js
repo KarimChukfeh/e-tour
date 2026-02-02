@@ -260,11 +260,13 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Winning move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
-            // Verify match completed with winner
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.winner).to.equal(firstPlayer.address);
-            expect(match.common.isDraw).to.be.false;
-            expect(match.common.status).to.equal(2); // Completed
+            // Verify match completed with winner by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.winner).to.equal(firstPlayer.address);
+            expect(lastMatch.isDraw).to.be.false;
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should detect vertical win", async function () {
@@ -280,10 +282,12 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             // Winning move
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
 
-            // Verify match completed with winner
-            const match = await game.getMatch(tierId, instanceId, 0, 0);
-            expect(match.common.winner).to.equal(firstPlayer.address);
-            expect(match.common.status).to.equal(2); // Completed
+            // Verify match completed with winner by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.winner).to.equal(firstPlayer.address);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
     });

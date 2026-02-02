@@ -222,13 +222,19 @@ contract ChessOnChain is ETour_Base {
     }
 
     function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CAE");
 
         (bool resetSuccess, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])", tierId, instanceId, enrolledPlayersCopy)
         );
         require(resetSuccess, "RT");
     }
