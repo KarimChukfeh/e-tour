@@ -261,18 +261,15 @@ abstract contract ETour_Base is ReentrancyGuard {
 
     /**
      * @dev Historic data for a single raffle execution
-     * Stores complete information about each raffle for historical tracking
+     * Stores minimal information - client can derive winnerPrize/protocolReserve/ownerShare from rafflePot
      */
     struct RaffleResult {
         address executor;               // Who called executeProtocolRaffle
-        uint256 timestamp;              // When the raffle was executed
-        uint256 rafflePot;              // Total raffle pot before distribution
+        uint64 timestamp;               // When the raffle was executed (64-bit timestamp good until year 2554)
+        uint256 rafflePot;              // Total raffle pot in wei (must support large ETH values)
         address[] participants;         // All addresses considered in the raffle
-        uint256[] weights;              // Each address's weight/odds to win
+        uint16[] weights;               // Each address's enrollment count (max 65k enrollments per player)
         address winner;                 // The randomly selected winner
-        uint256 winnerPrize;            // How much ETH the winner received
-        uint256 protocolReserve;        // How much ETH the protocol kept as reserve
-        uint256 ownerShare;             // How much ETH the owner received
     }
 
     // ============ State Variables ============
@@ -285,10 +282,8 @@ abstract contract ETour_Base is ReentrancyGuard {
     uint256 public accumulatedProtocolShare;
 
     // Raffle tracking
-    uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
-    uint256[] internal raffleThresholds;  // Configured thresholds for initial raffles
-    uint256 internal raffleThresholdFinal;  // Threshold to use after initial raffles exhausted
-    mapping(uint256 => RaffleResult) public raffleResults;  // Historic raffle execution data indexed by raffle index
+    uint256[] internal raffleThresholds;  // Configured thresholds (last element repeats for all future raffles)
+    RaffleResult[] public raffleResults;  // Historic raffle execution data (array auto-provides length)
 
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
@@ -443,17 +438,8 @@ abstract contract ETour_Base is ReentrancyGuard {
         return internalRound + roundOffset;
     }
 
-    /**
-     * @dev Get current raffle threshold
-     * Shared helper for all game contracts - extracts duplicate logic
-     * @return Current raffle threshold in wei
-     */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-        return raffleThresholdFinal;
-    }
+    // Note: _getRaffleThreshold() and _countCompletedRaffles() removed
+    // Logic inlined directly in getRaffleInfo() and executeProtocolRaffle()
 
     function _populateMatchRecord(
         MatchRecord storage r,
@@ -919,36 +905,30 @@ abstract contract ETour_Base is ReentrancyGuard {
     /**
      * @dev Get raffle information
      * Shared implementation for all games
+     * Client can derive: reserve=5% of threshold, owner=5% of 95%, winner=90% of 95%
      */
     function getRaffleInfo() external view returns (
-        uint256 raffleIndex,
-        bool isReady,
+        uint64 raffleIndex,
         uint256 currentAccumulated,
         uint256 threshold,
-        uint256 reserve,
-        uint256 raffleAmount,
-        uint256 ownerShare,
-        uint256 winnerShare,
-        uint256 eligiblePlayerCount
+        uint16 eligiblePlayerCount
     ) {
-        raffleIndex = currentRaffleIndex;
+        raffleIndex = uint64(raffleResults.length);
         currentAccumulated = accumulatedProtocolShare;
 
-        // Calculate threshold using inherited helper
-        threshold = _getRaffleThreshold();
-
-        // Calculate raffle amounts (5% reserve from threshold)
-        reserve = (threshold * 5) / 100;
-        isReady = currentAccumulated >= threshold;
-        raffleAmount = threshold - reserve;
-
-        // 5% to owner, 90% to winner (95% total)
-        ownerShare = (raffleAmount * 5) / 95;
-        winnerShare = (raffleAmount * 90) / 95;
+        // Get threshold for next raffle
+        uint256 nextIndex = raffleResults.length;
+        threshold = (nextIndex < raffleThresholds.length)
+            ? raffleThresholds[nextIndex]
+            : raffleThresholds[raffleThresholds.length - 1];
 
         // Get eligible player count by counting unique enrolled players
-        eligiblePlayerCount = _getEligiblePlayerCount();
+        eligiblePlayerCount = uint16(_getEligiblePlayerCount());
     }
+
+    // Note: raffleResults is public, so Solidity auto-generates raffleResults(uint256) getter
+    // Clients can fetch individual raffles or use raffleResults.length for iteration
+    // Removed getAllRaffleResults() to avoid expensive gas costs with many raffles
 
     /**
      * @dev Internal helper to count unique eligible players for raffle

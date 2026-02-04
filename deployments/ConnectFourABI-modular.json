@@ -1,15 +1,15 @@
 {
   "contractName": "ConnectFourOnChain",
-  "address": "0xb475Ce1Ec6008b2C69B819d75aF33256e3DfF630",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-02-04T00:40:35.254Z",
+  "address": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-02-04T09:17:42.004Z",
   "modules": {
-    "core": "0xC5826470e2E8dA56e4848d7E16527B97b0fcC6dD",
-    "matches": "0xB56D01a866975F80f01da51e6d64e277F1E25284",
-    "prizes": "0xd03A1F462C6E695812245BDCE480D8a8475f4fbb",
-    "raffle": "0xaa2E0B62D6Bc55f9E2B3d70bd814f1d78a17E3Ad",
-    "escalation": "0x589E2598f46260DeF92ACa01f58Cc2590E7DF137"
+    "core": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
+    "matches": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+    "prizes": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
+    "raffle": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d",
+    "escalation": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6"
   },
   "abi": [
     {
@@ -726,19 +726,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "currentRaffleIndex",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "uint8",
@@ -1172,14 +1159,9 @@
       "name": "getRaffleInfo",
       "outputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint64",
           "name": "raffleIndex",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "isReady",
-          "type": "bool"
+          "type": "uint64"
         },
         {
           "internalType": "uint256",
@@ -1192,29 +1174,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
-          "name": "reserve",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "raffleAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "ownerShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "winnerShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
+          "internalType": "uint16",
           "name": "eligiblePlayerCount",
-          "type": "uint256"
+          "type": "uint16"
         }
       ],
       "stateMutability": "view",
@@ -1736,9 +1698,9 @@
           "type": "address"
         },
         {
-          "internalType": "uint256",
+          "internalType": "uint64",
           "name": "timestamp",
-          "type": "uint256"
+          "type": "uint64"
         },
         {
           "internalType": "uint256",
@@ -1749,21 +1711,6 @@
           "internalType": "address",
           "name": "winner",
           "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "winnerPrize",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "protocolReserve",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "ownerShare",
-          "type": "uint256"
         }
       ],
       "stateMutability": "view",

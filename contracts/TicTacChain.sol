@@ -94,14 +94,15 @@ contract TicTacChain is ETour_Base {
 
         // Initialize progressive raffle thresholds for TicTacChain
         // Lower thresholds than base ETour to make raffles more accessible
-        raffleThresholds.push(0.001 ether);
+        // Last threshold (1.0 ether) repeats for all future raffles
+        raffleThresholds.push(0.001 ether);  // Raffle #0
         raffleThresholds.push(0.005 ether);  // Raffle #1
-        raffleThresholds.push(0.02 ether);  // Raffle #2
-        raffleThresholds.push(0.05 ether);  // Raffle #3
-        raffleThresholds.push(0.25 ether);  // Raffle #4
-        raffleThresholds.push(0.5 ether);   // Raffle #5
-        raffleThresholds.push(0.75 ether);  // Raffle #6
-        raffleThresholdFinal = 1.0 ether;   // Raffle #7+
+        raffleThresholds.push(0.02 ether);   // Raffle #2
+        raffleThresholds.push(0.05 ether);   // Raffle #3
+        raffleThresholds.push(0.25 ether);   // Raffle #4
+        raffleThresholds.push(0.5 ether);    // Raffle #5
+        raffleThresholds.push(0.75 ether);   // Raffle #6
+        raffleThresholds.push(1.0 ether);    // Raffle #7+ (repeats)
     }
 
     /**

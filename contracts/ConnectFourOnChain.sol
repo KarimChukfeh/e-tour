@@ -53,12 +53,14 @@ contract ConnectFourOnChain is ETour_Base {
     ) {
         _registerTiers();
 
-        raffleThresholds.push(0.001 ether);
-        raffleThresholds.push(0.01 ether);
-        raffleThresholds.push(0.05 ether);
-        raffleThresholds.push(0.4 ether);
-        raffleThresholds.push(0.75 ether);
-        raffleThresholdFinal = 1 ether;
+        // Initialize progressive raffle thresholds
+        // Last threshold (1 ether) repeats for all future raffles
+        raffleThresholds.push(0.001 ether);  // Raffle #0
+        raffleThresholds.push(0.01 ether);   // Raffle #1
+        raffleThresholds.push(0.05 ether);   // Raffle #2
+        raffleThresholds.push(0.4 ether);    // Raffle #3
+        raffleThresholds.push(0.75 ether);   // Raffle #4
+        raffleThresholds.push(1 ether);      // Raffle #5+ (repeats)
 
     }
 

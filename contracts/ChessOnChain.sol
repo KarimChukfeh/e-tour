@@ -98,9 +98,11 @@ contract ChessOnChain is ETour_Base {
             );
             require(success, "RT");
         }
-        raffleThresholds.push(0.005 ether);  // Raffle #1
-        raffleThresholds.push(0.02 ether);  // Raffle #2
-        raffleThresholds.push(0.05 ether);  // Raffle #3
+        // Initialize progressive raffle thresholds
+        // Last threshold repeats for all future raffles
+        raffleThresholds.push(0.005 ether);  // Raffle #0
+        raffleThresholds.push(0.02 ether);   // Raffle #1
+        raffleThresholds.push(0.05 ether);   // Raffle #2+ (repeats)
     }
 
     // ============ Initialization ============

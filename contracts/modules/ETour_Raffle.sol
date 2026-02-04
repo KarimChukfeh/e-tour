@@ -43,43 +43,8 @@ contract ETour_Raffle is ETour_Base {
     function initializeRound(uint8, uint8, uint8) public override { revert("Module: Call directly"); }
 
     // ============ Raffle Configuration Functions ============
-
-    /**
-     * @dev Returns the raffle threshold for the current raffle index
-     * EXACT COPY from ETour.sol lines 534-547
-     */
-    function getRaffleThreshold() external view returns (uint256) {
-        // If no raffle thresholds configured, use default
-        if (raffleThresholds.length == 0) {
-            return 3 ether;
-        }
-
-        // If currentRaffleIndex is within the configured array, use that value
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
-        }
-
-        // Otherwise, use the final threshold
-        return raffleThresholdFinal;
-    }
-
-    /**
-     * @dev Returns the reserve amount to keep after raffle execution
-     * EXACT COPY from ETour.sol lines 555-558
-     */
-    function getRaffleReserve() external view returns (uint256) {
-        uint256 threshold = _getRaffleThreshold();
-        return (threshold * 5) / 100;  // 5% of threshold
-    }
-
-    /**
-     * @dev Internal helper for getting raffle reserve
-     * EXACT COPY from ETour.sol lines 555-558
-     */
-    function _getRaffleReserve() internal view returns (uint256) {
-        uint256 threshold = _getRaffleThreshold();
-        return (threshold * 5) / 100;  // 5% of threshold
-    }
+    // Note: All raffle threshold/reserve getters removed
+    // Logic inlined directly in executeProtocolRaffle()
 
     // ============ Player Eligibility Functions ============
 
@@ -142,7 +107,7 @@ contract ETour_Raffle is ETour_Base {
         view
         returns (
             address[] memory players,
-            uint256[] memory weights,
+            uint16[] memory weights,
             uint256 totalWeight
         )
     {
@@ -189,12 +154,12 @@ contract ETour_Raffle is ETour_Base {
 
         // Allocate exact-size arrays
         players = new address[](uniqueCount);
-        weights = new uint256[](uniqueCount);
+        weights = new uint16[](uniqueCount);
 
         // Second pass: count weights for each unique player
         for (uint256 i = 0; i < uniqueCount; i++) {
             players[i] = tempPlayers[i];
-            uint256 playerWeight = 0;
+            uint16 playerWeight = 0;
 
             for (uint8 tierId = 0; tierId < tierCount; tierId++) {
                 TierConfig storage config = _tierConfigs[tierId];
@@ -234,7 +199,7 @@ contract ETour_Raffle is ETour_Base {
         view
         returns (
             address[] memory players,
-            uint256[] memory weights,
+            uint16[] memory weights,
             uint256 totalWeight
         )
     {
@@ -281,12 +246,12 @@ contract ETour_Raffle is ETour_Base {
 
         // Allocate exact-size arrays
         players = new address[](uniqueCount);
-        weights = new uint256[](uniqueCount);
+        weights = new uint16[](uniqueCount);
 
         // Second pass: count weights for each unique player
         for (uint256 i = 0; i < uniqueCount; i++) {
             players[i] = tempPlayers[i];
-            uint256 playerWeight = 0;
+            uint16 playerWeight = 0;
 
             for (uint8 tierId = 0; tierId < tierCount; tierId++) {
                 TierConfig storage config = _tierConfigs[tierId];
@@ -317,7 +282,7 @@ contract ETour_Raffle is ETour_Base {
      */
     function _selectWeightedWinner(
         address[] memory players,
-        uint256[] memory weights,
+        uint16[] memory weights,
         uint256 totalWeight,
         uint256 randomness
     ) internal pure returns (address winner) {
@@ -356,8 +321,15 @@ contract ETour_Raffle is ETour_Base {
             uint256 winnerAmount
         )
     {
+        // EFFECT 1: Get next raffle index from array length
+        uint256 nextRaffleIndex = raffleResults.length;
+
+        // EFFECT 2: Get threshold for next raffle
+        uint256 threshold = (nextRaffleIndex < raffleThresholds.length)
+            ? raffleThresholds[nextRaffleIndex]
+            : raffleThresholds[raffleThresholds.length - 1];
+
         // CHECK 1: Verify threshold met
-        uint256 threshold = _getRaffleThreshold();
         require(
             accumulatedProtocolShare >= threshold,
             "Raffle threshold not met"
@@ -369,29 +341,26 @@ contract ETour_Raffle is ETour_Base {
             "Only enrolled players can trigger raffle"
         );
 
-        // EFFECT 1: Calculate raffle amount BEFORE incrementing index
+        // EFFECT 3: Calculate raffle amount
         // (reserve must use current threshold, not next threshold)
         uint256 reserve = (threshold * 5) / 100;  // 5% of current threshold
         uint256 raffleAmount = accumulatedProtocolShare - reserve;
-
-        // EFFECT 2: Increment raffle index
-        currentRaffleIndex++;
         ownerAmount = (raffleAmount * 5) / 95;  // 5% of total (5/95 of remaining)
         winnerAmount = (raffleAmount * 90) / 95; // 90% of total (90/95 of remaining)
 
-        // EFFECT 3: Update accumulated protocol share (keep reserve)
+        // EFFECT 4: Update accumulated protocol share (keep reserve)
         accumulatedProtocolShare = reserve;
 
-        // EFFECT 4: Get all enrolled players with weights
+        // EFFECT 5: Get all enrolled players with weights
         (
             address[] memory players,
-            uint256[] memory weights,
+            uint16[] memory weights,
             uint256 totalWeight
         ) = _getAllEnrolledPlayersWithWeights();
 
         require(totalWeight > 0, "No eligible players for raffle");
 
-        // EFFECT 5: Generate randomness and select winner
+        // EFFECT 6: Generate randomness and select winner
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
@@ -411,18 +380,15 @@ contract ETour_Raffle is ETour_Base {
             }
         }
 
-        // EFFECT 6: Store historic raffle result
-        raffleResults[currentRaffleIndex] = RaffleResult({
+        // EFFECT 7: Store historic raffle result by pushing to array
+        raffleResults.push(RaffleResult({
             executor: msg.sender,
-            timestamp: block.timestamp,
+            timestamp: uint64(block.timestamp),
             rafflePot: raffleAmount + reserve,
             participants: players,
             weights: weights,
-            winner: winner,
-            winnerPrize: winnerAmount,
-            protocolReserve: reserve,
-            ownerShare: ownerAmount
-        });
+            winner: winner
+        }));
 
         // INTERACTION 1: Send to owner
         (bool ownerSent, ) = payable(owner).call{value: ownerAmount}("");
@@ -440,20 +406,18 @@ contract ETour_Raffle is ETour_Base {
     /**
      * @dev Returns complete raffle result data for a specific raffle index
      * Needed because public mapping can't return dynamic arrays
+     * Client can derive: reserve=5% of rafflePot, owner=5% of 95%, winner=90% of 95%
      */
     function getRaffleResult(uint256 raffleIndex)
         external
         view
         returns (
             address executor,
-            uint256 timestamp,
+            uint64 timestamp,
             uint256 rafflePot,
             address[] memory participants,
-            uint256[] memory weights,
-            address winner,
-            uint256 winnerPrize,
-            uint256 protocolReserve,
-            uint256 ownerShare
+            uint16[] memory weights,
+            address winner
         )
     {
         RaffleResult storage result = raffleResults[raffleIndex];
@@ -463,10 +427,7 @@ contract ETour_Raffle is ETour_Base {
             result.rafflePot,
             result.participants,
             result.weights,
-            result.winner,
-            result.winnerPrize,
-            result.protocolReserve,
-            result.ownerShare
+            result.winner
         );
     }
 
