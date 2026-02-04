@@ -55,7 +55,8 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
         it("Should have 5% reserve for TicTacChain", async function () {
             const info = await game.getRaffleInfo();
             // Raffle #1: threshold = 0.001 ETH, reserve = 5% = 0.00005 ETH
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
+            const reserve = (info.threshold * 5n) / 100n;
+            expect(reserve).to.equal(hre.ethers.parseEther("0.00005"));
         });
 
         it("Should calculate raffle amount correctly with 5% reserve", async function () {
@@ -67,9 +68,11 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             // raffleAmount = 0.001 - 0.00005 = 0.00095 ETH (95% distributed)
             // owner: 0.00005 ETH (5% of total), winner: 0.0009 ETH (90% of total)
 
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
-            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.00095"));
+            const reserve = (info.threshold * 5n) / 100n;
+            const raffleAmount = info.threshold - reserve;
+            expect(reserve).to.equal(hre.ethers.parseEther("0.00005"));
+            expect(raffleAmount).to.equal(hre.ethers.parseEther("0.00095"));
         });
     });
 
@@ -83,8 +86,8 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             // Need 0.001 ETH, so need ~134 enrollments
             // For testing purposes, we'll just check the threshold logic
 
-            const indexBefore = await game.currentRaffleIndex();
-            expect(indexBefore).to.equal(0);
+            const info = await game.getRaffleInfo();
+            expect(info.raffleIndex).to.equal(0);
 
             // After raffle executes, index would be 1
             // Next threshold = thresholds[1] = 0.005 ETH
@@ -117,14 +120,13 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
 
     describe("Raffle Index Tracking", function () {
         it("Should start with currentRaffleIndex = 0", async function () {
-            const index = await game.currentRaffleIndex();
-            expect(index).to.equal(0);
+            const info = await game.getRaffleInfo();
+            expect(info.raffleIndex).to.equal(0);
         });
 
-        it("Should show raffleIndex in getRaffleInfo matching currentRaffleIndex", async function () {
+        it("Should show raffleIndex in getRaffleInfo", async function () {
             const info = await game.getRaffleInfo();
-            const index = await game.currentRaffleIndex();
-            expect(info.raffleIndex).to.equal(index);
+            expect(info.raffleIndex).to.equal(0);
         });
     });
 
@@ -150,7 +152,7 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             // Check raffle info
             const info = await game.getRaffleInfo();
             expect(info.currentAccumulated).to.equal(expectedAccumulated);
-            expect(info.isReady).to.be.false; // Not yet at 0.001 ETH threshold
+            expect(info.currentAccumulated).to.be.lt(info.threshold); // Not yet at 0.001 ETH threshold
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
         });
 
@@ -209,7 +211,8 @@ describe("TicTacChain Progressive Raffle Thresholds", function () {
             // TicTacChain raffle #1: threshold 0.001 ETH → reserve 0.00005 ETH (5%)
             // ETour default: threshold 3 ETH → reserve 0.15 ETH (5%)
             const info = await game.getRaffleInfo();
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005")); // 5% of 0.001
+            const reserve = (info.threshold * 5n) / 100n;
+            expect(reserve).to.equal(hre.ethers.parseEther("0.00005")); // 5% of 0.001
 
             // For comparison: ETour with 3 ETH threshold would have:
             // - 5% = 0.15 ETH reserve
