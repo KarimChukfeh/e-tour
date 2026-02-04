@@ -265,7 +265,8 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
             const lastMatch = player1Matches[player1Matches.length - 1];
             expect(lastMatch.winner).to.equal(firstPlayer.address);
-            expect(lastMatch.isDraw).to.be.false;
+            // CompletionReason.NormalWin = 0 (not a draw)
+            expect(lastMatch.completionReason).to.equal(0);
             expect(lastMatch.status).to.equal(2); // Completed
         });
 

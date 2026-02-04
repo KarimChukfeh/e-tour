@@ -446,7 +446,8 @@ contract ChessOnChain is ETour_Base {
         bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
         matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
+        // For draws, winner should always be address(0)
+        matchData.winner = isDraw ? address(0) : winner;
         matchData.isDraw = isDraw;
     }
 
@@ -507,7 +508,8 @@ contract ChessOnChain is ETour_Base {
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
         Match storage m = matches[matchId];
         m.status = MatchStatus.Completed;
-        m.winner = winner;
+        // For draws, winner should always be address(0)
+        m.winner = isDraw ? address(0) : winner;
         m.isDraw = isDraw;
     }
 

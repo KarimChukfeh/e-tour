@@ -282,13 +282,12 @@ contract ETour_Matches is ETour_Base {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
         (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
-        (address finalPlayer1, ) = this._getMatchPlayers(finalMatchId);
 
         if (finalIsDraw) {
             tournament.finalsWasDraw = true;
-            tournament.completionReason = CompletionReason.Draw;
-            tournament.winner = finalPlayer1;
-            completeTournament(tierId, instanceId, finalPlayer1);
+            tournament.completionReason = CompletionReason.AllDrawScenario;
+            tournament.winner = address(0);
+            completeTournament(tierId, instanceId, address(0));
         } else {
             // Use the passed completion reason (e.g., Timeout for ML1)
             tournament.completionReason = reason;

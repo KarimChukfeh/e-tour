@@ -183,7 +183,8 @@ describe("Chess Threefold Repetition Rule", function () {
             // (Match data is cleared after tournament completes, but history is preserved)
             const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
             const lastMatch = player1Matches[player1Matches.length - 1];
-            expect(lastMatch.isDraw).to.be.true;
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
             expect(lastMatch.status).to.equal(2); // Completed
         });
 
@@ -220,7 +221,8 @@ describe("Chess Threefold Repetition Rule", function () {
             // (Match data is cleared after tournament completes, but history is preserved)
             const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
             const lastMatch = player1Matches[player1Matches.length - 1];
-            expect(lastMatch.isDraw).to.be.true;
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
             expect(lastMatch.status).to.equal(2); // Completed
         });
 
@@ -338,7 +340,8 @@ describe("Chess Threefold Repetition Rule", function () {
             // (Match data is cleared after tournament completes, but history is preserved)
             const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
             const lastMatch = player1Matches[player1Matches.length - 1];
-            expect(lastMatch.isDraw).to.be.true;
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
             expect(lastMatch.status).to.equal(2); // Completed
         });
 

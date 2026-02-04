@@ -215,6 +215,7 @@ abstract contract ETour_Base is ReentrancyGuard {
      * @dev Complete record of a finished match
      * Stores all essential data for a completed match including move history
      * Added to both players' match history arrays when match completes
+     * Note: Draw status can be determined by checking if winner == address(0)
      */
     struct MatchRecord {
         // Tournament context
@@ -231,9 +232,7 @@ abstract contract ETour_Base is ReentrancyGuard {
 
         // Match state (at completion)
         MatchStatus status;         // Should always be Completed
-        bool isDraw;
         uint256 packedBoard;        // Final board state
-        uint256 packedState;        // Final game state (Chess: castling, en passant, etc.)
 
         // Timing
         uint256 startTime;
@@ -406,6 +405,45 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     /**
+     * @dev Translate internal round number to actual bracket round
+     * When a tournament is force-started with fewer players than configured,
+     * the internal round numbers start at 0, but should be recorded as the
+     * appropriate finals/semifinals round in the full bracket structure.
+     *
+     * Examples:
+     * - 4-player tournament with 2 enrolled: internal round 0 → bracket round 1 (finals)
+     * - 8-player tournament with 4 enrolled: internal round 0 → bracket round 1 (semifinals)
+     * - 8-player tournament with 2 enrolled: internal round 0 → bracket round 2 (finals)
+     * - Full tournament: internal round 0 → bracket round 0 (no translation needed)
+     *
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param internalRound The internal round number (starts at 0)
+     * @return Actual bracket round number for historical records
+     */
+    function _translateToBracketRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 internalRound
+    ) internal view returns (uint8) {
+        TierConfig storage config = _tierConfigs[tierId];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // If tournament is fully enrolled, no translation needed
+        if (tournament.enrolledCount == config.playerCount) {
+            return internalRound;
+        }
+
+        // Calculate the offset: how many rounds were skipped
+        // Formula: totalRounds - log2(enrolledCount)
+        uint8 enrolledLog = _log2(tournament.enrolledCount);
+        uint8 roundOffset = config.totalRounds - enrolledLog;
+
+        // Add the offset to get the actual bracket round
+        return internalRound + roundOffset;
+    }
+
+    /**
      * @dev Get current raffle threshold
      * Shared helper for all game contracts - extracts duplicate logic
      * @return Current raffle threshold in wei
@@ -428,16 +466,15 @@ abstract contract ETour_Base is ReentrancyGuard {
     ) internal {
         r.tierId = t;
         r.instanceId = i;
-        r.roundNumber = rn;
+        // Translate internal round to actual bracket round for historical accuracy
+        r.roundNumber = _translateToBracketRound(t, i, rn);
         r.matchNumber = mn;
         r.player1 = m.player1;
         r.player2 = m.player2;
         r.winner = m.winner;
         r.firstPlayer = m.firstPlayer;
         r.status = m.status;
-        r.isDraw = m.isDraw;
         r.packedBoard = m.packedBoard;
-        r.packedState = m.packedState;
         r.startTime = m.startTime;
         r.endTime = block.timestamp;
         r.completionReason = cr;
@@ -475,7 +512,8 @@ abstract contract ETour_Base is ReentrancyGuard {
         Match storage m = matches[matchId];
 
         // Set winner BEFORE populating records so MatchRecord captures correct winner
-        m.winner = winner;
+        // For draws, winner should always be address(0)
+        m.winner = isDraw ? address(0) : winner;
         m.isDraw = isDraw;
         m.status = MatchStatus.Completed;
 

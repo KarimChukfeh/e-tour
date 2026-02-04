@@ -521,7 +521,8 @@ contract ConnectFourOnChain is ETour_Base {
         Match storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
+        // For draws, winner should always be address(0)
+        matchData.winner = isDraw ? address(0) : winner;
         matchData.isDraw = isDraw;
     }
 
@@ -586,7 +587,8 @@ contract ConnectFourOnChain is ETour_Base {
         Match storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
+        // For draws, winner should always be address(0)
+        matchData.winner = isDraw ? address(0) : winner;
         matchData.isDraw = isDraw;
     }
 
