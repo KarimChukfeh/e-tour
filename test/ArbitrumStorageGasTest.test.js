@@ -42,17 +42,23 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
     // Number of wallets and matches per wallet
     // EXTREME STRESS TEST: 200 wallets × 10,000 matches = 2,000,000 total matches (4,000,000 MatchRecords)
     // This is the ULTIMATE test of unbounded storage growth
-    const NUM_WALLETS = 200;
-    const MATCHES_PER_WALLET = 10000;
+    const NUM_WALLETS = Number(process.env.GAS_TEST_WALLETS ?? 20);
+    const MATCHES_PER_WALLET = Number(process.env.GAS_TEST_MATCHES ?? 200);
 
-    // Track gas measurements at these intervals across the 10,000 match journey
-    const MEASUREMENT_POINTS = [
+    const BASE_MEASUREMENT_POINTS = [
         1, 10, 25, 50, 100,           // Early matches
         250, 500, 750, 1000,          // First thousand
         2000, 3000, 4000, 5000,       // Mid-range
         6000, 7000, 8000, 9000,       // Late stage
-        10000                          // Final match
+        10000                         // Final match
     ];
+
+    const MEASUREMENT_POINTS = [
+        ...new Set(
+            BASE_MEASUREMENT_POINTS.filter((point) => point <= MATCHES_PER_WALLET)
+        ),
+        MATCHES_PER_WALLET
+    ].filter((point, index, arr) => arr.indexOf(point) === index).sort((a, b) => a - b);
 
     // Square positions for Fool's Mate
     const sq = {
@@ -81,10 +87,10 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("ARBITRUM STORAGE GAS COST ANALYSIS");
         console.log("🚨 EXTREME STRESS TEST 🚨");
         console.log("==========================================");
-        console.log(`Wallets: ${NUM_WALLETS}`);
+        console.log(`Wallets (requested): ${NUM_WALLETS}`);
         console.log(`Matches per wallet: ${MATCHES_PER_WALLET.toLocaleString()}`);
-        console.log(`Total matches: ${(NUM_WALLETS * MATCHES_PER_WALLET).toLocaleString()}`);
-        console.log(`Total MatchRecords: ${(NUM_WALLETS * MATCHES_PER_WALLET * 2).toLocaleString()} (2 per match)`);
+        console.log(`Total matches (requested): ${(NUM_WALLETS * MATCHES_PER_WALLET).toLocaleString()}`);
+        console.log(`Total MatchRecords (requested): ${(NUM_WALLETS * MATCHES_PER_WALLET * 2).toLocaleString()} (2 per match)`);
         console.log("");
         console.log("⚠️  WARNING: This test will take HOURS to complete!");
         console.log("⚠️  Each wallet will accumulate 10,000 MatchRecords");
@@ -93,9 +99,11 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
 
         // Get all available signers
         const allSigners = await hre.ethers.getSigners();
-        wallets = allSigners.slice(0, NUM_WALLETS);
+        const walletCount = Math.min(NUM_WALLETS, allSigners.length);
+        wallets = allSigners.slice(0, walletCount);
 
         console.log(`✓ Loaded ${wallets.length} wallets\n`);
+        console.log(`Measurement points: ${MEASUREMENT_POINTS.join(", ")}\n`);
 
         // Deploy all modules
         console.log("Deploying modules...");
@@ -140,7 +148,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("✓ ChessOnChain deployed\n");
 
         // Initialize gas tracking for all wallets
-        for (let i = 0; i < NUM_WALLETS; i++) {
+        for (let i = 0; i < wallets.length; i++) {
             gasData.enrollment[i] = [];
             gasData.firstMove[i] = [];
             gasData.secondMove[i] = [];
@@ -211,7 +219,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
      * Main test: Run 10,000 matches for each of 200 wallets
      * EXTREME STRESS TEST - 2 MILLION MATCHES TOTAL
      */
-    it.skip("Should measure gas costs across 2,000,000 matches with extreme playerMatches storage growth", async function () {
+    it("Should measure gas costs across playerMatches storage growth", async function () {
         this.timeout(0); // Disable timeout
 
         console.log("\n🚀 Starting mass match simulation...\n");
@@ -219,16 +227,16 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         let totalMatches = 0;
 
         // For each wallet, play MATCHES_PER_WALLET matches
-        for (let walletIdx = 0; walletIdx < NUM_WALLETS; walletIdx++) {
+        for (let walletIdx = 0; walletIdx < wallets.length; walletIdx++) {
             const wallet = wallets[walletIdx];
 
-            console.log(`\n📊 Wallet ${walletIdx + 1}/${NUM_WALLETS} (${wallet.address.slice(0, 10)}...)`);
+            console.log(`\n📊 Wallet ${walletIdx + 1}/${wallets.length} (${wallet.address.slice(0, 10)}...)`);
 
             for (let matchIdx = 0; matchIdx < MATCHES_PER_WALLET; matchIdx++) {
                 const matchNum = matchIdx + 1;
 
                 // Pair this wallet with the next wallet (circular), offset by match number to avoid reuse
-                const opponentIdx = (walletIdx + 1 + matchIdx * 2) % NUM_WALLETS;
+                const opponentIdx = (walletIdx + 1 + matchIdx * 2) % wallets.length;
 
                 // Use unique instance per wallet-match combination to avoid all conflicts
                 // Each wallet gets its own range of instances
@@ -310,7 +318,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         }
 
         // Aggregate data
-        for (let walletIdx = 0; walletIdx < NUM_WALLETS; walletIdx++) {
+        for (let walletIdx = 0; walletIdx < wallets.length; walletIdx++) {
             for (let i = 0; i < gasData.enrollment[walletIdx].length; i++) {
                 const point = gasData.enrollment[walletIdx][i].matchNumber;
 
@@ -334,6 +342,11 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         for (const point of MEASUREMENT_POINTS) {
             const data = avgGasByMeasurement[point];
             const count = data.count;
+
+            if (count === 0) {
+                console.log(`${point.toString().padStart(6)} | ${"N/A".padStart(10)} | ${"N/A".padStart(7)} | ${"N/A".padStart(7)} | ${"N/A".padStart(7)} | ${"N/A".padStart(7)} | ${"N/A".padStart(7)} | ${"N/A".padStart(10)}`);
+                continue;
+            }
 
             const avgEnroll = Math.round(data.enrollment / count);
             const avgMove1 = Math.round(data.firstMove / count);
@@ -366,8 +379,18 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("\n* Move 4 includes MatchRecord creation for both players\n");
 
         // Analysis
-        const firstTotal = avgGasByMeasurement[1].total / avgGasByMeasurement[1].count;
-        const lastTotal = avgGasByMeasurement[MATCHES_PER_WALLET].total / avgGasByMeasurement[MATCHES_PER_WALLET].count;
+        const firstPoint = MEASUREMENT_POINTS[0];
+        const lastPoint = MEASUREMENT_POINTS[MEASUREMENT_POINTS.length - 1];
+        const firstCount = avgGasByMeasurement[firstPoint]?.count ?? 0;
+        const lastCount = avgGasByMeasurement[lastPoint]?.count ?? 0;
+
+        if (firstCount === 0 || lastCount === 0) {
+            console.log("No gas data collected. Ensure the measurement test ran and produced data.");
+            return;
+        }
+
+        const firstTotal = avgGasByMeasurement[firstPoint].total / firstCount;
+        const lastTotal = avgGasByMeasurement[lastPoint].total / lastCount;
         const totalIncrease = lastTotal - firstTotal;
         const pctIncrease = ((totalIncrease / firstTotal) * 100).toFixed(2);
 
@@ -375,20 +398,20 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("SUMMARY");
         console.log("==========================================");
         console.log(`First match avg gas:     ${Math.round(firstTotal).toLocaleString()}`);
-        console.log(`${MATCHES_PER_WALLET}th match avg gas:   ${Math.round(lastTotal).toLocaleString()}`);
+        console.log(`${lastPoint}th match avg gas:   ${Math.round(lastTotal).toLocaleString()}`);
         console.log(`Absolute increase:       ${Math.round(totalIncrease).toLocaleString()} gas`);
         console.log(`Percentage increase:     ${pctIncrease}%`);
         console.log("\n");
 
         // Additional insights
         const firstMove4 = avgGasByMeasurement[1].fourthMove / avgGasByMeasurement[1].count;
-        const lastMove4 = avgGasByMeasurement[MATCHES_PER_WALLET].fourthMove / avgGasByMeasurement[MATCHES_PER_WALLET].count;
+        const lastMove4 = avgGasByMeasurement[lastPoint].fourthMove / lastCount;
         const move4Increase = lastMove4 - firstMove4;
         const move4PctIncrease = ((move4Increase / firstMove4) * 100).toFixed(2);
 
         console.log("Move 4 Analysis (MatchRecord creation):");
         console.log(`First match Move 4:      ${Math.round(firstMove4).toLocaleString()} gas`);
-        console.log(`${MATCHES_PER_WALLET}th match Move 4:    ${Math.round(lastMove4).toLocaleString()} gas`);
+        console.log(`${lastPoint}th match Move 4:    ${Math.round(lastMove4).toLocaleString()} gas`);
         console.log(`Increase:                ${Math.round(move4Increase).toLocaleString()} gas (${move4PctIncrease}%)`);
         console.log("\n");
 
@@ -411,7 +434,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("==========================================\n");
 
         // Calculate total MatchRecords created
-        const totalMatchRecords = NUM_WALLETS * MATCHES_PER_WALLET * 2; // 2 records per match (both players)
+        const totalMatchRecords = wallets.length * MATCHES_PER_WALLET * 2; // 2 records per match (both players)
 
         // MatchRecord structure size estimation (in bytes):
         // Each MatchRecord contains:
@@ -430,7 +453,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         // Additional overhead:
         // - Array length slot per wallet: 32 bytes × NUM_WALLETS
         // - Mapping storage overhead (minimal on reads, but exists)
-        const arrayLengthOverhead = 32 * NUM_WALLETS;
+        const arrayLengthOverhead = 32 * wallets.length;
 
         // Total storage calculation
         const matchRecordStorage = totalMatchRecords * BYTES_PER_MATCH_RECORD;
@@ -444,7 +467,7 @@ describe("Arbitrum Storage Gas Cost Analysis - playerMatches Growth", function (
         console.log("playerMatches Storage Breakdown:");
         console.log(`  Total MatchRecords:        ${totalMatchRecords.toLocaleString()}`);
         console.log(`  Bytes per MatchRecord:     ~${BYTES_PER_MATCH_RECORD} bytes (${BYTES_PER_MATCH_RECORD / 32} storage slots)`);
-        console.log(`  Array length overhead:     ${arrayLengthOverhead.toLocaleString()} bytes (${NUM_WALLETS} wallets × 32 bytes)`);
+        console.log(`  Array length overhead:     ${arrayLengthOverhead.toLocaleString()} bytes (${wallets.length} wallets × 32 bytes)`);
         console.log("");
         console.log("Total Storage Size:");
         console.log(`  Bytes:     ${totalStorageBytes.toLocaleString()} bytes`);

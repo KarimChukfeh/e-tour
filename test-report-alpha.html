@@ -1,24 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ETour Protocol - Test Report (Alpha)</title>
+  <style>
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-> e-tour@1.0.0 test
-> hardhat test
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
 
-[dotenv@17.2.3] injecting env (1) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #1e293b;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,0 Q300,80 600,50 T1200,70 L1200,0 Z" fill="rgba(255,255,255,0.05)"/></svg>') no-repeat bottom;
+            background-size: cover;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.95;
+            margin: 5px 0;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 12px 24px;
+            border-radius: 30px;
+            margin-top: 20px;
+            font-weight: 700;
+            font-size: 1.1em;
+            border: 2px solid #10b981;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            background: #0f172a;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 30px 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #667eea;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card .number {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .stat-card .sublabel {
+            color: #64748b;
+            font-size: 0.75em;
+            margin-top: 5px;
+        }
+
+        .stat-card.passing .number { color: #10b981; }
+        .stat-card.failing .number { color: #ef4444; }
+        .stat-card.pending .number { color: #f59e0b; }
+        .stat-card.total .number { color: #667eea; }
+        .stat-card.time .number { font-size: 2.8em; color: #06b6d4; }
+        .stat-card.coverage .number { color: #8b5cf6; }
+
+        .section {
+            padding: 50px 40px;
+            border-top: 1px solid #334155;
+        }
+
+        .section h2 {
+            color: #e2e8f0;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 6px;
+            height: 40px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 3px;
+        }
+
+        .test-suite {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+        }
+
+        .test-suite:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+
+        .test-suite h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .info-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card h4 {
+            color: #e2e8f0;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .info-card p {
+            color: #94a3b8;
+            font-size: 0.95em;
+            line-height: 1.7;
+        }
+
+        .gas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .gas-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .gas-table th {
+            padding: 18px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.95em;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .gas-table td {
+            padding: 16px 18px;
+            color: #cbd5e1;
+            border-top: 1px solid #334155;
+        }
+
+        .gas-table tr:hover {
+            background: rgba(102, 126, 234, 0.08);
+        }
+
+        .gas-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #06b6d4;
+        }
+
+        .cost-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .highlight-box h4 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .highlight-box p {
+            color: #cbd5e1;
+            line-height: 1.8;
+        }
+
+        .checkmark-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .checkmark-list li {
+            padding: 12px 0 12px 35px;
+            position: relative;
+            color: #cbd5e1;
+            font-size: 1.05em;
+        }
+
+        .checkmark-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.4em;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            color: #10b981;
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        .footer {
+            padding: 40px;
+            text-align: center;
+            color: #64748b;
+            border-top: 1px solid #334155;
+            background: #0f172a;
+        }
+
+        .footer-highlight {
+            color: #10b981;
+            font-weight: 700;
+            font-size: 1.3em;
+            margin: 15px 0;
+        }
+
+        .edge-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .edge-case-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+        }
+
+        .edge-case-card:hover {
+            border-color: #10b981;
+            transform: translateY(-3px);
+        }
+
+        .edge-case-card .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .edge-case-card h5 {
+            color: #e2e8f0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .edge-case-card p {
+            color: #94a3b8;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .status-ok {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .gas-comparison-chart {
+            margin: 30px 0;
+            padding: 25px;
+            background: #1e293b;
+            border-radius: 12px;
+        }
+
+        details {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 18px;
+        }
+        details summary {
+            cursor: pointer;
+            color: #93c5fd;
+            font-weight: 700;
+        }
+        details pre {
+            margin-top: 12px;
+            white-space: pre-wrap;
+            color: #cbd5e1;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .scenario-box {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 28px;
+            margin: 22px 0;
+            border: 1px solid #334155;
+            border-left: 4px solid #06b6d4;
+        }
+        .scenario-box h3 {
+            color: #e2e8f0;
+            margin-bottom: 12px;
+            font-size: 1.5em;
+            font-weight: 800;
+        }
+        .small-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 0 0;
+            background: #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .small-table thead {
+            background: rgba(102, 126, 234, 0.18);
+            color: white;
+        }
+        .small-table th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .small-table td {
+            padding: 12px 16px;
+            color: #cbd5e1;
+            border-top: 1px solid #334155;
+        }
+    
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-content">
+        <h1>ETour Protocol Test Report (Alpha)</h1>
+        <p class="subtitle">Scenario-oriented report hydrated from console output</p>
+        <p class="subtitle">Generated February 4, 2026 at 07:10</p>
+        <div class="confidence-badge">96.6% SUCCESS • 490 PASSING • 17 PENDING</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card total">
+        <div class="number">507</div>
+        <div class="label">Total Tests</div>
+        <div class="sublabel">Pass + Pending</div>
+      </div>
+      <div class="stat-card passing">
+        <div class="number">490</div>
+        <div class="label">Passing</div>
+        <div class="sublabel">Validated behavior</div>
+      </div>
+      <div class="stat-card failing">
+        <div class="number">0</div>
+        <div class="label">Failing</div>
+        <div class="sublabel">No regressions</div>
+      </div>
+      <div class="stat-card pending">
+        <div class="number">17</div>
+        <div class="label">Pending</div>
+        <div class="sublabel">Future work</div>
+      </div>
+      <div class="stat-card time">
+        <div class="number">5m</div>
+        <div class="label">Duration</div>
+        <div class="sublabel">Full run</div>
+      </div>
+      <div class="stat-card coverage">
+        <div class="number">96.6%</div>
+        <div class="label">Success Rate</div>
+        <div class="sublabel">Passing / Total</div>
+      </div>
+    </div>
+
+    <div class="section" style="background: #0f172a;">
+      <h2>Scenario Walkthroughs</h2>
+
+      <div class="scenario-box">
+        <h3>Comprehensive Escalation Tournament</h3>
+        <p style="color: #94a3b8; margin-bottom: 15px;">
+          Extracted from the console logs printed during the end-to-end escalation flow test.
+        </p>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Round 0 Summary</h4>
+            <ul class="checkmark-list"><li>✓ All 4 matches completed:</li>
+<li>- 1 normal win</li>
+<li>- 2 L2 force eliminations</li>
+<li>- 1 L3 replacement</li></ul>
+          </div>
+          <div class="info-card" style="border-left-color: #10b981;">
+            <h4>Validated</h4>
+            <p style="color: #94a3b8;">(No scenario output captured.)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="scenario-box" style="border-left-color: #8b5cf6;">
+        <h3>Multi-Tournament Data Isolation</h3>
+        <p style="color: #94a3b8; margin-bottom: 15px;">
+          Extracted from the comprehensive multi-tournament isolation test summary.
+        </p>
+        <ul class="checkmark-list"><li>Tournament 1: 3 players with draw scenario</li>
+<li>Tournament 2: 7 players (WIN, DRAW scenarios)</li>
+<li>Tournament 3: 8 players (ML2 timeout tested)</li>
+<li>• QF: 1 normal win, 1 ML2 timeout, 2 normal wins</li>
+<li>• SF: 2 normal wins</li>
+<li>• Finals: Normal win (ML3 testing skipped for now)</li>
+<li>Match-ending scenarios tested: WIN, DRAW, ML2 (ML3 to be tested later)</li>
+<li>Match data properly isolated across all 3 tournaments</li>
+<li>Prize distribution verified for all tournaments</li>
+<li>Earnings accumulation working correctly</li>
+<li>Data cleanup confirmed after each tournament</li>
+<li>RecentMatches entries verified for all players</li></ul>
+      </div>
+    </div>
+
+    <div class="section" style="background: #0f172a;">
+      <h2>Gas & Performance (Captured Console Reports)</h2>
+
+      <div class="highlight-box">
+        <h4>ConnectFour Maximum Capacity Report</h4>
+        <p>
+          The following metrics and tables are extracted from the printed report in the capacity/gas suite.
+        </p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card" style="border-left-color: #10b981;">
+          <h4>Saturation</h4>
+          <p>
+            <strong class="gas-value">128 players</strong><br>
+            <strong class="cost-value">30 active tournaments</strong>
+          </p>
+        </div>
+        <div class="info-card" style="border-left-color: #06b6d4;">
+          <h4>Auto-Start (Capacity Trigger)</h4>
+          <p>
+            <strong class="gas-value">914,094 gas</strong><br>
+            <strong class="cost-value">0.000914094006398658 ETH</strong>
+            <span style="color: #64748b;">($2.74)</span>
+          </p>
+        </div>
+        <div class="info-card" style="border-left-color: #8b5cf6;">
+          <h4>Avg Player Cost</h4>
+          <p>
+            <strong class="gas-value">260,394 gas</strong><br>
+            <strong class="cost-value">0.0000130197 ETH</strong>
+            <span style="color: #64748b;">($0.04)</span>
+          </p>
+        </div>
+        <div class="info-card" style="border-left-color: #ef4444;">
+          <h4>Max Cost Player</h4>
+          <p>
+            <strong class="gas-value">1,021,157 gas</strong><br>
+            <span style="color: #94a3b8; font-family: monospace;">0x011bD5423C5F77b5a0789E27f922535fd76B688F</span><br>
+            <span style="color: #64748b;">11 txs</span>
+          </p>
+        </div>
+      </div>
+
+      <h3 style="color: #e2e8f0; margin: 35px 0 20px 0;">Network Cost Estimates (L2)</h3>
+      <table class="gas-table">
+        <thead>
+          <tr>
+            <th>Gas Price</th>
+            <th>Avg Player Cost</th>
+            <th>Max Player Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>0.03 gwei</strong></td><td><span class="cost-value">0.00000781182 ETH</span> <span style="color:#64748b;">($0.02)</span></td><td><span class="cost-value">0.00003063471 ETH</span> <span style="color:#64748b;">($0.09)</span></td></tr>
+<tr><td><strong>0.1 gwei</strong></td><td><span class="cost-value">0.0000260394 ETH</span> <span style="color:#64748b;">($0.08)</span></td><td><span class="cost-value">0.0001021157 ETH</span> <span style="color:#64748b;">($0.31)</span></td></tr>
+<tr><td><strong>0.5 gwei</strong></td><td><span class="cost-value">0.000130197 ETH</span> <span style="color:#64748b;">($0.39)</span></td><td><span class="cost-value">0.0005105785 ETH</span> <span style="color:#64748b;">($1.53)</span></td></tr>
+<tr><td><strong>1 gwei</strong></td><td><span class="cost-value">0.000260394 ETH</span> <span style="color:#64748b;">($0.78)</span></td><td><span class="cost-value">0.001021157 ETH</span> <span style="color:#64748b;">($3.06)</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-grid">
+        <div class="info-card" style="border-left-color: #06b6d4;">
+          <h4>Long Game Checkpoints</h4>
+          <p>Gas sampled during the long-game scenario.</p>
+          <table class="small-table">
+            <thead><tr><th>Move</th><th>Gas</th></tr></thead>
+            <tbody>
+              <tr><td>5/20</td><td><span class="gas-value">76898</span></td></tr>
+<tr><td>10/20</td><td><span class="gas-value">79142</span></td></tr>
+<tr><td>15/20</td><td><span class="gas-value">79018</span></td></tr>
+<tr><td>20/20</td><td><span class="gas-value">78573</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-card" style="border-left-color: #10b981;">
+          <h4>Operation Breakdown</h4>
+          <p>Aggregated counts and averages from the report.</p>
+          <table class="small-table">
+            <thead><tr><th>Type</th><th>Count</th><th>Avg Gas</th><th>Total Gas</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Enrollments</strong></td><td>1</td><td><span class="gas-value">914,094</span></td><td><span class="gas-value">914,094</span></td></tr>
+<tr><td><strong>Moves</strong></td><td>20</td><td><span class="gas-value">80,202</span></td><td><span class="gas-value">1,604,046</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="highlight-box" style="margin-top: 35px;">
+        <h4>Arbitrum Storage Growth Gas Stability</h4>
+        <p>Extracted from the Arbitrum storage growth gas report printed during the run.</p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card" style="border-left-color: #06b6d4;">
+          <h4>Total Matches Simulated</h4>
+          <p><strong class="gas-value">4000</strong></p>
+        </div>
+        <div class="info-card" style="border-left-color: #10b981;">
+          <h4>Avg Total Gas (First)</h4>
+          <p><strong class="gas-value">4,126,838</strong></p>
+        </div>
+        <div class="info-card" style="border-left-color: #10b981;">
+          <h4>Avg Total Gas (Last)</h4>
+          <p>
+            <strong class="gas-value">4,095,592</strong><br>
+            <span style="color:#64748b;">match 200</span>
+          </p>
+        </div>
+        <div class="info-card" style="border-left-color: #8b5cf6;">
+          <h4>Storage Size</h4>
+          <p>
+            <strong class="gas-value">2,048,640 bytes</strong><br>
+            <span style="color:#64748b;">1.95 MB</span>
+          </p>
+        </div>
+      </div>
+
+      <table class="gas-table">
+        <thead>
+          <tr>
+            <th>Match#</th>
+            <th>Enrollment</th>
+            <th>Move 1</th>
+            <th>Move 2</th>
+            <th>Move 3</th>
+            <th>Move 4*</th>
+            <th>Total</th>
+            <th>Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="gas-value">1</span></td><td><span class="gas-value">221,192</span></td><td>373,748</td><td>356,617</td><td>365,322</td><td><span class="gas-value">2,411,001</span></td><td><span class="gas-value">4,126,838</span></td><td>0</td></tr>
+<tr><td><span class="gas-value">10</span></td><td><span class="gas-value">220,338</span></td><td>373,749</td><td>356,618</td><td>365,323</td><td><span class="gas-value">2,401,952</span></td><td><span class="gas-value">4,116,935</span></td><td>-9,903 (-0.24%)</td></tr>
+<tr><td><span class="gas-value">25</span></td><td><span class="gas-value">220,338</span></td><td>373,749</td><td>356,618</td><td>365,323</td><td><span class="gas-value">2,412,277</span></td><td><span class="gas-value">4,127,265</span></td><td>+427 (0.01%)</td></tr>
+<tr><td><span class="gas-value">50</span></td><td><span class="gas-value">236,583</span></td><td>373,749</td><td>356,618</td><td>365,323</td><td><span class="gas-value">2,546,405</span></td><td><span class="gas-value">4,295,772</span></td><td>+168,934 (4.09%)</td></tr>
+<tr><td><span class="gas-value">100</span></td><td><span class="gas-value">219,483</span></td><td>373,749</td><td>356,618</td><td>365,323</td><td><span class="gas-value">2,389,435</span></td><td><span class="gas-value">4,102,596</span></td><td>-24,242 (-0.59%)</td></tr>
+<tr><td><span class="gas-value">200</span></td><td><span class="gas-value">219,483</span></td><td>373,749</td><td>356,618</td><td>365,323</td><td><span class="gas-value">2,382,427</span></td><td><span class="gas-value">4,095,592</span></td><td>-31,246 (-0.76%)</td></tr>
+        </tbody>
+      </table>
+
+      <p style="color:#94a3b8;">* Move 4 includes MatchRecord creation (as printed in the report).</p>
+
+      <h3 style="color: #e2e8f0; margin: 35px 0 20px 0;">Scaling Projections</h3>
+      <table class="gas-table">
+        <thead>
+          <tr>
+            <th>Players</th>
+            <th>Matches Each</th>
+            <th>Total Records</th>
+            <th>Storage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>1,000</strong></td><td>200</td><td><span class="gas-value">400,000</span></td><td><span class="cost-value">97.66 MB</span></td></tr>
+<tr><td><strong>10,000</strong></td><td>200</td><td><span class="gas-value">4,000,000</span></td><td><span class="cost-value">976.56 MB</span></td></tr>
+<tr><td><strong>100,000</strong></td><td>200</td><td><span class="gas-value">40,000,000</span></td><td><span class="cost-value">9.54 GB</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box" style="margin-top: 35px;">
+        <h4>TicTacChain Gas Checks</h4>
+        <p>Captured from the console logs in <code>Gas Optimization</code> tests.</p>
+        <div class="metric-row"><span class="metric-label">Enrollment Gas</span><span class="metric-value">253,905</span></div><div class="metric-row"><span class="metric-label">Move Gas</span><span class="metric-value">103,527</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Test Suite Breakdown</h2>
+      
+            <div class="test-suite">
+                <h3>
+                    <span>ConnectFourOnChain</span>
+                    <span class="badge success">79 PASSING</span>
+                </h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%;"></div>
+                </div>
+                <p style="color: #cbd5e1; margin-top: 10px;">
+                    <strong>79 tests</strong> (grouped by suite/test names)
+                </p>
+                <div class="info-grid">
+                <div class="info-card">
+                    <h4>Escalation &amp; Timeouts (42 tests)</h4>
+                    <p>Anti-stalling flows (EL*/ML*) and all timing/eligibility boundary checks.<br><span class="status-ok">42 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Game &amp; Tournament Logic (20 tests)</h4>
+                    <p>Core gameplay, enrollment, bracket progression, and correctness of state transitions.<br><span class="status-ok">20 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Views &amp; Data Integrity (8 tests)</h4>
+                    <p>View functions used by UIs: match/tournament data, leaderboards, stats, and persistence.<br><span class="status-ok">8 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Economics &amp; Prizes (6 tests)</h4>
+                    <p>Entry fee splits, prize distribution, rounding/wei integrity, raffles, and earnings.<br><span class="status-ok">6 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Edge Cases &amp; Regression (2 tests)</h4>
+                    <p>Known bugs/edge cases prevented from regressing (cache, finals persistence, etc.).<br><span class="status-ok">2 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Events &amp; Records (1 tests)</h4>
+                    <p>Event emissions and record-keeping correctness (e.g., Transfer, records/mappings).<br><span class="status-ok">1 passing</span></p>
+                </div>
+                </div>
+            </div>
+            
+            <div class="test-suite">
+                <h3>
+                    <span>ChessOnChain</span>
+                    <span class="badge success">149 PASSING</span> <span class="badge warning">1 PENDING</span>
+                </h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 99.3%;"></div>
+                </div>
+                <p style="color: #cbd5e1; margin-top: 10px;">
+                    <strong>150 tests</strong> (grouped by suite/test names)
+                </p>
+                <div class="info-grid">
+                <div class="info-card">
+                    <h4>Escalation &amp; Timeouts (59 tests)</h4>
+                    <p>Anti-stalling flows (EL*/ML*) and all timing/eligibility boundary checks.<br><span class="status-ok">59 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Game &amp; Tournament Logic (51 tests)</h4>
+                    <p>Core gameplay, enrollment, bracket progression, and correctness of state transitions.<br><span class="status-ok">51 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Economics &amp; Prizes (17 tests)</h4>
+                    <p>Entry fee splits, prize distribution, rounding/wei integrity, raffles, and earnings.<br><span class="status-ok">17 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Edge Cases &amp; Regression (8 tests)</h4>
+                    <p>Known bugs/edge cases prevented from regressing (cache, finals persistence, etc.).<br><span class="status-ok">8 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Views &amp; Data Integrity (7 tests)</h4>
+                    <p>View functions used by UIs: match/tournament data, leaderboards, stats, and persistence.<br><span class="status-ok">7 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Gas &amp; Performance (6 tests)</h4>
+                    <p>Gas measurements, capacity testing, storage growth, and scale/stress behaviors.<br><span class="status-ok">6 passing</span></p>
+                </div>
+                </div>
+            </div>
+            
+            <div class="test-suite">
+                <h3>
+                    <span>TicTacChain</span>
+                    <span class="badge success">80 PASSING</span>
+                </h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%;"></div>
+                </div>
+                <p style="color: #cbd5e1; margin-top: 10px;">
+                    <strong>80 tests</strong> (grouped by suite/test names)
+                </p>
+                <div class="info-grid">
+                <div class="info-card">
+                    <h4>Game &amp; Tournament Logic (25 tests)</h4>
+                    <p>Core gameplay, enrollment, bracket progression, and correctness of state transitions.<br><span class="status-ok">25 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Economics &amp; Prizes (20 tests)</h4>
+                    <p>Entry fee splits, prize distribution, rounding/wei integrity, raffles, and earnings.<br><span class="status-ok">20 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Escalation &amp; Timeouts (18 tests)</h4>
+                    <p>Anti-stalling flows (EL*/ML*) and all timing/eligibility boundary checks.<br><span class="status-ok">18 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Views &amp; Data Integrity (11 tests)</h4>
+                    <p>View functions used by UIs: match/tournament data, leaderboards, stats, and persistence.<br><span class="status-ok">11 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>All-Draw Resolution (3 tests)</h4>
+                    <p>Finals/semi/round-all-draw scenarios and fair payout splitting.<br><span class="status-ok">3 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Gas &amp; Performance (2 tests)</h4>
+                    <p>Gas measurements, capacity testing, storage growth, and scale/stress behaviors.<br><span class="status-ok">2 passing</span></p>
+                </div>
+                </div>
+            </div>
+            
+            <div class="test-suite">
+                <h3>
+                    <span>Protocol Core</span>
+                    <span class="badge success">131 PASSING</span> <span class="badge warning">15 PENDING</span>
+                </h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 89.7%;"></div>
+                </div>
+                <p style="color: #cbd5e1; margin-top: 10px;">
+                    <strong>146 tests</strong> (grouped by suite/test names)
+                </p>
+                <div class="info-grid">
+                <div class="info-card">
+                    <h4>Escalation &amp; Timeouts (74 tests)</h4>
+                    <p>Anti-stalling flows (EL*/ML*) and all timing/eligibility boundary checks.<br><span class="status-ok">63 passing • 11 pending</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Economics &amp; Prizes (40 tests)</h4>
+                    <p>Entry fee splits, prize distribution, rounding/wei integrity, raffles, and earnings.<br><span class="status-ok">40 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Edge Cases &amp; Regression (11 tests)</h4>
+                    <p>Known bugs/edge cases prevented from regressing (cache, finals persistence, etc.).<br><span class="status-ok">9 passing • 2 pending</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Game &amp; Tournament Logic (10 tests)</h4>
+                    <p>Core gameplay, enrollment, bracket progression, and correctness of state transitions.<br><span class="status-ok">9 passing • 1 pending</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>All-Draw Resolution (8 tests)</h4>
+                    <p>Finals/semi/round-all-draw scenarios and fair payout splitting.<br><span class="status-ok">8 passing</span></p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>Events &amp; Records (2 tests)</h4>
+                    <p>Event emissions and record-keeping correctness (e.g., Transfer, records/mappings).<br><span class="status-ok">1 passing • 1 pending</span></p>
+                </div>
+                </div>
+            </div>
+            
+            <div class="test-suite">
+                <h3>
+                    <span>Gas &amp; Performance</span>
+                    <span class="badge success">5 PASSING</span> <span class="badge warning">12 PENDING</span>
+                </h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 29.4%;"></div>
+                </div>
+                <p style="color: #cbd5e1; margin-top: 10px;">
+                    <strong>17 tests</strong> (grouped by suite/test names)
+                </p>
+                <div class="info-grid">
+                <div class="info-card">
+                    <h4>Gas &amp; Performance (17 tests)</h4>
+                    <p>Gas measurements, capacity testing, storage growth, and scale/stress behaviors.<br><span class="status-ok">5 passing • 12 pending</span></p>
+                </div>
+                </div>
+            </div>
+            
+
+      <h3 style="color: #e2e8f0; margin: 35px 0 20px 0;">Coverage by Category (Heuristic)</h3>
+      <div class="edge-case-grid">
+        
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Escalation &amp; Timeouts</h5>
+                <p><strong>193 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #f59e0b; font-weight: 600;">PASSING: 182 • PENDING: 11</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Game &amp; Tournament Logic</h5>
+                <p><strong>106 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #f59e0b; font-weight: 600;">PASSING: 105 • PENDING: 1</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Economics &amp; Prizes</h5>
+                <p><strong>83 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #10b981; font-weight: 600;">PASSING: 83</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Gas &amp; Performance</h5>
+                <p><strong>26 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #f59e0b; font-weight: 600;">PASSING: 14 • PENDING: 12</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Views &amp; Data Integrity</h5>
+                <p><strong>26 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #10b981; font-weight: 600;">PASSING: 26</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Edge Cases &amp; Regression</h5>
+                <p><strong>21 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #f59e0b; font-weight: 600;">PASSING: 19 • PENDING: 2</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>All-Draw Resolution</h5>
+                <p><strong>11 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #10b981; font-weight: 600;">PASSING: 11</div>
+            </div>
+            
+            <div class="edge-case-card">
+                <div class="icon">•</div>
+                <h5>Events &amp; Records</h5>
+                <p><strong>6 tests</strong> tagged under this category (heuristic).</p>
+                <div style="margin-top: 10px; color: #f59e0b; font-weight: 600;">PASSING: 4 • PENDING: 2</div>
+            </div>
+            
+      </div>
+    </div>
+
+    <div class="section" style="background: #0f172a;">
+      <h2>Pending Tests</h2>
+      <div class="info-grid">
+        
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Raffle Results Storage - Historic Data Validation / Edge Cases and Data Integrity <span class="badge warning">4 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should handle raffle with single participant</li>
+<li>Should ensure participants and weights arrays have same length</li>
+<li>Should preserve exact ETH amounts without rounding errors</li>
+<li>Should query non-existent raffle index safely</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Comprehensive Tournament Escalation Flow Tests / 8-Player Tournament with Mixed Escalation Scenarios <span class="badge warning">3 PENDING</span></h4>
+                <ul class="checkmark-list"><li>1 normal win</li>
+<li>2 L2 force eliminations</li>
+<li>1 L3 replacement</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>L2/L3 Ordering Test <span class="badge warning">3 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Match time: 120 seconds</li>
+<li>L2 delay: 120 seconds (starts after timeout)</li>
+<li>L3 delay: 240 seconds (starts after timeout)</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Raffle Results Storage - Historic Data Validation / Multiple Consecutive Raffles Storage <span class="badge warning">3 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should store separate results for 3 consecutive raffles with correct data</li>
+<li>Should maintain independent storage for each raffle index</li>
+<li>Should correctly track progressive threshold increases across raffles</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Raffle Results Storage - Historic Data Validation / Single Raffle Execution Storage <span class="badge warning">3 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should store complete raffle result data after execution</li>
+<li>Should store different winner when randomness changes</li>
+<li>Should handle weighted participants correctly when player enrolled in multiple tournaments</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Finals Data Persistence Bug (TDD) / Scenario 1: Finals Never Completed (InProgress) <span class="badge warning">2 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Security gap closed</li>
+<li>Historical data available via events</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Finals Data Persistence Bug (TDD) / Scenario 2: Double-Elimination Finals (winner = address(0)) <span class="badge warning">2 PENDING</span></h4>
+                <ul class="checkmark-list"><li>winner=0x0 case handled properly</li>
+<li>Security gap closed</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Protocol Raffle System / Edge Cases <span class="badge warning">2 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should handle single enrolled player (100% chance) (DEPRECATED - eligiblePlayerCount calculation changed)</li>
+<li>Should handle player enrolled in many tournaments (DEPRECATED - eligiblePlayerCount calculation changed)</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Raffle Results Storage - Historic Data Validation / Storage Gas Costs <span class="badge warning">2 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should document gas cost for storing raffle results</li>
+<li>Should handle storage for raffle with many participants</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Finals Data Persistence Bug (TDD) / Scenario 3: Exploit Attempt After Status Check Fix <span class="badge warning">1 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Error: VM Exception while processing transaction: reverted with reason string &#x27;Tournament not in progress&#x27;</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Protocol Raffle System / Raffle Mechanics (Integration with Failed Prizes) <span class="badge warning">1 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should handle multiple enrollment counts correctly (DEPRECATED - eligiblePlayerCount calculation changed)</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Protocol Raffle System / getRaffleInfo() View Function <span class="badge warning">1 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should count enrolled players correctly (DEPRECATED - eligiblePlayerCount calculation changed)</li></ul>
+            </div>
+            
+            <div class="info-card" style="border-left-color: #f59e0b;">
+                <h4>Transfer Event Tests / Chess Transfer Event <span class="badge warning">1 PENDING</span></h4>
+                <ul class="checkmark-list"><li>Should emit Transfer event with gameName=&#x27;Chess Reward&#x27; for winner</li></ul>
+            </div>
+            
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Slowest Tests</h2>
+      <table class="gas-table">
+        <thead><tr><th>Test</th><th>Suite</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td>Should store multiple elite matches sequentially</td><td>ChessOnChain 8-Tier System Tests / Elite Matches Storage (Tier 3 and Tier 7)</td><td><span class="gas-value">326ms</span></td></tr>
+<tr><td>Should distribute winner-takes-all correctly in Tier 7</td><td>ChessOnChain 8-Tier System Tests / Prize Distribution Validation</td><td><span class="gas-value">243ms</span></td></tr>
+<tr><td>Should store Tier 7 finals match in eliteMatches array</td><td>ChessOnChain 8-Tier System Tests / Elite Matches Storage (Tier 3 and Tier 7)</td><td><span class="gas-value">242ms</span></td></tr>
+<tr><td>Should complete Tier 7 semi-finals and finals via checkmate</td><td>ChessOnChain 8-Tier System Tests / 4-Player Tier Progression</td><td><span class="gas-value">238ms</span></td></tr>
+<tr><td>Should complete Tier 4 semi-finals and finals via checkmate</td><td>ChessOnChain 8-Tier System Tests / 4-Player Tier Progression</td><td><span class="gas-value">234ms</span></td></tr>
+<tr><td>Should distribute winner-takes-all correctly in Tier 4</td><td>ChessOnChain 8-Tier System Tests / Prize Distribution Validation</td><td><span class="gas-value">233ms</span></td></tr>
+<tr><td>Should end game as draw via threefold repetition before fifty-move (expected behavior)</td><td>Chess Fifty-Move Rule / ChessOnChain - Fifty-Move Rule Integration Tests</td><td><span class="gas-value">210ms</span></td></tr>
+<tr><td>Should track prizes independently per tier</td><td>ChessOnChain 8-Tier System Tests / Cross-Tier Independence</td><td><span class="gas-value">175ms</span></td></tr>
+<tr><td>Should handle mixed completion methods (timeout + checkmate)</td><td>ChessOnChain 8-Tier System Tests / 4-Player Tier Progression</td><td><span class="gas-value">170ms</span></td></tr>
+<tr><td>Should handle 3 consecutive 8-player tier tournaments with varying player counts and escalation scenarios</td><td>Tournament Reset and Enrollment Edge Cases / CRITICAL BUG: Match Data Persistence Across Tournaments</td><td><span class="gas-value">164ms</span></td></tr>
+<tr><td>Should test that player tracking storage exists in game contract</td><td>Test Simple Tracking</td><td><span class="gas-value">144ms</span></td></tr>
+<tr><td>Should handle Tier 7 mixed completion methods</td><td>ChessOnChain 8-Tier System Tests / 4-Player Tier Progression</td><td><span class="gas-value">127ms</span></td></tr>
+<tr><td>Should deploy all contracts successfully</td><td>Basic Deployment Test</td><td><span class="gas-value">119ms</span></td></tr>
+<tr><td>Should handle ML2 on finals match (both players eliminated)</td><td>ChessOnChain Comprehensive Escalation Tests / ML2: Advanced Player Force Eliminate</td><td><span class="gas-value">109ms</span></td></tr>
+<tr><td>Should handle ML3 on finals match properly</td><td>ChessOnChain Comprehensive Escalation Tests / ML3: External Player Replacement</td><td><span class="gas-value">107ms</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" style="background: #0f172a;">
+      <h2>Raw Console Output</h2>
+      <p style="color: #94a3b8;">
+        This is the full <code>test-output.txt</code> content (HTML-escaped).
+      </p>
+      <details>
+        <summary>Show raw output</summary>
+        <pre>
+&gt; e-tour@1.0.0 test
+&gt; hardhat test
+
+[dotenv@17.2.3] injecting env (1) from .env -- tip: ⚙️  load multiple .env files with { path: [&#x27;.env.local&#x27;, &#x27;.env&#x27;] }
 StateTracker initialized: object
 StateTracker methods: [
-  'constructor',
-  'startTest',
-  'recordTimelineEntry',
-  'endTest',
-  'isTracking',
-  'getTestData',
-  'getAllTests',
-  'getCurrentTestId',
-  'getSummary',
-  'getTestsByFile',
-  'getTestsByStatus',
-  'clear',
-  'toJSON',
-  'fromJSON'
+  &#x27;constructor&#x27;,
+  &#x27;startTest&#x27;,
+  &#x27;recordTimelineEntry&#x27;,
+  &#x27;endTest&#x27;,
+  &#x27;isTracking&#x27;,
+  &#x27;getTestData&#x27;,
+  &#x27;getAllTests&#x27;,
+  &#x27;getCurrentTestId&#x27;,
+  &#x27;getSummary&#x27;,
+  &#x27;getTestsByFile&#x27;,
+  &#x27;getTestsByStatus&#x27;,
+  &#x27;clear&#x27;,
+  &#x27;toJSON&#x27;,
+  &#x27;fromJSON&#x27;
 ]
 Scientific test reporter setup complete. State capture enabled.
 
@@ -357,9 +1485,9 @@ Scaling Projections:
       ✔ Should reject ML3 on non-stalled match
       ✔ Should handle ML3 on finals match properly (107ms)
     Cascading Effects: Multi-Level Escalation
-      ✔ Should handle ML1 -> tournament completion -> reset -> new enrollment
-      ✔ Should handle ML2 in round 0 -> ML3 in finals (61ms)
-      ✔ Should handle EL2 with multiple enrollments -> complete reset
+      ✔ Should handle ML1 -&gt; tournament completion -&gt; reset -&gt; new enrollment
+      ✔ Should handle ML2 in round 0 -&gt; ML3 in finals (61ms)
+      ✔ Should handle EL2 with multiple enrollments -&gt; complete reset
       ✔ Should track forfeited amounts correctly across escalation types (59ms)
     Prize Distribution Verification Across Escalation Types
       ✔ Should distribute correct prizes for EL1 solo force start
@@ -428,7 +1556,7 @@ Match 0: Winner 0x3C44Cd..., Loser 0x709979...
 ✓ Advanced player (winner) blocked from L3
 ✓ Eliminated (non-advanced) player successfully claimed L3
 
-✅ Eliminated players CAN claim L3 (they're not advanced)
+✅ Eliminated players CAN claim L3 (they&#x27;re not advanced)
       ✔ Should verify eliminated player can claim L3 in their own round
 
 === Complex Bracket Test ===
@@ -479,7 +1607,7 @@ Round 1 players: 0x3C44Cd... vs 0x15d34A...
       ✔ Should reject ML3 on non-stalled match
       ✔ Should handle ML3 on finals match properly
     Cascading Effects: Multi-Level Escalation
-      ✔ Should handle ML1 -> tournament completion -> reset -> new enrollment
+      ✔ Should handle ML1 -&gt; tournament completion -&gt; reset -&gt; new enrollment
 
 === BEFORE PLAYING SEMIFINAL 1-0 ===
 Player1: 0x70997970
@@ -497,8 +1625,8 @@ Player1: 0x70997970
 Player2: 0x9965507D
 Status: 1
 Round 2: totalMatches=1, completedMatches=0, initialized=true
-      ✔ Should handle ML2 in round 0 -> ML3 in finals (53ms)
-      ✔ Should handle EL2 with multiple enrollments -> complete reset
+      ✔ Should handle ML2 in round 0 -&gt; ML3 in finals (53ms)
+      ✔ Should handle EL2 with multiple enrollments -&gt; complete reset
       ✔ Should track forfeited amounts correctly across escalation types
     Prize Distribution Verification Across Escalation Types
       ✔ Should distribute correct prizes for EL1 solo force start
@@ -644,7 +1772,7 @@ Second Tournament Finals after both semifinals:
       ✔ Should return active match data when match is still in progress
     COMPREHENSIVE: Cross-Tournament Data Isolation
 
-========== FIRST TOURNAMENT: 3 PLAYERS - TESTING DRAW & ML2 ==========
+========== FIRST TOURNAMENT: 3 PLAYERS - TESTING DRAW &amp; ML2 ==========
 Tournament 1 started with 3 players
 Round 0 has 1 matches
 
@@ -701,10 +1829,10 @@ Tournament 2 final status: 0
 
 Total T2 prize pool: 8190000000000000 wei
 
-========== THIRD TOURNAMENT: 8 PLAYERS - ML2 & ML3 FOCUS ==========
+========== THIRD TOURNAMENT: 8 PLAYERS - ML2 &amp; ML3 FOCUS ==========
 Tournament 3 started with full 8 players
 
-=== Quarterfinals: Testing ML2 & ML3 ===
+=== Quarterfinals: Testing ML2 &amp; ML3 ===
 
 QF Match 0: Normal WIN
   ✓ Completed normally
@@ -770,10 +1898,10 @@ Tournament 3 Players:
   0x70997970... (all 3 tournaments) has 3 recent matches
   0x3C44CdDd... (all 3 tournaments) has 5 recent matches
   0x90F79bf6... (all 3 tournaments) has 3 recent matches
-  0x15d34AAf... (T2 & T3) has 4 recent matches
-  0x9965507D... (T2 & T3) has 3 recent matches
-  0x976EA740... (T2 & T3) has 3 recent matches
-  0x14dC7996... (T2 & T3) has 4 recent matches
+  0x15d34AAf... (T2 &amp; T3) has 4 recent matches
+  0x9965507D... (T2 &amp; T3) has 3 recent matches
+  0x976EA740... (T2 &amp; T3) has 3 recent matches
+  0x14dC7996... (T2 &amp; T3) has 4 recent matches
   0x23618e81... (T3 only) has 1 recent matches
 
 ✓ All players have appropriate recentMatches entries
@@ -802,9 +1930,9 @@ Tournament 3 Players:
       ✔ Should emit Transfer event with correct parameters for winner
       ✔ Should emit Transfer events for all winners in all-draw scenario
     Chess Transfer Event
-      - Should emit Transfer event with gameName='Chess Reward' for winner
+      - Should emit Transfer event with gameName=&#x27;Chess Reward&#x27; for winner
     ConnectFour Reward Transfer Event
-      ✔ Should emit Transfer event with gameName='ConnectFour Reward' for winner
+      ✔ Should emit Transfer event with gameName=&#x27;ConnectFour Reward&#x27; for winner
     Transfer Event Structure
       ✔ Should have correct indexed parameters for MetaMask filtering
       ✔ Should emit prize value matching actual prize distribution
@@ -871,7 +1999,7 @@ Tournament 3 Players:
       ✔ Should return false when timeout occurred but L3 delay has not passed
       ✔ Should return true when timeout occurred and L3 delay has passed (not marked stalled)
       ✔ Should return false exactly at the L3 delay boundary (edge case)
-      ✔ Should progress from L2 -> L3 availability over time
+      ✔ Should progress from L2 -&gt; L3 availability over time
     Cross-level consistency checks
       ✔ Should never have L3 available without L2 being available
     Match completion invalidation
@@ -929,7 +2057,7 @@ CYCLE 1: Completing tournament...
 
 ATTACKER: Attempting ML3 on stale finals...
 ✓ EXPLOIT BLOCKED: Tournament status check prevented ML3
-  - Error: VM Exception while processing transaction: reverted with reason string 'Tournament not in progress'
+  - Error: VM Exception while processing transaction: reverted with reason string &#x27;Tournament not in progress&#x27;
 
 === TEST COMPLETE ===
 
@@ -950,7 +2078,7 @@ Testing L2/L3 ordering:
 
 === AFTER L3 delay completes ===
 ✓ L3 claim succeeds after L3 delay passes
-    ✔ Should ensure L3 escalation respects L2 -> L3 ordering
+    ✔ Should ensure L3 escalation respects L2 -&gt; L3 ordering
 
   ML2 (Force Eliminate) Comprehensive Tests
     Advanced Player Detection
@@ -1111,7 +2239,7 @@ Step 7: Verifying tournament completion...
 ✓ Tournament properly reset
 
 Step 8: Verifying prize distribution...
-  A's prize: 0.00252 ETH
+  A&#x27;s prize: 0.00252 ETH
 ✓ Prize distributed to A
 
 === TEST COMPLETE ✅ ===
@@ -1360,7 +2488,7 @@ Initialized
     Time Bank Initialization
       ✔ Should initialize both players with configured match time at match start
     Time Bank Mechanics
-      ✔ Should deduct time from player's bank after making a move
+      ✔ Should deduct time from player&#x27;s bank after making a move
       ✔ Should allow multiple moves with cumulative time deduction
       ✔ Should NOT allow opponent to claim timeout before time runs out
       ✔ Should allow opponent to claim timeout after time runs out
@@ -1504,7 +2632,7 @@ Match 2-0: 0x14dC vs 0x7099
         ✔ Should return true after timeout + L3 delay
       isPlayerInAdvancedRound
         ✔ Should return false for non-enrolled player
-        ✔ Should return false for enrolled player who hasn't won any matches yet
+        ✔ Should return false for enrolled player who hasn&#x27;t won any matches yet
     ConnectFourOnChain View Functions
       isMatchEscL2Available
         ✔ Should return false for non-existent match
@@ -1516,7 +2644,7 @@ Match 2-0: 0x14dC vs 0x7099
         ✔ Should return true after timeout + L3 delay
       isPlayerInAdvancedRound
         ✔ Should return false for non-enrolled player
-        ✔ Should return false for enrolled player who hasn't won any matches yet
+        ✔ Should return false for enrolled player who hasn&#x27;t won any matches yet
     ChessOnChain View Functions
       isMatchEscL2Available
         ✔ Should return false for non-existent match
@@ -1528,7 +2656,7 @@ Match 2-0: 0x14dC vs 0x7099
         ✔ Should return true after timeout + L3 delay
       isPlayerInAdvancedRound
         ✔ Should return false for non-enrolled player
-        ✔ Should return false for enrolled player who hasn't won any matches yet
+        ✔ Should return false for enrolled player who hasn&#x27;t won any matches yet
 
   Wei Precision and Rounding in Prize Distribution
     Wei Rounding in Prize Splits
@@ -1542,9 +2670,9 @@ Match 2-0: 0x14dC vs 0x7099
       ✔ Should handle standard entry fee precision correctly
       ✔ Should handle entry fee calculations with precision
 
-  Chess Checkmate & Match Completion Tests
+  Chess Checkmate &amp; Match Completion Tests
     Checkmate Detection
-      ✔ Should detect Scholar's Mate and mark match as completed (59ms)
+      ✔ Should detect Scholar&#x27;s Mate and mark match as completed (59ms)
       ✔ Should detect Back Rank Mate
       ✔ Should detect checkmate and emit MatchCompleted event (57ms)
     Timeout Victory Match Completion
@@ -1632,8 +2760,8 @@ Match 2-0: 0x14dC vs 0x7099
       ✔ Should reject timeout claim on your own turn
     View Functions
       ✔ Should return chess match data
-    Scholar's Mate (Checkmate)
-      ✔ Should detect checkmate (Scholar's Mate) (54ms)
+    Scholar&#x27;s Mate (Checkmate)
+      ✔ Should detect checkmate (Scholar&#x27;s Mate) (54ms)
     4-Player Tournament
       ✔ Should handle 4-player tournament bracket
 
@@ -2036,4 +3164,14 @@ END OF REPORT
 
   490 passing (5m)
   17 pending
+</pre>
+      </details>
+    </div>
 
+    <div class="footer">
+      <div class="footer-highlight">490 passing • 17 pending • 0 failing</div>
+      Generated from <code>test-output.txt</code>
+    </div>
+  </div>
+</body>
+</html>
