@@ -267,6 +267,20 @@ contract ETour_Core is ETour_Base {
         tournament.startTime = block.timestamp;
         tournament.currentRound = 0;
 
+        // Calculate actual rounds needed based on enrolled players, not tier max
+        // Use ceiling of log2 to handle odd numbers (e.g., 3 players needs 2 rounds, not 1)
+        uint8 playerCount = tournament.enrolledCount;
+        if (playerCount == 0) {
+            tournament.actualTotalRounds = 0;
+        } else if (playerCount == 1) {
+            tournament.actualTotalRounds = 0; // Solo player, no rounds needed
+        } else {
+            // Calculate ceil(log2(playerCount))
+            uint8 log2Floor = _log2(playerCount);
+            // Check if playerCount is a perfect power of 2
+            bool isPowerOf2 = (playerCount & (playerCount - 1)) == 0;
+            tournament.actualTotalRounds = isPowerOf2 ? log2Floor : log2Floor + 1;
+        }
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];

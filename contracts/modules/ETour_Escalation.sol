@@ -384,8 +384,9 @@ contract ETour_Escalation is ETour_Base {
             tournament.enrolledCount++;
         }
 
-        TierConfig storage config = _tierConfigs[tierId];
-        if (roundNumber < config.totalRounds - 1) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber < tournament.actualTotalRounds - 1) {
             // Advance winner inline
             _advanceWinnerToNextRound(tierId, instanceId, roundNumber, matchNumber, replacementPlayer);
         }
@@ -462,14 +463,14 @@ contract ETour_Escalation is ETour_Base {
         TierConfig storage config = _tierConfigs[tierId];
         Round storage round = rounds[tierId][instanceId][roundNumber];
 
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
         // Check if this is the final round
-        if (roundNumber == config.totalRounds - 1) {
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber == tournament.actualTotalRounds - 1) {
             // Finals completed - check for winner
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
             (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
-
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
             if (!isDraw && winner != address(0)) {
                 // Check if this was an escalation-based win
                 MatchTimeoutState storage finalsTimeout = matchTimeouts[finalsMatchId];

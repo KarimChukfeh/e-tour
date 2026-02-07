@@ -1,16 +1,16 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x870ac029D3951359B4faA7a20A54a9397335639B",
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-02-04T10:32:42.854Z",
+  "address": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-02-07T00:38:13.853Z",
   "modules": {
-    "core": "0x05fF11E8440ffD9309724514eCa424B94c889Fff",
-    "matches": "0x9a67220ea3F428d318A3403157D7c31C8dBcee8E",
-    "prizes": "0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B",
-    "raffle": "0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5",
-    "escalation": "0x24B9Cdf557731a3EF154E212C9ead42A15647708",
-    "chessRules": "0x092a20D91Af8BEcA18BA195b112401Be267A175a"
+    "core": "0x851356ae760d987E095750cCeb3bC6014560891C",
+    "matches": "0xf5059a5D33d5853360D16C683c16e67980206f36",
+    "prizes": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
+    "raffle": "0x998abeb3E57409262aE5b751f60747921B33613E",
+    "escalation": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+    "chessRules": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf"
   },
   "abi": [
     {
@@ -2024,6 +2024,11 @@
           "internalType": "struct ETour_Base.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
+        },
+        {
+          "internalType": "uint8",
+          "name": "actualTotalRounds",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",

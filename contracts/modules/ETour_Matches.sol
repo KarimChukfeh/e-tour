@@ -123,12 +123,13 @@ contract ETour_Matches is ETour_Base {
         // Note: Escalation state is cleared by the game contract before calling completeMatch
 
         if (!isDraw) {
-            TierConfig storage config = _tierConfigs[tierId];
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
             // Note: Loser elimination hook is called by the game contract after delegatecall
             // (can't call hooks from within modules as they use empty stubs)
 
-            if (roundNumber < config.totalRounds - 1) {
+            // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+            if (roundNumber < tournament.actualTotalRounds - 1) {
                 advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
             }
             // Note: Winner elimination check happens when their next match completes (or tournament ends)
@@ -223,9 +224,9 @@ contract ETour_Matches is ETour_Base {
         }
 
         // Inline: Handle finals walkover scenario
-        TierConfig storage config = _tierConfigs[tierId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
         uint8 nextRound = roundNumber + 1;
-        if (nextRound == config.totalRounds - 1) {
+        if (nextRound == tournament.actualTotalRounds - 1) {
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, nextRound, 0);
             (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
 
@@ -244,16 +245,17 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber
     ) internal view returns (bool) {
         Round storage round = rounds[tierId][instanceId][roundNumber];
-        TierConfig storage config = _tierConfigs[tierId];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
-        if (roundNumber == config.totalRounds - 1) {
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber == tournament.actualTotalRounds - 1) {
             return true;
         }
 
         bool appearsToBeFinalsMatch = (roundNumber > 0 && round.completedMatches == 1 &&
                                       (round.totalMatches == 1 || round.totalMatches == 0));
 
-        if (!appearsToBeFinalsMatch || roundNumber >= config.totalRounds - 1) {
+        if (!appearsToBeFinalsMatch || roundNumber >= tournament.actualTotalRounds - 1) {
             return false;
         }
 
@@ -554,8 +556,9 @@ contract ETour_Matches is ETour_Base {
         }
 
         // Advance walkover player if not finals
-        TierConfig storage config = _tierConfigs[tierId];
-        if (nextRound < config.totalRounds - 1) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (nextRound < tournament.actualTotalRounds - 1) {
             advanceWinner(tierId, instanceId, nextRound, properMatchCount, walkoverPlayer);
         }
     }
@@ -598,8 +601,9 @@ contract ETour_Matches is ETour_Base {
      * REFACTORED: Combined logic to reduce duplication
      */
     function processOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
-        TierConfig storage config = _tierConfigs[tierId];
-        if (roundNumber >= config.totalRounds - 1) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber >= tournament.actualTotalRounds - 1) {
             return;
         }
 
@@ -680,8 +684,8 @@ contract ETour_Matches is ETour_Base {
             return;
         }
 
-        TierConfig storage config = _tierConfigs[tierId];
-        if (roundNumber >= config.totalRounds - 1) {
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber >= tournament.actualTotalRounds - 1) {
             return;
         }
 

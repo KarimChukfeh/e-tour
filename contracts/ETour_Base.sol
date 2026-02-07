@@ -114,6 +114,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         uint8 allDrawRound;
         CompletionReason completionReason;
         EnrollmentTimeoutState enrollmentTimeout;
+        uint8 actualTotalRounds;  // Actual rounds based on enrolled players (not tier max)
     }
 
     struct Round {
