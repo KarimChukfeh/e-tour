@@ -27,6 +27,12 @@ abstract contract ETour_Base is ReentrancyGuard {
     address public immutable MODULE_RAFFLE;
     address public immutable MODULE_ESCALATION;
 
+    // ============ Delegatecall Protection ============
+
+    /// @dev Stores the address of this contract for delegatecall detection
+    /// Used by modules to ensure they're only called via delegatecall
+    address private immutable _self;
+
     // ============ Constants & Immutables ============
 
     address public immutable owner;
@@ -54,12 +60,14 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     enum CompletionReason {
-        NormalWin,              // 0: Normal gameplay win
-        Timeout,                // 1: Win by opponent timeout (ML1)
-        Draw,                   // 2: Match/finals ended in a draw
-        ForceElimination,       // 3: ML2 - Advanced players force eliminated both players
-        Replacement,            // 4: ML3 - External player replaced stalled players
-        AllDrawScenario         // 5: All matches in a round resulted in draws (tournament only)
+        NormalWin,                  // 0: Normal gameplay win
+        Timeout,                    // 1: Win by opponent timeout (ML1)
+        Draw,                       // 2: Match/finals ended in a draw
+        ForceElimination,           // 3: ML2 - Advanced players force eliminated both players
+        Replacement,                // 4: ML3 - External player replaced stalled players
+        AllDrawScenario,            // 5: All matches in a round resulted in draws (tournament only)
+        SoloEnrollForceStart,       // 6: Solo enroller force started tournament (EL1)
+        AbandonedTournamentClaimed  // 7: Abandoned tournament claimed by external player (EL2)
     }
 
     // ============ Configuration Structs ============
@@ -106,6 +114,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         uint8 allDrawRound;
         CompletionReason completionReason;
         EnrollmentTimeoutState enrollmentTimeout;
+        uint8 actualTotalRounds;  // Actual rounds based on enrolled players (not tier max)
     }
 
     struct Round {
@@ -113,6 +122,7 @@ abstract contract ETour_Base is ReentrancyGuard {
         uint8 completedMatches;
         bool initialized;
         uint8 drawCount;
+        uint8 playerCount;  // Number of players entering this round (including bye players)
     }
 
     struct EnrollmentTimeoutState {
@@ -206,6 +216,7 @@ abstract contract ETour_Base is ReentrancyGuard {
      * @dev Complete record of a finished match
      * Stores all essential data for a completed match including move history
      * Added to both players' match history arrays when match completes
+     * Note: Draw status can be determined by checking if winner == address(0)
      */
     struct MatchRecord {
         // Tournament context
@@ -222,9 +233,7 @@ abstract contract ETour_Base is ReentrancyGuard {
 
         // Match state (at completion)
         MatchStatus status;         // Should always be Completed
-        bool isDraw;
         uint256 packedBoard;        // Final board state
-        uint256 packedState;        // Final game state (Chess: castling, en passant, etc.)
 
         // Timing
         uint256 startTime;
@@ -238,19 +247,30 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     /**
+     * @dev Complete record of a finished tournament
+     * Stores all essential data for a completed tournament instance
+     * Stored permanently in recentInstances[tierId][instanceId]
+     * Note: tierId/instanceId are implicit from mapping keys
+     */
+    struct TournamentRecord {
+        address[] players;              // Full list of enrolled players
+        uint256 endTime;                // When tournament completed
+        uint256 prizePool;
+        address winner;
+        CompletionReason completionReason;
+    }
+
+    /**
      * @dev Historic data for a single raffle execution
-     * Stores complete information about each raffle for historical tracking
+     * Stores minimal information - client can derive winnerPrize/protocolReserve/ownerShare from rafflePot
      */
     struct RaffleResult {
         address executor;               // Who called executeProtocolRaffle
-        uint256 timestamp;              // When the raffle was executed
-        uint256 rafflePot;              // Total raffle pot before distribution
+        uint64 timestamp;               // When the raffle was executed (64-bit timestamp good until year 2554)
+        uint256 rafflePot;              // Total raffle pot in wei (must support large ETH values)
         address[] participants;         // All addresses considered in the raffle
-        uint256[] weights;              // Each address's weight/odds to win
+        uint16[] weights;               // Each address's enrollment count (max 65k enrollments per player)
         address winner;                 // The randomly selected winner
-        uint256 winnerPrize;            // How much ETH the winner received
-        uint256 protocolReserve;        // How much ETH the protocol kept as reserve
-        uint256 ownerShare;             // How much ETH the owner received
     }
 
     // ============ State Variables ============
@@ -263,10 +283,8 @@ abstract contract ETour_Base is ReentrancyGuard {
     uint256 public accumulatedProtocolShare;
 
     // Raffle tracking
-    uint256 public currentRaffleIndex;  // Starts at 0, increments when raffle executes
-    uint256[] internal raffleThresholds;  // Configured thresholds for initial raffles
-    uint256 internal raffleThresholdFinal;  // Threshold to use after initial raffles exhausted
-    mapping(uint256 => RaffleResult) public raffleResults;  // Historic raffle execution data indexed by raffle index
+    uint256[] internal raffleThresholds;  // Configured thresholds (last element repeats for all future raffles)
+    RaffleResult[] public raffleResults;  // Historic raffle execution data (array auto-provides length)
 
     // Tournament state
     mapping(uint8 => mapping(uint8 => TournamentInstance)) public tournaments;
@@ -295,10 +313,13 @@ abstract contract ETour_Base is ReentrancyGuard {
     // Access via events or client-side indexing
     mapping(address => MatchRecord[]) internal playerMatches;
 
+    // Tournament history - most recent completed tournament per tier/instance
+    // Stores permanent record of last tournament completion with full player list
+    mapping(uint8 => mapping(uint8 => TournamentRecord)) public recentInstances;
+
     // ============ Events ============
 
     event TournamentEnrolled(address indexed player, uint8 tierId, uint8 instanceId);
-    event MatchCompleted(bytes32 indexed matchId, address indexed player1, address indexed player2, address winner, bool isDraw, CompletionReason reason, uint256 board);
 
     /**
      * @dev Emitted when a prize is distributed to a player
@@ -328,6 +349,22 @@ abstract contract ETour_Base is ReentrancyGuard {
         MODULE_PRIZES = _modulePrizesAddress;
         MODULE_RAFFLE = _moduleRaffleAddress;
         MODULE_ESCALATION = _moduleEscalationAddress;
+        _self = address(this);
+    }
+
+    // ============ Modifiers ============
+
+    /**
+     * @dev Ensures function is only called via delegatecall from main contract
+     * When called via delegatecall: address(this) = main contract, _self = module address ✓
+     * When called directly: address(this) = module address, _self = module address ✗
+     *
+     * This prevents accidental or malicious direct calls to module functions
+     * that should only be executed in the context of the main contract.
+     */
+    modifier onlyDelegateCall() {
+        require(address(this) != _self, "Function must be called via delegatecall");
+        _;
     }
 
     // ============ Helper Functions (Shared across modules) ============
@@ -364,16 +401,46 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     /**
-     * @dev Get current raffle threshold
-     * Shared helper for all game contracts - extracts duplicate logic
-     * @return Current raffle threshold in wei
+     * @dev Translate internal round number to actual bracket round
+     * When a tournament is force-started with fewer players than configured,
+     * the internal round numbers start at 0, but should be recorded as the
+     * appropriate finals/semifinals round in the full bracket structure.
+     *
+     * Examples:
+     * - 4-player tournament with 2 enrolled: internal round 0 → bracket round 1 (finals)
+     * - 8-player tournament with 4 enrolled: internal round 0 → bracket round 1 (semifinals)
+     * - 8-player tournament with 2 enrolled: internal round 0 → bracket round 2 (finals)
+     * - Full tournament: internal round 0 → bracket round 0 (no translation needed)
+     *
+     * @param tierId Tournament tier
+     * @param instanceId Instance within tier
+     * @param internalRound The internal round number (starts at 0)
+     * @return Actual bracket round number for historical records
      */
-    function _getRaffleThreshold() internal view returns (uint256) {
-        if (currentRaffleIndex < raffleThresholds.length) {
-            return raffleThresholds[currentRaffleIndex];
+    function _translateToBracketRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 internalRound
+    ) internal view returns (uint8) {
+        TierConfig storage config = _tierConfigs[tierId];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // If tournament is fully enrolled, no translation needed
+        if (tournament.enrolledCount == config.playerCount) {
+            return internalRound;
         }
-        return raffleThresholdFinal;
+
+        // Calculate the offset: how many rounds were skipped
+        // Formula: totalRounds - log2(enrolledCount)
+        uint8 enrolledLog = _log2(tournament.enrolledCount);
+        uint8 roundOffset = config.totalRounds - enrolledLog;
+
+        // Add the offset to get the actual bracket round
+        return internalRound + roundOffset;
     }
+
+    // Note: _getRaffleThreshold() and _countCompletedRaffles() removed
+    // Logic inlined directly in getRaffleInfo() and executeProtocolRaffle()
 
     function _populateMatchRecord(
         MatchRecord storage r,
@@ -386,16 +453,15 @@ abstract contract ETour_Base is ReentrancyGuard {
     ) internal {
         r.tierId = t;
         r.instanceId = i;
-        r.roundNumber = rn;
+        // Translate internal round to actual bracket round for historical accuracy
+        r.roundNumber = _translateToBracketRound(t, i, rn);
         r.matchNumber = mn;
         r.player1 = m.player1;
         r.player2 = m.player2;
         r.winner = m.winner;
         r.firstPlayer = m.firstPlayer;
         r.status = m.status;
-        r.isDraw = m.isDraw;
         r.packedBoard = m.packedBoard;
-        r.packedState = m.packedState;
         r.startTime = m.startTime;
         r.endTime = block.timestamp;
         r.completionReason = cr;
@@ -433,7 +499,8 @@ abstract contract ETour_Base is ReentrancyGuard {
         Match storage m = matches[matchId];
 
         // Set winner BEFORE populating records so MatchRecord captures correct winner
-        m.winner = winner;
+        // For draws, winner should always be address(0)
+        m.winner = isDraw ? address(0) : winner;
         m.isDraw = isDraw;
         m.status = MatchStatus.Completed;
 
@@ -460,14 +527,11 @@ abstract contract ETour_Base is ReentrancyGuard {
         // Delegate to Matches module for advancement logic
         (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature(
-                "completeMatch(uint8,uint8,uint8,uint8,address,bool)",
-                tierId, instanceId, roundNumber, matchNumber, winner, isDraw
+                "completeMatch(uint8,uint8,uint8,uint8,address,bool,uint8)",
+                tierId, instanceId, roundNumber, matchNumber, winner, isDraw, reason
             )
         );
         require(completeSuccess, "CM");
-
-        // Call game-specific hook to emit MatchCompleted event with board data
-        _emitMatchCompletedEvent(matchId, winner, isDraw, reason);
 
         // Check if tournament completed and handle prize distribution/reset
         _handleTournamentCompletion(tierId, instanceId, enrolledPlayersCopy);
@@ -542,10 +606,10 @@ abstract contract ETour_Base is ReentrancyGuard {
         // Call hook BEFORE reset (for ChessOnChain elite match archival)
         _onTournamentCompletedBeforeReset(tierId, instanceId);
 
-        // Reset tournament state
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)",
-                tierId, instanceId)
+        // Reset tournament state (MODULE_CORE records completion in recentInstances)
+        (bool resetSuccess, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])",
+                tierId, instanceId, enrolledPlayersCopy)
         );
         require(resetSuccess, "RT");
     }
@@ -704,20 +768,6 @@ abstract contract ETour_Base is ReentrancyGuard {
     }
 
     /**
-     * @dev Hook to emit MatchCompleted event with game-specific board data
-     * MUST be overridden in each game contract to emit event with correct board format
-     * Default implementation reverts (modules don't use this)
-     */
-    function _emitMatchCompletedEvent(
-        bytes32 matchId,
-        address winner,
-        bool isDraw,
-        CompletionReason reason
-    ) internal virtual {
-        revert("ETour_Base: _emitMatchCompletedEvent must be implemented by game contract");
-    }
-
-    /**
      * @dev Hook called BEFORE tournament reset (for ChessOnChain elite match archival)
      * Override in ChessOnChain to archive finals matches
      */
@@ -780,11 +830,13 @@ abstract contract ETour_Base is ReentrancyGuard {
      * Separate function to reduce stack depth
      */
     function _handleSinglePlayerCompletion(uint8 tierId, uint8 instanceId) private {
-        address[] memory singlePlayer = new address[](1);
-        singlePlayer[0] = tournaments[tierId][instanceId].winner;
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
 
-        (bool success, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])", tierId, instanceId, enrolledPlayersCopy)
         );
         require(success, "Reset failed");
     }
@@ -854,36 +906,30 @@ abstract contract ETour_Base is ReentrancyGuard {
     /**
      * @dev Get raffle information
      * Shared implementation for all games
+     * Client can derive: reserve=5% of threshold, owner=5% of 95%, winner=90% of 95%
      */
     function getRaffleInfo() external view returns (
-        uint256 raffleIndex,
-        bool isReady,
+        uint64 raffleIndex,
         uint256 currentAccumulated,
         uint256 threshold,
-        uint256 reserve,
-        uint256 raffleAmount,
-        uint256 ownerShare,
-        uint256 winnerShare,
-        uint256 eligiblePlayerCount
+        uint16 eligiblePlayerCount
     ) {
-        raffleIndex = currentRaffleIndex;
+        raffleIndex = uint64(raffleResults.length);
         currentAccumulated = accumulatedProtocolShare;
 
-        // Calculate threshold using inherited helper
-        threshold = _getRaffleThreshold();
-
-        // Calculate raffle amounts (5% reserve from threshold)
-        reserve = (threshold * 5) / 100;
-        isReady = currentAccumulated >= threshold;
-        raffleAmount = threshold - reserve;
-
-        // 5% to owner, 90% to winner (95% total)
-        ownerShare = (raffleAmount * 5) / 95;
-        winnerShare = (raffleAmount * 90) / 95;
+        // Get threshold for next raffle
+        uint256 nextIndex = raffleResults.length;
+        threshold = (nextIndex < raffleThresholds.length)
+            ? raffleThresholds[nextIndex]
+            : raffleThresholds[raffleThresholds.length - 1];
 
         // Get eligible player count by counting unique enrolled players
-        eligiblePlayerCount = _getEligiblePlayerCount();
+        eligiblePlayerCount = uint16(_getEligiblePlayerCount());
     }
+
+    // Note: raffleResults is public, so Solidity auto-generates raffleResults(uint256) getter
+    // Clients can fetch individual raffles or use raffleResults.length for iteration
+    // Removed getAllRaffleResults() to avoid expensive gas costs with many raffles
 
     /**
      * @dev Internal helper to count unique eligible players for raffle
@@ -946,6 +992,15 @@ abstract contract ETour_Base is ReentrancyGuard {
      */
     function getPlayerMatches() external view returns (MatchRecord[] memory) {
         return playerMatches[msg.sender];
+    }
+
+    /**
+     * @dev Get most recent completed tournament record with full player list
+     * Required because auto-generated getter omits dynamic arrays
+     * Shared implementation for all games
+     */
+    function getTournamentRecord(uint8 tierId, uint8 instanceId) external view returns (TournamentRecord memory) {
+        return recentInstances[tierId][instanceId];
     }
 
     /**
@@ -1090,7 +1145,7 @@ abstract contract ETour_Base is ReentrancyGuard {
     /**
      * @dev Check if player has advanced past a given round
      * Used for ML2 escalation eligibility
-     * Kept in ETour_Base to avoid stack depth issues with delegatecall
+     * Same implementation as _isPlayerInAdvancedRound in Escalation module
      */
     function isPlayerInAdvancedRound(
         uint8 tierId,

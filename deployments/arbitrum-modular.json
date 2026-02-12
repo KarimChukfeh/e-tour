@@ -2,16 +2,16 @@
   "network": "arbitrum",
   "chainId": "42161",
   "deployer": "0xAF44A0De1684cBa4511ff539B2b4D2010bc93c6f",
-  "timestamp": "2026-01-25T02:46:53.694Z",
-  "blockNumber": 424929344,
+  "timestamp": "2026-02-07T00:49:00.835Z",
+  "blockNumber": 429410702,
   "modules": {
-    "ETour_Core": "0x39A403997c5A33508c0DB4b35DD6aCC8179D623c",
-    "ETour_Matches": "0x2c6145aaa5D1c015e4Fa678F3aa9eBEf7889D8f5",
-    "ETour_Prizes": "0xB15Ee6bB89Fb419aCCFBf05514ce7549e18d8c5b",
-    "ETour_Raffle": "0x8a7255A5b9bfD237D522539DC276e459D7CA099e",
-    "ETour_Escalation": "0x303aA52B6b1b984e2423225afE4dD4D4902EA507"
+    "ETour_Core": "0x3C86Fd676574528321fd47d21658bCf066a38b76",
+    "ETour_Matches": "0xfC3c8c7a3DC6E3a8025eAD0B1fb9e1347df30b6F",
+    "ETour_Prizes": "0x48D4772B6273799Ece6bb7E41254F57e076a6eE3",
+    "ETour_Raffle": "0xfA1B58c9AE68d29EF0aC239dAAdd13a149cb96f8",
+    "ETour_Escalation": "0x59Cc2cB8FD70b9407a06082d976C7fa5eCC29178"
   },
   "contracts": {
-    "TicTacChain": "0x490A897210177f3a9D9238d8034A62a595EE4819"
+    "TicTacChain": "0x89464650B9987994222aE227303cd51dBC2d89B0"
   }
 }

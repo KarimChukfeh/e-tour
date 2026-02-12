@@ -8,7 +8,7 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
     let owner, player1, player2, player3, player4, player5, player6, player7, player8;
     const TIER_0_FEE = hre.ethers.parseEther("0.0003");
     const TIER_1_FEE = hre.ethers.parseEther("0.0007");
-    const TIER_2_FEE = hre.ethers.parseEther("0.0013"); // 8-player tier
+    const TIER_2_FEE = hre.ethers.parseEther("0.0015"); // 8-player tier
 
     // Data collection for HTML report
     const matchHistory = [];
@@ -77,20 +77,19 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                         <div class="test-category">
                             <h4>Round ${r} ${r === 0 ? '(Semifinals)' : '(Finals)'}</h4>
                             ${roundMatches.map(match => `
-                            <div class="scenario-section" style="margin: 10px 0; padding: 15px; background: ${match.condition.includes('ML3') ? '#2d1f3d' : match.condition.includes('ML2') ? '#3d2d1f' : match.condition.includes('Draw') ? '#1f2d3d' : match.condition === 'Normal gameplay' ? '#1a2f1a' : '#2a2a2a'}; border-left: 4px solid ${match.condition.includes('ML3') ? '#b794f6' : match.condition.includes('ML2') ? '#ffb74d' : match.condition.includes('Draw') ? '#5ca8ff' : match.condition === 'Normal gameplay' ? '#4caf50' : '#888'};">
+                            <div class="scenario-section" style="margin: 10px 0; padding: 15px; background: ${match.condition.includes('ML3') ? '#2d1f3d' : match.condition === 'Normal gameplay' ? '#1a2f1a' : '#2a2a2a'}; border-left-color: ${match.condition.includes('ML3') ? '#b794f6' : match.condition === 'Normal gameplay' ? '#4caf50' : '#ffb74d'};">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div style="flex: 1;">
                                         <strong>Match ${r}-${match.matchNum}:</strong>
                                         <code>${match.player1}</code> vs <code>${match.player2}</code>
-                                        ${match.condition.includes('Draw') ? '<br><span style="color: #5ca8ff; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">⚖️ DRAW - No Winner</span>' : ''}
-                                        ${match.condition.includes('ML2') ? '<br><span style="color: #ffb74d; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">⚡ ML2 - Force Elimination by Advanced Player</span>' : ''}
-                                        ${match.condition.includes('ML3') ? '<br><span style="color: #b794f6; font-weight: bold; font-size: 0.95em; margin-top: 5px; display: inline-block;">🔄 ML3 - External Player Replacement</span>' : ''}
                                     </div>
                                     <div style="flex: 1; text-align: center;">
-                                        <span class="badge ${match.condition.includes('ML3') || match.condition.includes('ML2') ? 'warning' : match.condition.includes('Draw') ? 'info' : 'success'}">${match.condition}</span>
+                                        <span class="badge ${match.condition.includes('ML3') ? 'warning' : 'success'}">${match.condition}</span>
                                     </div>
                                     <div style="flex: 1; text-align: right;">
-                                        ${match.winner !== '0x0000' ? `<strong style="color: #4caf50;">Winner:</strong> <code>${match.winner}</code><br><strong style="color: #f44336;">Loser:</strong> <code>${match.loser}</code>` : '<strong style="color: #888;">No Winner (Draw/Both Eliminated)</strong>'}
+                                        <strong style="color: #4caf50;">Winner:</strong> <code>${match.winner}</code>
+                                        <br>
+                                        <strong style="color: #f44336;">Loser:</strong> <code>${match.loser}</code>
                                     </div>
                                 </div>
                             </div>
@@ -107,13 +106,13 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                 <p>Complete match data fetched directly from the contract for every player who participated:</p>
             </div>
 
-            <div style="margin: 20px 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin: 20px 0;">
                 ${await Promise.all(Array.from(playerStats.keys()).map(async (playerAddr) => {
                     const recentMatches = await game.connect(await hre.ethers.getSigner(playerAddr)).getPlayerMatches();
                     const player = playerStats.get(playerAddr);
                     return `
-                <div class="test-suite" style="padding: 20px; margin-bottom: 20px; width: 100%;">
-                    <h4 style="color: #8b9dff; margin-top: 0; font-size: 1.2em;">Player: <code style="font-size: 1.1em;">${player.address}</code></h4>
+                <div class="test-suite" style="padding: 20px;">
+                    <h4 style="color: #8b9dff; margin-top: 0;">Player: <code>${player.address}</code></h4>
                     <div style="font-size: 0.95em;">
                         <strong>Total Matches (from contract):</strong> ${recentMatches.length}
                         <br>
@@ -131,33 +130,23 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
                                 const completionReasonMap = {
                                     0: 'Normal Win',
                                     1: 'Timeout',
-                                    2: '⚖️ DRAW',
-                                    3: '⚡ ML2: Force Elimination',
-                                    4: '🔄 ML3: Replacement',
+                                    2: 'Draw',
+                                    3: 'Force Elimination',
+                                    4: 'Replacement',
                                     5: 'All Draw Scenario'
                                 };
                                 const reason = completionReasonMap[Number(match.completionReason)] || 'Unknown';
-                                const isDraw = Number(match.completionReason) === 2;
-                                const isML2 = Number(match.completionReason) === 3;
-                                const isML3 = Number(match.completionReason) === 4;
-                                const bgColor = isDraw ? '#1f2d3d' : isML2 ? '#3d2d1f' : isML3 ? '#2d1f3d' : (isWinner ? '#1b3d1b' : '#3d1b1b');
-                                const borderColor = isDraw ? '#5ca8ff' : isML2 ? '#ffb74d' : isML3 ? '#b794f6' : (isWinner ? '#4caf50' : '#f44336');
                                 return `
-                            <div style="margin: 5px 0; padding: 10px; background: ${bgColor}; border-left: 3px solid ${borderColor}; border-radius: 4px; font-size: 0.9em;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <div style="flex: 1;">
-                                        <strong>${idx + 1}.</strong> T${match.tierId}-I${match.instanceId}-R${match.roundNumber}-M${match.matchNumber}
-                                        <br>
-                                        <span style="font-size: 0.85em; margin-top: 3px; display: inline-block;">vs <code>${opponent.slice(0, 6)}</code></span>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span class="badge ${isWinner ? 'success' : isDraw ? 'info' : 'warning'}">${isWinner ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}</span>
-                                    </div>
-                                </div>
-                                <div style="margin-top: 5px; font-size: 0.85em;">
-                                    <span style="color: ${isDraw ? '#5ca8ff' : isML2 ? '#ffb74d' : isML3 ? '#b794f6' : '#b0b0b0'}; font-weight: ${isDraw || isML2 || isML3 ? 'bold' : 'normal'};">${reason}</span>
-                                    ${!isDraw ? `<br><span style="color: #888; font-size: 0.9em;">Winner: <code>${match.winner.slice(0, 6)}</code></span>` : ''}
-                                </div>
+                            <div style="margin: 5px 0; padding: 8px; background: ${isWinner ? '#1b3d1b' : '#3d1b1b'}; border-radius: 4px; font-size: 0.9em;">
+                                <strong>${idx + 1}.</strong> T${match.tierId}-I${match.instanceId}-R${match.roundNumber}-M${match.matchNumber}
+                                <br>
+                                <span style="font-size: 0.85em;">vs <code>${opponent.slice(0, 6)}</code></span>
+                                <span style="float: right;">
+                                    <span class="badge ${isWinner ? 'success' : 'warning'}">${isWinner ? 'WIN' : 'LOSS'}</span>
+                                    <span style="margin-left: 5px; font-size: 0.85em; color: #b0b0b0;">${reason}</span>
+                                </span>
+                                <br>
+                                <span style="font-size: 0.8em; color: #888;">Winner: <code>${match.winner.slice(0, 6)}</code></span>
                             </div>
                             `;
                             }).join('')}
@@ -171,9 +160,9 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             <div class="summary-box">
                 <h3>Key Insights</h3>
                 <ul>
-                    <li><strong>Tournament 1 (4 players):</strong> Tests force start with half capacity, demonstrates basic bracket completion</li>
-                    <li><strong>Tournament 2 (7 players):</strong> Tests force start with near-full capacity, validates complex bracket with Draw and ML2 (Force Elimination) scenarios</li>
-                    <li><strong>Tournament 3 (8 players):</strong> Full capacity tournament testing ML3 (External Replacement) escalation where external player replaces stalled match players</li>
+                    <li><strong>Tournament 1 (3 players):</strong> Tests force start with odd number of players, includes walkover scenarios</li>
+                    <li><strong>Tournament 2 (7 players):</strong> Tests force start with larger odd number, validates complex bracket with draw and ML2 scenarios</li>
+                    <li><strong>Tournament 3 (8 players):</strong> Full capacity tournament testing ML3 escalation where external player replaces stalled match players</li>
                     <li><strong>Escalation Coverage:</strong> Includes Draw, ML2 (Force Elimination by advanced player), and ML3 (External replacement) scenarios</li>
                     <li><strong>State Management:</strong> All matches tracked correctly across tournament resets with no data persistence issues</li>
                     <li><strong>Player Activity:</strong> Complete match history maintained for all ${playerStats.size} participants across 8-player tier</li>
@@ -516,74 +505,58 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             const instanceId = 1;
 
             // ============================================
-            // FIRST TOURNAMENT: 4 players, force start
+            // FIRST TOURNAMENT: 3 players, force start
             // ============================================
-            console.log("\n=== FIRST TOURNAMENT (4 players, force start) ===");
+            console.log("\n=== FIRST TOURNAMENT (3 players, force start) ===");
             await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
-            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
-            // Fast forward past enrollment window for tier 2 (480 seconds)
-            await hre.ethers.provider.send("evm_increaseTime", [481]);
+            // Fast forward past enrollment window for tier 2 (300 seconds)
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
 
             // Force start with EL1
             await game.connect(player1).forceStartTournament(tierId, instanceId);
 
-            // Verify tournament started with 4 players
+            // Verify tournament started with 3 players
             let tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(1); // InProgress
-            expect(tournament.enrolledCount).to.equal(4);
+            expect(tournament.enrolledCount).to.equal(3);
 
-            // With 4 players, complete all rounds until tournament finishes
-            let currentRound = 0;
-            let tournamentComplete = false;
+            // With 3 players, check what matches are active and complete them
+            let t1Round0 = await game.rounds(tierId, instanceId, 0);
+            console.log(`Round 0 initialized: ${t1Round0.initialized}, total matches: ${t1Round0.totalMatches}`);
 
-            while (!tournamentComplete && currentRound < 5) { // Safety limit
-                const round = await game.rounds(tierId, instanceId, currentRound);
-                if (!round.initialized) break;
+            // Find and complete all active matches in round 0
+            for (let m = 0; m < t1Round0.totalMatches; m++) {
+                const match = await game.getMatch(tierId, instanceId, 0, m);
+                if (match.common.player1 !== hre.ethers.ZeroAddress && match.common.player2 !== hre.ethers.ZeroAddress) {
+                    const players = [player1, player2, player3];
+                    const p1 = players.find(p => p.address === match.common.player1);
+                    const p2 = players.find(p => p.address === match.common.player2);
 
-                console.log(`\nRound ${currentRound}: ${round.totalMatches} matches`);
+                    if (p1 && p2) {
+                        const first = match.currentTurn === p1.address ? p1 : p2;
+                        const second = first === p1 ? p2 : p1;
 
-                // Find and complete all active matches in this round
-                for (let m = 0; m < round.totalMatches; m++) {
-                    const match = await game.getMatch(tierId, instanceId, currentRound, m);
-                    if (match.common.player1 !== hre.ethers.ZeroAddress &&
-                        match.common.player2 !== hre.ethers.ZeroAddress &&
-                        match.common.status !== 2) { // Not completed
-
-                        const players = [player1, player2, player3, player4];
-                        const p1 = players.find(p => p.address === match.common.player1);
-                        const p2 = players.find(p => p.address === match.common.player2);
-
-                        if (p1 && p2) {
-                            const first = match.currentTurn === p1.address ? p1 : p2;
-                            const second = first === p1 ? p2 : p1;
-
-                            console.log(`Match ${currentRound}-${m}: ${first.address.slice(0, 6)} vs ${second.address.slice(0, 6)}`);
-                            await game.connect(first).makeMove(tierId, instanceId, currentRound, m, 0);
-                            await game.connect(second).makeMove(tierId, instanceId, currentRound, m, 3);
-                            await game.connect(first).makeMove(tierId, instanceId, currentRound, m, 1);
-                            await game.connect(second).makeMove(tierId, instanceId, currentRound, m, 4);
-                            await game.connect(first).makeMove(tierId, instanceId, currentRound, m, 2);
-                            console.log(`${first.address.slice(0, 6)} wins match ${currentRound}-${m}`);
-                            recordMatch(1, currentRound, m, match.common.player1, match.common.player2, first.address, 'Normal gameplay');
-                        }
+                        console.log(`Match 0-${m}: ${first.address.slice(0, 6)} vs ${second.address.slice(0, 6)}`);
+                        await game.connect(first).makeMove(tierId, instanceId, 0, m, 0);
+                        await game.connect(second).makeMove(tierId, instanceId, 0, m, 3);
+                        await game.connect(first).makeMove(tierId, instanceId, 0, m, 1);
+                        await game.connect(second).makeMove(tierId, instanceId, 0, m, 4);
+                        await game.connect(first).makeMove(tierId, instanceId, 0, m, 2);
+                        console.log(`${first.address.slice(0, 6)} wins match 0-${m}`);
+                        recordMatch(1, 0, m, match.common.player1, match.common.player2, first.address, 'Normal gameplay');
                     }
-                }
-
-                // Check if tournament completed
-                tournament = await game.tournaments(tierId, instanceId);
-                if (tournament.status === 0) {
-                    tournamentComplete = true;
-                    console.log("✓ Tournament 1 completed and reset");
-                } else {
-                    currentRound++;
                 }
             }
 
+            // Wait for tournament to complete (with walkovers, it should auto-complete)
+            tournament = await game.tournaments(tierId, instanceId);
+            console.log(`Tournament 1 status after matches: ${tournament.status}`);
             expect(tournament.status).to.equal(0); // Should reset
+            console.log("✓ Tournament 1 completed and reset")
 
             // ============================================
             // SECOND TOURNAMENT: 7 players with Draw and ML2
@@ -597,8 +570,8 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await game.connect(player6).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
             await game.connect(player7).enrollInTournament(tierId, instanceId, { value: TIER_2_FEE });
 
-            // Force start (480 second enrollment window for tier 2)
-            await hre.ethers.provider.send("evm_increaseTime", [481]);
+            // Force start
+            await hre.ethers.provider.send("evm_increaseTime", [301]);
             await hre.ethers.provider.send("evm_mine", []);
             await game.connect(player1).forceStartTournament(tierId, instanceId);
 
@@ -747,36 +720,27 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             expect(tournament.enrolledCount).to.equal(8);
             console.log("Tournament 3 started with 8 players (full capacity)");
 
-            // Complete all matches in Round 0 except one which will be stalled for ML3
+            // Complete first semifinal normally
             let t3Round0 = await game.rounds(tierId, instanceId, 0);
             console.log(`Round 0: ${t3Round0.totalMatches} matches`);
 
+            const semi1T3 = await game.getMatch(tierId, instanceId, 0, 0);
             const players8 = [player1, player2, player3, player4, player5, player6, player7, player8];
+            const semi1P1 = players8.find(p => p.address === semi1T3.common.player1);
+            const semi1P2 = players8.find(p => p.address === semi1T3.common.player2);
+            const firstMover = semi1T3.currentTurn === semi1P1.address ? semi1P1 : semi1P2;
+            const secondMover = firstMover === semi1P1 ? semi1P2 : semi1P1;
 
-            // Complete matches 0, 2, 3 normally
-            for (let m = 0; m < t3Round0.totalMatches; m++) {
-                if (m === 1) continue; // Skip match 1 - we'll stall it for ML3
+            console.log(`Semifinal 0-0: ${firstMover.address.slice(0, 6)} vs ${secondMover.address.slice(0, 6)}`);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 0);
+            await game.connect(secondMover).makeMove(tierId, instanceId, 0, 0, 3);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 1);
+            await game.connect(secondMover).makeMove(tierId, instanceId, 0, 0, 4);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 2);
+            console.log(`${firstMover.address.slice(0, 6)} wins semifinal 0-0`);
+            recordMatch(3, 0, 0, semi1T3.common.player1, semi1T3.common.player2, firstMover.address, 'Normal gameplay');
 
-                const match = await game.getMatch(tierId, instanceId, 0, m);
-                const p1 = players8.find(p => p.address === match.common.player1);
-                const p2 = players8.find(p => p.address === match.common.player2);
-
-                if (p1 && p2) {
-                    const first = match.currentTurn === p1.address ? p1 : p2;
-                    const second = first === p1 ? p2 : p1;
-
-                    console.log(`Semifinal 0-${m}: ${first.address.slice(0, 6)} vs ${second.address.slice(0, 6)}`);
-                    await game.connect(first).makeMove(tierId, instanceId, 0, m, 0);
-                    await game.connect(second).makeMove(tierId, instanceId, 0, m, 3);
-                    await game.connect(first).makeMove(tierId, instanceId, 0, m, 1);
-                    await game.connect(second).makeMove(tierId, instanceId, 0, m, 4);
-                    await game.connect(first).makeMove(tierId, instanceId, 0, m, 2);
-                    console.log(`${first.address.slice(0, 6)} wins semifinal 0-${m}`);
-                    recordMatch(3, 0, m, match.common.player1, match.common.player2, first.address, 'Normal gameplay');
-                }
-            }
-
-            // Start match 1 but stall it for ML3
+            // Start second semifinal but stall it for ML3
             const semi2T3 = await game.getMatch(tierId, instanceId, 0, 1);
             const semi2P1 = players8.find(p => p.address === semi2T3.common.player1);
             const semi2P2 = players8.find(p => p.address === semi2T3.common.player2);
@@ -792,8 +756,7 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
             await hre.ethers.provider.send("evm_mine", []);
 
             // External player (not in tournament) uses ML3
-            const allPlayers = await hre.ethers.getSigners();
-            const externalPlayer = allPlayers[9]; // Player not enrolled in tournament
+            const externalPlayer = external || (await hre.ethers.getSigners())[9];
             console.log(`\n🔧 Using ML3 to end stalled match...`);
             console.log(`Caller: ${externalPlayer.address.slice(0, 6)} (external player, not enrolled)`);
 
@@ -807,59 +770,307 @@ describe("Tournament Reset and Enrollment Edge Cases", function () {
 
             recordMatch(3, 0, 1, semi2T3.common.player1, semi2T3.common.player2, externalPlayer.address, 'ML3 Replacement (stalled match)');
 
-            // Complete all remaining rounds until tournament finishes
-            console.log("\n✓ Round 0 completed with ML3");
+            // Verify finals initialized
+            let t3Round1 = await game.rounds(tierId, instanceId, 1);
+            expect(t3Round1.initialized).to.be.true;
+            console.log("\n✓ Finals initialized with winners from both semifinals");
 
-            let t3CurrentRound = 1;
-            let t3TournamentComplete = false;
+            // Complete finals
+            const finalsT3 = await game.getMatch(tierId, instanceId, 1, 0);
+            const allSigners = await hre.ethers.getSigners();
+            const finalsP1T3 = allSigners.find(p => p.address === finalsT3.common.player1);
+            const finalsP2T3 = allSigners.find(p => p.address === finalsT3.common.player2);
+            const finalsFirstT3 = finalsT3.currentTurn === finalsP1T3.address ? finalsP1T3 : finalsP2T3;
+            const finalsSecondT3 = finalsFirstT3 === finalsP1T3 ? finalsP2T3 : finalsP1T3;
 
-            while (!t3TournamentComplete && t3CurrentRound < 5) {
-                const round = await game.rounds(tierId, instanceId, t3CurrentRound);
-                if (!round.initialized) break;
+            console.log(`\nFinals: ${finalsFirstT3.address.slice(0, 6)} vs ${finalsSecondT3.address.slice(0, 6)}`);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 0);
+            await game.connect(finalsSecondT3).makeMove(tierId, instanceId, 1, 0, 3);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 1);
+            await game.connect(finalsSecondT3).makeMove(tierId, instanceId, 1, 0, 4);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 2);
+            console.log(`${finalsFirstT3.address.slice(0, 6)} wins third tournament`);
 
-                console.log(`\nRound ${t3CurrentRound}: ${round.totalMatches} matches`);
-
-                for (let m = 0; m < round.totalMatches; m++) {
-                    const match = await game.getMatch(tierId, instanceId, t3CurrentRound, m);
-                    if (match.common.player1 !== hre.ethers.ZeroAddress &&
-                        match.common.player2 !== hre.ethers.ZeroAddress &&
-                        match.common.status !== 2) {
-
-                        const allSigners = await hre.ethers.getSigners();
-                        const p1 = allSigners.find(p => p.address === match.common.player1);
-                        const p2 = allSigners.find(p => p.address === match.common.player2);
-
-                        if (p1 && p2) {
-                            const first = match.currentTurn === p1.address ? p1 : p2;
-                            const second = first === p1 ? p2 : p1;
-
-                            console.log(`Match ${t3CurrentRound}-${m}: ${first.address.slice(0, 6)} vs ${second.address.slice(0, 6)}`);
-                            await game.connect(first).makeMove(tierId, instanceId, t3CurrentRound, m, 0);
-                            await game.connect(second).makeMove(tierId, instanceId, t3CurrentRound, m, 3);
-                            await game.connect(first).makeMove(tierId, instanceId, t3CurrentRound, m, 1);
-                            await game.connect(second).makeMove(tierId, instanceId, t3CurrentRound, m, 4);
-                            await game.connect(first).makeMove(tierId, instanceId, t3CurrentRound, m, 2);
-                            console.log(`${first.address.slice(0, 6)} wins match ${t3CurrentRound}-${m}`);
-                            recordMatch(3, t3CurrentRound, m, match.common.player1, match.common.player2, first.address, 'Normal gameplay');
-                        }
-                    }
-                }
-
-                tournament = await game.tournaments(tierId, instanceId);
-                if (tournament.status === 0) {
-                    t3TournamentComplete = true;
-                    console.log(`✓ Tournament 3 completed after round ${t3CurrentRound}`);
-                } else {
-                    t3CurrentRound++;
-                }
-            }
+            recordMatch(3, 1, 0, finalsT3.common.player1, finalsT3.common.player2, finalsFirstT3.address, 'Normal gameplay');
 
             // Verify tournament completed and reset
             tournament = await game.tournaments(tierId, instanceId);
             expect(tournament.status).to.equal(0); // Enrolling (auto-reset)
             expect(tournament.enrolledCount).to.equal(0);
             console.log("\n✓ Third tournament completed and reset successfully");
-            console.log("✓ All 3 tournaments validated: 4 players, 7 players (Draw+ML2), 8 players (ML3)");
+            console.log("✓ All 3 tournaments validated: 3 players, 7 players (Draw+ML2), 8 players (ML3)");
+
+            console.log(`Semifinal 0-1: ${semifinal2.common.player1.slice(0, 6)} vs ${semifinal2.common.player2.slice(0, 6)}`);
+
+            // In second tournament, we need B to win against A
+            // Identify which player is A (player1) and which is B (player2) from the first tournament
+            const playerA = firstPlayer;
+            const playerB = secondPlayer;
+
+            // Check who is player1 and player2 in semifinal 0-0 of second tournament
+            const isAinSlot1 = semifinal1.common.player1 === playerA.address;
+            const isBinSlot1 = semifinal1.common.player1 === playerB.address;
+
+            let semi1PlayerA, semi1PlayerB;
+            if (isAinSlot1) {
+                semi1PlayerA = playerA;
+                semi1PlayerB = playerB;
+            } else if (isBinSlot1) {
+                semi1PlayerA = playerB;
+                semi1PlayerB = playerA;
+            } else {
+                // A and B aren't in match 0-0, they must be in 0-1
+                console.log("A and B are not in semifinal 0-0, test needs adjustment");
+            }
+
+            // Find who has the first move
+            const semi1FirstMover = semifinal1.currentTurn === semi1PlayerA.address ? semi1PlayerA : semi1PlayerB;
+            const semi1SecondMover = semi1FirstMover === semi1PlayerA ? semi1PlayerB : semi1PlayerA;
+
+            // Make moves such that B WINS (opposite of first tournament where A won)
+            if (semi1FirstMover === playerB) {
+                // B goes first and wins
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 0);
+                await game.connect(semi1SecondMover).makeMove(tierId, instanceId, 0, 0, 3);
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 1);
+                await game.connect(semi1SecondMover).makeMove(tierId, instanceId, 0, 0, 4);
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 2); // B wins
+            } else {
+                // A goes first, but we want B to win, so B needs to block and win
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 0);
+                await game.connect(semi1SecondMover).makeMove(tierId, instanceId, 0, 0, 4); // B takes center
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 1);
+                await game.connect(semi1SecondMover).makeMove(tierId, instanceId, 0, 0, 3); // B blocks
+                await game.connect(semi1FirstMover).makeMove(tierId, instanceId, 0, 0, 6); // A plays bottom-left
+                await game.connect(semi1SecondMover).makeMove(tierId, instanceId, 0, 0, 5); // B wins (3-4-5 middle row)
+            }
+
+            console.log(`${playerB.address.slice(0, 6)} (B) wins semifinal 0-0`);
+            console.log(`${playerA.address.slice(0, 6)} (A) LOSES semifinal 0-0`);
+
+            // Record Tournament 2 semifinal 0-0
+            recordMatch(2, 0, 0, semifinal1.common.player1, semifinal1.common.player2, playerB.address, 'Normal gameplay');
+
+            // ============================================
+            // BUG CHECK: Check for stale match data
+            // ============================================
+            console.log("\n=== CHECKING FOR BUG ===");
+
+            // First, check the semifinal match data to see if it contains stale info
+            const semifinal1After = await game.getMatch(tierId, instanceId, 0, 0);
+            console.log(`Semifinal 0-0 after completion:`);
+            console.log(`  player1: ${semifinal1After.common.player1.slice(0, 6)}`);
+            console.log(`  player2: ${semifinal1After.common.player2.slice(0, 6)}`);
+            console.log(`  winner: ${semifinal1After.common.winner.slice(0, 6)}`);
+            console.log(`  status: ${semifinal1After.common.status}`);
+
+            // Check if round 1 (finals) was initialized
+            const round1 = await game.rounds(tierId, instanceId, 1);
+            console.log(`\nFinals initialized: ${round1.initialized}`);
+
+            if (round1.initialized) {
+                // Finals was initialized - check the players
+                const finalsMatch = await game.getMatch(tierId, instanceId, 1, 0);
+                console.log(`Finals 1-0: player1=${finalsMatch.common.player1.slice(0, 6)}, player2=${finalsMatch.common.player2.slice(0, 6)}`);
+                console.log(`  winner: ${finalsMatch.common.winner.slice(0, 6)}`);
+                console.log(`  status: ${finalsMatch.common.status}`);
+                console.log(`  currentTurn: ${finalsMatch.currentTurn.slice(0, 6)}`);
+
+                // The LOSER (A) of semifinal 0-0 should NOT be in the finals
+                // The WINNER (B) of semifinal 0-0 should be in the finals
+                const loserAddress = playerA.address;
+                const winnerAddress = playerB.address;
+                console.log(`\nWinner of semifinal: ${winnerAddress.slice(0, 6)} (B)`);
+                console.log(`Loser of semifinal: ${loserAddress.slice(0, 6)} (A)`);
+
+                // BUG REPRODUCTION: Check if the loser (A) is in the finals
+                const loserInFinalsAsP1 = finalsMatch.common.player1 === loserAddress;
+                const loserInFinalsAsP2 = finalsMatch.common.player2 === loserAddress;
+
+                if (loserInFinalsAsP1 || loserInFinalsAsP2) {
+                    console.log("\n🐛 BUG REPRODUCED! The loser (A) from semifinals is in the finals!");
+                    console.log(`   This is stale data from the first tournament where A beat B!`);
+                    expect.fail(`BUG: Player A (${loserAddress.slice(0, 6)}) lost semifinal 0-0 to B but is in the finals! This is stale match data from the first tournament.`);
+                }
+
+                // Check if there's stale data: both slots filled when other semifinal isn't done
+                const semifinal2After = await game.getMatch(tierId, instanceId, 0, 1);
+                console.log(`\nSemifinal 0-1 status: ${semifinal2After.common.status}`);
+                console.log(`  winner: ${semifinal2After.common.winner.slice(0, 6)}`);
+
+                if (semifinal2After.common.winner === hre.ethers.ZeroAddress) {
+                    // Semifinal 0-1 is NOT completed
+                    console.log("Semifinal 0-1 is NOT completed yet");
+
+                    // If both finals slots are filled, that's the bug!
+                    if (finalsMatch.common.player1 !== hre.ethers.ZeroAddress &&
+                        finalsMatch.common.player2 !== hre.ethers.ZeroAddress) {
+                        console.log("\n🐛 BUG REPRODUCED! Finals has both players filled when other semifinal isn't done!");
+                        expect.fail(`BUG: Finals has both slots filled (${finalsMatch.common.player1.slice(0, 6)} vs ${finalsMatch.common.player2.slice(0, 6)}) but semifinal 0-1 hasn't completed yet!`);
+                    }
+                }
+
+                // The winner should be in the finals
+                const winnerInFinalsAsP1 = finalsMatch.common.player1 === winnerAddress;
+                const winnerInFinalsAsP2 = finalsMatch.common.player2 === winnerAddress;
+                expect(winnerInFinalsAsP1 || winnerInFinalsAsP2).to.be.true;
+
+                // If the other slot is filled, it should NOT be the loser from our match
+                if (finalsMatch.common.player1 !== hre.ethers.ZeroAddress &&
+                    finalsMatch.common.player2 !== hre.ethers.ZeroAddress) {
+                    // Both slots filled - neither should be the loser from semifinal 0-0
+                    expect(finalsMatch.common.player1).to.not.equal(loserAddress);
+                    expect(finalsMatch.common.player2).to.not.equal(loserAddress);
+                }
+            }
+
+            // ============================================
+            // COMPLETE SECOND TOURNAMENT
+            // ============================================
+            console.log("\n=== COMPLETING SECOND TOURNAMENT ===");
+
+            // Complete the second semifinal (0-1)
+            const semi2Incomplete = await game.getMatch(tierId, instanceId, 0, 1);
+            const semi2P1Incomplete = [player1, player2, player3, player4].find(p => p.address === semi2Incomplete.common.player1);
+            const semi2P2Incomplete = [player1, player2, player3, player4].find(p => p.address === semi2Incomplete.common.player2);
+            const semi2FirstIncomplete = semi2Incomplete.currentTurn === semi2P1Incomplete.address ? semi2P1Incomplete : semi2P2Incomplete;
+            const semi2SecondIncomplete = semi2FirstIncomplete === semi2P1Incomplete ? semi2P2Incomplete : semi2P1Incomplete;
+
+            await game.connect(semi2FirstIncomplete).makeMove(tierId, instanceId, 0, 1, 0);
+            await game.connect(semi2SecondIncomplete).makeMove(tierId, instanceId, 0, 1, 3);
+            await game.connect(semi2FirstIncomplete).makeMove(tierId, instanceId, 0, 1, 1);
+            await game.connect(semi2SecondIncomplete).makeMove(tierId, instanceId, 0, 1, 4);
+            await game.connect(semi2FirstIncomplete).makeMove(tierId, instanceId, 0, 1, 2); // semi2FirstIncomplete wins
+            console.log(`Semifinal 0-1 completed: ${semi2FirstIncomplete.address.slice(0, 6)} wins`);
+
+            // Record Tournament 2 semifinal 0-1
+            recordMatch(2, 0, 1, semi2Incomplete.common.player1, semi2Incomplete.common.player2, semi2FirstIncomplete.address, 'Normal gameplay');
+
+            // Complete the finals
+            const finals2 = await game.getMatch(tierId, instanceId, 1, 0);
+            const finalsP1T2 = [player1, player2, player3, player4].find(p => p.address === finals2.common.player1);
+            const finalsP2T2 = [player1, player2, player3, player4].find(p => p.address === finals2.common.player2);
+            const finalsFirstT2 = finals2.currentTurn === finalsP1T2.address ? finalsP1T2 : finalsP2T2;
+            const finalsSecondT2 = finalsFirstT2 === finalsP1T2 ? finalsP2T2 : finalsP1T2;
+
+            await game.connect(finalsFirstT2).makeMove(tierId, instanceId, 1, 0, 0);
+            await game.connect(finalsSecondT2).makeMove(tierId, instanceId, 1, 0, 3);
+            await game.connect(finalsFirstT2).makeMove(tierId, instanceId, 1, 0, 1);
+            await game.connect(finalsSecondT2).makeMove(tierId, instanceId, 1, 0, 4);
+            await game.connect(finalsFirstT2).makeMove(tierId, instanceId, 1, 0, 2); // finalsFirstT2 wins
+            console.log(`${finalsFirstT2.address.slice(0, 6)} wins second tournament`);
+
+            // Record Tournament 2 finals
+            recordMatch(2, 1, 0, finals2.common.player1, finals2.common.player2, finalsFirstT2.address, 'Normal gameplay');
+
+            // Verify second tournament completed and reset
+            const tournament2Complete = await game.tournaments(tierId, instanceId);
+            expect(tournament2Complete.status).to.equal(0); // Enrolling (auto-reset)
+
+            console.log("\n✓ Test completed successfully!");
+            console.log("Match data is properly cleared on tournament reset.");
+            console.log("No stale data persists across tournament instances.");
+
+            // ============================================
+            // THIRD TOURNAMENT: ML3 match-ending scenario
+            // ============================================
+            console.log("\n=== THIRD TOURNAMENT (ML3 match-ending) ===");
+            await game.connect(player1).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player2).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player3).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+            await game.connect(player4).enrollInTournament(tierId, instanceId, { value: TIER_1_FEE });
+
+            // Verify tournament started
+            tournament = await game.tournaments(tierId, instanceId);
+            expect(tournament.status).to.equal(1); // InProgress
+
+            // Complete one semifinal match to create an advanced player
+            const semi1T3 = await game.getMatch(tierId, instanceId, 0, 0);
+            const semi1P1 = [player1, player2, player3, player4].find(p => p.address === semi1T3.common.player1);
+            const semi1P2 = [player1, player2, player3, player4].find(p => p.address === semi1T3.common.player2);
+            const firstMover = semi1T3.currentTurn === semi1P1.address ? semi1P1 : semi1P2;
+            const secondMover = firstMover === semi1P1 ? semi1P2 : semi1P1;
+
+            console.log(`Semifinal 0-0: ${firstMover.address.slice(0, 6)} vs ${secondMover.address.slice(0, 6)}`);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 0);
+            await game.connect(secondMover).makeMove(tierId, instanceId, 0, 0, 3);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 1);
+            await game.connect(secondMover).makeMove(tierId, instanceId, 0, 0, 4);
+            await game.connect(firstMover).makeMove(tierId, instanceId, 0, 0, 2); // firstMover wins
+            console.log(`${firstMover.address.slice(0, 6)} wins semifinal 0-0 and becomes advanced player`);
+
+            // Record Tournament 3 semifinal 0-0
+            recordMatch(3, 0, 0, semi1T3.common.player1, semi1T3.common.player2, firstMover.address, 'Normal gameplay');
+
+            // Semifinal 0-1 starts but gets stalled after one move
+            const semi2T3 = await game.getMatch(tierId, instanceId, 0, 1);
+            const semi2P1 = [player1, player2, player3, player4].find(p => p.address === semi2T3.common.player1);
+            const semi2P2 = [player1, player2, player3, player4].find(p => p.address === semi2T3.common.player2);
+            const stalledMover = semi2T3.currentTurn === semi2P1.address ? semi2P1 : semi2P2;
+
+            console.log(`Semifinal 0-1: ${semi2P1.address.slice(0, 6)} vs ${semi2P2.address.slice(0, 6)}`);
+            await game.connect(stalledMover).makeMove(tierId, instanceId, 0, 1, 0);
+            console.log(`${stalledMover.address.slice(0, 6)} makes first move, then match stalls`);
+
+            // Fast forward to Level 3 escalation window (7200 seconds = 2 hours)
+            console.log("\n⏰ Advancing time to Level 3 escalation window...");
+            await hre.ethers.provider.send("evm_increaseTime", [7200]);
+            await hre.ethers.provider.send("evm_mine", []);
+
+            // Use player5 for ML3 (not enrolled, not advanced, not in active match)
+            console.log("\n🔧 Using ML3 to end stalled match...");
+            console.log(`Caller: ${player5.address.slice(0, 6)} (non-advanced, not in active match)`);
+
+            // ML3 conditions check:
+            // 1. Tournament is in progress ✓
+            // 2. Match is stalled (> 2 hours) ✓
+            // 3. Level 3 time window active ✓
+            // 4. Caller (player5) is NOT an advanced player ✓
+            // 5. Caller (player5) is NOT in an active match ✓
+
+            await game.connect(player5).claimMatchSlotByReplacement(tierId, instanceId, 0, 1);
+            console.log("✓ ML3 successfully ended stalled match");
+
+            // Verify match was ended via ML3
+            const semi2AfterML3 = await game.getMatch(tierId, instanceId, 0, 1);
+            expect(semi2AfterML3.common.status).to.equal(2); // Completed
+            console.log(`Match 0-1 status after ML3: Completed`);
+            console.log(`Winner: ${semi2AfterML3.common.winner.slice(0, 6)}`);
+
+            // Record Tournament 3 semifinal 0-1 (ended via ML3)
+            recordMatch(3, 0, 1, semi2T3.common.player1, semi2T3.common.player2, player5.address, 'ML3 Replacement (stalled match)');
+
+            // Verify finals was created with the winners
+            const round1T3 = await game.rounds(tierId, instanceId, 1);
+            expect(round1T3.initialized).to.be.true;
+            console.log("\n✓ Finals initialized with winners from both semifinals");
+
+            // Complete the finals to finish the tournament
+            const finalsT3 = await game.getMatch(tierId, instanceId, 1, 0);
+            // Get all signers since player5 is now in the finals as the replacement winner
+            const allSigners = await hre.ethers.getSigners();
+            const finalsP1T3 = allSigners.find(p => p.address === finalsT3.common.player1);
+            const finalsP2T3 = allSigners.find(p => p.address === finalsT3.common.player2);
+            const finalsFirstT3 = finalsT3.currentTurn === finalsP1T3.address ? finalsP1T3 : finalsP2T3;
+            const finalsSecondT3 = finalsFirstT3 === finalsP1T3 ? finalsP2T3 : finalsP1T3;
+
+            console.log(`\nFinals: ${finalsFirstT3.address.slice(0, 6)} vs ${finalsSecondT3.address.slice(0, 6)}`);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 0);
+            await game.connect(finalsSecondT3).makeMove(tierId, instanceId, 1, 0, 3);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 1);
+            await game.connect(finalsSecondT3).makeMove(tierId, instanceId, 1, 0, 4);
+            await game.connect(finalsFirstT3).makeMove(tierId, instanceId, 1, 0, 2); // Wins
+            console.log(`${finalsFirstT3.address.slice(0, 6)} wins third tournament`);
+
+            // Record Tournament 3 finals
+            recordMatch(3, 1, 0, finalsT3.common.player1, finalsT3.common.player2, finalsFirstT3.address, 'Normal gameplay');
+
+            // Verify tournament completed and reset after ML3 scenario
+            const tournamentT3Final = await game.tournaments(tierId, instanceId);
+            expect(tournamentT3Final.status).to.equal(0); // Enrolling (auto-reset)
+            expect(tournamentT3Final.enrolledCount).to.equal(0);
+            console.log("\n✓ Third tournament completed and reset successfully");
+            console.log("✓ ML3 match-ending scenario validated across 3 tournaments");
 
             // Generate HTML report
             await generateHTMLReport();

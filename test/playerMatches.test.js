@@ -91,7 +91,11 @@ describe("PlayerMatches - Complete MatchRecord Tracking", function () {
         expect(record.player2).to.equal(expected.player2);
         expect(record.winner).to.equal(expected.winner);
         expect(record.completionReason).to.equal(expected.completionReason);
-        expect(record.isDraw).to.equal(expected.isDraw);
+        // Draw status is derived from completionReason
+        // CompletionReason.Draw = 2, CompletionReason.AllDrawScenario = 5
+        // Convert to Number for comparison since Solidity returns BigInt
+        const isDraw = Number(record.completionReason) === 2 || Number(record.completionReason) === 5;
+        expect(isDraw).to.equal(expected.isDraw);
     }
 
     describe("Normal Win Scenario", function () {

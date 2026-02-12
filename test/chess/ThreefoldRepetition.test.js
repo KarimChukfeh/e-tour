@@ -174,22 +174,18 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.f3, squares.g1, PieceType.None);
 
             // This move returns to the starting position for the 3rd time
-            const tx = await chess.connect(blackPlayer).makeMove(
+            await chess.connect(blackPlayer).makeMove(
                 tierId, instanceId, roundNumber, matchNumber,
                 squares.f6, squares.g8, PieceType.None
             );
 
-            // Should emit MatchCompleted with draw
-            await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(
-                    matchId,
-                    () => true, // player1
-                    () => true, // player2
-                    hre.ethers.ZeroAddress,
-                    true,
-                    2, // CompletionReason.Draw
-                    () => true // board (any value)
-                );
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should trigger draw on third repetition of non-starting position", async function () {
@@ -216,21 +212,18 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.c3, squares.b1, PieceType.None);
 
             // This returns to Position A for the 3rd time
-            const tx = await chess.connect(blackPlayer).makeMove(
+            await chess.connect(blackPlayer).makeMove(
                 tierId, instanceId, roundNumber, matchNumber,
                 squares.c6, squares.b8, PieceType.None
             );
 
-            await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(
-                    matchId,
-                    () => true, // player1
-                    () => true, // player2
-                    hre.ethers.ZeroAddress,
-                    true,
-                    2, // CompletionReason.Draw
-                    () => true // board (any value)
-                );
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should NOT trigger draw after only two repetitions", async function () {
@@ -338,13 +331,18 @@ describe("Chess Threefold Repetition Rule", function () {
             await chess.connect(blackPlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.g8, squares.f6, PieceType.None);
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.f3, squares.g1, PieceType.None);
 
-            const tx = await chess.connect(blackPlayer).makeMove(
+            await chess.connect(blackPlayer).makeMove(
                 tierId, instanceId, roundNumber, matchNumber,
                 squares.f6, squares.g8, PieceType.None
             );
 
-            await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(matchId, () => true, () => true, hre.ethers.ZeroAddress, true, 2, () => true);
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should allow pawn moves without resetting position counts", async function () {

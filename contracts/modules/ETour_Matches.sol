@@ -54,8 +54,20 @@ contract ETour_Matches is ETour_Base {
      * EXACT COPY from ETour.sol lines 869-911
      * Module implementation - called via delegatecall from game contracts
      */
-    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+    function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override onlyDelegateCall {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Calculate playerCount for this round
+        uint8 playerCount;
+        if (roundNumber == 0) {
+            playerCount = tournament.enrolledCount;
+        } else {
+            Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+            // Winners from matches + bye player if previous round had odd players
+            playerCount = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
+        }
+
+        uint8 matchCount = playerCount / 2;
         require(matchCount > 0 || roundNumber > 0, "Invalid match count");
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -63,35 +75,27 @@ contract ETour_Matches is ETour_Base {
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
+        round.playerCount = playerCount;
 
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
             require(players.length >= 2, "Not enough players");
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
-                uint256 randomness = uint256(keccak256(abi.encodePacked(
-                    block.prevrandao,
-                    block.timestamp,
-                    tierId,
-                    instanceId,
-                    tournament.enrolledCount
-                )));
-                uint8 walkoverIndex = uint8(randomness % tournament.enrolledCount);
-                walkoverPlayer = players[walkoverIndex];
+                uint8 walkoverIndex = uint8(uint256(keccak256(abi.encodePacked(
+                    block.prevrandao, block.timestamp, tierId, instanceId, tournament.enrolledCount
+                ))) % tournament.enrolledCount);
 
-                address lastPlayer = players[tournament.enrolledCount - 1];
-                players[walkoverIndex] = lastPlayer;
+                walkoverPlayer = players[walkoverIndex];
+                players[walkoverIndex] = players[tournament.enrolledCount - 1];
                 players[tournament.enrolledCount - 1] = walkoverPlayer;
             }
 
-            for (uint8 i = 0; i < matchCount; i++) {
-                address p1 = players[i * 2];
-                address p2 = players[i * 2 + 1];
-                require(p1 != address(0) && p2 != address(0), "Invalid player addresses");
-
-                this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
+            for (uint8 i = 0; i < matchCount;) {
+                require(players[i * 2] != address(0) && players[i * 2 + 1] != address(0), "Invalid player addresses");
+                this._createMatchGame(tierId, instanceId, roundNumber, i, players[i * 2], players[i * 2 + 1]);
+                unchecked { i++; }
             }
 
             if (walkoverPlayer != address(0)) {
@@ -113,22 +117,19 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner,
-        bool isDraw
-    ) public {
-        bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-
+        bool isDraw,
+        CompletionReason reason
+    ) public onlyDelegateCall {
         // Note: Escalation state is cleared by the game contract before calling completeMatch
-        // No need to clear again here to avoid double clearing
-
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
 
         if (!isDraw) {
-            TierConfig storage config = _tierConfigs[tierId];
+            TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
             // Note: Loser elimination hook is called by the game contract after delegatecall
             // (can't call hooks from within modules as they use empty stubs)
 
-            if (roundNumber < config.totalRounds - 1) {
+            // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+            if (roundNumber < tournament.actualTotalRounds - 1) {
                 advanceWinner(tierId, instanceId, roundNumber, matchNumber, winner);
             }
             // Note: Winner elimination check happens when their next match completes (or tournament ends)
@@ -142,14 +143,20 @@ contract ETour_Matches is ETour_Base {
             round.drawCount++;
         }
 
-        if (round.completedMatches == round.totalMatches) {
+        // BUG FIX: Handle consolidation scenario where totalMatches = 0
+        // Round is complete when completedMatches == totalMatches, OR
+        // when totalMatches = 0 and we have 1 completed match (consolidation finals)
+        bool isRoundComplete = (round.completedMatches == round.totalMatches) ||
+                              (round.totalMatches == 0 && round.completedMatches == 1);
+
+        if (isRoundComplete) {
             if (hasOrphanedWinners(tierId, instanceId, roundNumber)) {
                 processOrphanedWinners(tierId, instanceId, roundNumber);
                 // After processing orphaned winners, check if tournament can complete
                 // This handles the case where only one winner remains after force elimination
                 checkForSoleWinnerCompletion(tierId, instanceId, roundNumber);
             }
-            completeRound(tierId, instanceId, roundNumber);
+            completeRound(tierId, instanceId, roundNumber, reason);
         }
     }
 
@@ -157,7 +164,7 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Advance winner to next round
-     * EXACT COPY from ETour.sol lines 937-977
+     * OPTIMIZED: Simplified logic and reduced redundant calls
      */
     function advanceWinner(
         uint8 tierId,
@@ -165,27 +172,21 @@ contract ETour_Matches is ETour_Base {
         uint8 roundNumber,
         uint8 matchNumber,
         address winner
-    ) public {
+    ) public onlyDelegateCall {
         uint8 nextRound = roundNumber + 1;
-        uint8 nextMatchNumber = matchNumber / 2;
-
         Round storage nextRoundData = rounds[tierId][instanceId][nextRound];
         if (!nextRoundData.initialized) {
             initializeRound(tierId, instanceId, nextRound);
         }
 
-        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, nextMatchNumber);
+        bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, matchNumber / 2);
 
-        if (matchNumber % 2 == 0) {
-            this._setMatchPlayer(nextMatchId, 0, winner);
-        } else {
-            this._setMatchPlayer(nextMatchId, 1, winner);
-        }
+        // Set player based on match parity
+        this._setMatchPlayer(nextMatchId, matchNumber & 1, winner);
 
+        // Check if both players are set and match can start
         (address p1, address p2) = this._getMatchPlayers(nextMatchId);
-        (, , MatchStatus status) = this._getMatchResult(nextMatchId);
-
-        if (p1 != address(0) && p2 != address(0) && status == MatchStatus.NotStarted) {
+        if (p1 != address(0) && p2 != address(0)) {
             require(p1 != p2, "Cannot match player against themselves");
             this._initializeMatchForPlay(nextMatchId, tierId);
         }
@@ -195,85 +196,158 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Complete a round and handle tournament progression
-     * EXACT COPY from ETour.sol lines 1049-1140
+     * REFACTORED: Broken down into smaller helper functions
      */
-    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
+    function completeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber, CompletionReason reason) internal {
+        if (_isActualFinalsRound(tierId, instanceId, roundNumber)) {
+            _handleFinalsCompletion(tierId, instanceId, roundNumber, reason);
+            return;
+        }
+
         Round storage round = rounds[tierId][instanceId][roundNumber];
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TierConfig storage config = _tierConfigs[tierId];
-
-        bool isActualFinals = (roundNumber == config.totalRounds - 1) ||
-                             (roundNumber > 0 && round.totalMatches == 1 && round.completedMatches == 1);
-
-        if (isActualFinals) {
-            bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
-            (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
-            (address finalPlayer1, address finalPlayer2) = this._getMatchPlayers(finalMatchId);
-
-            if (finalIsDraw) {
-                tournament.finalsWasDraw = true;
-                tournament.completionReason = CompletionReason.Draw;
-                tournament.winner = finalPlayer1;
-                completeTournament(tierId, instanceId, finalPlayer1);
-            } else {
-                tournament.completionReason = CompletionReason.NormalWin;
-                completeTournament(tierId, instanceId, finalWinner);
-            }
-        } else if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
+        if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
             address[] memory remainingPlayers = getRemainingPlayers(tierId, instanceId, roundNumber);
             completeTournamentAllDraw(tierId, instanceId, roundNumber, remainingPlayers);
-        } else {
-            // Removed: Ranking assignments (no longer needed with winner-takes-all)
-            tournament.currentRound = roundNumber + 1;
-            consolidateScatteredPlayers(tierId, instanceId, roundNumber + 1);
+            return;
+        }
 
-            if (tournament.status == TournamentStatus.Completed) {
-                return;
-            }
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        tournament.currentRound = roundNumber + 1;
+        consolidateScatteredPlayers(tierId, instanceId, roundNumber + 1);
 
-            Round storage nextRoundData = rounds[tierId][instanceId][roundNumber + 1];
-            if (nextRoundData.initialized && nextRoundData.totalMatches == 0) {
-                address soleWinner = address(0);
-                uint8 winnerCount = 0;
+        if (tournament.status == TournamentStatus.Completed) {
+            return;
+        }
 
-                for (uint8 i = 0; i < round.totalMatches; i++) {
-                    bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-                    (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
-                    if (matchStatus == MatchStatus.Completed && matchWinner != address(0) && !matchIsDraw) {
-                        soleWinner = matchWinner;
-                        winnerCount++;
-                    }
-                }
+        if (_checkAndHandleSoleWinner(tierId, instanceId, roundNumber)) {
+            return;
+        }
 
-                if (winnerCount == 1) {
-                    completeTournament(tierId, instanceId, soleWinner);
-                    return;
-                }
-            }
+        // Inline: Handle finals walkover scenario
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        uint8 nextRound = roundNumber + 1;
+        if (nextRound == tournament.actualTotalRounds - 1) {
+            bytes32 finalsMatchId = _getMatchId(tierId, instanceId, nextRound, 0);
+            (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
 
-            uint8 nextRound = roundNumber + 1;
-            if (nextRound == config.totalRounds - 1) {
-                bytes32 finalsMatchId = _getMatchId(tierId, instanceId, nextRound, 0);
-                (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
-
-                bool onlyPlayer1 = fp1 != address(0) && fp2 == address(0);
-                bool onlyPlayer2 = fp2 != address(0) && fp1 == address(0);
-
-                if (onlyPlayer1 || onlyPlayer2) {
-                    address walkoverWinner = onlyPlayer1 ? fp1 : fp2;
-
-                    bytes32 prevMatchId0 = _getMatchId(tierId, instanceId, roundNumber, 0);
-                    bytes32 prevMatchId1 = _getMatchId(tierId, instanceId, roundNumber, 1);
-                    (address pm0Winner, bool pm0Draw, ) = this._getMatchResult(prevMatchId0);
-                    (address pm1Winner, bool pm1Draw, ) = this._getMatchResult(prevMatchId1);
-                    (address pm0p1, address pm0p2) = this._getMatchPlayers(prevMatchId0);
-                    (address pm1p1, address pm1p2) = this._getMatchPlayers(prevMatchId1);
-
-                    // Removed: RunnerUp ranking (no longer needed with winner-takes-all)
-                    completeTournament(tierId, instanceId, walkoverWinner);
-                }
+            if ((fp1 != address(0) && fp2 == address(0)) || (fp2 != address(0) && fp1 == address(0))) {
+                completeTournament(tierId, instanceId, fp1 != address(0) ? fp1 : fp2);
             }
         }
+    }
+
+    /**
+     * @dev Check if round is actual finals (not semi-finals with walkover)
+     */
+    function _isActualFinalsRound(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal view returns (bool) {
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber == tournament.actualTotalRounds - 1) {
+            return true;
+        }
+
+        bool appearsToBeFinalsMatch = (roundNumber > 0 && round.completedMatches == 1 &&
+                                      (round.totalMatches == 1 || round.totalMatches == 0));
+
+        if (!appearsToBeFinalsMatch || roundNumber >= tournament.actualTotalRounds - 1) {
+            return false;
+        }
+
+        // Inline: Check if next round has players (walkover scenario)
+        uint8 nextRound = roundNumber + 1;
+        for (uint8 m = 0; m < 4;) {
+            bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+            (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+            if (p1 != address(0) || p2 != address(0)) {
+                return false; // Has players, not finals
+            }
+            unchecked { m++; }
+        }
+        return true; // No players in next round, this is finals
+    }
+
+    /**
+     * @dev Handle completion of finals match
+     */
+    function _handleFinalsCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber,
+        CompletionReason reason
+    ) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        bytes32 finalMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
+        (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
+
+        if (finalIsDraw) {
+            tournament.finalsWasDraw = true;
+            tournament.completionReason = CompletionReason.AllDrawScenario;
+            tournament.winner = address(0);
+            completeTournament(tierId, instanceId, address(0));
+        } else {
+            // Use the passed completion reason (e.g., Timeout for ML1)
+            tournament.completionReason = reason;
+            completeTournament(tierId, instanceId, finalWinner);
+        }
+    }
+
+    /**
+     * @dev Check for sole winner scenario and complete if found
+     * @return true if tournament was completed
+     */
+    function _checkAndHandleSoleWinner(
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal returns (bool) {
+        Round storage round = rounds[tierId][instanceId][roundNumber];
+        Round storage nextRoundData = rounds[tierId][instanceId][roundNumber + 1];
+
+        if (!nextRoundData.initialized || nextRoundData.totalMatches != 0) {
+            return false;
+        }
+
+        address soleWinner = address(0);
+        uint8 winnerCount = 0;
+
+        for (uint8 i = 0; i < round.totalMatches;) {
+            bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+            (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
+            if (matchStatus == MatchStatus.Completed && matchWinner != address(0) && !matchIsDraw) {
+                soleWinner = matchWinner;
+                winnerCount++;
+            }
+            unchecked { i++; }
+        }
+
+        if (winnerCount != 1) {
+            return false;
+        }
+
+        // Inline: Count players in next round for walkover check
+        uint8 playersInNextRound = 0;
+        uint8 nextRound = roundNumber + 1;
+        for (uint8 m = 0; m < 4;) {
+            bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+            (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+            if (p1 != address(0)) playersInNextRound++;
+            if (p2 != address(0)) playersInNextRound++;
+            if (p1 == address(0) && p2 == address(0)) break;
+            unchecked { m++; }
+        }
+
+        if (playersInNextRound == 0) {
+            completeTournament(tierId, instanceId, soleWinner);
+            return true;
+        }
+
+        return false;
     }
 
     // ============ Tournament Completion ============
@@ -281,10 +355,10 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Complete tournament and distribute prizes
      * EXACT COPY from ETour.sol lines 1142-1172
+     * INTERNAL: Only called from within this module
      */
-    function completeTournament(uint8 tierId, uint8 instanceId, address winner) public {
+    function completeTournament(uint8 tierId, uint8 instanceId, address winner) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        TierConfig storage config = _tierConfigs[tierId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
 
@@ -292,9 +366,6 @@ contract ETour_Matches is ETour_Base {
             tournament.winner = winner;
             // Removed: Ranking assignments (no longer needed with winner-takes-all)
         }
-
-        uint256 winnersPot = tournament.prizePool;
-        address[] storage players = enrolledPlayers[tierId][instanceId];
 
         // NOTE: Prize distribution, earnings update, reset, and event emission are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
@@ -304,13 +375,14 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Complete tournament with all-draw resolution
      * EXACT COPY from ETour.sol lines 1174-1199
+     * INTERNAL: Only called from within this module
      */
     function completeTournamentAllDraw(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber,
         address[] memory remainingPlayers
-    ) public {
+    ) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         // Set status to Completed before reset (will be set to Enrolling during reset)
         tournament.status = TournamentStatus.Completed;
@@ -319,10 +391,8 @@ contract ETour_Matches is ETour_Base {
         tournament.winner = address(0);
         tournament.completionReason = CompletionReason.AllDrawScenario;
 
-        uint256 winnersPot = tournament.prizePool;
-        uint256 prizePerPlayer = winnersPot / remainingPlayers.length;
-
-        address[] storage players = enrolledPlayers[tierId][instanceId];
+        // Silence unused parameter warning (used by game contract)
+        remainingPlayers;
 
         // NOTE: Prize distribution, earnings update, and reset are handled by the game contract
         // (TicTacChain) after it detects tournament completion, because nested delegatecalls
@@ -333,104 +403,84 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Consolidate scattered players into complete matches
-     * EXACT COPY from ETour.sol lines 1527-1628
+     * REFACTORED: Combined loops for better gas efficiency
      */
     function consolidateScatteredPlayers(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber
-    ) public {
+    ) internal {
         Round storage round = rounds[tierId][instanceId][roundNumber];
         if (!round.initialized) {
             return;
         }
 
+        // Single loop: collect players AND check if consolidation needed
         address[] memory playersInRound = new address[](round.totalMatches * 2);
         uint8 playerCount = 0;
-
-        for (uint8 i = 0; i < round.totalMatches; i++) {
-            bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
-
-            if (p1 != address(0)) {
-                playersInRound[playerCount++] = p1;
-            }
-            if (p2 != address(0)) {
-                playersInRound[playerCount++] = p2;
-            }
-        }
-
-        if (playerCount == 0) {
-            return;
-        }
-
         bool needsConsolidation = false;
-        uint8 incompleteMatches = 0;
 
-        for (uint8 i = 0; i < round.totalMatches; i++) {
+        for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
             (address p1, address p2) = this._getMatchPlayers(matchId);
 
             bool hasPlayer1 = p1 != address(0);
             bool hasPlayer2 = p2 != address(0);
 
+            if (hasPlayer1) playersInRound[playerCount++] = p1;
+            if (hasPlayer2) playersInRound[playerCount++] = p2;
+
+            // Check if match is incomplete (XOR logic)
             if (hasPlayer1 != hasPlayer2) {
                 needsConsolidation = true;
-                incompleteMatches++;
             }
+            unchecked { i++; }
         }
 
-        if (!needsConsolidation) {
+        if (playerCount == 0 || !needsConsolidation) {
             return;
         }
 
-        TournamentInstance storage tournament = tournaments[tierId][instanceId];
         if (playerCount == 1) {
             completeTournament(tierId, instanceId, playersInRound[0]);
             return;
         }
 
-        // Reset all matches in the round
-        for (uint8 i = 0; i < round.totalMatches; i++) {
+        // Reset all matches
+        for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
             this._resetMatchGame(matchId);
+            unchecked { i++; }
         }
 
-        // Recalculate match count for consolidated players
-        uint8 newMatchCount = playerCount / 2;
-        uint8 hasWalkover = playerCount % 2;
+        // Handle walkover if odd number of players
+        uint8 originalPlayerCount = playerCount;  // Save before walkover selection
+        address walkoverPlayer = address(0);
+        if (playerCount % 2 == 1) {
+            (walkoverPlayer, playerCount) = _selectWalkoverPlayer(
+                playersInRound, playerCount, tierId, instanceId, roundNumber
+            );
+        }
 
+        // Update round and create new matches
+        uint8 newMatchCount = playerCount / 2;
         round.totalMatches = newMatchCount;
         round.completedMatches = 0;
         round.drawCount = 0;
+        round.playerCount = originalPlayerCount;
 
-        address walkoverPlayer = address(0);
-        if (hasWalkover == 1) {
-            uint256 randomness = uint256(keccak256(abi.encodePacked(
-                block.prevrandao,
-                block.timestamp,
+        for (uint8 i = 0; i < newMatchCount;) {
+            this._createMatchGame(
                 tierId,
                 instanceId,
                 roundNumber,
-                playerCount
-            )));
-
-            uint8 walkoverIndex = uint8(randomness % playerCount);
-            walkoverPlayer = playersInRound[walkoverIndex];
-
-            playersInRound[walkoverIndex] = playersInRound[playerCount - 1];
-            playerCount--;
+                i,
+                playersInRound[i * 2],
+                playersInRound[i * 2 + 1]
+            );
+            unchecked { i++; }
         }
 
-        // Create new matches with consolidated players
-        for (uint8 i = 0; i < newMatchCount; i++) {
-            address p1 = playersInRound[i * 2];
-            address p2 = playersInRound[i * 2 + 1];
-
-            this._createMatchGame(tierId, instanceId, roundNumber, i, p1, p2);
-        }
-
-        // Advance walkover player if exists
         if (walkoverPlayer != address(0)) {
             advanceWinner(tierId, instanceId, roundNumber, newMatchCount, walkoverPlayer);
         }
@@ -438,83 +488,78 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Consolidate and start next round when odd number of winners after ML2/ML3
-     * Called after escalation events that may leave odd number of advancing players
+     * REFACTORED: Using walkover helper and early returns
      */
     function consolidateAndStartOddRound(
         uint8 tierId,
         uint8 instanceId,
         uint8 completedRound
-    ) public {
+    ) public onlyDelegateCall {
         Round storage completedRoundStruct = rounds[tierId][instanceId][completedRound];
         if (!completedRoundStruct.initialized) {
             return;
         }
 
         // Count winners from completed round
-        uint8 winnersCount = 0;
         address[] memory winners = new address[](completedRoundStruct.totalMatches * 2);
+        uint8 winnersCount = 0;
 
-        for (uint8 i = 0; i < completedRoundStruct.totalMatches; i++) {
+        for (uint8 i = 0; i < completedRoundStruct.totalMatches;) {
             bytes32 matchId = _getMatchId(tierId, instanceId, completedRound, i);
             (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
 
             if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
                 winners[winnersCount++] = winner;
             }
+            unchecked { i++; }
         }
 
-        // If no winners or even number, nothing to consolidate
+        // Early return if no winners or even number
         if (winnersCount == 0 || winnersCount % 2 == 0) {
             return;
         }
 
-        // Odd number of winners - need to consolidate next round
         uint8 nextRound = completedRound + 1;
         Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
 
-        // Calculate proper match count: (winnersCount - 1) / 2
+        // If already initialized, use consolidation logic
+        if (nextRoundStruct.initialized) {
+            consolidateScatteredPlayers(tierId, instanceId, nextRound);
+            return;
+        }
+
+        // Initialize next round with odd winner handling
         uint8 properMatchCount = (winnersCount - 1) / 2;
+        nextRoundStruct.initialized = true;
+        nextRoundStruct.totalMatches = properMatchCount;
+        nextRoundStruct.completedMatches = 0;
+        nextRoundStruct.drawCount = 0;
+        nextRoundStruct.playerCount = winnersCount;
 
-        if (!nextRoundStruct.initialized) {
-            // Initialize next round with correct match count
-            nextRoundStruct.initialized = true;
-            nextRoundStruct.totalMatches = properMatchCount;
-            nextRoundStruct.completedMatches = 0;
-            nextRoundStruct.drawCount = 0;
+        // Select walkover player
+        address walkoverPlayer;
+        (walkoverPlayer, winnersCount) = _selectWalkoverPlayer(
+            winners, winnersCount, tierId, instanceId, nextRound
+        );
 
-            // Select random walkover
-            uint256 randomness = uint256(keccak256(abi.encodePacked(
-                block.prevrandao,
-                block.timestamp,
+        // Create matches for remaining players
+        for (uint8 i = 0; i < properMatchCount;) {
+            this._createMatchGame(
                 tierId,
                 instanceId,
                 nextRound,
-                winnersCount
-            )));
+                i,
+                winners[i * 2],
+                winners[i * 2 + 1]
+            );
+            unchecked { i++; }
+        }
 
-            uint8 walkoverIndex = uint8(randomness % winnersCount);
-            address walkoverPlayer = winners[walkoverIndex];
-
-            // Remove walkover player from winners array
-            winners[walkoverIndex] = winners[winnersCount - 1];
-            winnersCount--;
-
-            // Create matches for remaining players
-            for (uint8 i = 0; i < properMatchCount; i++) {
-                address p1 = winners[i * 2];
-                address p2 = winners[i * 2 + 1];
-                this._createMatchGame(tierId, instanceId, nextRound, i, p1, p2);
-            }
-
-            // Advance walkover player to round after next
-            TierConfig storage config = _tierConfigs[tierId];
-            if (nextRound < config.totalRounds - 1) {
-                advanceWinner(tierId, instanceId, nextRound, properMatchCount, walkoverPlayer);
-            }
-        } else {
-            // Next round already initialized (possibly with wrong match count)
-            // Use existing consolidateScatteredPlayers to fix it
-            consolidateScatteredPlayers(tierId, instanceId, nextRound);
+        // Advance walkover player if not finals
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (nextRound < tournament.actualTotalRounds - 1) {
+            advanceWinner(tierId, instanceId, nextRound, properMatchCount, walkoverPlayer);
         }
     }
 
@@ -522,12 +567,13 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Check if round has orphaned winners
-     * EXACT COPY from ETour.sol lines 1397-1420
+     * REFACTORED: Using helper to reduce duplication
+     * INTERNAL: Only called from within this module
      */
-    function hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (bool) {
+    function hasOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (bool) {
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
-        for (uint8 i = 0; i < matchCount; i += 2) {
+        for (uint8 i = 0; i < matchCount;) {
             if (i + 1 >= matchCount) break;
 
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
@@ -536,14 +582,15 @@ contract ETour_Matches is ETour_Base {
             (address w1, bool d1, MatchStatus s1) = this._getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = this._getMatchResult(matchId2);
 
-            // Check if match 1 has a winner and match 2 has no winner (draw or double elimination)
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
+            bool m1Complete = s1 == MatchStatus.Completed;
+            bool m2Complete = s2 == MatchStatus.Completed;
+            bool m1HasWinner = w1 != address(0) && !d1;
+            bool m2HasWinner = w2 != address(0) && !d2;
+
+            if (m1Complete && m2Complete && (m1HasWinner != m2HasWinner)) {
                 return true;
             }
-            // Check if match 2 has a winner and match 1 has no winner (draw or double elimination)
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
-                return true;
-            }
+            unchecked { i += 2; }
         }
 
         return false;
@@ -551,17 +598,18 @@ contract ETour_Matches is ETour_Base {
 
     /**
      * @dev Process orphaned winners by advancing them
-     * EXACT COPY from ETour.sol lines 1422-1448
+     * REFACTORED: Combined logic to reduce duplication
      */
-    function processOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) public {
-        TierConfig storage config = _tierConfigs[tierId];
-        if (roundNumber >= config.totalRounds - 1) {
+    function processOrphanedWinners(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber >= tournament.actualTotalRounds - 1) {
             return;
         }
 
         uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
 
-        for (uint8 i = 0; i < matchCount; i += 2) {
+        for (uint8 i = 0; i < matchCount;) {
             if (i + 1 >= matchCount) break;
 
             bytes32 matchId1 = _getMatchId(tierId, instanceId, roundNumber, i);
@@ -570,69 +618,79 @@ contract ETour_Matches is ETour_Base {
             (address w1, bool d1, MatchStatus s1) = this._getMatchResult(matchId1);
             (address w2, bool d2, MatchStatus s2) = this._getMatchResult(matchId2);
 
-            // Advance winner from match 1 if match 2 has no winner (draw or double elimination)
-            if (s1 == MatchStatus.Completed && w1 != address(0) && !d1 && s2 == MatchStatus.Completed && (d2 || w2 == address(0))) {
-                advanceWinner(tierId, instanceId, roundNumber, i, w1);
+            bool m1Complete = s1 == MatchStatus.Completed;
+            bool m2Complete = s2 == MatchStatus.Completed;
+
+            if (m1Complete && m2Complete) {
+                bool m1HasWinner = w1 != address(0) && !d1;
+                bool m2HasWinner = w2 != address(0) && !d2;
+
+                if (m1HasWinner && !m2HasWinner) {
+                    advanceWinner(tierId, instanceId, roundNumber, i, w1);
+                } else if (m2HasWinner && !m1HasWinner) {
+                    advanceWinner(tierId, instanceId, roundNumber, i + 1, w2);
+                }
             }
-            // Advance winner from match 2 if match 1 has no winner (draw or double elimination)
-            if (s2 == MatchStatus.Completed && w2 != address(0) && !d2 && s1 == MatchStatus.Completed && (d1 || w1 == address(0))) {
-                advanceWinner(tierId, instanceId, roundNumber, i + 1, w2);
-            }
+            unchecked { i += 2; }
         }
     }
 
     /**
      * @dev Get remaining players in a round
-     * EXACT COPY from ETour.sol lines 1450-1471
+     * OPTIMIZED: Single allocation, no temp array
+     * INTERNAL: Only called from within this module
      */
-    function getRemainingPlayers(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (address[] memory) {
+    function getRemainingPlayers(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (address[] memory) {
         Round storage round = rounds[tierId][instanceId][roundNumber];
-        address[] memory tempPlayers = new address[](round.totalMatches * 2);
-        uint8 count = 0;
 
-        for (uint8 i = 0; i < round.totalMatches; i++) {
+        // First pass: count players
+        uint8 count = 0;
+        for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
             (address p1, address p2) = this._getMatchPlayers(matchId);
-            if (p1 != address(0)) {
-                tempPlayers[count++] = p1;
-            }
-            if (p2 != address(0)) {
-                tempPlayers[count++] = p2;
-            }
+            if (p1 != address(0)) count++;
+            if (p2 != address(0)) count++;
+            unchecked { i++; }
         }
 
+        // Allocate exact size
         address[] memory result = new address[](count);
-        for (uint8 i = 0; i < count; i++) {
-            result[i] = tempPlayers[i];
+
+        // Second pass: fill array
+        uint8 index = 0;
+        for (uint8 i = 0; i < round.totalMatches;) {
+            bytes32 matchId = _getMatchId(tierId, instanceId, roundNumber, i);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
+            if (p1 != address(0)) result[index++] = p1;
+            if (p2 != address(0)) result[index++] = p2;
+            unchecked { i++; }
         }
+
         return result;
     }
 
     /**
      * @dev Check if tournament should complete with sole winner after orphan processing
-     * EXACT COPY from ETour.sol lines 1478-1525
+     * REFACTORED: Early returns and simplified logic
+     * INTERNAL: Only called from within this module
      */
     function checkForSoleWinnerCompletion(
         uint8 tierId,
         uint8 instanceId,
         uint8 roundNumber
-    ) public {
-        TierConfig storage config = _tierConfigs[tierId];
+    ) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-
-        // Only check if not already completed and not in finals
         if (tournament.status == TournamentStatus.Completed) {
             return;
         }
 
-        if (roundNumber >= config.totalRounds - 1) {
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber >= tournament.actualTotalRounds - 1) {
             return;
         }
 
-        // Check next round to see if only one player advanced
         uint8 nextRound = roundNumber + 1;
         Round storage nextRoundData = rounds[tierId][instanceId][nextRound];
-
         if (!nextRoundData.initialized) {
             return;
         }
@@ -640,7 +698,7 @@ contract ETour_Matches is ETour_Base {
         address soleWinner = address(0);
         uint8 advancedPlayerCount = 0;
 
-        for (uint8 i = 0; i < nextRoundData.totalMatches; i++) {
+        for (uint8 i = 0; i < nextRoundData.totalMatches;) {
             bytes32 matchId = _getMatchId(tierId, instanceId, nextRound, i);
             (address p1, address p2) = this._getMatchPlayers(matchId);
 
@@ -652,9 +710,23 @@ contract ETour_Matches is ETour_Base {
                 soleWinner = p2;
                 advancedPlayerCount++;
             }
+            unchecked { i++; }
         }
 
-        // If exactly one player advanced to next round, they win by walkover
+        // Check for bye player (odd players in next round)
+        if (nextRoundData.playerCount % 2 == 1) {
+            bytes32 byeMatchId = _getMatchId(tierId, instanceId, nextRound, nextRoundData.totalMatches);
+            (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+            if (byeP1 != address(0)) {
+                soleWinner = byeP1;
+                advancedPlayerCount++;
+            }
+            if (byeP2 != address(0)) {
+                soleWinner = byeP2;
+                advancedPlayerCount++;
+            }
+        }
+
         if (advancedPlayerCount == 1) {
             completeTournament(tierId, instanceId, soleWinner);
         }
@@ -665,19 +737,38 @@ contract ETour_Matches is ETour_Base {
     /**
      * @dev Get match count for a round
      * EXACT COPY from ETour.sol lines 914-930
+     * INTERNAL: Only called from within this module (game contracts have their own implementations)
      */
-    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
+    function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) internal view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        uint8 playerCount = tournament.enrolledCount;
 
         if (roundNumber == 0) {
-            return playerCount / 2;
+            return tournament.enrolledCount / 2;
         }
 
         Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
-        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+        // Winners from matches + bye player if previous round had odd players
+        uint8 winnersFromPrevRound = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
 
         return winnersFromPrevRound / 2;
+    }
+
+    /**
+     * @dev Select a random walkover player from array
+     */
+    function _selectWalkoverPlayer(
+        address[] memory players,
+        uint8 playerCount,
+        uint8 tierId,
+        uint8 instanceId,
+        uint8 roundNumber
+    ) internal view returns (address walkoverPlayer, uint8 newPlayerCount) {
+        uint8 walkoverIndex = uint8(uint256(keccak256(abi.encodePacked(
+            block.prevrandao, block.timestamp, tierId, instanceId, roundNumber, playerCount
+        ))) % playerCount);
+        walkoverPlayer = players[walkoverIndex];
+        players[walkoverIndex] = players[playerCount - 1];
+        newPlayerCount = playerCount - 1;
     }
 
     // ============ Player Advancement Detection ============

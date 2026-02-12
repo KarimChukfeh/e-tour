@@ -1443,12 +1443,6 @@ At scale, operational revenue provides significant runway for development, audit
 *This whitepaper describes ETour Protocol as designed for deployment on Arbitrum One. The protocol operates autonomously according to its smart contract code. This document is for informational purposes and does not constitute financial advice.*
 
 
-
-
-
-
-
-
 ------ 
 
 pkill -f anvil || true
@@ -1483,3 +1477,19 @@ Step 4: Deploy Modules + ChessOnChain
 npx hardhat run scripts/deploy-tictacchain-modular.js --network localhost
 npx hardhat run scripts/deploy-chessonchain-modular.js --network localhost
 npx hardhat run scripts/deploy-connectfour-modular.js --network localhost
+
+
+
+-----
+
+
+npx hardhat verify --network arbitrum  
+
+npx hardhat verify --network arbitrum 0x05fF11E8440ffD9309724514eCa424B94c889Fff && npx hardhat verify --network arbitrum 0x9a67220ea3F428d318A3403157D7c31C8dBcee8E && npx hardhat verify --network arbitrum 0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B && npx hardhat verify --network arbitrum 0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5 && npx hardhat verify --network arbitrum 0x24B9Cdf557731a3EF154E212C9ead42A15647708 && npx hardhat verify --network arbitrum 0x092a20D91Af8BEcA18BA195b112401Be267A175a
+
+npx hardhat verify --network arbitrum 0xf8797f178130AD4125fD054C0621c809de178644 "0x05fF11E8440ffD9309724514eCa424B94c889Fff" "0x9a67220ea3F428d318A3403157D7c31C8dBcee8E" "0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B" "0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5" "0x24B9Cdf557731a3EF154E212C9ead42A15647708" 
+                                                                                                    
+npx hardhat verify --network arbitrum 0x870ac029D3951359B4faA7a20A54a9397335639B "0x05fF11E8440ffD9309724514eCa424B94c889Fff" "0x9a67220ea3F428d318A3403157D7c31C8dBcee8E" "0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B" "0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5" "0x24B9Cdf557731a3EF154E212C9ead42A15647708" "0x092a20D91Af8BEcA18BA195b112401Be267A175a"
+
+
+npx hardhat verify --network arbitrum 0xb39e8f27D522C8AB4f9105123D1519a142598CA0 "0x05fF11E8440ffD9309724514eCa424B94c889Fff" "0x9a67220ea3F428d318A3403157D7c31C8dBcee8E" "0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B" "0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5" "0x24B9Cdf557731a3EF154E212C9ead42A15647708" 

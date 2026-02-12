@@ -1,15 +1,15 @@
 {
   "contractName": "TicTacChain",
-  "address": "0x490A897210177f3a9D9238d8034A62a595EE4819",
+  "address": "0x89464650B9987994222aE227303cd51dBC2d89B0",
   "network": "arbitrum",
   "chainId": "42161",
-  "deployedAt": "2026-01-25T02:46:53.694Z",
+  "deployedAt": "2026-02-07T00:49:00.835Z",
   "modules": {
-    "core": "0x39A403997c5A33508c0DB4b35DD6aCC8179D623c",
-    "matches": "0x2c6145aaa5D1c015e4Fa678F3aa9eBEf7889D8f5",
-    "prizes": "0xB15Ee6bB89Fb419aCCFBf05514ce7549e18d8c5b",
-    "raffle": "0x8a7255A5b9bfD237D522539DC276e459D7CA099e",
-    "escalation": "0x303aA52B6b1b984e2423225afE4dD4D4902EA507"
+    "core": "0x3C86Fd676574528321fd47d21658bCf066a38b76",
+    "matches": "0xfC3c8c7a3DC6E3a8025eAD0B1fb9e1347df30b6F",
+    "prizes": "0x48D4772B6273799Ece6bb7E41254F57e076a6eE3",
+    "raffle": "0xfA1B58c9AE68d29EF0aC239dAAdd13a149cb96f8",
+    "escalation": "0x59Cc2cB8FD70b9407a06082d976C7fa5eCC29178"
   },
   "abi": [
     {
@@ -47,55 +47,6 @@
       "inputs": [],
       "name": "ReentrancyGuardReentrantCall",
       "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "matchId",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "player1",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "player2",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isDraw",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum ETour_Base.CompletionReason",
-          "name": "reason",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "board",
-          "type": "uint256"
-        }
-      ],
-      "name": "MatchCompleted",
-      "type": "event"
     },
     {
       "anonymous": false,
@@ -739,19 +690,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "currentRaffleIndex",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "uint8",
@@ -1139,18 +1077,8 @@
               "type": "uint8"
             },
             {
-              "internalType": "bool",
-              "name": "isDraw",
-              "type": "bool"
-            },
-            {
               "internalType": "uint256",
               "name": "packedBoard",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "packedState",
               "type": "uint256"
             },
             {
@@ -1200,14 +1128,9 @@
       "name": "getRaffleInfo",
       "outputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint64",
           "name": "raffleIndex",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "isReady",
-          "type": "bool"
+          "type": "uint64"
         },
         {
           "internalType": "uint256",
@@ -1220,29 +1143,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
-          "name": "reserve",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "raffleAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "ownerShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "winnerShare",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
+          "internalType": "uint16",
           "name": "eligiblePlayerCount",
-          "type": "uint256"
+          "type": "uint16"
         }
       ],
       "stateMutability": "view",
@@ -1326,6 +1229,57 @@
           "internalType": "address",
           "name": "winner",
           "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tierId",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "instanceId",
+          "type": "uint8"
+        }
+      ],
+      "name": "getTournamentRecord",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "players",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "endTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "prizePool",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "winner",
+              "type": "address"
+            },
+            {
+              "internalType": "enum ETour_Base.CompletionReason",
+              "name": "completionReason",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct ETour_Base.TournamentRecord",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -1713,9 +1667,9 @@
           "type": "address"
         },
         {
-          "internalType": "uint256",
+          "internalType": "uint64",
           "name": "timestamp",
-          "type": "uint256"
+          "type": "uint64"
         },
         {
           "internalType": "uint256",
@@ -1726,21 +1680,45 @@
           "internalType": "address",
           "name": "winner",
           "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
         },
         {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "name": "recentInstances",
+      "outputs": [
+        {
           "internalType": "uint256",
-          "name": "winnerPrize",
+          "name": "endTime",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "protocolReserve",
+          "name": "prizePool",
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
-          "name": "ownerShare",
-          "type": "uint256"
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "internalType": "enum ETour_Base.CompletionReason",
+          "name": "completionReason",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1802,6 +1780,11 @@
         {
           "internalType": "uint8",
           "name": "drawCount",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "playerCount",
           "type": "uint8"
         }
       ],
@@ -1922,6 +1905,11 @@
           "internalType": "struct ETour_Base.EnrollmentTimeoutState",
           "name": "enrollmentTimeout",
           "type": "tuple"
+        },
+        {
+          "internalType": "uint8",
+          "name": "actualTotalRounds",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",

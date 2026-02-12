@@ -297,13 +297,18 @@ describe("Chess Fifty-Move Rule", function () {
             await chess.connect(whitePlayer).makeMove(tierId, instanceId, roundNumber, matchNumber, squares.f3, squares.g1, PieceType.None);
 
             // This returns to start for 3rd time - threefold repetition draw
-            const tx = await chess.connect(blackPlayer).makeMove(
+            await chess.connect(blackPlayer).makeMove(
                 tierId, instanceId, roundNumber, matchNumber,
                 squares.f6, squares.g8, PieceType.None
             );
 
-            await expect(tx).to.emit(chess, "MatchCompleted")
-                .withArgs(matchId, () => true, () => true, hre.ethers.ZeroAddress, true, 2, () => true);
+            // Verify match ended in draw by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await chess.connect(whitePlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            // CompletionReason.Draw = 2
+            expect(lastMatch.completionReason).to.equal(2);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should reset half-move clock on pawn move", async function () {

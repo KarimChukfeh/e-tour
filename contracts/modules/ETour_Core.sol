@@ -53,7 +53,7 @@ contract ETour_Core is ETour_Base {
         uint8 instanceCount,
         uint256 entryFee,
         TimeoutConfig memory timeouts
-    ) external {
+    ) external onlyDelegateCall {
         require(!_tierConfigs[tierId].initialized, "Tier already registered");
         require(playerCount >= 2, "Need at least 2 players");
         require(instanceCount >= 1, "Need at least 1 instance");
@@ -73,24 +73,8 @@ contract ETour_Core is ETour_Base {
         }
     }
 
-    /**
-     * @dev Register raffle threshold configuration
-     * EXACT COPY from ETour.sol lines 307-320
-     */
-    function registerRaffleThresholds(
-        uint256[] memory thresholds,
-        uint256 finalThreshold
-    ) external {
-        require(raffleThresholds.length == 0, "Raffle thresholds already registered");
-        require(finalThreshold > 0, "Final threshold must be greater than 0");
-
-        for (uint256 i = 0; i < thresholds.length; i++) {
-            require(thresholds[i] > 0, "Threshold must be greater than 0");
-            raffleThresholds.push(thresholds[i]);
-        }
-
-        raffleThresholdFinal = finalThreshold;
-    }
+    // REMOVED: registerRaffleThresholds() - Never called anywhere in codebase
+    // Raffle thresholds would need to be configured differently if needed
 
     // ============ Enrollment Functions ============
 
@@ -116,6 +100,9 @@ contract ETour_Core is ETour_Base {
             tournament.enrollmentTimeout.escalation2Start = tournament.enrollmentTimeout.escalation1Start + config.timeouts.enrollmentLevel2Delay;
             tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
             tournament.enrollmentTimeout.forfeitPool = 0;
+
+            // NOTE: Match data is cleared in resetTournamentAfterCompletion (below in this module)
+            // This prevents security vulnerabilities from stale match actions between tournaments
         }
 
         require(tournament.status == TournamentStatus.Enrolling, "Tournament not accepting enrollments");
@@ -173,7 +160,7 @@ contract ETour_Core is ETour_Base {
      * @dev Claim abandoned enrollment pool
      * EXACT COPY from ETour.sol lines 633-661
      */
-    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external {
+    function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -198,7 +185,12 @@ contract ETour_Core is ETour_Base {
 
         updateAbandonedEarnings(tierId, instanceId, msg.sender, claimAmount);
 
-        // NOTE: Tournament reset is handled by game contract after this function returns
+        // Mark tournament as completed with abandoned claim reason
+        tournament.status = TournamentStatus.Completed;
+        tournament.completionReason = CompletionReason.AbandonedTournamentClaimed;
+        tournament.winner = msg.sender;  // EL2 claimant is the winner
+
+        // NOTE: Tournament reset with recording is handled by game contract after this function returns
         // (nested delegatecall to MODULE_PRIZES doesn't work)
     }
 
@@ -206,7 +198,7 @@ contract ETour_Core is ETour_Base {
      * @dev Reset enrollment window for solo enrolled player
      * EXACT COPY from ETour.sol lines 670-706
      */
-    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external {
+    function resetEnrollmentWindow(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
         TierConfig storage config = _tierConfigs[tierId];
         require(config.initialized, "Invalid tier");
         require(instanceId < config.instanceCount, "Invalid instance");
@@ -267,19 +259,34 @@ contract ETour_Core is ETour_Base {
     /**
      * @dev Start tournament (handles solo winner case, delegates to Matches module for multi-player)
      * EXACT COPY from ETour.sol lines 831-867 with delegatecall to MODULE_MATCHES
+     * INTERNAL: Only called from enrollInTournament and forceStartTournament
      */
-    function startTournament(uint8 tierId, uint8 instanceId) public {
+    function startTournament(uint8 tierId, uint8 instanceId) internal {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
         tournament.status = TournamentStatus.InProgress;
         tournament.startTime = block.timestamp;
         tournament.currentRound = 0;
 
+        // Calculate actual rounds needed based on enrolled players, not tier max
+        // Use ceiling of log2 to handle odd numbers (e.g., 3 players needs 2 rounds, not 1)
+        uint8 playerCount = tournament.enrolledCount;
+        if (playerCount == 0) {
+            tournament.actualTotalRounds = 0;
+        } else if (playerCount == 1) {
+            tournament.actualTotalRounds = 0; // Solo player, no rounds needed
+        } else {
+            // Calculate ceil(log2(playerCount))
+            uint8 log2Floor = _log2(playerCount);
+            // Check if playerCount is a perfect power of 2
+            bool isPowerOf2 = (playerCount & (playerCount - 1)) == 0;
+            tournament.actualTotalRounds = isPowerOf2 ? log2Floor : log2Floor + 1;
+        }
 
         if (tournament.enrolledCount == 1) {
             address soloWinner = enrolledPlayers[tierId][instanceId][0];
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Completed;
-            tournament.completionReason = CompletionReason.NormalWin;
+            tournament.completionReason = CompletionReason.SoloEnrollForceStart;
             // Removed: Ranking assignment (no longer needed with winner-takes-all)
 
             uint256 winnersPot = tournament.prizePool;
@@ -320,13 +327,14 @@ contract ETour_Core is ETour_Base {
     /**
      * @dev Update earnings for abandoned enrollment claim
      * EXACT COPY from ETour.sol lines 2128-2142
+     * INTERNAL: Only called from claimAbandonedEnrollmentPool
      */
     function updateAbandonedEarnings(
         uint8 tierId,
         uint8 instanceId,
         address claimer,
         uint256 claimAmount
-    ) public {
+    ) internal {
         // Only track the claimer if they receive a claim amount
         // Enrolled players who abandoned don't receive anything, so don't track them
         if (claimAmount > 0) {
@@ -398,17 +406,7 @@ contract ETour_Core is ETour_Base {
 
     // ============ Additional Getters (Extracted from Game Contracts) ============
 
-    /**
-     * @dev Generate unique match identifier
-     */
-    function getMatchId(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) public pure returns (bytes32) {
-        return _getMatchId(tierId, instanceId, roundNumber, matchNumber);
-    }
+    // REMOVED: getMatchId() - Redundant wrapper around _getMatchId() from ETour_Base, never called
 
     /**
      * @dev Get full tier configuration struct
@@ -452,5 +450,123 @@ contract ETour_Core is ETour_Base {
             }
         }
         return totalPlayers;
+    }
+
+    // ============ Tournament Reset ============
+
+    /**
+     * @dev Reset tournament state after completion (with recording)
+     * MOVED from ETour_Prizes.sol - Tournament lifecycle belongs in Core module
+     * Records tournament completion in recentInstances before resetting
+     */
+    function resetTournamentAfterCompletion(
+        uint8 tierId,
+        uint8 instanceId,
+        address[] memory enrolledPlayersCopy
+    ) external onlyDelegateCall {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Record tournament completion in permanent storage BEFORE reset
+        TournamentRecord storage record = recentInstances[tierId][instanceId];
+        record.players = enrolledPlayersCopy;
+        record.endTime = block.timestamp;
+        record.prizePool = tournament.prizePool;
+        record.winner = tournament.winner;
+        record.completionReason = tournament.completionReason;
+
+        // Call internal reset logic
+        _resetTournamentInternal(tierId, instanceId);
+    }
+
+    /**
+     * @dev Reset tournament state without recording (for abandonment/single player)
+     * Used when tournament is abandoned or single player force start
+     */
+    function resetTournamentAfterCompletion(uint8 tierId, uint8 instanceId) external onlyDelegateCall {
+        _resetTournamentInternal(tierId, instanceId);
+    }
+
+    /**
+     * @dev Internal reset logic shared by both overloads
+     */
+    function _resetTournamentInternal(uint8 tierId, uint8 instanceId) private {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        TierConfig storage config = _tierConfigs[tierId];
+
+        // CRITICAL: Reset status FIRST before any other operations
+        tournament.status = TournamentStatus.Enrolling;
+
+        // Continue with other resets
+        tournament.currentRound = 0;
+        tournament.enrolledCount = 0;
+        tournament.prizePool = 0;
+        tournament.startTime = 0;
+        tournament.winner = address(0);
+        tournament.finalsWasDraw = false;
+        tournament.allDrawResolution = false;
+        tournament.allDrawRound = NO_ROUND;
+        tournament.completionReason = CompletionReason.NormalWin;
+
+        tournament.enrollmentTimeout.escalation1Start = 0;
+        tournament.enrollmentTimeout.escalation2Start = 0;
+        tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
+        tournament.enrollmentTimeout.forfeitPool = 0;
+
+        address[] storage players = enrolledPlayers[tierId][instanceId];
+
+        // Copy players array before deletion for tracking cleanup
+        address[] memory playersCopy = new address[](players.length);
+        for (uint256 i = 0; i < players.length; i++) {
+            playersCopy[i] = players[i];
+        }
+
+        for (uint256 i = 0; i < players.length; i++) {
+            address player = players[i];
+            isEnrolled[tierId][instanceId][player] = false;
+            // Note: playerPrizes is intentionally NOT deleted - it's permanent historical record
+        }
+        delete enrolledPlayers[tierId][instanceId];
+
+        // ARCHITECTURE: Finals are treated like any other match - no special preservation
+        // Historical data is available via events (MatchCreated, MatchCompleted)
+        // This prevents stale data persistence issues and simplifies the codebase
+
+        // CRITICAL SECURITY FIX: Clear ALL possible matches immediately on reset
+        // This prevents any stale match actions (moves, timeouts, ML2/ML3 claims)
+        // between tournament completion and next enrollment
+        //
+        // We must clear based on tier's max player count, not actual enrolled count,
+        // because force-started tournaments may have fewer players but still create
+        // matches in higher rounds (e.g., 2 players in 4-player tier advancing to finals)
+        for (uint8 roundNum = 0; roundNum < config.totalRounds; roundNum++) {
+            Round storage round = rounds[tierId][instanceId][roundNum];
+
+            // Calculate max possible matches for this round based on tier config
+            // Round 0: playerCount / 2, Round 1: playerCount / 4, etc.
+            uint8 maxMatchesForRound = config.playerCount / uint8(2 << roundNum);
+
+            // Clear ALL possible matches for this round
+            for (uint8 matchNum = 0; matchNum < maxMatchesForRound; matchNum++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, roundNum, matchNum);
+
+                // Clear drawParticipants for any players in this match
+                (address p1, address p2) = this._getMatchPlayers(matchId);
+                if (p1 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p1];
+                }
+                if (p2 != address(0)) {
+                    delete drawParticipants[tierId][instanceId][roundNum][matchNum][p2];
+                }
+
+                // Clear the match data itself
+                this._resetMatchGame(matchId);
+            }
+
+            // Reset round metadata
+            round.totalMatches = 0;
+            round.completedMatches = 0;
+            round.initialized = false;
+            round.drawCount = 0;
+        }
     }
 }

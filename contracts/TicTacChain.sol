@@ -94,14 +94,15 @@ contract TicTacChain is ETour_Base {
 
         // Initialize progressive raffle thresholds for TicTacChain
         // Lower thresholds than base ETour to make raffles more accessible
-        raffleThresholds.push(0.001 ether);
+        // Last threshold (1.0 ether) repeats for all future raffles
+        raffleThresholds.push(0.001 ether);  // Raffle #0
         raffleThresholds.push(0.005 ether);  // Raffle #1
-        raffleThresholds.push(0.02 ether);  // Raffle #2
-        raffleThresholds.push(0.05 ether);  // Raffle #3
-        raffleThresholds.push(0.25 ether);  // Raffle #4
-        raffleThresholds.push(0.5 ether);   // Raffle #5
-        raffleThresholds.push(0.75 ether);  // Raffle #6
-        raffleThresholdFinal = 1.0 ether;   // Raffle #7+
+        raffleThresholds.push(0.02 ether);   // Raffle #2
+        raffleThresholds.push(0.05 ether);   // Raffle #3
+        raffleThresholds.push(0.25 ether);   // Raffle #4
+        raffleThresholds.push(0.5 ether);    // Raffle #5
+        raffleThresholds.push(0.75 ether);   // Raffle #6
+        raffleThresholds.push(1.0 ether);    // Raffle #7+ (repeats)
     }
 
     /**
@@ -109,17 +110,29 @@ contract TicTacChain is ETour_Base {
      * Called when tournament starts or when advancing to next round
      */
     function initializeRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public override {
-        uint8 matchCount = getMatchCountForRound(tierId, instanceId, roundNumber);
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+
+        // Calculate playerCount for this round
+        uint8 playerCount;
+        if (roundNumber == 0) {
+            playerCount = tournament.enrolledCount;
+        } else {
+            Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
+            // Winners from matches + bye player if previous round had odd players
+            playerCount = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
+        }
+
+        uint8 matchCount = playerCount / 2;
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.totalMatches = matchCount;
         round.completedMatches = 0;
         round.initialized = true;
         round.drawCount = 0;
+        round.playerCount = playerCount;
 
         if (roundNumber == 0) {
             address[] storage players = enrolledPlayers[tierId][instanceId];
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
@@ -160,14 +173,14 @@ contract TicTacChain is ETour_Base {
      */
     function getMatchCountForRound(uint8 tierId, uint8 instanceId, uint8 roundNumber) public view returns (uint8) {
         TournamentInstance storage tournament = tournaments[tierId][instanceId];
-        uint8 playerCount = tournament.enrolledCount;
 
         if (roundNumber == 0) {
-            return playerCount / 2;
+            return tournament.enrolledCount / 2;
         }
 
         Round storage prevRound = rounds[tierId][instanceId][roundNumber - 1];
-        uint8 winnersFromPrevRound = prevRound.totalMatches - prevRound.drawCount;
+        // Winners from matches + bye player if previous round had odd players
+        uint8 winnersFromPrevRound = (prevRound.totalMatches - prevRound.drawCount) + (prevRound.playerCount % 2);
 
         return winnersFromPrevRound / 2;
     }
@@ -211,14 +224,20 @@ contract TicTacChain is ETour_Base {
      * @dev Claim abandoned enrollment pool - delegates to Core module
      */
     function claimAbandonedEnrollmentPool(uint8 tierId, uint8 instanceId) external nonReentrant {
+        // Save enrolled players before delegatecall modifies state
+        address[] memory enrolledPlayersCopy = new address[](enrolledPlayers[tierId][instanceId].length);
+        for (uint256 i = 0; i < enrolledPlayers[tierId][instanceId].length; i++) {
+            enrolledPlayersCopy[i] = enrolledPlayers[tierId][instanceId][i];
+        }
+
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("claimAbandonedEnrollmentPool(uint8,uint8)", tierId, instanceId)
         );
         require(success, "CAE");
 
         // Reset tournament after claiming abandoned pool (modules can't do nested delegatecalls)
-        (bool resetSuccess, ) = MODULE_PRIZES.delegatecall(
-            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8)", tierId, instanceId)
+        (bool resetSuccess, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("resetTournamentAfterCompletion(uint8,uint8,address[])", tierId, instanceId, enrolledPlayersCopy)
         );
         require(resetSuccess, "RT");
     }
@@ -264,9 +283,6 @@ contract TicTacChain is ETour_Base {
         // Create MatchRecords for both eliminated players
         _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
         _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.ForceElimination);
-
-        // Emit MatchCompleted event from game contract (triggering player wins)
-        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.ForceElimination, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -328,9 +344,6 @@ contract TicTacChain is ETour_Base {
         _addMatchRecord(originalPlayer1, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
         _addMatchRecord(originalPlayer2, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
         _addMatchRecord(msg.sender, m, tierId, instanceId, roundNumber, matchNumber, CompletionReason.Replacement);
-
-        // Emit MatchCompleted event from game contract (replacement player wins)
-        emit MatchCompleted(matchId, originalPlayer1, originalPlayer2, msg.sender, false, CompletionReason.Replacement, m.packedBoard);
 
         // Check if round is complete before consolidating
         Round storage round = rounds[tierId][instanceId][roundNumber];
@@ -438,13 +451,17 @@ contract TicTacChain is ETour_Base {
         matchData.startTime = block.timestamp;
         matchData.isDraw = false;
 
-        // Random starting player
+        // Improved randomness using multiple entropy sources
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
+            block.number,
+            tierId,
+            instanceId,
+            roundNumber,
+            matchNumber,
             player1,
-            player2,
-            matchId
+            player2
         )));
         matchData.currentTurn = (randomness % 2 == 0) ? player1 : player2;
         matchData.firstPlayer = matchData.currentTurn;
@@ -482,7 +499,8 @@ contract TicTacChain is ETour_Base {
         Match storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
+        // For draws, winner should always be address(0)
+        matchData.winner = isDraw ? address(0) : winner;
         matchData.isDraw = isDraw;
     }
 
@@ -539,14 +557,14 @@ contract TicTacChain is ETour_Base {
         matchData.isDraw = false;
         matchData.winner = address(0);
 
-        // Re-randomize starting player
+        // Improved randomness using multiple entropy sources
         uint256 randomness = uint256(keccak256(abi.encodePacked(
             block.prevrandao,
             block.timestamp,
-            matchData.player1,
-            matchData.player2,
+            block.number,
             matchId,
-            "replay"
+            matchData.player1,
+            matchData.player2
         )));
         matchData.currentTurn = (randomness % 2 == 0) ? matchData.player1 : matchData.player2;
         matchData.firstPlayer = matchData.currentTurn;
@@ -564,7 +582,8 @@ contract TicTacChain is ETour_Base {
         Match storage matchData = matches[matchId];
 
         matchData.status = MatchStatus.Completed;
-        matchData.winner = winner;
+        // For draws, winner should always be address(0)
+        matchData.winner = isDraw ? address(0) : winner;
         matchData.isDraw = isDraw;
 
         // Note: Caching is handled by _completeMatchInternal which calls the other overload
@@ -709,21 +728,5 @@ contract TicTacChain is ETour_Base {
         // Match not found in active storage - return empty data
         TicTacToeMatchData memory emptyData;
         return emptyData;
-    }
-
-    // ============ Game-Specific Overrides ============
-
-    /**
-     * @dev Emit MatchCompleted event with TicTacToe board data
-     * Implements abstract function from ETour_Base
-     */
-    function _emitMatchCompletedEvent(
-        bytes32 matchId,
-        address winner,
-        bool isDraw,
-        CompletionReason reason
-    ) internal override {
-        Match storage m = matches[matchId];
-        emit MatchCompleted(matchId, m.player1, m.player2, winner, isDraw, reason, m.packedBoard);
     }
 }

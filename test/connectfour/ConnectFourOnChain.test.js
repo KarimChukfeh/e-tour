@@ -257,20 +257,17 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 2);
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 2);
 
-            // Winning move - check event with winner address (isDraw = false)
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
-            const receipt = await tx.wait();
+            // Winning move
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 3);
 
-            // Find MatchCompleted event
-            const matchCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "MatchCompleted"
-            );
-            expect(matchCompletedEvent).to.not.be.undefined;
-
-            // Check winner and isDraw from event args
-            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
-            expect(winner).to.equal(firstPlayer.address);
-            expect(isDraw).to.be.false;
+            // Verify match completed with winner by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.winner).to.equal(firstPlayer.address);
+            // CompletionReason.NormalWin = 0 (not a draw)
+            expect(lastMatch.completionReason).to.equal(0);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
         it("Should detect vertical win", async function () {
@@ -284,17 +281,14 @@ describe("ConnectFourOnChain ETour Compatibility Tests", function () {
             await game.connect(secondPlayer).makeMove(tierId, instanceId, 0, 0, 1);
 
             // Winning move
-            const tx = await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
-            const receipt = await tx.wait();
+            await game.connect(firstPlayer).makeMove(tierId, instanceId, 0, 0, 0);
 
-            // Find MatchCompleted event
-            const matchCompletedEvent = receipt.logs.find(
-                log => log.fragment && log.fragment.name === "MatchCompleted"
-            );
-            expect(matchCompletedEvent).to.not.be.undefined;
-
-            const [matchId, player1, player2, winner, isDraw] = matchCompletedEvent.args;
-            expect(winner).to.equal(firstPlayer.address);
+            // Verify match completed with winner by checking player match history
+            // (Match data is cleared after tournament completes, but history is preserved)
+            const player1Matches = await game.connect(firstPlayer).getPlayerMatches();
+            const lastMatch = player1Matches[player1Matches.length - 1];
+            expect(lastMatch.winner).to.equal(firstPlayer.address);
+            expect(lastMatch.status).to.equal(2); // Completed
         });
 
     });

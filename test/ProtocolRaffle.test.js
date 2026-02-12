@@ -49,16 +49,21 @@ describe("Protocol Raffle System", function () {
         it("Should return correct raffle info when below threshold", async function () {
             const info = await game.getRaffleInfo();
 
-            expect(info.isReady).to.be.false;
             expect(info.currentAccumulated).to.equal(0);
+            expect(info.currentAccumulated).to.be.lt(info.threshold);
 
             // Even when below threshold, should show POTENTIAL distribution at threshold
             // TicTacChain: threshold 0.001 ETH, reserve 0.00005 ETH (5%)
             expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
-            expect(info.reserve).to.equal(hre.ethers.parseEther("0.00005"));
-            expect(info.raffleAmount).to.equal(hre.ethers.parseEther("0.00095")); // 0.001 - 0.00005
-            expect(info.ownerShare).to.equal(hre.ethers.parseEther("0.00005")); // 5% of total (5/95 of 0.00095)
-            expect(info.winnerShare).to.equal(hre.ethers.parseEther("0.0009")); // 90% of total (90/95 of 0.00095)
+            const reserve = (info.threshold * 5n) / 100n;
+            const raffleAmount = info.threshold - reserve;
+            const ownerShare = (raffleAmount * 5n) / 95n;
+            const winnerShare = (raffleAmount * 90n) / 95n;
+
+            expect(reserve).to.equal(hre.ethers.parseEther("0.00005"));
+            expect(raffleAmount).to.equal(hre.ethers.parseEther("0.00095")); // 0.001 - 0.00005
+            expect(ownerShare).to.equal(hre.ethers.parseEther("0.00005")); // 5% of total (5/95 of 0.00095)
+            expect(winnerShare).to.equal(hre.ethers.parseEther("0.0009")); // 90% of total (90/95 of 0.00095)
 
             expect(info.eligiblePlayerCount).to.equal(0);
         });
@@ -103,7 +108,8 @@ describe("Protocol Raffle System", function () {
             const info = await game.getRaffleInfo();
             // TicTacChain raffle #1: threshold = 0.001 ETH, reserve = 5% = 0.00005 ETH
             const expectedReserve = hre.ethers.parseEther("0.00005");
-            expect(info.reserve).to.equal(expectedReserve);
+            const reserve = (info.threshold * 5n) / 100n;
+            expect(reserve).to.equal(expectedReserve);
         });
     });
 

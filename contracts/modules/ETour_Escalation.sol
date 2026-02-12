@@ -49,7 +49,7 @@ contract ETour_Escalation is ETour_Base {
      * @dev Mark a match as stalled when timeout is claimable
      * EXACT COPY from ETour.sol lines 1669-1683
      */
-    function markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) external {
+    function markMatchStalled(bytes32 matchId, uint8 tierId, uint256 timeoutOccurredAt) external onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         if (!timeout.isStalled) {
             timeout.isStalled = true;
@@ -89,7 +89,7 @@ contract ETour_Escalation is ETour_Base {
      * @dev Clear escalation state for a match after it completes
      * EXACT COPY from ETour.sol lines 1696-1702
      */
-    function clearEscalationState(bytes32 matchId) external {
+    function clearEscalationState(bytes32 matchId) external onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         timeout.isStalled = false;
         timeout.escalation1Start = 0;
@@ -109,50 +109,8 @@ contract ETour_Escalation is ETour_Base {
         timeout.activeEscalation = EscalationLevel.None;
     }
 
-    /**
-     * @dev Check if a match should be marked as stalled and mark it if needed
-     * EXACT COPY from ETour.sol lines 1709-1748
-     */
-    function checkAndMarkStalled(
-        bytes32 matchId,
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        uint8 matchNumber
-    ) external returns (bool) {
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-
-        // If already marked as stalled, return true
-        if (timeout.isStalled) {
-            return true;
-        }
-
-        // Check if match is active
-        if (!this._isMatchActive(matchId)) {
-            return false;
-        }
-
-        // Get match common data to check status
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, tierId, instanceId, roundNumber, matchNumber);
-        if (matchData.status != MatchStatus.InProgress) {
-            return false;
-        }
-
-        // Check if current player has run out of time (using game-specific time bank logic)
-        if (this._hasCurrentPlayerTimedOut(matchId)) {
-            TierConfig storage config = _tierConfigs[tierId];
-
-            // Calculate when the timeout occurred for accurate escalation timing
-            // Timeout occurs at: lastMoveTime + currentPlayer's timeRemaining
-            uint256 timeoutOccurredAt = matchData.lastMoveTime + config.timeouts.matchTimePerPlayer;
-
-            // Mark as stalled with escalation timers starting from timeout occurrence
-            _markMatchStalled(matchId, tierId, timeoutOccurredAt);
-            return true;
-        }
-
-        return false;
-    }
+    // REMOVED: checkAndMarkStalled() external - Never called via delegatecall
+    // Only internal version _checkAndMarkStalled() is used
 
     /**
      * @dev Internal helper for checking and marking stalled
@@ -266,6 +224,10 @@ contract ETour_Escalation is ETour_Base {
         bool isAdvanced = _isPlayerInAdvancedRound(tierId, instanceId, roundNumber, msg.sender);
         require(!isAdvanced, "Advanced players cannot claim L3");
 
+        // Prevent players currently in an active match from claiming
+        bool inActiveMatch = _isPlayerInActiveMatch(tierId, instanceId, msg.sender);
+        require(!inActiveMatch, "Cannot claim while in active match");
+
         // Mark escalation level and complete match with replacement winner
         timeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
 
@@ -277,6 +239,40 @@ contract ETour_Escalation is ETour_Base {
 
     // Note: isPlayerInAdvancedRound() is now implemented in ETour_Base for direct storage access
     // The internal _isPlayerInAdvancedRound() helper below is still used within this module
+
+    /**
+     * @dev Internal helper for checking if player is currently in an active match
+     */
+    function _isPlayerInActiveMatch(
+        uint8 tierId,
+        uint8 instanceId,
+        address player
+    ) internal view returns (bool) {
+        TierConfig storage config = _tierConfigs[tierId];
+
+        // Check all rounds in this tournament
+        for (uint8 r = 0; r < config.totalRounds; r++) {
+            Round storage round = rounds[tierId][instanceId][r];
+            if (!round.initialized) continue;
+
+            // Check all matches in this round
+            for (uint8 m = 0; m < round.totalMatches; m++) {
+                bytes32 matchId = _getMatchId(tierId, instanceId, r, m);
+                (address p1, address p2) = this._getMatchPlayers(matchId);
+
+                // Check if player is in this match
+                if (p1 == player || p2 == player) {
+                    // Check if match is in progress
+                    (, , MatchStatus status) = this._getMatchResult(matchId);
+                    if (status == MatchStatus.InProgress) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     /**
      * @dev Internal helper for checking if player is in advanced round
@@ -346,12 +342,7 @@ contract ETour_Escalation is ETour_Base {
 
         this._completeMatchWithResult(matchId, address(0), false);
 
-        // Assign rankings directly
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
-
-
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
+        // Note: Ranking assignments removed (winner-takes-all distribution)
 
         Round storage round = rounds[tierId][instanceId][roundNumber];
         round.completedMatches++;
@@ -383,10 +374,7 @@ contract ETour_Escalation is ETour_Base {
 
         this._completeMatchWithResult(matchId, replacementPlayer, false);
 
-        // Assign rankings directly
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player1);
-        _assignRankingOnElimination(tierId, instanceId, roundNumber, player2);
-
+        // Note: Ranking assignments removed (winner-takes-all distribution)
 
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[tierId][instanceId][replacementPlayer]) {
@@ -396,10 +384,9 @@ contract ETour_Escalation is ETour_Base {
             tournament.enrolledCount++;
         }
 
-        // Note: MatchCompleted event is emitted by the game contract after this delegatecall
-
-        TierConfig storage config = _tierConfigs[tierId];
-        if (roundNumber < config.totalRounds - 1) {
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber < tournament.actualTotalRounds - 1) {
             // Advance winner inline
             _advanceWinnerToNextRound(tierId, instanceId, roundNumber, matchNumber, replacementPlayer);
         }
@@ -418,29 +405,8 @@ contract ETour_Escalation is ETour_Base {
         _clearEscalationState(matchId);
     }
 
-    /**
-     * @dev Assign ranking to player when eliminated (no-op with winner-takes-all)
-     */
-    function assignRankingOnElimination(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        address player
-    ) external {
-        // No-op: Rankings removed with winner-takes-all distribution
-    }
-
-    /**
-     * @dev Internal helper for assigning ranking on elimination (no-op with winner-takes-all)
-     */
-    function _assignRankingOnElimination(
-        uint8 tierId,
-        uint8 instanceId,
-        uint8 roundNumber,
-        address player
-    ) internal {
-        // No-op: Rankings removed with winner-takes-all distribution
-    }
+    // REMOVED: assignRankingOnElimination() and _assignRankingOnElimination()
+    // Both were no-ops since rankings were removed with winner-takes-all distribution
 
     // ============ Escalation Availability Helpers (Public View) ============
     // Note: All escalation view functions and claimTimeoutWin kept in ETour_Base
@@ -497,14 +463,14 @@ contract ETour_Escalation is ETour_Base {
         TierConfig storage config = _tierConfigs[tierId];
         Round storage round = rounds[tierId][instanceId][roundNumber];
 
+        TournamentInstance storage tournament = tournaments[tierId][instanceId];
 
         // Check if this is the final round
-        if (roundNumber == config.totalRounds - 1) {
+        // Use actualTotalRounds (based on enrolled players) not config.totalRounds (tier max)
+        if (roundNumber == tournament.actualTotalRounds - 1) {
             // Finals completed - check for winner
             bytes32 finalsMatchId = _getMatchId(tierId, instanceId, roundNumber, 0);
             (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
-
-            TournamentInstance storage tournament = tournaments[tierId][instanceId];
             if (!isDraw && winner != address(0)) {
                 // Check if this was an escalation-based win
                 MatchTimeoutState storage finalsTimeout = matchTimeouts[finalsMatchId];
@@ -549,10 +515,48 @@ contract ETour_Escalation is ETour_Base {
                 }
             }
 
-            // If only one winner, they win the tournament
-            if (winnersCount == 1 && lastWinner != address(0)) {
+            // Check for sole remaining player (either from matches or as bye)
+            // BUG FIX: Check if next round has any players (from walkovers)
+            // before declaring sole winner. This prevents premature tournament
+            // completion when walkover players are already in the next round.
+            uint8 nextRound = roundNumber + 1;
+            Round storage nextRoundStruct = rounds[tierId][instanceId][nextRound];
+
+            uint8 playersInNextRound = 0;
+            address solePlayerInNextRound = address(0);
+            if (nextRoundStruct.initialized) {
+                for (uint8 m = 0; m < nextRoundStruct.totalMatches; m++) {
+                    bytes32 nextMatchId = _getMatchId(tierId, instanceId, nextRound, m);
+                    (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                    if (p1 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = p1;
+                    }
+                    if (p2 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = p2;
+                    }
+                }
+                // Check for bye player (odd players in next round)
+                if (nextRoundStruct.playerCount % 2 == 1) {
+                    bytes32 byeMatchId = _getMatchId(tierId, instanceId, nextRound, nextRoundStruct.totalMatches);
+                    (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+                    if (byeP1 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = byeP1;
+                    }
+                    if (byeP2 != address(0)) {
+                        playersInNextRound++;
+                        solePlayerInNextRound = byeP2;
+                    }
+                }
+            }
+
+            // Complete tournament if exactly 1 player remains (either from matches or bye)
+            if ((winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0)) ||
+                (winnersCount == 0 && playersInNextRound == 1 && solePlayerInNextRound != address(0))) {
                 TournamentInstance storage tournament = tournaments[tierId][instanceId];
-                tournament.winner = lastWinner;
+                tournament.winner = winnersCount == 1 ? lastWinner : solePlayerInNextRound;
                 tournament.status = TournamentStatus.Completed;
                 tournament.completionReason = CompletionReason.NormalWin;
                 // Removed: Ranking assignment (no longer needed with winner-takes-all)
