@@ -463,6 +463,7 @@ contract ChessOnChain is ETour_Base {
         m.packedBoard = 0; m.packedState = 0;
         m.startTime = 0; m.lastMoveTime = 0;
         m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
+        m.moves = "";  // Clear move history
         // Increment nonce to invalidate any stale position counts
         ++_gameNonce[matchId];
     }

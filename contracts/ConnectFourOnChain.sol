@@ -547,6 +547,7 @@ contract ConnectFourOnChain is ETour_Base {
         matchData.lastMoveTime = 0;
         matchData.player1TimeRemaining = 0;
         matchData.player2TimeRemaining = 0;
+        matchData.moves = "";  // Clear move history
     }
 
     
