@@ -1,16 +1,16 @@
 {
   "contractName": "ChessOnChain",
-  "address": "0x81bb603C84aFE5817d85Fe5D3fd1Dcf606Ff566D",
+  "address": "0xDD730f00973389DfB1e669c8E024166C96dc1a7d",
   "network": "arbitrum",
   "chainId": "42161",
-  "deployedAt": "2026-02-07T00:49:11.088Z",
+  "deployedAt": "2026-02-21T13:26:34.878Z",
   "modules": {
-    "core": "0x3C86Fd676574528321fd47d21658bCf066a38b76",
-    "matches": "0xfC3c8c7a3DC6E3a8025eAD0B1fb9e1347df30b6F",
-    "prizes": "0x48D4772B6273799Ece6bb7E41254F57e076a6eE3",
-    "raffle": "0xfA1B58c9AE68d29EF0aC239dAAdd13a149cb96f8",
-    "escalation": "0x59Cc2cB8FD70b9407a06082d976C7fa5eCC29178",
-    "chessRules": "0x2C48FFB461Cb603351FC903F582329eECf05BF33"
+    "core": "0xc39985E520bDcB6c551591a0afE9B76b4B4EEED4",
+    "matches": "0xa6e29A8C842AC39416be48Ca26F5274b87FB2118",
+    "prizes": "0x93A4524571AEBCf81e443D8707E8DbDB6Db3C73C",
+    "raffle": "0xd64CC3B13f71E1D357F83F8A9433D0B31fa28973",
+    "escalation": "0x9B59380DDA483F21B6c0E8E778e3ACF47D9E5462",
+    "chessRules": "0x1CB99D88175f015fB1299B359AFD14f229267921"
   },
   "abi": [
     {
