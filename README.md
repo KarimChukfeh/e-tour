@@ -1497,6 +1497,6 @@ npx hardhat verify --network arbitrum 0xb39e8f27D522C8AB4f9105123D1519a142598CA0
 ---
 npx hardhat compile --config v2/hardhat.config.js   
 
-npx hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost         
-npx hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost         
-npx hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost         
+npx hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost --force      
+npx hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost --force        
+npx hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost --force        

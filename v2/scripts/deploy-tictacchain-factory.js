@@ -14,7 +14,7 @@ import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 const DEPLOYMENTS_DIR = "./v2/deployments";
 
 async function main() {
-    const force = process.argv.includes("--force");
+    const force = process.env.FORCE === "1";
 
     const [deployer] = await hre.ethers.getSigners();
     const network = hre.network.name;

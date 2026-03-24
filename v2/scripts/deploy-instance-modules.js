@@ -106,7 +106,7 @@ export async function deployInstanceModules() {
 // ── Standalone entrypoint ─────────────────────────────────────────────────────
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-    const force = process.argv.includes("--force");
+    const force = process.env.FORCE === "1";
 
     getOrDeployInstanceModules(force)
         .then((addrs) => {
