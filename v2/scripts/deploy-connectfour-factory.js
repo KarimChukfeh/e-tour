@@ -11,7 +11,7 @@ import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 
-const DEPLOYMENTS_DIR = "./deployments";
+const DEPLOYMENTS_DIR = "./v2/deployments";
 
 async function main() {
     const force = process.argv.includes("--force");
@@ -36,7 +36,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ConnectFourFactory...");
     console.log("=".repeat(60));
-    const C4Factory = await hre.ethers.getContractFactory("ConnectFourFactory");
+    const C4Factory = await hre.ethers.getContractFactory("contracts/ConnectFourFactory.sol:ConnectFourFactory");
     const factory = await C4Factory.deploy(
         modules.core,
         modules.matches,
@@ -82,8 +82,8 @@ async function main() {
 
     // ABI file with addresses — drop-in for frontend
     const [factoryArt, instanceArt] = await Promise.all([
-        hre.artifacts.readArtifact("ConnectFourFactory"),
-        hre.artifacts.readArtifact("ConnectFourInstance"),
+        hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
+        hre.artifacts.readArtifact("contracts/ConnectFourInstance.sol:ConnectFourInstance"),
     ]);
 
     const abiFile = path.join(DEPLOYMENTS_DIR, "ConnectFourFactory-ABI.json");

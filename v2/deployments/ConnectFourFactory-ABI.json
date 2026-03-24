@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-24T04:06:47.608Z",
+  "deployedAt": "2026-03-24T04:07:01.626Z",
   "modules": {
     "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -9,7 +9,7 @@
     "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "factory": {
-    "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
     "abi": [
       {
         "inputs": [
@@ -1033,8 +1033,18 @@
     ]
   },
   "instance": {
-    "address": "0x3B02fF1e626Ed7a8fd6eC5299e2C54e1421B626B",
+    "address": "0x8aCd85898458400f7Db866d53FCFF6f0D49741FF",
     "abi": [
+      {
+        "inputs": [],
+        "name": "ColumnFull",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidColumn",
+        "type": "error"
+      },
       {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
@@ -1095,7 +1105,13 @@
           {
             "indexed": false,
             "internalType": "uint8",
-            "name": "cellIndex",
+            "name": "column",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "row",
             "type": "uint8"
           }
         ],
@@ -1762,9 +1778,9 @@
         "name": "getBoard",
         "outputs": [
           {
-            "internalType": "uint8[9]",
+            "internalType": "uint8[42]",
             "name": "board",
-            "type": "uint8[9]"
+            "type": "uint8[42]"
           }
         ],
         "stateMutability": "view",
@@ -2214,7 +2230,7 @@
           },
           {
             "internalType": "uint8",
-            "name": "cellIndex",
+            "name": "column",
             "type": "uint8"
           }
         ],

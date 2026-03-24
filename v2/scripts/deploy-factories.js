@@ -2,7 +2,7 @@
 // Deploy all three ETour factory contracts:
 //   TicTacChainFactory, ConnectFourFactory, ChessOnChainFactory
 //
-// Requires instance modules already deployed (reads from deployments/instance-modules.json).
+// Requires instance modules already deployed (reads from v2/deployments/instance-modules.json).
 // Run deploy-instance-modules.js first, or use deploy-all-factory.js to do both.
 //
 // Usage:
@@ -14,7 +14,7 @@ import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 
-const DEPLOYMENT_FILE = "./deployments/factories.json";
+const DEPLOYMENT_FILE = "./v2/deployments/factories.json";
 
 function loadExistingFactories() {
     if (fs.existsSync(DEPLOYMENT_FILE)) {
@@ -25,7 +25,7 @@ function loadExistingFactories() {
 }
 
 function saveFactories(data) {
-    const dir = "./deployments";
+    const dir = "./v2/deployments";
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(DEPLOYMENT_FILE, JSON.stringify(data, null, 2));
     console.log("💾 Factory addresses saved to:", DEPLOYMENT_FILE);
@@ -54,7 +54,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessRulesModule...");
     console.log("=".repeat(60));
-    const ChessRules = await hre.ethers.getContractFactory("ChessRulesModule");
+    const ChessRules = await hre.ethers.getContractFactory("contracts/modules/ChessRulesModule.sol:ChessRulesModule");
     const chessRules = await ChessRules.deploy();
     await chessRules.waitForDeployment();
     const chessRulesAddr = await chessRules.getAddress();
@@ -65,7 +65,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying TicTacChainFactory...");
     console.log("=".repeat(60));
-    const TicTacFactory = await hre.ethers.getContractFactory("TicTacChainFactory");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const ticTacFactory = await TicTacFactory.deploy(
         modules.core,
         modules.matches,
@@ -83,7 +83,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ConnectFourFactory...");
     console.log("=".repeat(60));
-    const C4Factory = await hre.ethers.getContractFactory("ConnectFourFactory");
+    const C4Factory = await hre.ethers.getContractFactory("contracts/ConnectFourFactory.sol:ConnectFourFactory");
     const c4Factory = await C4Factory.deploy(
         modules.core,
         modules.matches,
@@ -101,7 +101,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessOnChainFactory...");
     console.log("=".repeat(60));
-    const ChessFactory = await hre.ethers.getContractFactory("ChessOnChainFactory");
+    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
     const chessFactory = await ChessFactory.deploy(
         modules.core,
         modules.matches,
@@ -148,16 +148,16 @@ async function main() {
     saveFactories(deployment);
 
     // Save combined ABI file for frontend
-    const abiDir = "./deployments";
+    const abiDir = "./v2/deployments";
     const [ticTacArt, c4Art, chessArt] = await Promise.all([
-        hre.artifacts.readArtifact("TicTacChainFactory"),
-        hre.artifacts.readArtifact("ConnectFourFactory"),
-        hre.artifacts.readArtifact("ChessOnChainFactory"),
+        hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
+        hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
+        hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
     ]);
     const [ticTacInstArt, c4InstArt, chessInstArt] = await Promise.all([
-        hre.artifacts.readArtifact("TicTacInstance"),
-        hre.artifacts.readArtifact("ConnectFourInstance"),
-        hre.artifacts.readArtifact("ChessInstance"),
+        hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
+        hre.artifacts.readArtifact("contracts/ConnectFourInstance.sol:ConnectFourInstance"),
+        hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
     ]);
 
     const abiFile = path.join(abiDir, "ETour-Factory-ABIs.json");

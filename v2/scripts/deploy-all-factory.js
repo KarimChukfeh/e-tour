@@ -36,7 +36,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessRulesModule...");
     console.log("=".repeat(60));
-    const ChessRules = await hre.ethers.getContractFactory("ChessRulesModule");
+    const ChessRules = await hre.ethers.getContractFactory("contracts/modules/ChessRulesModule.sol:ChessRulesModule");
     const chessRules = await ChessRules.deploy();
     await chessRules.waitForDeployment();
     const chessRulesAddr = await chessRules.getAddress();
@@ -47,7 +47,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying TicTacChainFactory...");
     console.log("=".repeat(60));
-    const TicTacFactory = await hre.ethers.getContractFactory("TicTacChainFactory");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const ticTacFactory = await TicTacFactory.deploy(
         modules.core, modules.matches, modules.prizes, modules.escalation
     );
@@ -62,7 +62,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ConnectFourFactory...");
     console.log("=".repeat(60));
-    const C4Factory = await hre.ethers.getContractFactory("ConnectFourFactory");
+    const C4Factory = await hre.ethers.getContractFactory("contracts/ConnectFourFactory.sol:ConnectFourFactory");
     const c4Factory = await C4Factory.deploy(
         modules.core, modules.matches, modules.prizes, modules.escalation
     );
@@ -77,7 +77,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessOnChainFactory...");
     console.log("=".repeat(60));
-    const ChessFactory = await hre.ethers.getContractFactory("ChessOnChainFactory");
+    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
     const chessFactory = await ChessFactory.deploy(
         modules.core, modules.matches, modules.prizes, modules.escalation, chessRulesAddr
     );
@@ -89,7 +89,7 @@ async function main() {
     console.log("");
 
     // ── Step 6: Save artifacts ────────────────────────────────────────────────
-    const deploymentsDir = "./deployments";
+    const deploymentsDir = "./v2/deployments";
     if (!fs.existsSync(deploymentsDir)) fs.mkdirSync(deploymentsDir, { recursive: true });
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();
@@ -126,12 +126,12 @@ async function main() {
 
     // ABI file for frontend
     const [ticTacArt, c4Art, chessArt, ticTacInstArt, c4InstArt, chessInstArt] = await Promise.all([
-        hre.artifacts.readArtifact("TicTacChainFactory"),
-        hre.artifacts.readArtifact("ConnectFourFactory"),
-        hre.artifacts.readArtifact("ChessOnChainFactory"),
-        hre.artifacts.readArtifact("TicTacInstance"),
-        hre.artifacts.readArtifact("ConnectFourInstance"),
-        hre.artifacts.readArtifact("ChessInstance"),
+        hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
+        hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
+        hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
+        hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
+        hre.artifacts.readArtifact("contracts/ConnectFourInstance.sol:ConnectFourInstance"),
+        hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
     ]);
 
     const abiFile = path.join(deploymentsDir, "ETour-Factory-ABIs.json");

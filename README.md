@@ -1493,3 +1493,10 @@ npx hardhat verify --network arbitrum 0x870ac029D3951359B4faA7a20A54a9397335639B
 
 
 npx hardhat verify --network arbitrum 0xb39e8f27D522C8AB4f9105123D1519a142598CA0 "0x05fF11E8440ffD9309724514eCa424B94c889Fff" "0x9a67220ea3F428d318A3403157D7c31C8dBcee8E" "0x54D7051DaFD5F5ec9FFe9b61131518ccC5eb774B" "0xc98E58D53C998648D8CF176938cc77fb9C6a7Bc5" "0x24B9Cdf557731a3EF154E212C9ead42A15647708" 
+
+---
+npx hardhat compile --config v2/hardhat.config.js   
+
+npx hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost         
+npx hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost         
+npx hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost         

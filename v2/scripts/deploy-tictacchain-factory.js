@@ -11,7 +11,7 @@ import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 
-const DEPLOYMENTS_DIR = "./deployments";
+const DEPLOYMENTS_DIR = "./v2/deployments";
 
 async function main() {
     const force = process.argv.includes("--force");
@@ -36,7 +36,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying TicTacChainFactory...");
     console.log("=".repeat(60));
-    const TicTacFactory = await hre.ethers.getContractFactory("TicTacChainFactory");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const factory = await TicTacFactory.deploy(
         modules.core,
         modules.matches,
@@ -82,8 +82,8 @@ async function main() {
 
     // ABI file with addresses — drop-in for frontend
     const [factoryArt, instanceArt] = await Promise.all([
-        hre.artifacts.readArtifact("TicTacChainFactory"),
-        hre.artifacts.readArtifact("TicTacInstance"),
+        hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
+        hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
     ]);
 
     const abiFile = path.join(DEPLOYMENTS_DIR, "TicTacChainFactory-ABI.json");

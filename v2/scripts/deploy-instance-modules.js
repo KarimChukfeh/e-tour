@@ -6,7 +6,7 @@ import hre from "hardhat";
 import fs from "fs";
 import path from "path";
 
-const DEPLOYMENT_FILE = "./deployments/instance-modules.json";
+const DEPLOYMENT_FILE = "./v2/deployments/instance-modules.json";
 
 export function loadExistingInstanceModules() {
     if (fs.existsSync(DEPLOYMENT_FILE)) {
@@ -19,7 +19,7 @@ export function loadExistingInstanceModules() {
 }
 
 export function saveInstanceModules(modules) {
-    const dir = "./deployments";
+    const dir = "./v2/deployments";
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     fs.writeFileSync(DEPLOYMENT_FILE, JSON.stringify({

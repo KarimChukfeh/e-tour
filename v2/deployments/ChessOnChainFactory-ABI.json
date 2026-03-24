@@ -1,15 +1,16 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-24T04:06:47.608Z",
+  "deployedAt": "2026-03-24T04:06:55.650Z",
   "modules": {
     "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "ETourInstance_Prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+    "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ChessRulesModule": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
   },
   "factory": {
-    "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
     "abi": [
       {
         "inputs": [
@@ -31,6 +32,11 @@
           {
             "internalType": "address",
             "name": "moduleEscalation",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "chessRules",
             "type": "address"
           }
         ],
@@ -253,6 +259,19 @@
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "CHESS_RULES",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -1033,7 +1052,7 @@
     ]
   },
   "instance": {
-    "address": "0x3B02fF1e626Ed7a8fd6eC5299e2C54e1421B626B",
+    "address": "0x94099942864EA81cCF197E9D71ac53310b1468D8",
     "abi": [
       {
         "inputs": [],
@@ -1095,7 +1114,13 @@
           {
             "indexed": false,
             "internalType": "uint8",
-            "name": "cellIndex",
+            "name": "from",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "to",
             "type": "uint8"
           }
         ],
@@ -1198,6 +1223,19 @@
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "CHESS_RULES",
+        "outputs": [
+          {
+            "internalType": "contract IChessRules",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -1762,9 +1800,14 @@
         "name": "getBoard",
         "outputs": [
           {
-            "internalType": "uint8[9]",
+            "internalType": "uint256",
             "name": "board",
-            "type": "uint8[9]"
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "state",
+            "type": "uint256"
           }
         ],
         "stateMutability": "view",
@@ -2099,6 +2142,113 @@
       {
         "inputs": [
           {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "playerCount",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "entryFee",
+                "type": "uint256"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "matchTimePerPlayer",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "timeIncrementPerMove",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "matchLevel2Delay",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "matchLevel3Delay",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "enrollmentWindow",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "enrollmentLevel2Delay",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct ETourInstance_Base.TimeoutConfig",
+                "name": "timeouts",
+                "type": "tuple"
+              },
+              {
+                "internalType": "uint8",
+                "name": "totalRounds",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "tierKey",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct ETourInstance_Base.TierConfig",
+            "name": "config_",
+            "type": "tuple"
+          },
+          {
+            "internalType": "address",
+            "name": "factory_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "moduleCore_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "moduleMatches_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "modulePrizes_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "moduleEscalation_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "chessRules_",
+            "type": "address"
+          }
+        ],
+        "name": "initializeChess",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
             "internalType": "uint8",
             "name": "roundNumber",
             "type": "uint8"
@@ -2214,7 +2364,17 @@
           },
           {
             "internalType": "uint8",
-            "name": "cellIndex",
+            "name": "from",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "to",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "promotion",
             "type": "uint8"
           }
         ],

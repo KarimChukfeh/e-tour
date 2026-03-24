@@ -11,7 +11,7 @@ import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 
-const DEPLOYMENTS_DIR = "./deployments";
+const DEPLOYMENTS_DIR = "./v2/deployments";
 
 async function main() {
     const force = process.argv.includes("--force");
@@ -36,7 +36,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessRulesModule...");
     console.log("=".repeat(60));
-    const ChessRules = await hre.ethers.getContractFactory("ChessRulesModule");
+    const ChessRules = await hre.ethers.getContractFactory("contracts/modules/ChessRulesModule.sol:ChessRulesModule");
     const chessRules = await ChessRules.deploy();
     await chessRules.waitForDeployment();
     const chessRulesAddr = await chessRules.getAddress();
@@ -47,7 +47,7 @@ async function main() {
     console.log("=".repeat(60));
     console.log("Deploying ChessOnChainFactory...");
     console.log("=".repeat(60));
-    const ChessFactory = await hre.ethers.getContractFactory("ChessOnChainFactory");
+    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
     const factory = await ChessFactory.deploy(
         modules.core,
         modules.matches,
@@ -95,8 +95,8 @@ async function main() {
 
     // ABI file with addresses — drop-in for frontend
     const [factoryArt, instanceArt] = await Promise.all([
-        hre.artifacts.readArtifact("ChessOnChainFactory"),
-        hre.artifacts.readArtifact("ChessInstance"),
+        hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
+        hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
     ]);
 
     const abiFile = path.join(DEPLOYMENTS_DIR, "ChessOnChainFactory-ABI.json");

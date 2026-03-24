@@ -4,14 +4,14 @@
   "description": "ETour factory/instance architecture (v2)",
   "type": "module",
   "scripts": {
-    "compile": "hardhat compile",
-    "test": "hardhat test",
-    "deploy:modules": "hardhat run scripts/deploy-instance-modules.js --network localhost",
-    "deploy:tictac": "hardhat run scripts/deploy-tictacchain-factory.js --network localhost",
-    "deploy:connectfour": "hardhat run scripts/deploy-connectfour-factory.js --network localhost",
-    "deploy:chess": "hardhat run scripts/deploy-chessonchain-factory.js --network localhost",
-    "deploy:factories": "hardhat run scripts/deploy-factories.js --network localhost",
-    "deploy:all": "hardhat run scripts/deploy-all-factory.js --network localhost"
+    "compile": "hardhat compile --config v2/hardhat.config.js",
+    "test": "hardhat test --config v2/hardhat.config.js",
+    "deploy:modules": "hardhat run v2/scripts/deploy-instance-modules.js --config v2/hardhat.config.js --network localhost",
+    "deploy:tictac": "hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:connectfour": "hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:chess": "hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:factories": "hardhat run v2/scripts/deploy-factories.js --config v2/hardhat.config.js --network localhost",
+    "deploy:all": "hardhat run v2/scripts/deploy-all-factory.js --config v2/hardhat.config.js --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
