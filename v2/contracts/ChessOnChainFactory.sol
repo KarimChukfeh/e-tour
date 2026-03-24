@@ -53,7 +53,8 @@ contract ChessOnChainFactory is ETourFactory {
         uint8 playerCount,
         uint256 entryFee,
         ETourInstance_Base.TimeoutConfig calldata timeouts
-    ) external override returns (address instance) {
+    ) external payable override returns (address instance) {
+        require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
         _validatePlayerCount(playerCount);
         _validateEntryFee(entryFee);
         _validateTimeouts(timeouts);
@@ -93,5 +94,8 @@ contract ChessOnChainFactory is ETourFactory {
         tierInstances[tierKey].push(instance);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
+
+        // Auto-enroll the creator on their behalf
+        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
     }
 }

@@ -30,7 +30,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
     function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
     function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
-    function initializeRound(uint8) public override { revert("Module stub"); }
+    function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Prize Distribution ============
 
@@ -38,7 +38,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
      * @dev Distribute prize to tournament winner (winner-takes-all).
      * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
      */
-    function distributePrizes(uint256 winnersPot)
+    function distributePrizes(uint256 winnersPot) payable
         external
         onlyDelegateCall
         returns (address[] memory winners, uint256[] memory prizes)
@@ -58,7 +58,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
      * @dev Distribute equal prizes to all remaining players (all-draw scenario).
      * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
      */
-    function distributeEqualPrizes(address[] memory remainingPlayers, uint256 winnersPot)
+    function distributeEqualPrizes(address[] memory remainingPlayers, uint256 winnersPot) payable
         external
         onlyDelegateCall
         returns (address[] memory winners, uint256[] memory prizes)

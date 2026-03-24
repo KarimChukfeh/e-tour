@@ -32,7 +32,7 @@ contract ETourInstance_Core is ETourInstance_Base {
     function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
     function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
-    function initializeRound(uint8) public override { revert("Module stub"); }
+    function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Enrollment ============
 
@@ -87,10 +87,58 @@ contract ETourInstance_Core is ETourInstance_Base {
     }
 
     /**
+     * @dev Enroll a specific player on their behalf.
+     * Called via delegatecall from ETourInstance_Base.enrollOnBehalf().
+     * Identical to coreEnroll() but uses the provided player address instead of msg.sender.
+     */
+    function coreEnrollOnBehalf(address player) external payable onlyDelegateCall {
+        require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
+        require(!isEnrolled[player], "Already enrolled");
+        require(tournament.enrolledCount < tierConfig.playerCount, "Instance full");
+        require(msg.value == tierConfig.entryFee, "Incorrect entry fee");
+
+        // Lazy-initialize enrollment timeout on first enrollment
+        if (tournament.enrolledCount == 0) {
+            tournament.enrollmentTimeout.escalation1Start =
+                block.timestamp + tierConfig.timeouts.enrollmentWindow;
+            tournament.enrollmentTimeout.escalation2Start =
+                tournament.enrollmentTimeout.escalation1Start +
+                tierConfig.timeouts.enrollmentLevel2Delay;
+            tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
+            tournament.enrollmentTimeout.forfeitPool = 0;
+        }
+
+        uint256 participantsShare = (msg.value * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
+        uint256 ownerShare = (msg.value * OWNER_SHARE_BPS) / BASIS_POINTS;
+        uint256 protocolShare = (msg.value * PROTOCOL_SHARE_BPS) / BASIS_POINTS;
+
+        tournament.enrollmentTimeout.forfeitPool += participantsShare;
+        tournament.prizePool += participantsShare;
+
+        (bool ownerOk, ) = payable(factory).call{value: ownerShare}(
+            abi.encodeWithSignature("receiveOwnerShare()")
+        );
+        require(ownerOk, "Owner fee transfer failed");
+
+        (bool protocolOk, ) = payable(factory).call{value: protocolShare}(
+            abi.encodeWithSignature("receiveProtocolShare()")
+        );
+        require(protocolOk, "Protocol fee transfer failed");
+
+        enrolledPlayers.push(player);
+        isEnrolled[player] = true;
+        tournament.enrolledCount++;
+
+        if (tournament.enrolledCount == tierConfig.playerCount) {
+            _startTournament();
+        }
+    }
+
+    /**
      * @dev Force start if enrollment window expired and caller is enrolled.
      * Called via delegatecall from ETourInstance_Base.forceStartTournament().
      */
-    function coreForceStart() external onlyDelegateCall {
+    function coreForceStart() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
         require(isEnrolled[msg.sender], "Not enrolled");
         require(
@@ -107,7 +155,7 @@ contract ETourInstance_Core is ETourInstance_Base {
      * @dev Claim abandoned enrollment pool (EL2).
      * Anyone can call after escalation2Start if pool is non-empty.
      */
-    function coreClaimAbandonedPool() external onlyDelegateCall {
+    function coreClaimAbandonedPool() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
         require(
             block.timestamp >= tournament.enrollmentTimeout.escalation2Start,

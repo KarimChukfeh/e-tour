@@ -151,7 +151,8 @@ contract ETourFactory is ReentrancyGuard {
         uint8 playerCount,
         uint256 entryFee,
         ETourInstance_Base.TimeoutConfig calldata timeouts
-    ) external virtual returns (address instance) {
+    ) external payable virtual returns (address instance) {
+        require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
         _validatePlayerCount(playerCount);
         _validateEntryFee(entryFee);
         _validateTimeouts(timeouts);
@@ -191,6 +192,9 @@ contract ETourFactory is ReentrancyGuard {
         tierInstances[tierKey].push(instance);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
+
+        // Auto-enroll the creator on their behalf
+        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
     }
 
     // ============ Player Registration (called by instances) ============

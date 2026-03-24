@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-24T04:07:01.626Z",
+  "deployedAt": "2026-03-24T09:38:44.096Z",
   "modules": {
     "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -9,7 +9,7 @@
     "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "factory": {
-    "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "abi": [
       {
         "inputs": [
@@ -446,7 +446,7 @@
             "type": "address"
           }
         ],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {
@@ -1033,7 +1033,7 @@
     ]
   },
   "instance": {
-    "address": "0x8aCd85898458400f7Db866d53FCFF6f0D49741FF",
+    "address": "0xd8058efe0198ae9dD7D563e1b4938Dcbc86A1F81",
     "abi": [
       {
         "inputs": [],
@@ -1708,6 +1708,19 @@
       {
         "inputs": [
           {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          }
+        ],
+        "name": "enrollOnBehalf",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
@@ -2122,7 +2135,7 @@
         ],
         "name": "initializeRound",
         "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
       },
       {

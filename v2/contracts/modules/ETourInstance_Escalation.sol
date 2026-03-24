@@ -28,7 +28,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
     function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
     function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
     function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
-    function initializeRound(uint8) public override { revert("Module stub"); }
+    function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Match Stalling ============
 
@@ -36,7 +36,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
      * @dev Mark a match as stalled when timeout is claimable.
      * Called via delegatecall from ETourInstance_Base.claimTimeoutWin().
      */
-    function markMatchStalled(bytes32 matchId, uint256 timeoutOccurredAt) external onlyDelegateCall {
+    function markMatchStalled(bytes32 matchId, uint256 timeoutOccurredAt) external payable onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         if (!timeout.isStalled) {
             timeout.isStalled = true;
@@ -58,7 +58,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         }
     }
 
-    function clearEscalationState(bytes32 matchId) external onlyDelegateCall {
+    function clearEscalationState(bytes32 matchId) external payable onlyDelegateCall {
         _clearEscalationState(matchId);
     }
 

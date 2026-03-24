@@ -174,7 +174,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     address public MODULE_ESCALATION;
 
     // Delegatecall protection (same pattern as ETour_Base)
-    address private _self;
+    // immutable — burned into bytecode, not overwritten by delegatecall storage context
+    address internal immutable _self;
 
     // ============ Tier Configuration (set once at initialize) ============
 
@@ -206,6 +207,12 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     event MatchCompleted(address indexed instance, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
+    // ============ Constructor ============
+
+    constructor() {
+        _self = address(this);
+    }
+
     // ============ Initializer ============
 
     /**
@@ -223,7 +230,6 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     ) external {
         require(!_initialized, "Already initialized");
         _initialized = true;
-        _self = address(this);
 
         tierConfig = _tierConfig;
         factory = _factory;
@@ -438,11 +444,11 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         revert("ETourInstance_Base: must be implemented by game contract");
     }
 
-    function initializeRound(uint8 roundNumber) public virtual;
+    function initializeRound(uint8 roundNumber) public payable virtual;
 
     // ============ Public Enrollment ============
 
-    function enrollInTournament() external payable virtual notConcluded nonReentrant {
+    function enrollInTournament() external payable virtual notConcluded {
         TournamentStatus oldStatus = tournament.status;
 
         (bool success, ) = MODULE_CORE.delegatecall(
@@ -463,6 +469,34 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         }
 
         emit PlayerEnrolled(msg.sender, address(this));
+    }
+
+    /**
+     * @dev Enroll a specific player on their behalf. Only callable by the factory.
+     * Used by createInstance() to auto-enroll the creator without changing msg.sender context.
+     */
+    function enrollOnBehalf(address player) external payable notConcluded {
+        require(msg.sender == factory, "Only factory");
+        TournamentStatus oldStatus = tournament.status;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("coreEnrollOnBehalf(address)", player)
+        );
+        require(success, "Enrollment failed");
+
+        // Register player on factory for history tracking (best effort)
+        (bool regOk, ) = factory.call(
+            abi.encodeWithSignature("registerPlayer(address)", player)
+        );
+        regOk;
+
+        if (oldStatus == TournamentStatus.Enrolling &&
+            tournament.status == TournamentStatus.InProgress) {
+            initializeRound(0);
+            emit TournamentStarted(address(this), tournament.enrolledCount);
+        }
+
+        emit PlayerEnrolled(player, address(this));
     }
 
     function forceStartTournament() external virtual notConcluded {

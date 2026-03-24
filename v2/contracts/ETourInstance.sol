@@ -36,7 +36,7 @@ abstract contract ETourInstance is ETourInstance_Base {
      * @dev Initialize a round by delegating to the Matches module.
      * Called internally after tournament starts or a round completes.
      */
-    function initializeRound(uint8 roundNumber) public override {
+    function initializeRound(uint8 roundNumber) public payable override {
         (bool success, ) = MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature("initializeRound(uint8)", roundNumber)
         );

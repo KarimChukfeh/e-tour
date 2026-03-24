@@ -43,7 +43,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
      * @dev Initialize a new round with matches.
      * Called via delegatecall from the instance after tournament starts or round completes.
      */
-    function initializeRound(uint8 roundNumber) public override onlyDelegateCall {
+    function initializeRound(uint8 roundNumber) public payable override onlyDelegateCall {
         uint8 playerCount;
         if (roundNumber == 0) {
             playerCount = tournament.enrolledCount;
@@ -100,7 +100,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
         address winner,
         bool isDraw,
         CompletionReason reason
-    ) public onlyDelegateCall {
+    ) public payable onlyDelegateCall {
         if (!isDraw) {
             if (roundNumber < tournament.actualTotalRounds - 1) {
                 advanceWinner(roundNumber, matchNumber, winner);
@@ -125,7 +125,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
     // ============ Winner Advancement ============
 
-    function advanceWinner(uint8 roundNumber, uint8 matchNumber, address winner) public onlyDelegateCall {
+    function advanceWinner(uint8 roundNumber, uint8 matchNumber, address winner) public payable onlyDelegateCall {
         uint8 nextRound = roundNumber + 1;
         Round storage nextRoundData = rounds[nextRound];
         if (!nextRoundData.initialized) {
@@ -315,7 +315,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
         }
     }
 
-    function consolidateAndStartOddRound(uint8 completedRound) public onlyDelegateCall {
+    function consolidateAndStartOddRound(uint8 completedRound) public payable onlyDelegateCall {
         Round storage completedRoundStruct = rounds[completedRound];
         if (!completedRoundStruct.initialized) return;
 

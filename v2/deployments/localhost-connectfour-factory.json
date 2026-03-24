@@ -2,8 +2,8 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-03-24T04:07:01.626Z",
-  "blockNumber": 1473,
+  "timestamp": "2026-03-24T09:38:44.096Z",
+  "blockNumber": 14,
   "modules": {
     "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -11,9 +11,9 @@
     "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "factory": {
-    "ConnectFourFactory": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+    "ConnectFourFactory": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "implementation": {
-    "ConnectFourInstance": "0x8aCd85898458400f7Db866d53FCFF6f0D49741FF"
+    "ConnectFourInstance": "0xd8058efe0198ae9dD7D563e1b4938Dcbc86A1F81"
   }
 }
