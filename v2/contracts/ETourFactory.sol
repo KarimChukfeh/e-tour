@@ -371,8 +371,38 @@ contract ETourFactory is ReentrancyGuard {
     }
 
     function _validateTimeouts(ETourInstance_Base.TimeoutConfig calldata timeouts) internal pure {
-        if (timeouts.matchTimePerPlayer == 0) revert InvalidTimeoutConfig();
-        if (timeouts.enrollmentWindow == 0) revert InvalidTimeoutConfig();
+        // Validate enrollment window: 2, 5, 10, or 30 minutes
+        if (
+            timeouts.enrollmentWindow != 2 minutes &&
+            timeouts.enrollmentWindow != 5 minutes &&
+            timeouts.enrollmentWindow != 10 minutes &&
+            timeouts.enrollmentWindow != 30 minutes
+        ) {
+            revert InvalidTimeoutConfig();
+        }
+
+        // Validate time per player: 2, 5, 10, or 15 minutes
+        if (
+            timeouts.matchTimePerPlayer != 2 minutes &&
+            timeouts.matchTimePerPlayer != 5 minutes &&
+            timeouts.matchTimePerPlayer != 10 minutes &&
+            timeouts.matchTimePerPlayer != 15 minutes
+        ) {
+            revert InvalidTimeoutConfig();
+        }
+
+        // Validate increment time: 15 or 30 seconds
+        if (
+            timeouts.timeIncrementPerMove != 15 seconds &&
+            timeouts.timeIncrementPerMove != 30 seconds
+        ) {
+            revert InvalidTimeoutConfig();
+        }
+
+        // Other timeout values can be any non-zero value (set by factory/defaults)
+        if (timeouts.matchLevel2Delay == 0) revert InvalidTimeoutConfig();
+        if (timeouts.matchLevel3Delay == 0) revert InvalidTimeoutConfig();
+        if (timeouts.enrollmentLevel2Delay == 0) revert InvalidTimeoutConfig();
     }
 
     // ============ Internal: EIP-1167 Clone ============

@@ -63,30 +63,34 @@ async function deployFactory() {
 
 /**
  * Build a TimeoutConfig with generous defaults for testing.
- * All timeouts are long (1 hour) so they don't interfere with game-flow tests.
+ * Uses valid values that comply with factory validation:
+ * - enrollmentWindow: 2, 5, 10, or 30 minutes
+ * - matchTimePerPlayer: 2, 5, 10, or 15 minutes
+ * - timeIncrementPerMove: 15 or 30 seconds
  */
 function defaultTimeouts() {
     const ONE_HOUR = 3600n;
     return {
-        matchTimePerPlayer:    ONE_HOUR * 24n,  // 24 h per player
-        timeIncrementPerMove:  10n,             // +10 s after each move
+        matchTimePerPlayer:    15n * 60n,       // 15 minutes per player (valid option)
+        timeIncrementPerMove:  30n,             // 30 seconds after each move (valid option)
         matchLevel2Delay:      ONE_HOUR,
         matchLevel3Delay:      ONE_HOUR * 2n,
-        enrollmentWindow:      ONE_HOUR * 48n,  // 48 h to fill up
+        enrollmentWindow:      30n * 60n,       // 30 minutes to fill up (valid option)
         enrollmentLevel2Delay: ONE_HOUR * 24n,
     };
 }
 
 /**
  * Short timeouts for escalation/timeout tests.
+ * Uses valid values that comply with factory validation.
  */
 function shortTimeouts(overrides = {}) {
     return {
-        matchTimePerPlayer:    overrides.matchTimePerPlayer    ?? 30n,
-        timeIncrementPerMove:  overrides.timeIncrementPerMove  ?? 5n,
+        matchTimePerPlayer:    overrides.matchTimePerPlayer    ?? (2n * 60n),  // 2 minutes (valid)
+        timeIncrementPerMove:  overrides.timeIncrementPerMove  ?? 15n,         // 15 seconds (valid)
         matchLevel2Delay:      overrides.matchLevel2Delay      ?? 10n,
         matchLevel3Delay:      overrides.matchLevel3Delay      ?? 20n,
-        enrollmentWindow:      overrides.enrollmentWindow      ?? 30n,
+        enrollmentWindow:      overrides.enrollmentWindow      ?? (2n * 60n),  // 2 minutes (valid)
         enrollmentLevel2Delay: overrides.enrollmentLevel2Delay ?? 15n,
     };
 }
@@ -928,8 +932,8 @@ describe("TicTacInstance — time bank (Fischer clock)", function () {
     let factory, instance;
     let owner, p1;
     const ENTRY_FEE = hre.ethers.parseEther("0.001");
-    const MATCH_TIME = 120n; // 2 minutes per player
-    const INCREMENT  = 10n;  // +10s per move
+    const MATCH_TIME = 2n * 60n; // 2 minutes per player (valid)
+    const INCREMENT  = 15n;      // +15s per move (valid)
 
     before(async function () {
         [owner, p1] = await hre.ethers.getSigners();
@@ -937,7 +941,7 @@ describe("TicTacInstance — time bank (Fischer clock)", function () {
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
             timeIncrementPerMove: INCREMENT,
-            enrollmentWindow:     3600n,
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     3600n,
             matchLevel3Delay:     7200n,
         });
@@ -1002,15 +1006,15 @@ describe("TicTacInstance — timeout claim (claimTimeoutWin)", function () {
     let factory, instance;
     let owner, p1;
     const ENTRY_FEE = hre.ethers.parseEther("0.001");
-    const MATCH_TIME = 10n; // Very short: 10s per player
+    const MATCH_TIME = 2n * 60n; // 2 minutes per player (valid - shortest allowed)
 
     before(async function () {
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 0n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     5n,
             matchLevel3Delay:     10n,
         });
@@ -1059,7 +1063,7 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
     let factory, instance;
     let owner, p1, p2, p3;
     const ENTRY_FEE = hre.ethers.parseEther("0.002");
-    const MATCH_TIME     = 5n;  // very short
+    const MATCH_TIME     = 2n * 60n;  // 2 minutes (valid - shortest allowed)
     const L2_DELAY       = 5n;
 
     before(async function () {
@@ -1067,8 +1071,8 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 0n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     L2_DELAY,
             matchLevel3Delay:     L2_DELAY * 4n,
         });
@@ -1133,7 +1137,7 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
     let factory, instance;
     let owner, p1, p2, p3, outsider;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
-    const MATCH_TIME = 5n;
+    const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
     const L3_DELAY   = 10n;
 
     before(async function () {
@@ -1141,8 +1145,8 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 0n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     5n,
             matchLevel3Delay:     L3_DELAY,
         });
@@ -1188,7 +1192,7 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
     let factory, instance;
     let owner;
     const ENTRY_FEE          = hre.ethers.parseEther("0.002");
-    const ENROLLMENT_WINDOW  = 10n; // 10 seconds
+    const ENROLLMENT_WINDOW  = 2n * 60n; // 2 minutes (valid - shortest allowed)
 
     before(async function () {
         [owner] = await hre.ethers.getSigners();
@@ -1196,7 +1200,7 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
         const timeouts = shortTimeouts({
             enrollmentWindow:     ENROLLMENT_WINDOW,
             enrollmentLevel2Delay: 5n,
-            matchTimePerPlayer:   3600n,
+            matchTimePerPlayer:   15n * 60n, // 15 minutes (valid)
             matchLevel2Delay:     3600n,
             matchLevel3Delay:     7200n,
         });
@@ -1587,6 +1591,176 @@ describe("TicTacInstance — factory creation guardrails", function () {
             )
         ).to.be.reverted;
     });
+
+    // Timeout validation tests
+    it("rejects invalid enrollment window (3 minutes)", async function () {
+        const invalidTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 3n * 60n // 3 minutes (not allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.001"), invalidTimeouts,
+                { value: hre.ethers.parseEther("0.001") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("accepts valid enrollment window (2 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 2n * 60n // 2 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.001"), validTimeouts,
+                { value: hre.ethers.parseEther("0.001") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid enrollment window (5 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 5n * 60n // 5 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.002"), validTimeouts,
+                { value: hre.ethers.parseEther("0.002") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid enrollment window (10 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 10n * 60n // 10 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.003"), validTimeouts,
+                { value: hre.ethers.parseEther("0.003") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid enrollment window (30 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 30n * 60n // 30 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.004"), validTimeouts,
+                { value: hre.ethers.parseEther("0.004") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("rejects invalid time per player (3 minutes)", async function () {
+        const invalidTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 3n * 60n // 3 minutes (not allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.005"), invalidTimeouts,
+                { value: hre.ethers.parseEther("0.005") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("accepts valid time per player (2 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 2n * 60n // 2 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.006"), validTimeouts,
+                { value: hre.ethers.parseEther("0.006") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid time per player (5 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 5n * 60n // 5 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.007"), validTimeouts,
+                { value: hre.ethers.parseEther("0.007") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid time per player (10 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 10n * 60n // 10 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.008"), validTimeouts,
+                { value: hre.ethers.parseEther("0.008") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid time per player (15 minutes)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 15n * 60n // 15 minutes (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.009"), validTimeouts,
+                { value: hre.ethers.parseEther("0.009") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("rejects invalid increment time (10 seconds)", async function () {
+        const invalidTimeouts = {
+            ...defaultTimeouts(),
+            timeIncrementPerMove: 10n // 10 seconds (not allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.010"), invalidTimeouts,
+                { value: hre.ethers.parseEther("0.010") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("accepts valid increment time (15 seconds)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            timeIncrementPerMove: 15n // 15 seconds (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.011"), validTimeouts,
+                { value: hre.ethers.parseEther("0.011") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts valid increment time (30 seconds)", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            timeIncrementPerMove: 30n // 30 seconds (allowed)
+        };
+        await expect(
+            factory.connect(owner).createInstance(
+                2, hre.ethers.parseEther("0.012"), validTimeouts,
+                { value: hre.ethers.parseEther("0.012") }
+            )
+        ).to.not.be.reverted;
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1762,15 +1936,15 @@ describe("TicTacInstance — player activity: timeout win (ML1)", function () {
     let owner, p1;
     let winner, loser;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
-    const MATCH_TIME = 30n;
+    const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
 
     before(async function () {
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 5n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     60n,
             matchLevel3Delay:     120n,
         });
@@ -1885,7 +2059,7 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
     let owner, p1, p2, p3;
     let stalledP1, stalledP2;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
-    const MATCH_TIME = 5n;
+    const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
     const L2_DELAY   = 5n;
 
     before(async function () {
@@ -1893,8 +2067,8 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 0n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     L2_DELAY,
             matchLevel3Delay:     L2_DELAY * 4n,
         });
@@ -1955,7 +2129,7 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
     let owner, p1, p2, p3, outsider;
     let stalledP1, stalledP2;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
-    const MATCH_TIME = 5n;
+    const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
     const L3_DELAY   = 10n;
 
     before(async function () {
@@ -1963,8 +2137,8 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
         ({ factory } = await deployFactory());
         const timeouts = shortTimeouts({
             matchTimePerPlayer:   MATCH_TIME,
-            timeIncrementPerMove: 0n,
-            enrollmentWindow:     3600n,
+            timeIncrementPerMove: 15n, // 15 seconds (valid)
+            enrollmentWindow:     30n * 60n, // 30 minutes (valid)
             matchLevel2Delay:     5n,
             matchLevel3Delay:     L3_DELAY,
         });
@@ -2131,5 +2305,253 @@ describe("TicTacInstance — player activity: multi-round match tracking", funct
         expect(result.participated).to.be.false;
         expect(result.isWinner).to.be.false;
         expect(result.prizeWon).to.equal(0n);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Move History Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("TicTacInstance — move history tracking", function () {
+    this.timeout(60_000);
+    let factory, instance, owner, p1;
+    const ENTRY_FEE = hre.ethers.parseEther("0.001");
+
+    before(async function () {
+        [owner, p1] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+    });
+
+    describe("move history for ongoing match", function () {
+        it("should record single move correctly", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0");
+        });
+
+        it("should record multiple moves with comma separation", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 1);
+
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,1");
+        });
+
+        it("should track full game sequence in ongoing match", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 1);
+            await instance.connect(first).makeMove(0, 0, 4);
+            await instance.connect(second).makeMove(0, 0, 2);
+
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,1,4,2");
+        });
+
+        it("should preserve move order in ongoing match", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 1);
+            await instance.connect(first).makeMove(0, 0, 4);
+            await instance.connect(second).makeMove(0, 0, 8);
+
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,1,4,8");
+        });
+
+        it("should handle edge cell indices correctly", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 2);
+            await instance.connect(first).makeMove(0, 0, 6);
+            await instance.connect(second).makeMove(0, 0, 8);
+
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,2,6,8");
+        });
+    });
+
+    describe("move history for completed match", function () {
+        it("should preserve full move history after win", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            // Play a complete game to win (horizontal line: 0, 1, 2)
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            // Player 1: 0, 1, 2 (wins)
+            // Player 2: 3, 4
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 3);
+            await instance.connect(first).makeMove(0, 0, 1);
+            await instance.connect(second).makeMove(0, 0, 4);
+            await instance.connect(first).makeMove(0, 0, 2); // Winning move
+
+            // Verify match is completed
+            const detail = await instance.getMatch(0, 0);
+            expect(detail.status).to.equal(2); // Completed
+
+            // Verify move history is preserved
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,3,1,4,2");
+        });
+
+        it("should preserve full move history after draw", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            // Play a complete game to draw
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            // Draw sequence from playAndDraw helper
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 1);
+            await instance.connect(first).makeMove(0, 0, 2);
+            await instance.connect(second).makeMove(0, 0, 4);
+            await instance.connect(first).makeMove(0, 0, 3);
+            await instance.connect(second).makeMove(0, 0, 5);
+            await instance.connect(first).makeMove(0, 0, 7);
+            await instance.connect(second).makeMove(0, 0, 6);
+            await instance.connect(first).makeMove(0, 0, 8);  // Final move, draw
+
+            // Verify match is completed with draw
+            const detail = await instance.getMatch(0, 0);
+            expect(detail.status).to.equal(2); // Completed
+            expect(detail.isDraw).to.be.true;
+
+            // Verify all 9 moves are recorded
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,1,2,4,3,5,7,6,8");
+        });
+
+        it("should preserve move history after tournament conclusion", async function () {
+            instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+            // Complete the match quickly
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const matchData = await instance.matches(matchId);
+            const first = matchData.currentTurn === owner.address ? owner : p1;
+            const second = first === owner ? p1 : owner;
+
+            await instance.connect(first).makeMove(0, 0, 0);
+            await instance.connect(second).makeMove(0, 0, 3);
+            await instance.connect(first).makeMove(0, 0, 1);
+            await instance.connect(second).makeMove(0, 0, 4);
+            await instance.connect(first).makeMove(0, 0, 2); // Win
+
+            // Tournament should be concluded
+            const tournament = await instance.tournament();
+            expect(tournament.status).to.equal(2); // Concluded
+
+            // Move history should still be accessible
+            const moves = await instance.getMatchMoves(0, 0);
+            expect(moves).to.equal("0,3,1,4,2");
+        });
+
+        it("should track move history across multiple matches in tournament", async function () {
+            // Create 4-player tournament (2 rounds)
+            instance = await createInstance(factory, 4, ENTRY_FEE, owner, defaultTimeouts());
+
+            const [, , p2, p3] = await hre.ethers.getSigners();
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p3).enrollInTournament({ value: ENTRY_FEE });
+
+            // Complete match 0 (round 0)
+            const match0Id = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+            const match0Data = await instance.matches(match0Id);
+            const fp = match0Data.currentTurn === match0Data.player1 ? match0Data.player1 : match0Data.player2;
+            const sp = fp === match0Data.player1 ? match0Data.player2 : match0Data.player1;
+
+            const fpSigner = [owner, p1, p2, p3].find(s => s.address === fp);
+            const spSigner = [owner, p1, p2, p3].find(s => s.address === sp);
+
+            await instance.connect(fpSigner).makeMove(0, 0, 0);
+            await instance.connect(spSigner).makeMove(0, 0, 3);
+            await instance.connect(fpSigner).makeMove(0, 0, 1);
+            await instance.connect(spSigner).makeMove(0, 0, 4);
+            await instance.connect(fpSigner).makeMove(0, 0, 2); // Win
+
+            const match0Moves = await instance.getMatchMoves(0, 0);
+            expect(match0Moves).to.equal("0,3,1,4,2");
+
+            // Complete match 1 (round 0)
+            const match1Id = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 1]);
+            const match1Data = await instance.matches(match1Id);
+            const fp2 = match1Data.currentTurn === match1Data.player1 ? match1Data.player1 : match1Data.player2;
+            const sp2 = fp2 === match1Data.player1 ? match1Data.player2 : match1Data.player1;
+
+            const fp2Signer = [owner, p1, p2, p3].find(s => s.address === fp2);
+            const sp2Signer = [owner, p1, p2, p3].find(s => s.address === sp2);
+
+            await instance.connect(fp2Signer).makeMove(0, 1, 4);
+            await instance.connect(sp2Signer).makeMove(0, 1, 0);
+            await instance.connect(fp2Signer).makeMove(0, 1, 1);
+            await instance.connect(sp2Signer).makeMove(0, 1, 2);
+            await instance.connect(fp2Signer).makeMove(0, 1, 7); // Win
+
+            const match1Moves = await instance.getMatchMoves(0, 1);
+            expect(match1Moves).to.equal("4,0,1,2,7");
+
+            // Verify both match histories are independent
+            expect(match0Moves).to.not.equal(match1Moves);
+        });
+
+        it("should return empty string for match with no moves", async function () {
+            instance = await createInstance(factory, 4, ENTRY_FEE, owner, defaultTimeouts());
+
+            const [, , p2, p3] = await hre.ethers.getSigners();
+            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p3).enrollInTournament({ value: ENTRY_FEE });
+
+            // Check round 1, match 0 which hasn't been played yet
+            const moves = await instance.getMatchMoves(1, 0);
+            expect(moves).to.equal("");
+        });
     });
 });

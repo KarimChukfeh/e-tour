@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-25T09:34:53.571Z",
+  "deployedAt": "2026-03-25T10:47:42.271Z",
   "modules": {
     "ETourInstance_Core": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
     "ETourInstance_Matches": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
@@ -9,10 +9,10 @@
     "ETourInstance_Escalation": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2"
+    "PlayerRegistry": "0x2B0d36FACD61B71CC05ab8F3D2355ec3631C0dd5"
   },
   "factory": {
-    "address": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
+    "address": "0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d",
     "abi": [
       {
         "inputs": [
@@ -844,7 +844,7 @@
     ]
   },
   "instance": {
-    "address": "0x285BcEFFE7558b6c73Cb0632dA1497D81A2810eE",
+    "address": "0x782df4e02589470f7052428C9C879592FD4b0290",
     "abi": [
       {
         "inputs": [],
