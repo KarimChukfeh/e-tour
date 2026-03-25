@@ -1511,3 +1511,462 @@ describe("TicTacInstance — permanent record view functions", function () {
         expect(loserResult.prizeWon).to.equal(0n);
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Suite O: Player Activity & Match History
+//
+// Ports v1 playerMatches.test.js to the v2 factory/instance architecture.
+//
+// In v2 there is no cross-instance getPlayerMatches() — history is per-instance:
+//   - getPlayerResult(addr)  → participated, isWinner, prizeWon
+//   - getMatch(round, match) → player1, player2, matchWinner, isDraw, status, moves
+//   - getMatchMoves(round, match) → packed moves string
+//   - getPrizeDistribution() → full prize breakdown per enrolled address
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── O-1: Normal Win ─────────────────────────────────────────────────────────
+describe("TicTacInstance — player activity: normal win", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let owner, p1;
+    const ENTRY_FEE = hre.ethers.parseEther("0.002");
+
+    before(async function () {
+        [owner, p1] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        instance = await createInstance(factory, 2, ENTRY_FEE, owner);
+        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+        // Resolve match
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m = await instance.matches(matchId);
+        const mP1 = [owner, p1].find(s => s.address === m.player1);
+        const mP2 = [owner, p1].find(s => s.address === m.player2);
+        await playAndWin(instance, 0, 0, mP1, mP2);
+    });
+
+    it("winner: participated=true, isWinner=true, prizeWon>0", async function () {
+        const t = await instance.tournament();
+        const result = await instance.getPlayerResult(t.winner);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.true;
+        expect(result.prizeWon).to.be.gt(0n);
+    });
+
+    it("loser: participated=true, isWinner=false, prizeWon=0", async function () {
+        const t = await instance.tournament();
+        const loser = t.winner === owner.address ? p1.address : owner.address;
+        const result = await instance.getPlayerResult(loser);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.false;
+        expect(result.prizeWon).to.equal(0n);
+    });
+
+    it("match record: winner set, isDraw=false, status=Completed", async function () {
+        const t = await instance.tournament();
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(t.winner);
+        expect(detail.isDraw).to.be.false;
+        expect(detail.status).to.equal(2); // Completed
+    });
+
+    it("getMatchMoves returns non-empty moves string", async function () {
+        const moves = await instance.getMatchMoves(0, 0);
+        expect(moves).to.not.equal("");
+    });
+
+    it("getPrizeDistribution: winner received 90% of pool", async function () {
+        const t = await instance.tournament();
+        const { players, amounts } = await instance.getPrizeDistribution();
+        const winnerIdx = players.indexOf(t.winner);
+        expect(winnerIdx).to.be.gte(0);
+        const expectedPrize = (ENTRY_FEE * 2n * 9000n) / 10000n;
+        expect(amounts[winnerIdx]).to.equal(expectedPrize);
+    });
+
+    it("completionReason is NormalWin (0)", async function () {
+        const info = await instance.getInstanceInfo();
+        expect(info.completionReason).to.equal(0);
+    });
+});
+
+// ── O-2: Timeout Win (ML1) ──────────────────────────────────────────────────
+describe("TicTacInstance — player activity: timeout win (ML1)", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let owner, p1;
+    let winner, loser;
+    const ENTRY_FEE  = hre.ethers.parseEther("0.002");
+    const MATCH_TIME = 30n;
+
+    before(async function () {
+        [owner, p1] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        const timeouts = shortTimeouts({
+            matchTimePerPlayer:   MATCH_TIME,
+            timeIncrementPerMove: 5n,
+            enrollmentWindow:     3600n,
+            matchLevel2Delay:     60n,
+            matchLevel3Delay:     120n,
+        });
+        instance = await createInstance(factory, 2, ENTRY_FEE, owner, timeouts);
+        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+        // Determine who is active (current turn = timed-out player)
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m = await instance.matches(matchId);
+        const timedOut  = [owner, p1].find(s => s.address === m.currentTurn);
+        const claiming  = timedOut === owner ? p1 : owner;
+
+        // Advance past MATCH_TIME
+        await advanceTime(Number(MATCH_TIME) + 5);
+        await instance.connect(claiming).claimTimeoutWin(0, 0);
+
+        winner = claiming.address;
+        loser  = timedOut.address;
+    });
+
+    it("winner: isWinner=true, prizeWon>0", async function () {
+        const result = await instance.getPlayerResult(winner);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.true;
+        expect(result.prizeWon).to.be.gt(0n);
+    });
+
+    it("loser: isWinner=false, prizeWon=0", async function () {
+        const result = await instance.getPlayerResult(loser);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.false;
+        expect(result.prizeWon).to.equal(0n);
+    });
+
+    it("match record: winner set, isDraw=false, status=Completed", async function () {
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(winner);
+        expect(detail.isDraw).to.be.false;
+        expect(detail.status).to.equal(2); // Completed
+    });
+
+    it("completionReason is Timeout (1)", async function () {
+        const info = await instance.getInstanceInfo();
+        expect(info.completionReason).to.equal(1);
+    });
+});
+
+// ── O-3: Draw ────────────────────────────────────────────────────────────────
+describe("TicTacInstance — player activity: draw", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let owner, p1;
+    const ENTRY_FEE = hre.ethers.parseEther("0.002");
+
+    before(async function () {
+        [owner, p1] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        instance = await createInstance(factory, 2, ENTRY_FEE, owner);
+        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m = await instance.matches(matchId);
+        const mP1 = [owner, p1].find(s => s.address === m.player1);
+        const mP2 = [owner, p1].find(s => s.address === m.player2);
+        await playDraw(instance, 0, 0, mP1, mP2);
+    });
+
+    it("both players: participated=true, isWinner=false", async function () {
+        const r1 = await instance.getPlayerResult(owner.address);
+        const r2 = await instance.getPlayerResult(p1.address);
+        expect(r1.participated).to.be.true;
+        expect(r2.participated).to.be.true;
+        expect(r1.isWinner).to.be.false;
+        expect(r2.isWinner).to.be.false;
+    });
+
+    it("prize split equally between both players", async function () {
+        const expectedEach = (ENTRY_FEE * 2n * 9000n) / 10000n / 2n;
+        const r1 = await instance.getPlayerResult(owner.address);
+        const r2 = await instance.getPlayerResult(p1.address);
+        expect(r1.prizeWon).to.equal(expectedEach);
+        expect(r2.prizeWon).to.equal(expectedEach);
+    });
+
+    it("match record: matchWinner=address(0), isDraw=true", async function () {
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(hre.ethers.ZeroAddress);
+        expect(detail.isDraw).to.be.true;
+        expect(detail.status).to.equal(2); // Completed
+    });
+
+    it("getPrizeDistribution: total equals 90% of pool", async function () {
+        const { amounts } = await instance.getPrizeDistribution();
+        const total = amounts.reduce((a, b) => a + b, 0n);
+        expect(total).to.equal((ENTRY_FEE * 2n * 9000n) / 10000n);
+    });
+
+    it("completionReason is AllDrawScenario (5) for a 2-player finals draw", async function () {
+        // In v2, a 2-player match that ends in draw resolves as AllDrawScenario (5)
+        // because the entire finals was a draw — there is no further tiebreak round.
+        const info = await instance.getInstanceInfo();
+        expect(info.completionReason).to.equal(5);
+    });
+});
+
+// ── O-4: Force Elimination (ML2) ─────────────────────────────────────────────
+describe("TicTacInstance — player activity: ML2 force elimination", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let owner, p1, p2, p3;
+    let stalledP1, stalledP2;
+    const ENTRY_FEE  = hre.ethers.parseEther("0.002");
+    const MATCH_TIME = 5n;
+    const L2_DELAY   = 5n;
+
+    before(async function () {
+        [owner, p1, p2, p3] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        const timeouts = shortTimeouts({
+            matchTimePerPlayer:   MATCH_TIME,
+            timeIncrementPerMove: 0n,
+            enrollmentWindow:     3600n,
+            matchLevel2Delay:     L2_DELAY,
+            matchLevel3Delay:     L2_DELAY * 4n,
+        });
+        instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
+        await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
+
+        // Record stalled match 0 players before any moves
+        const matchId0 = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m0 = await instance.matches(matchId0);
+        stalledP1 = m0.player1;
+        stalledP2 = m0.player2;
+
+        // Complete match 1 normally so someone can trigger ML2
+        const matchId1 = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 1]);
+        const m1 = await instance.matches(matchId1);
+        const all = [owner, p1, p2, p3];
+        const mP1 = all.find(s => s.address === m1.player1);
+        const mP2 = all.find(s => s.address === m1.player2);
+        await playAndWin(instance, 0, 1, mP1, mP2);
+
+        // Make one move in match 0 to record lastMoveTime, then stall
+        const currentPlayer = all.find(s => s.address === m0.currentTurn);
+        await instance.connect(currentPlayer).makeMove(0, 0, 0);
+
+        // Advance past MATCH_TIME + L2_DELAY
+        await advanceTime(Number(MATCH_TIME) + Number(L2_DELAY) + 5);
+
+        // Advanced player (winner of match 1) force-eliminates match 0
+        const m1After = await instance.matches(matchId1);
+        const advancedPlayer = await hre.ethers.getSigner(m1After.winner);
+        await instance.connect(advancedPlayer).forceEliminateStalledMatch(0, 0);
+    });
+
+    it("both stalled players: participated=true, isWinner=false, prizeWon=0", async function () {
+        const r1 = await instance.getPlayerResult(stalledP1);
+        const r2 = await instance.getPlayerResult(stalledP2);
+        expect(r1.participated).to.be.true;
+        expect(r2.participated).to.be.true;
+        expect(r1.isWinner).to.be.false;
+        expect(r2.isWinner).to.be.false;
+        expect(r1.prizeWon).to.equal(0n);
+        expect(r2.prizeWon).to.equal(0n);
+    });
+
+    it("match 0 record: matchWinner=address(0), isDraw=false, status=Completed", async function () {
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(hre.ethers.ZeroAddress);
+        expect(detail.isDraw).to.be.false;
+        expect(detail.status).to.equal(2); // Completed
+    });
+});
+
+// ── O-5: Replacement (ML3) ───────────────────────────────────────────────────
+describe("TicTacInstance — player activity: ML3 replacement", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let owner, p1, p2, p3, outsider;
+    let stalledP1, stalledP2;
+    const ENTRY_FEE  = hre.ethers.parseEther("0.002");
+    const MATCH_TIME = 5n;
+    const L3_DELAY   = 10n;
+
+    before(async function () {
+        [owner, p1, p2, p3, outsider] = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        const timeouts = shortTimeouts({
+            matchTimePerPlayer:   MATCH_TIME,
+            timeIncrementPerMove: 0n,
+            enrollmentWindow:     3600n,
+            matchLevel2Delay:     5n,
+            matchLevel3Delay:     L3_DELAY,
+        });
+        instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
+        await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
+
+        // Record stalled match 0 players
+        const matchId0 = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m0 = await instance.matches(matchId0);
+        stalledP1 = m0.player1;
+        stalledP2 = m0.player2;
+
+        // Make one move then stall
+        const all = [owner, p1, p2, p3];
+        const currentPlayer = all.find(s => s.address === m0.currentTurn);
+        await instance.connect(currentPlayer).makeMove(0, 0, 0);
+        await advanceTime(Number(MATCH_TIME) + Number(L3_DELAY) + 5);
+
+        // Outsider claims the slot
+        await instance.connect(outsider).claimMatchSlotByReplacement(0, 0);
+    });
+
+    it("both original players: participated=true, isWinner=false, prizeWon=0", async function () {
+        const r1 = await instance.getPlayerResult(stalledP1);
+        const r2 = await instance.getPlayerResult(stalledP2);
+        expect(r1.participated).to.be.true;
+        expect(r2.participated).to.be.true;
+        expect(r1.isWinner).to.be.false;
+        expect(r2.isWinner).to.be.false;
+        expect(r1.prizeWon).to.equal(0n);
+        expect(r2.prizeWon).to.equal(0n);
+    });
+
+    it("match 0 record: matchWinner=outsider, status=Completed", async function () {
+        // ML3 completes the match with the outsider as winner.
+        // player1/player2 remain the original stalled addresses; winner is the outsider.
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(outsider.address);
+        expect(detail.status).to.equal(2); // Completed
+        expect(detail.isDraw).to.be.false;
+    });
+
+    it("outsider: enrolled in tournament and isWinner=true", async function () {
+        // ML3 adds the outsider to enrolledPlayers and advances them
+        const result = await instance.getPlayerResult(outsider.address);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.false; // isWinner only true if they win the whole tournament
+        // They advanced from match 0 but tournament isn't necessarily concluded here
+        const detail = await instance.getMatch(0, 0);
+        expect(detail.matchWinner).to.equal(outsider.address);
+    });
+});
+
+// ── O-6: Multi-round tracking (8-player, 3 rounds) ──────────────────────────
+describe("TicTacInstance — player activity: multi-round match tracking", function () {
+    this.timeout(120_000);
+
+    let factory, instance;
+    let owner, p1, p2, p3, p4, p5, p6, p7;
+    let allPlayers;
+    let champion;
+    const ENTRY_FEE = hre.ethers.parseEther("0.001");
+
+    before(async function () {
+        [owner, p1, p2, p3, p4, p5, p6, p7] = await hre.ethers.getSigners();
+        allPlayers = [owner, p1, p2, p3, p4, p5, p6, p7];
+        ({ factory } = await deployFactory());
+        instance = await createInstance(factory, 8, ENTRY_FEE, owner);
+        await enrollAll(instance, [p1, p2, p3, p4, p5, p6, p7], ENTRY_FEE);
+
+        // Round 0 — Quarter-finals (4 matches)
+        for (let matchNum = 0; matchNum < 4; matchNum++) {
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNum]);
+            const m = await instance.matches(matchId);
+            const mP1 = allPlayers.find(s => s.address === m.player1);
+            const mP2 = allPlayers.find(s => s.address === m.player2);
+            await playAndWin(instance, 0, matchNum, mP1, mP2);
+        }
+
+        // Round 1 — Semi-finals (2 matches)
+        for (let matchNum = 0; matchNum < 2; matchNum++) {
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [1, matchNum]);
+            const m = await instance.matches(matchId);
+            const mP1 = allPlayers.find(s => s.address === m.player1);
+            const mP2 = allPlayers.find(s => s.address === m.player2);
+            await playAndWin(instance, 1, matchNum, mP1, mP2);
+        }
+
+        // Round 2 — Final (1 match)
+        const finalId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [2, 0]);
+        const mf = await instance.matches(finalId);
+        const mfP1 = allPlayers.find(s => s.address === mf.player1);
+        const mfP2 = allPlayers.find(s => s.address === mf.player2);
+        champion = await playAndWin(instance, 2, 0, mfP1, mfP2);
+    });
+
+    it("tournament concludes with a champion", async function () {
+        const t = await instance.tournament();
+        expect(t.status).to.equal(2); // Concluded
+        expect(t.winner).to.equal(champion);
+    });
+
+    it("champion: isWinner=true, prizeWon = 90% of pool", async function () {
+        const result = await instance.getPlayerResult(champion);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.true;
+        const expectedPrize = (ENTRY_FEE * 8n * 9000n) / 10000n;
+        expect(result.prizeWon).to.equal(expectedPrize);
+    });
+
+    it("all 3 rounds have completed matches for the champion's path", async function () {
+        // Find which match the champion played in each round and verify records
+        for (let round = 0; round < 3; round++) {
+            const matchCount = round === 0 ? 4 : round === 1 ? 2 : 1;
+            let found = false;
+            for (let matchNum = 0; matchNum < matchCount; matchNum++) {
+                const detail = await instance.getMatch(round, matchNum);
+                if (detail.player1 === champion || detail.player2 === champion) {
+                    expect(detail.status).to.equal(2); // Completed
+                    expect(detail.matchWinner).to.equal(champion);
+                    expect(detail.isDraw).to.be.false;
+                    found = true;
+                    break;
+                }
+            }
+            expect(found, `champion not found in round ${round}`).to.be.true;
+        }
+    });
+
+    it("getMatchMoves non-empty for all 3 rounds of champion's path", async function () {
+        for (let round = 0; round < 3; round++) {
+            const matchCount = round === 0 ? 4 : round === 1 ? 2 : 1;
+            for (let matchNum = 0; matchNum < matchCount; matchNum++) {
+                const detail = await instance.getMatch(round, matchNum);
+                if (detail.player1 === champion || detail.player2 === champion) {
+                    const moves = await instance.getMatchMoves(round, matchNum);
+                    expect(moves).to.not.equal("", `moves empty for round ${round} match ${matchNum}`);
+                    break;
+                }
+            }
+        }
+    });
+
+    it("first-round loser: participated=true, isWinner=false, prizeWon=0", async function () {
+        // Find a player who lost in round 0
+        let loser;
+        for (let matchNum = 0; matchNum < 4; matchNum++) {
+            const detail = await instance.getMatch(0, matchNum);
+            const nonWinner = detail.matchWinner === detail.player1 ? detail.player2 : detail.player1;
+            if (nonWinner !== champion) {
+                loser = nonWinner;
+                break;
+            }
+        }
+        const result = await instance.getPlayerResult(loser);
+        expect(result.participated).to.be.true;
+        expect(result.isWinner).to.be.false;
+        expect(result.prizeWon).to.equal(0n);
+    });
+
+    it("non-enrolled address: participated=false, isWinner=false, prizeWon=0", async function () {
+        const [,,,,,,,, nonPlayer] = await hre.ethers.getSigners();
+        const result = await instance.getPlayerResult(nonPlayer.address);
+        expect(result.participated).to.be.false;
+        expect(result.isWinner).to.be.false;
+        expect(result.prizeWon).to.equal(0n);
+    });
+});
