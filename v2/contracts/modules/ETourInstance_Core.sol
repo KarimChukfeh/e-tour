@@ -62,20 +62,12 @@ contract ETourInstance_Core is ETourInstance_Base {
         uint256 ownerShare = (msg.value * OWNER_SHARE_BPS) / BASIS_POINTS;
         uint256 protocolShare = (msg.value * PROTOCOL_SHARE_BPS) / BASIS_POINTS;
 
-        tournament.enrollmentTimeout.forfeitPool += participantsShare;
+        // All fee buckets stay on the instance until conclusion.
+        // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
         tournament.prizePool += participantsShare;
-
-        // Owner share → factory (factory forwards to its owner)
-        (bool ownerOk, ) = payable(factory).call{value: ownerShare}(
-            abi.encodeWithSignature("receiveOwnerShare()")
-        );
-        require(ownerOk, "Owner fee transfer failed");
-
-        // Protocol share → factory (for raffle accumulation)
-        (bool protocolOk, ) = payable(factory).call{value: protocolShare}(
-            abi.encodeWithSignature("receiveProtocolShare()")
-        );
-        require(protocolOk, "Protocol fee transfer failed");
+        tournament.ownerAccrued += ownerShare;
+        tournament.protocolAccrued += protocolShare;
+        tournament.enrollmentTimeout.forfeitPool += msg.value;
 
         enrolledPlayers.push(msg.sender);
         isEnrolled[msg.sender] = true;
@@ -112,18 +104,12 @@ contract ETourInstance_Core is ETourInstance_Base {
         uint256 ownerShare = (msg.value * OWNER_SHARE_BPS) / BASIS_POINTS;
         uint256 protocolShare = (msg.value * PROTOCOL_SHARE_BPS) / BASIS_POINTS;
 
-        tournament.enrollmentTimeout.forfeitPool += participantsShare;
+        // All fee buckets stay on the instance until conclusion.
+        // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
         tournament.prizePool += participantsShare;
-
-        (bool ownerOk, ) = payable(factory).call{value: ownerShare}(
-            abi.encodeWithSignature("receiveOwnerShare()")
-        );
-        require(ownerOk, "Owner fee transfer failed");
-
-        (bool protocolOk, ) = payable(factory).call{value: protocolShare}(
-            abi.encodeWithSignature("receiveProtocolShare()")
-        );
-        require(protocolOk, "Protocol fee transfer failed");
+        tournament.ownerAccrued += ownerShare;
+        tournament.protocolAccrued += protocolShare;
+        tournament.enrollmentTimeout.forfeitPool += msg.value;
 
         enrolledPlayers.push(player);
         isEnrolled[player] = true;
@@ -198,18 +184,25 @@ contract ETourInstance_Core is ETourInstance_Base {
             tournament.status = TournamentStatus.Concluded;
             tournament.completionReason = CompletionReason.SoloEnrollForceStart;
 
-            uint256 winnersPot = tournament.prizePool;
-            playerPrizes[soloWinner] = winnersPot;
+            // Full 100% refund: prize pool + owner accrued + protocol accrued.
+            // Owner and protocol earn nothing — the tournament never ran.
+            uint256 refundAmount = tournament.prizePool
+                + tournament.ownerAccrued
+                + tournament.protocolAccrued;
 
-            if (winnersPot > 0) {
-                (bool sent, ) = payable(soloWinner).call{value: winnersPot}("");
+            // Zero out all buckets so _handleTournamentConclusion skips fee steps.
+            tournament.prizePool = 0;
+            tournament.ownerAccrued = 0;
+            tournament.protocolAccrued = 0;
+
+            playerPrizes[soloWinner] = refundAmount;
+
+            if (refundAmount > 0) {
+                (bool sent, ) = payable(soloWinner).call{value: refundAmount}("");
                 if (!sent) {
-                    // Fallback: send to factory protocol accumulator
-                    (bool fallbackOk, ) = payable(factory).call{value: winnersPot}(
-                        abi.encodeWithSignature("receiveProtocolShare()")
-                    );
-                    // Ignore fallback result — funds stay in contract if factory also fails
-                    fallbackOk;
+                    // Fallback: restore prize so rescueStuckFunds can recover it
+                    tournament.prizePool = refundAmount;
+                    playerPrizes[soloWinner] = refundAmount;
                 }
             }
             // Note: TournamentConcluded event is emitted by the instance after forceStartTournament returns

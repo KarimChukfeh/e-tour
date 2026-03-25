@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+/**
+ * @title IPlayerRegistry
+ * @dev Interface for the singleton PlayerRegistry. Used by game factories and instances.
+ */
+interface IPlayerRegistry {
+    /**
+     * @dev Called by a factory's registerPlayer() on enrollment.
+     * Deploys a PlayerProfile clone for the player if they don't have one yet,
+     * then records the enrollment on their profile.
+     * Only callable by authorized factories.
+     */
+    function recordEnrollment(
+        address player,
+        address instance,
+        uint8 gameType,
+        uint256 entryFee
+    ) external;
+
+    /**
+     * @dev Called by an instance inside _handleTournamentConclusion() for each enrolled player.
+     * Records the outcome on the player's profile (best-effort — callers should not revert on failure).
+     * Only callable by instances whose parent factory is authorized.
+     */
+    function recordResult(
+        address player,
+        address instance,
+        bool won,
+        uint256 prize
+    ) external;
+
+    /**
+     * @dev Returns the profile contract address for a player, or address(0) if none.
+     */
+    function getProfile(address player) external view returns (address);
+}

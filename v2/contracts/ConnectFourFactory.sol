@@ -7,16 +7,6 @@ import "./ConnectFourInstance.sol";
 /**
  * @title ConnectFourFactory
  * @dev Factory contract for Connect Four tournament instances.
- *
- * Inherits ETourFactory and sets:
- * - Implementation: ConnectFourInstance (deployed in constructor)
- * - Raffle thresholds specific to Connect Four
- *
- * Usage:
- * 1. Deploy shared modules (ETourInstance_Core, ETourInstance_Matches,
- *    ETourInstance_Prizes, ETourInstance_Escalation)
- * 2. Deploy ConnectFourFactory(moduleCore, moduleMatches, modulePrizes, moduleEscalation)
- * 3. Call createInstance(playerCount, entryFee, timeouts) to start tournaments
  */
 contract ConnectFourFactory is ETourFactory {
 
@@ -24,22 +14,18 @@ contract ConnectFourFactory is ETourFactory {
         address moduleCore,
         address moduleMatches,
         address modulePrizes,
-        address moduleEscalation
+        address moduleEscalation,
+        address playerRegistry
     ) ETourFactory(
-        address(new ConnectFourInstance()),  // deploy implementation inline
+        address(new ConnectFourInstance()),
         moduleCore,
         moduleMatches,
         modulePrizes,
-        moduleEscalation
-    ) {
-        // Progressive raffle thresholds (last repeats for all future raffles)
-        raffleThresholds.push(0.001 ether);  // Raffle #0
-        raffleThresholds.push(0.005 ether);  // Raffle #1
-        raffleThresholds.push(0.02 ether);   // Raffle #2
-        raffleThresholds.push(0.05 ether);   // Raffle #3
-        raffleThresholds.push(0.25 ether);   // Raffle #4
-        raffleThresholds.push(0.5 ether);    // Raffle #5
-        raffleThresholds.push(0.75 ether);   // Raffle #6
-        raffleThresholds.push(1.0 ether);    // Raffle #7+ (repeats)
+        moduleEscalation,
+        playerRegistry
+    ) { }
+
+    function _gameType() internal pure override returns (uint8) {
+        return 1;
     }
 }

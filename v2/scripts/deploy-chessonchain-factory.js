@@ -1,10 +1,9 @@
 // scripts/deploy-chessonchain-factory.js
-// Deploy ChessOnChainFactory (+ ChessRulesModule + instance modules if not already deployed).
+// Deploy ChessOnChainFactory (+ ChessRulesModule + PlayerRegistry + instance modules if not already deployed).
 //
 // Usage:
 //   npx hardhat run scripts/deploy-chessonchain-factory.js --network localhost
-//   npx hardhat run scripts/deploy-chessonchain-factory.js --network arbitrum
-//   npx hardhat run scripts/deploy-chessonchain-factory.js --network localhost --force
+//   REGISTRY=0x... npx hardhat run scripts/deploy-chessonchain-factory.js --network localhost
 
 import hre from "hardhat";
 import fs from "fs";
@@ -24,56 +23,65 @@ async function main() {
     console.log("ChessOnChainFactory Deployment");
     console.log("=".repeat(60));
     console.log("Deployer:", deployer.address);
-    console.log("Balance: ", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH");
     console.log("Network: ", network, `(chainId: ${chainId})`);
-    if (force) console.log("Mode:     FORCE (redeploying modules)");
     console.log("");
 
     // ── 1. Instance Modules ──────────────────────────────────────────────────
     const modules = await getOrDeployInstanceModules(force);
 
-    // ── 2. ChessRulesModule (game-specific, always redeployed) ───────────────
-    console.log("=".repeat(60));
+    // ── 2. ChessRulesModule ──────────────────────────────────────────────────
     console.log("Deploying ChessRulesModule...");
-    console.log("=".repeat(60));
     const ChessRules = await hre.ethers.getContractFactory("contracts/modules/ChessRulesModule.sol:ChessRulesModule");
     const chessRules = await ChessRules.deploy();
     await chessRules.waitForDeployment();
     const chessRulesAddr = await chessRules.getAddress();
-    console.log("✅ ChessRulesModule deployed to:", chessRulesAddr);
+    console.log("  ChessRulesModule:", chessRulesAddr);
     console.log("");
 
-    // ── 3. ChessOnChainFactory ───────────────────────────────────────────────
-    console.log("=".repeat(60));
+    // ── 3. PlayerProfile + PlayerRegistry ────────────────────────────────────
+    let registryAddr = process.env.REGISTRY;
+    if (registryAddr) {
+        console.log("Using existing PlayerRegistry:", registryAddr);
+    } else {
+        console.log("Deploying PlayerProfile + PlayerRegistry...");
+        const PlayerProfile = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
+        const profileImpl = await PlayerProfile.deploy();
+        await profileImpl.waitForDeployment();
+        const profileImplAddr = await profileImpl.getAddress();
+
+        const PlayerRegistry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
+        const registry = await PlayerRegistry.deploy(profileImplAddr);
+        await registry.waitForDeployment();
+        registryAddr = await registry.getAddress();
+        console.log("  PlayerProfile (impl):", profileImplAddr);
+        console.log("  PlayerRegistry:      ", registryAddr);
+    }
+    console.log("");
+
+    // ── 4. ChessOnChainFactory ───────────────────────────────────────────────
     console.log("Deploying ChessOnChainFactory...");
-    console.log("=".repeat(60));
     const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
     const factory = await ChessFactory.deploy(
-        modules.core,
-        modules.matches,
-        modules.prizes,
-        modules.escalation,
-        chessRulesAddr
+        modules.core, modules.matches, modules.prizes, modules.escalation, chessRulesAddr, registryAddr
     );
     await factory.waitForDeployment();
     const factoryAddr = await factory.getAddress();
     const implAddr    = await factory.implementation();
-    console.log("✅ ChessOnChainFactory deployed to:", factoryAddr);
-    console.log("   ChessInstance implementation:", implAddr);
+
+    const registry = await hre.ethers.getContractAt("contracts/PlayerRegistry.sol:PlayerRegistry", registryAddr);
+    await (await registry.authorizeFactory(factoryAddr)).wait();
+    console.log("  ChessOnChainFactory:", factoryAddr, "[authorized]");
+    console.log("  ChessInstance impl: ", implAddr);
     console.log("");
 
-    // ── 4. Save artifacts ────────────────────────────────────────────────────
+    // ── 5. Save artifacts ────────────────────────────────────────────────────
     if (!fs.existsSync(DEPLOYMENTS_DIR)) fs.mkdirSync(DEPLOYMENTS_DIR, { recursive: true });
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();
     const timestamp   = new Date().toISOString();
 
     const deployment = {
-        network,
-        chainId: chainId.toString(),
-        deployer: deployer.address,
-        timestamp,
-        blockNumber,
+        network, chainId: chainId.toString(), deployer: deployer.address, timestamp, blockNumber,
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
@@ -81,76 +89,34 @@ async function main() {
             ETourInstance_Escalation: modules.escalation,
             ChessRulesModule:         chessRulesAddr,
         },
-        factory: {
-            ChessOnChainFactory: factoryAddr,
-        },
-        implementation: {
-            ChessInstance: implAddr,
-        },
+        playerProfile: { PlayerRegistry: registryAddr },
+        factory: { ChessOnChainFactory: factoryAddr },
+        implementation: { ChessInstance: implAddr },
     };
 
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-chess-factory.json`);
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
-    console.log("💾 Deployment saved to:", deployFile);
 
-    // ABI file with addresses — drop-in for frontend
     const [factoryArt, instanceArt] = await Promise.all([
         hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
         hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
     ]);
-
     const abiFile = path.join(DEPLOYMENTS_DIR, "ChessOnChainFactory-ABI.json");
     fs.writeFileSync(abiFile, JSON.stringify({
-        network,
-        chainId: chainId.toString(),
-        deployedAt: timestamp,
+        network, chainId: chainId.toString(), deployedAt: timestamp,
         modules: deployment.modules,
+        playerProfile: deployment.playerProfile,
         factory:  { address: factoryAddr, abi: factoryArt.abi },
-        instance: { address: implAddr,    abi: instanceArt.abi },
+        instance: { address: implAddr,    abi: chessRulesAddr, instanceAbi: instanceArt.abi },
     }, null, 2));
-    console.log("💾 ABI file saved to:", abiFile);
-    console.log("");
 
-    // ── 5. Summary ───────────────────────────────────────────────────────────
-    console.log("=".repeat(60));
-    console.log("🎉 DEPLOYMENT COMPLETE");
-    console.log("=".repeat(60));
-    console.log("");
-    console.log("Network:", network, "| Block:", blockNumber);
-    console.log("");
-    console.log("📍 Instance Modules:");
-    console.log("  ETourInstance_Core:      ", modules.core);
-    console.log("  ETourInstance_Matches:   ", modules.matches);
-    console.log("  ETourInstance_Prizes:    ", modules.prizes);
-    console.log("  ETourInstance_Escalation:", modules.escalation);
-    console.log("  ChessRulesModule:        ", chessRulesAddr);
-    console.log("");
-    console.log("📍 Factory:");
-    console.log("  ChessOnChainFactory:", factoryAddr);
-    console.log("  ChessInstance impl: ", implAddr);
-    console.log("");
-    console.log("📁 Artifacts:");
-    console.log("  -", deployFile);
-    console.log("  -", abiFile);
-    console.log("");
-    console.log("🔗 Next step: factory.createInstance(playerCount, entryFee, timeouts)");
-    console.log("");
-    console.log("=".repeat(60));
-    console.log("Verification Commands:");
-    console.log("=".repeat(60));
+    console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
+    console.log("  Artifacts:", deployFile);
     const n = network;
-    console.log(`npx hardhat verify --network ${n} ${modules.core}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.matches}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.prizes}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.escalation}`);
     console.log(`npx hardhat verify --network ${n} ${chessRulesAddr}`);
-    console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${chessRulesAddr}"`);
-    console.log("");
+    console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${chessRulesAddr}" "${registryAddr}"`);
 }
 
 main()
     .then(() => process.exit(0))
-    .catch((err) => {
-        console.error("❌ Deployment failed:", err);
-        process.exit(1);
-    });
+    .catch((err) => { console.error("Deployment failed:", err); process.exit(1); });

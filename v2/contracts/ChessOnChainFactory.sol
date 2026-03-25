@@ -8,14 +8,8 @@ import "./ChessInstance.sol";
  * @title ChessOnChainFactory
  * @dev Factory contract for Chess tournament instances.
  *
- * Inherits ETourFactory and overrides createInstance() to also pass
- * the CHESS_RULES address to each newly deployed ChessInstance clone.
- *
- * Usage:
- * 1. Deploy shared modules (ETourInstance_Core, ETourInstance_Matches,
- *    ETourInstance_Prizes, ETourInstance_Escalation) + IChessRules implementation
- * 2. Deploy ChessOnChainFactory(moduleCore, moduleMatches, modulePrizes, moduleEscalation, chessRules)
- * 3. Call createInstance(playerCount, entryFee, timeouts) to start tournaments
+ * Overrides createInstance() to also pass the CHESS_RULES address to each
+ * newly deployed ChessInstance clone via initializeChess().
  */
 contract ChessOnChainFactory is ETourFactory {
 
@@ -26,24 +20,22 @@ contract ChessOnChainFactory is ETourFactory {
         address moduleMatches,
         address modulePrizes,
         address moduleEscalation,
-        address chessRules
+        address chessRules,
+        address playerRegistry
     ) ETourFactory(
-        address(new ChessInstance()),  // deploy implementation inline
+        address(new ChessInstance()),
         moduleCore,
         moduleMatches,
         modulePrizes,
-        moduleEscalation
+        moduleEscalation,
+        playerRegistry
     ) {
         require(chessRules != address(0), "CR");
         CHESS_RULES = chessRules;
+    }
 
-        // Progressive raffle thresholds (last repeats for all future raffles)
-        raffleThresholds.push(0.005 ether);  // Raffle #0
-        raffleThresholds.push(0.02 ether);   // Raffle #1
-        raffleThresholds.push(0.05 ether);   // Raffle #2
-        raffleThresholds.push(0.15 ether);   // Raffle #3
-        raffleThresholds.push(0.5 ether);    // Raffle #4
-        raffleThresholds.push(1.0 ether);    // Raffle #5+ (repeats)
+    function _gameType() internal pure override returns (uint8) {
+        return 2;
     }
 
     /**
@@ -74,10 +66,8 @@ contract ChessOnChainFactory is ETourFactory {
             tierKey: tierKey
         });
 
-        // Deploy EIP-1167 clone
         instance = _clone(implementation);
 
-        // Chess-specific initialization (sets CHESS_RULES + calls base initialize)
         ChessInstance(instance).initializeChess(
             instanceTierConfig,
             address(this),
@@ -89,13 +79,11 @@ contract ChessOnChainFactory is ETourFactory {
             CHESS_RULES
         );
 
-        // Track instance
         instances.push(instance);
         tierInstances[tierKey].push(instance);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
 
-        // Auto-enroll the creator on their behalf
         ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
     }
 }

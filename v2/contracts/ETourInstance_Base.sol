@@ -97,7 +97,9 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         TournamentStatus status;
         uint8 currentRound;
         uint8 enrolledCount;
-        uint256 prizePool;
+        uint256 prizePool;      // 90% of entry fees — distributed to winner(s)
+        uint256 ownerAccrued;   // 7.5% of entry fees — sent to factory at conclusion
+        uint256 protocolAccrued; // 2.5% of entry fees — raffled among players at conclusion
         uint256 startTime;
         uint256 createdAt;
         address winner;
@@ -206,6 +208,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     event TournamentConcluded(address indexed instance, address winner, CompletionReason reason);
     event MatchCompleted(address indexed instance, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw);
     event Transfer(address indexed from, address indexed to, uint256 value);
+    event TournamentRaffleAwarded(address indexed instance, address indexed winner, uint256 amount, bool transferred);
 
     // ============ Constructor ============
 
@@ -323,10 +326,17 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         address tournamentWinner = tournament.winner;
         uint256 winnersPot = tournament.prizePool;
 
+        // ── Step 1: Distribute prize pool (90%) to winner(s) ──────────────────
+        // Skip if prizePool is 0 — happens on EL1 solo force-start where the full
+        // refund was already sent and all buckets zeroed in _startTournament.
         address[] memory winners;
         uint256[] memory prizes;
 
-        if (tournament.allDrawResolution) {
+        if (winnersPot == 0) {
+            // EL1 solo force-start: refund already sent, nothing to distribute
+            winners = new address[](0);
+            prizes  = new uint256[](0);
+        } else if (tournament.allDrawResolution) {
             (bool ok, bytes memory ret) = MODULE_PRIZES.delegatecall(
                 abi.encodeWithSignature("distributeEqualPrizes(address[],uint256)",
                     enrolledPlayers, winnersPot)
@@ -360,6 +370,60 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         }
 
         emit TournamentConcluded(address(this), tournamentWinner, tournament.completionReason);
+
+        // ── Step 2: Send deferred owner share (7.5%) to factory ───────────────
+        // Always call receiveOwnerShare() even if ownerShare == 0 (EL1/EL2).
+        // The factory uses this call to move the instance from activeTournaments → pastTournaments.
+        uint256 ownerShare = tournament.ownerAccrued;
+        {
+            // Best-effort — failure leaves funds on instance for rescue
+            (bool _ownerOk, ) = factory.call{value: ownerShare}(
+                abi.encodeWithSignature("receiveOwnerShare()")
+            );
+            _ownerOk;
+        }
+
+        // ── Step 3: Profile callbacks — push result to each player's profile ──
+        // Best-effort: individual failures must never revert conclusion.
+        // Read PLAYER_REGISTRY from factory via low-level call to avoid circular import.
+        address reg;
+        {
+            (bool ok, bytes memory ret) = factory.staticcall(
+                abi.encodeWithSignature("PLAYER_REGISTRY()")
+            );
+            if (ok && ret.length >= 32) reg = abi.decode(ret, (address));
+        }
+        if (reg != address(0)) {
+            for (uint256 i = 0; i < enrolledPlayers.length; i++) {
+                address p = enrolledPlayers[i];
+                bool won = (tournament.winner == p);
+                uint256 prize = playerPrizes[p];
+                // 150k gas: registry call + profile SSTORE chain (cold slots ~20k each)
+                reg.call{gas: 150_000}(
+                    abi.encodeWithSignature(
+                        "recordResult(address,address,bool,uint256)",
+                        p, address(this), won, prize
+                    )
+                );
+            }
+        }
+
+        // ── Step 4: Per-tournament raffle — remaining balance (≈2.5%) ─────────
+        // address(this).balance now holds only the protocolAccrued (minus any
+        // gas costs from owner share send if that failed and left ETH here).
+        uint256 rafflePool = address(this).balance;
+        if (rafflePool > 0 && enrolledPlayers.length > 0) {
+            uint256 idx = uint256(keccak256(abi.encodePacked(
+                block.prevrandao,
+                block.timestamp,
+                block.number,
+                address(this),
+                tournament.enrolledCount
+            ))) % enrolledPlayers.length;
+            address raffleWinner = enrolledPlayers[idx];
+            (bool sent, ) = payable(raffleWinner).call{value: rafflePool}("");
+            emit TournamentRaffleAwarded(address(this), raffleWinner, rafflePool, sent);
+        }
     }
 
     // ============ Abstract Functions (implemented by game contracts) ============
@@ -456,9 +520,9 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         );
         require(success, "Enrollment failed");
 
-        // Register player on factory for history tracking (best effort)
+        // Register player on factory — routes to PlayerRegistry (best effort)
         (bool regOk, ) = factory.call(
-            abi.encodeWithSignature("registerPlayer(address)", msg.sender)
+            abi.encodeWithSignature("registerPlayer(address,uint256)", msg.sender, tierConfig.entryFee)
         );
         regOk; // intentionally ignore
 
@@ -484,9 +548,9 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         );
         require(success, "Enrollment failed");
 
-        // Register player on factory for history tracking (best effort)
+        // Register player on factory — routes to PlayerRegistry (best effort)
         (bool regOk, ) = factory.call(
-            abi.encodeWithSignature("registerPlayer(address)", player)
+            abi.encodeWithSignature("registerPlayer(address,uint256)", player, tierConfig.entryFee)
         );
         regOk;
 
@@ -519,6 +583,20 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         if (newStatus == TournamentStatus.Concluded) {
             _handleTournamentConclusion();
         }
+    }
+
+    /**
+     * @dev Rescue any ETH stuck on a concluded instance (e.g. failed raffle transfer).
+     * Only callable by the factory owner.
+     */
+    function rescueStuckFunds(address to) external {
+        (bool ok, bytes memory ret) = factory.staticcall(abi.encodeWithSignature("owner()"));
+        require(ok && abi.decode(ret, (address)) == msg.sender, "Not factory owner");
+        require(tournament.status == TournamentStatus.Concluded, "Not concluded");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "Nothing to rescue");
+        (bool sent, ) = payable(to).call{value: balance}("");
+        require(sent, "Transfer failed");
     }
 
     function claimAbandonedPool() external notConcluded {

@@ -34,6 +34,15 @@ async function deployFactory() {
             Escalation.deploy().then(c => c.waitForDeployment().then(() => c)),
         ]);
 
+    // Deploy PlayerProfile implementation + PlayerRegistry
+    const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
+    const profileImpl = await ProfileImpl.deploy();
+    await profileImpl.waitForDeployment();
+
+    const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
+    const registry = await Registry.deploy(await profileImpl.getAddress());
+    await registry.waitForDeployment();
+
     const Factory = await hre.ethers.getContractFactory(
         "contracts/TicTacChainFactory.sol:TicTacChainFactory"
     );
@@ -41,11 +50,15 @@ async function deployFactory() {
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
-        await moduleEscalation.getAddress()
+        await moduleEscalation.getAddress(),
+        await registry.getAddress()
     );
     await factory.waitForDeployment();
 
-    return { factory };
+    // Authorize factory on registry
+    await registry.authorizeFactory(await factory.getAddress());
+
+    return { factory, registry };
 }
 
 /**
@@ -285,21 +298,24 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             ).to.be.revertedWith("Enrollment failed");
         });
 
-        it("routes fees correctly on each enrollment", async function () {
-            // owner + p1 enrolled → 2 × entry fee routed through
-            const ownerBal = await factory.ownerBalance();
-            const protocolBal = await factory.accumulatedProtocolShare();
-
-            // 7.5% owner + 2.5% protocol of 0.002 ETH × 2 enrollments
-            const expectedOwner = (ENTRY_FEE * 2n * 750n) / 10000n;
-            const expectedProtocol = (ENTRY_FEE * 2n * 250n) / 10000n;
-            expect(ownerBal).to.equal(expectedOwner);
-            expect(protocolBal).to.equal(expectedProtocol);
+        it("routes fees correctly on each enrollment (deferred — held on instance)", async function () {
+            // With deferred fees, nothing is sent to the factory at enrollment time.
+            // All buckets accumulate on the instance.
+            const t = await instance.tournament();
+            // 2 enrollments (owner + p1)
+            const expectedPrize    = (ENTRY_FEE * 2n * 9000n) / 10000n;
+            const expectedOwner    = (ENTRY_FEE * 2n * 750n)  / 10000n;
+            const expectedProtocol = (ENTRY_FEE * 2n * 250n)  / 10000n;
+            expect(t.prizePool).to.equal(expectedPrize);
+            expect(t.ownerAccrued).to.equal(expectedOwner);
+            expect(t.protocolAccrued).to.equal(expectedProtocol);
+            // Factory ownerBalance is still 0 — owner share not forwarded yet
+            expect(await factory.ownerBalance()).to.equal(0n);
         });
 
-        it("registers the player on the factory", async function () {
-            const playerInstances = await factory.getPlayerInstances(p1.address);
-            expect(playerInstances).to.include(await instance.getAddress());
+        it("registers the player on the factory (profile created in registry)", async function () {
+            const profileAddr = await factory.getPlayerProfile(p1.address);
+            expect(profileAddr).to.not.equal(hre.ethers.ZeroAddress);
         });
 
         it("enrolls players 3 and 4 (still Enrolling after 3)", async function () {
@@ -501,18 +517,38 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             // owner auto-enrolled; enroll 3 more → 4 total
             instance = await createInstance(factory, PLAYER_COUNT, ENTRY_FEE, owner);
             await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
+
+            // Play through both rounds to trigger conclusion + deferred fee forwarding
+            const allPlayers = [owner, p1, p2, p3];
+            for (let matchNum = 0; matchNum < 2; matchNum++) {
+                const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNum]);
+                const m = await instance.matches(matchId);
+                const mP1 = allPlayers.find(s => s.address === m.player1);
+                const mP2 = allPlayers.find(s => s.address === m.player2);
+                await playAndWin(instance, 0, matchNum, mP1, mP2);
+            }
+            const finalMatchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [1, 0]);
+            const finalMatch = await instance.matches(finalMatchId);
+            const fP1 = allPlayers.find(s => s.address === finalMatch.player1);
+            const fP2 = allPlayers.find(s => s.address === finalMatch.player2);
+            await playAndWin(instance, 1, 0, fP1, fP2);
         });
 
-        it("factory accumulated correct owner balance (7.5% × 4 players)", async function () {
+        it("factory received correct owner balance (7.5% × 4 players) at conclusion", async function () {
+            // Deferred: owner share is forwarded at conclusion, not enrollment.
+            // This test runs after the 4-player tournament has fully concluded.
             const totalFees = ENTRY_FEE * BigInt(PLAYER_COUNT);
             const expectedOwnerBalance = (totalFees * 750n) / 10000n;
             expect(await factory.ownerBalance()).to.equal(expectedOwnerBalance);
         });
 
-        it("factory accumulated correct protocol balance (2.5% × 4 players)", async function () {
-            const totalFees = ENTRY_FEE * BigInt(PLAYER_COUNT);
-            const expectedProtocol = (totalFees * 250n) / 10000n;
-            expect(await factory.accumulatedProtocolShare()).to.equal(expectedProtocol);
+        it("protocol share stays on instance (raffled at conclusion, not accumulated on factory)", async function () {
+            // accumulatedProtocolShare no longer exists on factory.
+            // Protocol share is raffled per-tournament directly on the instance.
+            // After conclusion the instance balance should be 0 (raffle was paid out).
+            const instanceAddr = await instance.getAddress();
+            const balance = await hre.ethers.provider.getBalance(instanceAddr);
+            expect(balance).to.equal(0n);
         });
 
         it("owner can withdraw their balance", async function () {
@@ -1192,87 +1228,89 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
         expect(t.completionReason).to.equal(6); // SoloEnrollForceStart
     });
 
-    it("solo winner received the prize pool", async function () {
-        const t = await instance.tournament();
-        const prizePool = (ENTRY_FEE * 9000n) / 10000n; // only 1 enrollment
-        expect(await instance.playerPrizes(owner.address)).to.equal(prizePool);
+    it("solo winner received 100% of entry fee (full refund on EL1)", async function () {
+        // With deferred fees, EL1 refunds the full entry fee — owner and protocol get nothing.
+        expect(await instance.playerPrizes(owner.address)).to.equal(ENTRY_FEE);
     });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suite K: Protocol raffle (factory-level)
+// Suite K: Per-tournament instant raffle (replaces factory-level community raffle)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — protocol raffle accumulation and execution", function () {
+describe("TicTacInstance — per-tournament instant raffle at conclusion", function () {
     this.timeout(120_000);
 
-    let factory;
-    let signers;
-
-    // TicTacChainFactory first threshold = 0.001 ETH
-    // Each enrollment contributes entryFee × 2.5% to protocol
-    // To reach 0.001 ETH with entryFee=0.1 ETH: 0.1 × 0.025 = 0.0025 ETH per player
-    // → need 1 enrollment of 0.1 ETH × 2 players = 0.005 ETH protocol total → exceeds 0.001 ETH
-    const ENTRY_FEE = hre.ethers.parseEther("0.1");
+    let factory, signers;
+    const ENTRY_FEE = hre.ethers.parseEther("0.004");
 
     before(async function () {
         signers = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
     });
 
-    it("initial raffle info shows index=0 and threshold=0.001 ETH", async function () {
-        const info = await factory.getRaffleInfo();
-        expect(info.raffleIndex).to.equal(0);
-        expect(info.threshold).to.equal(hre.ethers.parseEther("0.001"));
+    it("factory has no accumulatedProtocolShare (removed)", async function () {
+        // accumulatedProtocolShare no longer exists on the factory
+        expect(factory.accumulatedProtocolShare).to.equal(undefined);
+        expect(factory.executeProtocolRaffle).to.equal(undefined);
     });
 
-    it("protocol share accumulates with each enrollment", async function () {
-        // Create a 2-player instance and enroll both players
+    it("protocol share stays on instance until conclusion", async function () {
         const inst = await createInstance(factory, 2, ENTRY_FEE, signers[0]);
         await inst.connect(signers[1]).enrollInTournament({ value: ENTRY_FEE });
 
-        // 2 × 0.1 ETH × 2.5% = 0.005 ETH accumulated
+        const t = await inst.tournament();
         const expectedProtocol = (ENTRY_FEE * 2n * 250n) / 10000n;
-        expect(await factory.accumulatedProtocolShare()).to.equal(expectedProtocol);
+        expect(t.protocolAccrued).to.equal(expectedProtocol);
+        // Factory has nothing
+        expect(await factory.ownerBalance()).to.equal(0n);
     });
 
-    it("accumulated protocol share exceeds the first raffle threshold", async function () {
-        const info = await factory.getRaffleInfo();
-        expect(info.currentAccumulated).to.be.gt(info.threshold);
-    });
+    it("TournamentRaffleAwarded event emitted at conclusion with correct amount", async function () {
+        const [p1, p2] = signers;
+        const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
+        await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
 
-    it("non-enrolled address cannot trigger raffle", async function () {
-        // signers[5] has not enrolled in any instance
-        await expect(
-            factory.connect(signers[5]).executeProtocolRaffle()
-        ).to.be.revertedWith("Not enrolled in active instance");
-    });
+        const expectedRaffle = (ENTRY_FEE * 2n * 250n) / 10000n;
 
-    it("enrolled player can execute the raffle and a winner is paid", async function () {
-        // signers[0] is enrolled in the instance created above (still active/InProgress)
-        const accumulated = await factory.accumulatedProtocolShare();
-        const winnerBefore = await hre.ethers.provider.getBalance(signers[1].address);
-
-        const tx = await factory.connect(signers[0]).executeProtocolRaffle();
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const matchData = await inst.matches(matchId);
+        const first  = matchData.currentTurn === p1.address ? p1 : p2;
+        const second = first === p1 ? p2 : p1;
+        await inst.connect(first).makeMove(0, 0, 0);
+        await inst.connect(second).makeMove(0, 0, 3);
+        await inst.connect(first).makeMove(0, 0, 1);
+        await inst.connect(second).makeMove(0, 0, 4);
+        const tx = await inst.connect(first).makeMove(0, 0, 2);
         const receipt = await tx.wait();
 
-        // Raffle count incremented
-        expect(await factory.getRaffleCount()).to.equal(1);
+        const raffleEvent = receipt.logs
+            .map(log => { try { return inst.interface.parseLog(log); } catch { return null; } })
+            .find(e => e && e.name === "TournamentRaffleAwarded");
 
-        // accumulatedProtocolShare reduced to reserve (5% of threshold)
-        const threshold = hre.ethers.parseEther("0.001");
-        const reserve = (threshold * 500n) / 10000n; // 5% reserve = RAFFLE_RESERVE_BPS
-        expect(await factory.accumulatedProtocolShare()).to.be.lte(accumulated);
+        expect(raffleEvent).to.not.be.null;
+        expect(raffleEvent.args.amount).to.equal(expectedRaffle);
+        expect(raffleEvent.args.transferred).to.equal(true);
+        expect([p1.address, p2.address]).to.include(raffleEvent.args.winner);
     });
 
-    it("raffle index advances after execution", async function () {
-        const info = await factory.getRaffleInfo();
-        expect(info.raffleIndex).to.equal(1);
-    });
+    it("instance balance is 0 after conclusion (raffle paid out)", async function () {
+        const [p1, p2] = signers;
+        const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
+        await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
 
-    it("next raffle threshold is 0.005 ETH (index 1)", async function () {
-        const info = await factory.getRaffleInfo();
-        expect(info.threshold).to.equal(hre.ethers.parseEther("0.005"));
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const matchData = await inst.matches(matchId);
+        const first  = matchData.currentTurn === p1.address ? p1 : p2;
+        const second = first === p1 ? p2 : p1;
+        await inst.connect(first).makeMove(0, 0, 0);
+        await inst.connect(second).makeMove(0, 0, 3);
+        await inst.connect(first).makeMove(0, 0, 1);
+        await inst.connect(second).makeMove(0, 0, 4);
+        await inst.connect(first).makeMove(0, 0, 2);
+
+        const balance = await hre.ethers.provider.getBalance(await inst.getAddress());
+        expect(balance).to.equal(0n);
     });
 });
 
@@ -1343,10 +1381,11 @@ describe("TicTacInstance — factory instance tracking and pagination", function
         await expect(factory.tierKeys(2)).to.be.reverted;
     });
 
-    it("getPlayerInstances tracks all instances creator enrolled in", async function () {
-        const playerInstances = await factory.getPlayerInstances(owner.address);
+    it("player profile tracks all instances creator enrolled in", async function () {
+        const profileAddr = await factory.getPlayerProfile(owner.address);
+        const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         // owner was auto-enrolled (as creator) in all 3 instances
-        expect(playerInstances.length).to.equal(3);
+        expect(await profile.getEnrollmentCount()).to.equal(3);
     });
 
     it("getActiveTierConfigs returns both tier configs", async function () {
@@ -1355,6 +1394,130 @@ describe("TicTacInstance — factory instance tracking and pagination", function
         const configs = result[1];
         expect(keys.length).to.equal(2);
         expect(configs.length).to.equal(2);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Suite L2: players / activeTournaments / pastTournaments
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("TicTacInstance — players, activeTournaments, pastTournaments", function () {
+    this.timeout(120_000);
+
+    let factory, registry;
+    let owner, p1, p2;
+    let inst;
+    const ENTRY_FEE = hre.ethers.parseEther("0.001");
+
+    before(async function () {
+        [owner, p1, p2] = await hre.ethers.getSigners();
+        ({ factory, registry } = await deployFactory());
+    });
+
+    it("players[owner] is zero before any enrollment", async function () {
+        expect(await factory.players(owner.address)).to.equal(hre.ethers.ZeroAddress);
+    });
+
+    it("activeTournaments is empty before any instance is created", async function () {
+        expect(await factory.getActiveTournamentCount()).to.equal(0);
+    });
+
+    it("instance appears in activeTournaments immediately after creation", async function () {
+        inst = await createInstance(factory, 2, ENTRY_FEE, owner);
+        const instAddr = await inst.getAddress();
+        expect(await factory.getActiveTournamentCount()).to.equal(1);
+        expect(await factory.activeTournaments(0)).to.equal(instAddr);
+    });
+
+    it("players[owner] is set after creator's first enrollment", async function () {
+        const profileAddr = await factory.players(owner.address);
+        expect(profileAddr).to.not.equal(hre.ethers.ZeroAddress);
+    });
+
+    it("players[owner] matches registry getProfile(owner)", async function () {
+        const fromFactory = await factory.players(owner.address);
+        const fromRegistry = await registry.getProfile(owner.address);
+        expect(fromFactory).to.equal(fromRegistry);
+    });
+
+    it("players[p1] is zero before p1 enrolls", async function () {
+        expect(await factory.players(p1.address)).to.equal(hre.ethers.ZeroAddress);
+    });
+
+    it("players[p1] set after p1 enrolls; instance moves to pastTournaments on conclusion", async function () {
+        const instAddr = await inst.getAddress();
+
+        // p1 enrolls → tournament auto-starts (2-player)
+        await inst.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        expect(await factory.players(p1.address)).to.not.equal(hre.ethers.ZeroAddress);
+
+        // still active until conclusion
+        expect(await factory.getActiveTournamentCount()).to.equal(1);
+        expect(await factory.getPastTournamentCount()).to.equal(0);
+
+        // play to conclusion
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m = await inst.matches(matchId);
+        const first  = m.currentTurn === owner.address ? owner : p1;
+        const second = first === owner ? p1 : owner;
+        await inst.connect(first).makeMove(0, 0, 0);
+        await inst.connect(second).makeMove(0, 0, 3);
+        await inst.connect(first).makeMove(0, 0, 1);
+        await inst.connect(second).makeMove(0, 0, 4);
+        await inst.connect(first).makeMove(0, 0, 2);
+
+        // after conclusion: removed from active, added to past
+        expect(await factory.getActiveTournamentCount()).to.equal(0);
+        expect(await factory.getPastTournamentCount()).to.equal(1);
+        expect(await factory.pastTournaments(0)).to.equal(instAddr);
+    });
+
+    it("swap-and-pop: completing middle tournament leaves activeTournaments consistent", async function () {
+        // Create 3 more instances (A, B, C)
+        const instA = await createInstance(factory, 2, ENTRY_FEE, owner);
+        const instB = await createInstance(factory, 2, ENTRY_FEE, owner);
+        const instC = await createInstance(factory, 2, ENTRY_FEE, owner);
+        expect(await factory.getActiveTournamentCount()).to.equal(3);
+
+        // Conclude instB (the middle one) by enrolling p1 and playing
+        await instB.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const m = await instB.matches(matchId);
+        const first  = m.currentTurn === owner.address ? owner : p1;
+        const second = first === owner ? p1 : owner;
+        await instB.connect(first).makeMove(0, 0, 0);
+        await instB.connect(second).makeMove(0, 0, 3);
+        await instB.connect(first).makeMove(0, 0, 1);
+        await instB.connect(second).makeMove(0, 0, 4);
+        await instB.connect(first).makeMove(0, 0, 2);
+
+        // activeTournaments should have 2 entries (A and C)
+        expect(await factory.getActiveTournamentCount()).to.equal(2);
+        expect(await factory.getPastTournamentCount()).to.equal(2);
+
+        // Both remaining active entries should be properAddresses and not instB
+        const instBAddr = await instB.getAddress();
+        const active0 = await factory.activeTournaments(0);
+        const active1 = await factory.activeTournaments(1);
+        expect(active0).to.be.properAddress;
+        expect(active1).to.be.properAddress;
+        expect(active0).to.not.equal(instBAddr);
+        expect(active1).to.not.equal(instBAddr);
+    });
+
+    it("EL1 conclusion also moves instance to pastTournaments (even with 0 owner share)", async function () {
+        const inst2 = await createInstance(factory, 2, ENTRY_FEE, owner);
+        const activeBefore = await factory.getActiveTournamentCount();
+
+        // Force start with only 1 player enrolled (EL1)
+        await hre.network.provider.send("evm_increaseTime", [3600 * 49]);
+        await hre.network.provider.send("evm_mine");
+        await inst2.forceStartTournament();
+
+        expect(await factory.getActiveTournamentCount()).to.equal(activeBefore - 1n);
+        const pastCount = await factory.getPastTournamentCount();
+        const last = await factory.pastTournaments(pastCount - 1n);
+        expect(last).to.equal(await inst2.getAddress());
     });
 });
 
