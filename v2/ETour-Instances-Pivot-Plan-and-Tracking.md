@@ -316,29 +316,43 @@ Move the old monolithic game contracts to `contracts/archived/`:
 ### 3.3 — Game-Specific Tests
 
 **Files:**
-- `test/factory/TicTacInstance.test.js`
+- `test/factory/TicTacInstance.test.js` ✅ DONE (107 tests passing)
 - `test/factory/ChessInstance.test.js`
 - `test/factory/ConnectFourInstance.test.js`
 
-- [ ] Game moves validate correctly within instance context
-- [ ] Win detection works
-- [ ] Full game lifecycle (create → enroll → play → win → prizes)
+**TicTacInstance.test.js covers (107 tests, 0 failures):**
+- [x] Game moves validate correctly within instance context (move validation suite)
+- [x] Win detection works (playAndWin helper, draw detection suite)
+- [x] Full game lifecycle: 2-player, 4-player, 8-player (create → enroll → play → win → prizes)
+- [x] Draw detection and equal prize split (finals draw suite)
+- [x] Time bank (Fischer clock): initialization, decrement, lastMoveTime tracking
+- [x] Timeout claim (claimTimeoutWin): reverts before expiry, succeeds after
+- [x] ML2: forceEliminateStalledMatch — advanced player eliminates stalled match
+- [x] ML3: claimMatchSlotByReplacement — outsider takes over stalled match
+- [x] EL1: forceStartTournament with solo enrollment → immediate Concluded
+- [x] Protocol raffle: accumulation, threshold, eligibility, execution, index progression
+- [x] Factory bookkeeping: instance tracking, pagination, tierKey dedup, playerInstances
+- [x] Factory guardrails: invalid playerCount, invalid entryFee, mismatched msg.value
+- [x] Permanent record views: getInstanceInfo, getPlayers, getBracket, getMatch, getMatchMoves, getPrizeDistribution, getPlayerResult
+- [x] Fee routing: ownerBalance, accumulatedProtocolShare, withdrawOwnerBalance
 
 ### 3.4 — Escalation Tests in New Architecture
 
 **File:** `test/factory/InstanceEscalation.test.js`
 
-- [ ] EL1: Solo enrollment force-start works in instance
+- [x] EL1: Solo enrollment force-start works in instance (covered in TicTacInstance.test.js Suite J)
 - [ ] EL2: Abandoned pool claim works in instance
-- [ ] ML1-ML3: Match timeout escalation works in instance
+- [x] ML2: forceEliminateStalledMatch (covered in TicTacInstance.test.js Suite H)
+- [x] ML3: claimMatchSlotByReplacement (covered in TicTacInstance.test.js Suite I)
+- [x] Timeout claim / claimTimeoutWin (covered in TicTacInstance.test.js Suite G)
 
 ### 3.5 — Raffle Tests
 
 **File:** `test/factory/FactoryRaffle.test.js`
 
-- [ ] Protocol share accumulates on factory from instance fee routing
-- [ ] Raffle executes from factory context
-- [ ] Raffle eligibility checks work across instances
+- [x] Protocol share accumulates on factory from instance fee routing (covered in TicTacInstance.test.js Suite K)
+- [x] Raffle executes from factory context (covered in TicTacInstance.test.js Suite K)
+- [x] Raffle eligibility checks work across instances (covered in TicTacInstance.test.js Suite K)
 
 ### 3.6 — Gas Benchmarks
 
@@ -493,4 +507,5 @@ Phase 5.x (Docs)                   ← last, reflects final state
 | 2026-03-22 | 1.3 | Created `ChessOnChainFactory.sol` — inherits ETourFactory, overrides createInstance() to pass CHESS_RULES to each clone (11.1KB) | Done |
 | 2026-03-22 | — | All 26 contracts compile successfully (0 errors, evm: paris) | Done |
 | 2026-03-22 | 2.1 | Deploy scripts complete: `deploy-instance-modules.js`, `deploy-tictacchain-factory.js`, `deploy-connectfour-factory.js`, `deploy-chessonchain-factory.js`, `deploy-factories.js`, `deploy-all-factory.js` | Done |
+| 2026-03-24 | 3.3 | TicTacInstance.test.js: 107 tests, 0 failures. Covers 14 suites: 2/4/8-player lifecycle, draw, move validation, time bank, timeout claim, ML2/ML3 escalation, EL1 force-start, protocol raffle, factory bookkeeping, guardrails, permanent record views | Done |
 | | | | |
