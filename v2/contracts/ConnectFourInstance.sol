@@ -113,6 +113,7 @@ contract ConnectFourInstance is ETourInstance {
         m.startTime = 0; m.lastMoveTime = 0;
         m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
         m.moves = "";
+        m.completionReason = CompletionReason.NormalWin;
     }
 
     function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {

@@ -1,16 +1,19 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-24T10:05:26.906Z",
+  "deployedAt": "2026-03-25T09:34:48.578Z",
   "modules": {
-    "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "ETourInstance_Prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "ETourInstance_Escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "ChessRulesModule": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    "ETourInstance_Core": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "ETourInstance_Matches": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+    "ETourInstance_Prizes": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+    "ETourInstance_Escalation": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "ChessRulesModule": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f"
+  },
+  "playerProfile": {
+    "PlayerRegistry": "0xdbC43Ba45381e02825b14322cDdd15eC4B3164E6"
   },
   "factory": {
-    "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "address": "0x04C89607413713Ec9775E14b954286519d836FEf",
     "abi": [
       {
         "inputs": [
@@ -38,6 +41,11 @@
             "internalType": "address",
             "name": "chessRules",
             "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "playerRegistry",
+            "type": "address"
           }
         ],
         "stateMutability": "nonpayable",
@@ -56,21 +64,6 @@
       {
         "inputs": [],
         "name": "InvalidTimeoutConfig",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "NoEligiblePlayers",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "RaffleSendFailed",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "RaffleThresholdNotMet",
         "type": "error"
       },
       {
@@ -180,50 +173,6 @@
           }
         ],
         "name": "PlayerRegistered",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "internalType": "address",
-            "name": "instance",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "ProtocolShareReceived",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "internalType": "address",
-            "name": "winner",
-            "type": "address"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "winnerAmount",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint256",
-            "name": "ownerAmount",
-            "type": "uint256"
-          }
-        ],
-        "name": "RaffleExecuted",
         "type": "event"
       },
       {
@@ -357,51 +306,31 @@
       },
       {
         "inputs": [],
-        "name": "RAFFLE_OWNER_BPS",
+        "name": "PLAYER_REGISTRY",
         "outputs": [
           {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
+            "type": "address"
           }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
-        "inputs": [],
-        "name": "RAFFLE_RESERVE_BPS",
-        "outputs": [
+        "inputs": [
           {
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
           }
         ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "RAFFLE_WINNER_BPS",
+        "name": "activeTournaments",
         "outputs": [
           {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "accumulatedProtocolShare",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -466,29 +395,6 @@
           }
         ],
         "stateMutability": "payable",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "executeProtocolRaffle",
-        "outputs": [
-          {
-            "internalType": "address",
-            "name": "winner",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "ownerAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "winnerAmount",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "nonpayable",
         "type": "function"
       },
       {
@@ -570,6 +476,19 @@
       },
       {
         "inputs": [],
+        "name": "getActiveTournamentCount",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "getInstanceCount",
         "outputs": [
           {
@@ -606,54 +525,12 @@
         "type": "function"
       },
       {
-        "inputs": [
-          {
-            "internalType": "address",
-            "name": "player",
-            "type": "address"
-          }
-        ],
-        "name": "getPlayerInstances",
-        "outputs": [
-          {
-            "internalType": "address[]",
-            "name": "",
-            "type": "address[]"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
         "inputs": [],
-        "name": "getRaffleCount",
+        "name": "getPastTournamentCount",
         "outputs": [
           {
             "internalType": "uint256",
             "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "getRaffleInfo",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "raffleIndex",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "currentAccumulated",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "threshold",
             "type": "uint256"
           }
         ],
@@ -663,41 +540,16 @@
       {
         "inputs": [
           {
-            "internalType": "uint256",
-            "name": "index",
-            "type": "uint256"
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
           }
         ],
-        "name": "getRaffleResult",
+        "name": "getPlayerProfile",
         "outputs": [
           {
             "internalType": "address",
-            "name": "executor",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "timestamp",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rafflePot",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address[]",
-            "name": "participants",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint16[]",
-            "name": "weights",
-            "type": "uint16[]"
-          },
-          {
-            "internalType": "address",
-            "name": "winner",
+            "name": "",
             "type": "address"
           }
         ],
@@ -797,17 +649,12 @@
       {
         "inputs": [
           {
-            "internalType": "address",
-            "name": "",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
           }
         ],
-        "name": "playerInstances",
+        "name": "pastTournaments",
         "outputs": [
           {
             "internalType": "address",
@@ -821,51 +668,17 @@
       {
         "inputs": [
           {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
-          }
-        ],
-        "name": "raffleResults",
-        "outputs": [
-          {
-            "internalType": "address",
-            "name": "executor",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "timestamp",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rafflePot",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "winner",
             "type": "address"
           }
         ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "name": "raffleThresholds",
+        "name": "players",
         "outputs": [
           {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -879,18 +692,16 @@
         "type": "function"
       },
       {
-        "inputs": [],
-        "name": "receiveProtocolShare",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      },
-      {
         "inputs": [
           {
             "internalType": "address",
             "name": "player",
             "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "entryFee",
+            "type": "uint256"
           }
         ],
         "name": "registerPlayer",
@@ -1052,8 +863,9 @@
     ]
   },
   "instance": {
-    "address": "0x75537828f2ce51be7289709686A69CbFDbB714F1",
-    "abi": [
+    "address": "0xB5d064b44960FdedA1072f983C3E8f1e123cE154",
+    "abi": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
+    "instanceAbi": [
       {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
@@ -1169,6 +981,37 @@
           }
         ],
         "name": "TournamentConcluded",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "winner",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "bool",
+            "name": "transferred",
+            "type": "bool"
+          }
+        ],
+        "name": "TournamentRaffleAwarded",
         "type": "event"
       },
       {
@@ -1961,6 +1804,11 @@
             "internalType": "string",
             "name": "moves",
             "type": "string"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "name": "completionReason",
+            "type": "uint8"
           }
         ],
         "stateMutability": "view",
@@ -2509,6 +2357,11 @@
             "internalType": "string",
             "name": "moves",
             "type": "string"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "name": "completionReason",
+            "type": "uint8"
           }
         ],
         "stateMutability": "view",
@@ -2531,6 +2384,19 @@
           }
         ],
         "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "name": "rescueStuckFunds",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
       },
       {
@@ -2659,6 +2525,16 @@
           {
             "internalType": "uint256",
             "name": "prizePool",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ownerAccrued",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "protocolAccrued",
             "type": "uint256"
           },
           {

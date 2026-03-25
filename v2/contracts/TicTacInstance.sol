@@ -107,6 +107,7 @@ contract TicTacInstance is ETourInstance {
         m.player1TimeRemaining = 0;
         m.player2TimeRemaining = 0;
         m.moves = "";
+        m.completionReason = CompletionReason.NormalWin;
     }
 
     function _getMatchResult(bytes32 matchId)

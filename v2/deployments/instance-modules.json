@@ -1,11 +1,11 @@
 {
   "network": "localhost",
   "chainId": null,
-  "timestamp": "2026-03-24T10:15:56.914Z",
+  "timestamp": "2026-03-25T05:54:19.582Z",
   "modules": {
-    "core": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    "matches": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-    "prizes": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-    "escalation": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+    "core": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "matches": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+    "prizes": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+    "escalation": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E"
   }
 }

@@ -141,6 +141,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
         string moves;
+        CompletionReason completionReason;
     }
 
     struct LeaderboardEntry {
@@ -296,6 +297,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         m.winner = isDraw ? address(0) : winner;
         m.isDraw = isDraw;
         m.status = MatchStatus.Completed;
+        m.completionReason = reason;
 
         _completeMatchGameSpecific(roundNumber, matchNumber, winner, isDraw);
 
@@ -759,11 +761,12 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         MatchStatus status,
         uint256 startTime,
         uint256 lastMoveTime,
-        string memory moves
+        string memory moves,
+        CompletionReason completionReason
     ) {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
-        return (m.player1, m.player2, m.winner, m.isDraw, m.status, m.startTime, m.lastMoveTime, m.moves);
+        return (m.player1, m.player2, m.winner, m.isDraw, m.status, m.startTime, m.lastMoveTime, m.moves, m.completionReason);
     }
 
     function getMatchMoves(uint8 roundNumber, uint8 matchNumber) external view returns (string memory) {
