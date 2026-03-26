@@ -6,6 +6,7 @@
   "scripts": {
     "compile": "hardhat compile --config v2/hardhat.config.js",
     "test": "hardhat test --config v2/hardhat.config.js",
+    "sync:abis": "node v2/scripts/sync-abis.js",
     "deploy:modules": "hardhat run v2/scripts/deploy-instance-modules.js --config v2/hardhat.config.js --network localhost",
     "deploy:tictac": "hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost",
     "deploy:connectfour": "hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost",

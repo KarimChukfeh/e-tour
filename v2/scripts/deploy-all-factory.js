@@ -179,6 +179,132 @@ async function main() {
         },
     }, null, 2));
     console.log("ABI file saved to:", abiFile);
+
+    const perGameDeploymentFiles = [
+        {
+            path: path.join(deploymentsDir, `${network}-tictac-factory.json`),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployer: deployer.address,
+                timestamp,
+                blockNumber,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { TicTacChainFactory: ticTacFactoryAddr },
+                implementation: { TicTacInstance: ticTacImplAddr },
+            },
+        },
+        {
+            path: path.join(deploymentsDir, `${network}-connectfour-factory.json`),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployer: deployer.address,
+                timestamp,
+                blockNumber,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { ConnectFourFactory: c4FactoryAddr },
+                implementation: { ConnectFourInstance: c4ImplAddr },
+            },
+        },
+        {
+            path: path.join(deploymentsDir, `${network}-chess-factory.json`),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployer: deployer.address,
+                timestamp,
+                blockNumber,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                    ChessRulesModule: chessRulesAddr,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { ChessOnChainFactory: chessFactoryAddr },
+                implementation: { ChessInstance: chessImplAddr },
+            },
+        },
+    ];
+
+    for (const file of perGameDeploymentFiles) {
+        fs.writeFileSync(file.path, JSON.stringify(file.payload, null, 2));
+        console.log("Deployment saved to:", file.path);
+    }
+
+    const perGameAbiFiles = [
+        {
+            path: path.join(deploymentsDir, "TicTacChainFactory-ABI.json"),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployedAt: timestamp,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { address: ticTacFactoryAddr, abi: ticTacArt.abi },
+                instance: { address: ticTacImplAddr, abi: ticTacInstArt.abi },
+            },
+        },
+        {
+            path: path.join(deploymentsDir, "ConnectFourFactory-ABI.json"),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployedAt: timestamp,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { address: c4FactoryAddr, abi: c4Art.abi },
+                instance: { address: c4ImplAddr, abi: c4InstArt.abi },
+            },
+        },
+        {
+            path: path.join(deploymentsDir, "ChessOnChainFactory-ABI.json"),
+            payload: {
+                network,
+                chainId: chainId.toString(),
+                deployedAt: timestamp,
+                modules: {
+                    ETourInstance_Core: modules.core,
+                    ETourInstance_Matches: modules.matches,
+                    ETourInstance_Prizes: modules.prizes,
+                    ETourInstance_Escalation: modules.escalation,
+                    ChessRulesModule: chessRulesAddr,
+                },
+                playerProfile: { PlayerRegistry: registryAddr },
+                factory: { address: chessFactoryAddr, abi: chessArt.abi },
+                instance: { address: chessImplAddr, abi: chessInstArt.abi },
+            },
+        },
+    ];
+
+    for (const file of perGameAbiFiles) {
+        fs.writeFileSync(file.path, JSON.stringify(file.payload, null, 2));
+        console.log("ABI file saved to:", file.path);
+    }
     console.log("");
 
     // ── Summary ───────────────────────────────────────────────────────────────
