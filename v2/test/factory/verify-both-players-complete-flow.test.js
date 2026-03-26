@@ -43,12 +43,9 @@ async function deployAll() {
 
 function defaultTimeouts() {
     return {
-        matchTimePerPlayer: 3600n * 24n,
-        timeIncrementPerMove: 10n,
-        matchLevel2Delay: 3600n,
-        matchLevel3Delay: 3600n * 2n,
-        enrollmentWindow: 3600n * 48n,
-        enrollmentLevel2Delay: 3600n * 24n,
+        enrollmentWindow:      2n * 60n,    // 2 minutes
+        matchTimePerPlayer:    5n * 60n,    // 5 minutes
+        timeIncrementPerMove:  15n,         // 15 seconds
     };
 }
 
@@ -64,8 +61,9 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
         ({ factory, registry } = await deployAll());
 
         // Create instance (creator auto-enrolls)
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs

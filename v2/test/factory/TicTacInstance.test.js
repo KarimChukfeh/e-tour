@@ -69,14 +69,10 @@ async function deployFactory() {
  * - timeIncrementPerMove: 15 or 30 seconds
  */
 function defaultTimeouts() {
-    const ONE_HOUR = 3600n;
     return {
+        enrollmentWindow:      30n * 60n,       // 30 minutes to fill up (valid option)
         matchTimePerPlayer:    15n * 60n,       // 15 minutes per player (valid option)
         timeIncrementPerMove:  30n,             // 30 seconds after each move (valid option)
-        matchLevel2Delay:      ONE_HOUR,
-        matchLevel3Delay:      ONE_HOUR * 2n,
-        enrollmentWindow:      30n * 60n,       // 30 minutes to fill up (valid option)
-        enrollmentLevel2Delay: ONE_HOUR * 24n,
     };
 }
 
@@ -86,12 +82,9 @@ function defaultTimeouts() {
  */
 function shortTimeouts(overrides = {}) {
     return {
+        enrollmentWindow:      overrides.enrollmentWindow      ?? (2n * 60n),  // 2 minutes (valid)
         matchTimePerPlayer:    overrides.matchTimePerPlayer    ?? (2n * 60n),  // 2 minutes (valid)
         timeIncrementPerMove:  overrides.timeIncrementPerMove  ?? 15n,         // 15 seconds (valid)
-        matchLevel2Delay:      overrides.matchLevel2Delay      ?? 10n,
-        matchLevel3Delay:      overrides.matchLevel3Delay      ?? 20n,
-        enrollmentWindow:      overrides.enrollmentWindow      ?? (2n * 60n),  // 2 minutes (valid)
-        enrollmentLevel2Delay: overrides.enrollmentLevel2Delay ?? 15n,
     };
 }
 
@@ -103,7 +96,7 @@ async function createInstance(factory, playerCount, entryFee, signer, timeouts) 
     const caller = signer ?? (await hre.ethers.getSigners())[0];
     const to = timeouts ?? defaultTimeouts();
     const tx = await factory.connect(caller).createInstance(
-        playerCount, entryFee, to, { value: entryFee }
+        playerCount, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
     );
     const receipt = await tx.wait();
 
@@ -1064,7 +1057,8 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
     let owner, p1, p2, p3;
     const ENTRY_FEE = hre.ethers.parseEther("0.002");
     const MATCH_TIME     = 2n * 60n;  // 2 minutes (valid - shortest allowed)
-    const L2_DELAY       = 5n;
+    const ML2_DELAY      = 2n * 60n;  // Hardcoded: 2 minutes
+    const ML3_DELAY      = 5n * 60n;  // Hardcoded: 5 minutes total (2 + 3)
 
     before(async function () {
         [owner, p1, p2, p3] = await hre.ethers.getSigners();
@@ -1073,8 +1067,6 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
             matchTimePerPlayer:   MATCH_TIME,
             timeIncrementPerMove: 15n, // 15 seconds (valid)
             enrollmentWindow:     30n * 60n, // 30 minutes (valid)
-            matchLevel2Delay:     L2_DELAY,
-            matchLevel3Delay:     L2_DELAY * 4n,
         });
         // 4-player: owner auto-enrolled, add p1, p2, p3
         instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
@@ -1104,8 +1096,8 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         // Make one move to record lastMoveTime, then let time run out
         await instance.connect(currentPlayer).makeMove(0, 0, 0);
 
-        // Advance past matchTimePerPlayer + matchLevel2Delay
-        await advanceTime(Number(MATCH_TIME) + Number(L2_DELAY) + 5);
+        // Advance past matchTimePerPlayer + ML2_DELAY (2 min + 2 min)
+        await advanceTime(Number(MATCH_TIME) + Number(ML2_DELAY) + 5);
     });
 
     it("ML2 is available for match 0 after timeout + L2 delay", async function () {
@@ -1138,7 +1130,7 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
     let owner, p1, p2, p3, outsider;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
     const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
-    const L3_DELAY   = 10n;
+    const ML3_DELAY  = 5n * 60n; // Hardcoded: 5 minutes total (2 + 3)
 
     before(async function () {
         [owner, p1, p2, p3, outsider] = await hre.ethers.getSigners();
@@ -1147,20 +1139,18 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
             matchTimePerPlayer:   MATCH_TIME,
             timeIncrementPerMove: 15n, // 15 seconds (valid)
             enrollmentWindow:     30n * 60n, // 30 minutes (valid)
-            matchLevel2Delay:     5n,
-            matchLevel3Delay:     L3_DELAY,
         });
         instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
         await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
     });
 
-    it("stalls match 0 by advancing time past matchTimePerPlayer + L3 delay", async function () {
+    it("stalls match 0 by advancing time past matchTimePerPlayer + ML3 delay", async function () {
         const matchId0 = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const m = await instance.matches(matchId0);
         const currentPlayer = [owner, p1, p2, p3].find(s => s.address === m.currentTurn);
 
         await instance.connect(currentPlayer).makeMove(0, 0, 0);
-        await advanceTime(Number(MATCH_TIME) + Number(L3_DELAY) + 5);
+        await advanceTime(Number(MATCH_TIME) + Number(ML3_DELAY) + 5);
     });
 
     it("ML3 is available for match 0", async function () {
@@ -1541,27 +1531,21 @@ describe("TicTacInstance — factory creation guardrails", function () {
 
     it("rejects non-power-of-2 player count (e.g. 3)", async function () {
         await expect(
-            factory.connect(owner).createInstance(
-                3, hre.ethers.parseEther("0.001"), defaultTimeouts(),
-                { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(3, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
 
     it("rejects player count 0", async function () {
         await expect(
-            factory.connect(owner).createInstance(
-                0, hre.ethers.parseEther("0.001"), defaultTimeouts(),
-                { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(0, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
 
     it("rejects player count above 64 (e.g. 128)", async function () {
         await expect(
-            factory.connect(owner).createInstance(
-                128, hre.ethers.parseEther("0.001"), defaultTimeouts(),
-                { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(128, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
@@ -1569,16 +1553,14 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects entry fee that is not a multiple of 0.001 ETH", async function () {
         const oddFee = hre.ethers.parseEther("0.0015"); // 1.5x increment
         await expect(
-            factory.connect(owner).createInstance(
-                2, oddFee, defaultTimeouts(), { value: oddFee }
+            factory.connect(owner).createInstance(2, oddFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: oddFee }
             )
         ).to.be.reverted;
     });
 
     it("rejects zero entry fee", async function () {
         await expect(
-            factory.connect(owner).createInstance(
-                2, 0n, defaultTimeouts(), { value: 0n }
+            factory.connect(owner).createInstance(2, 0n, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: 0n }
             )
         ).to.be.reverted;
     });
@@ -1586,8 +1568,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects createInstance with mismatched msg.value (less than entryFee)", async function () {
         const fee = hre.ethers.parseEther("0.001");
         await expect(
-            factory.connect(owner).createInstance(
-                2, fee, defaultTimeouts(), { value: 0n } // no payment
+            factory.connect(owner).createInstance(2, fee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: 0n } // no payment
             )
         ).to.be.reverted;
     });
@@ -1599,9 +1580,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 3n * 60n // 3 minutes (not allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.001"), invalidTimeouts,
-                { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
@@ -1612,9 +1591,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 2n * 60n // 2 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.001"), validTimeouts,
-                { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.not.be.reverted;
     });
@@ -1625,9 +1602,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 5n * 60n // 5 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.002"), validTimeouts,
-                { value: hre.ethers.parseEther("0.002") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.002"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.002") }
             )
         ).to.not.be.reverted;
     });
@@ -1638,9 +1613,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 10n * 60n // 10 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.003"), validTimeouts,
-                { value: hre.ethers.parseEther("0.003") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.003"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.003") }
             )
         ).to.not.be.reverted;
     });
@@ -1651,9 +1624,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 30n * 60n // 30 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.004"), validTimeouts,
-                { value: hre.ethers.parseEther("0.004") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.004"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.004") }
             )
         ).to.not.be.reverted;
     });
@@ -1664,9 +1635,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 3n * 60n // 3 minutes (not allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.005"), invalidTimeouts,
-                { value: hre.ethers.parseEther("0.005") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.005"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.005") }
             )
         ).to.be.reverted;
     });
@@ -1677,9 +1646,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 2n * 60n // 2 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.006"), validTimeouts,
-                { value: hre.ethers.parseEther("0.006") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.006"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.006") }
             )
         ).to.not.be.reverted;
     });
@@ -1690,9 +1657,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 5n * 60n // 5 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.007"), validTimeouts,
-                { value: hre.ethers.parseEther("0.007") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.007"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.007") }
             )
         ).to.not.be.reverted;
     });
@@ -1703,9 +1668,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 10n * 60n // 10 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.008"), validTimeouts,
-                { value: hre.ethers.parseEther("0.008") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.008"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.008") }
             )
         ).to.not.be.reverted;
     });
@@ -1716,9 +1679,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 15n * 60n // 15 minutes (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.009"), validTimeouts,
-                { value: hre.ethers.parseEther("0.009") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.009"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.009") }
             )
         ).to.not.be.reverted;
     });
@@ -1729,9 +1690,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 10n // 10 seconds (not allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.010"), invalidTimeouts,
-                { value: hre.ethers.parseEther("0.010") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.010"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.010") }
             )
         ).to.be.reverted;
     });
@@ -1742,9 +1701,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 15n // 15 seconds (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.011"), validTimeouts,
-                { value: hre.ethers.parseEther("0.011") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.011"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.011") }
             )
         ).to.not.be.reverted;
     });
@@ -1755,9 +1712,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 30n // 30 seconds (allowed)
         };
         await expect(
-            factory.connect(owner).createInstance(
-                2, hre.ethers.parseEther("0.012"), validTimeouts,
-                { value: hre.ethers.parseEther("0.012") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.012"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.012") }
             )
         ).to.not.be.reverted;
     });
@@ -2060,7 +2015,7 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
     let stalledP1, stalledP2;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
     const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
-    const L2_DELAY   = 5n;
+    const ML2_DELAY  = 2n * 60n; // Hardcoded: 2 minutes
 
     before(async function () {
         [owner, p1, p2, p3] = await hre.ethers.getSigners();
@@ -2069,8 +2024,6 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
             matchTimePerPlayer:   MATCH_TIME,
             timeIncrementPerMove: 15n, // 15 seconds (valid)
             enrollmentWindow:     30n * 60n, // 30 minutes (valid)
-            matchLevel2Delay:     L2_DELAY,
-            matchLevel3Delay:     L2_DELAY * 4n,
         });
         instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
         await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
@@ -2093,8 +2046,8 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
         const currentPlayer = all.find(s => s.address === m0.currentTurn);
         await instance.connect(currentPlayer).makeMove(0, 0, 0);
 
-        // Advance past MATCH_TIME + L2_DELAY
-        await advanceTime(Number(MATCH_TIME) + Number(L2_DELAY) + 5);
+        // Advance past MATCH_TIME + ML2_DELAY
+        await advanceTime(Number(MATCH_TIME) + Number(ML2_DELAY) + 5);
 
         // Advanced player (winner of match 1) force-eliminates match 0
         const m1After = await instance.matches(matchId1);
@@ -2130,7 +2083,7 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
     let stalledP1, stalledP2;
     const ENTRY_FEE  = hre.ethers.parseEther("0.002");
     const MATCH_TIME = 2n * 60n; // 2 minutes (valid - shortest allowed)
-    const L3_DELAY   = 10n;
+    const ML3_DELAY  = 5n * 60n; // Hardcoded: 5 minutes total
 
     before(async function () {
         [owner, p1, p2, p3, outsider] = await hre.ethers.getSigners();
@@ -2139,8 +2092,6 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
             matchTimePerPlayer:   MATCH_TIME,
             timeIncrementPerMove: 15n, // 15 seconds (valid)
             enrollmentWindow:     30n * 60n, // 30 minutes (valid)
-            matchLevel2Delay:     5n,
-            matchLevel3Delay:     L3_DELAY,
         });
         instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
         await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
@@ -2155,7 +2106,7 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
         const all = [owner, p1, p2, p3];
         const currentPlayer = all.find(s => s.address === m0.currentTurn);
         await instance.connect(currentPlayer).makeMove(0, 0, 0);
-        await advanceTime(Number(MATCH_TIME) + Number(L3_DELAY) + 5);
+        await advanceTime(Number(MATCH_TIME) + Number(ML3_DELAY) + 5);
 
         // Outsider claims the slot
         await instance.connect(outsider).claimMatchSlotByReplacement(0, 0);

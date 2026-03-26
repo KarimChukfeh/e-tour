@@ -58,6 +58,11 @@ contract ETourFactory is ReentrancyGuard {
     uint256 public constant FEE_INCREMENT = 0.001 ether;
     uint256 public constant BASIS_POINTS = 10000;
 
+    // Escalation delay constants (not user-configurable)
+    uint256 public constant MATCH_LEVEL_2_DELAY = 2 minutes;      // ML2: 2 mins after ML1
+    uint256 public constant MATCH_LEVEL_3_DELAY = 3 minutes;      // ML3: 3 mins after ML2 (5 mins total)
+    uint256 public constant ENROLLMENT_LEVEL_2_DELAY = 2 minutes; // EL2: 2 mins after EL1
+
     // ============ State ============
 
     address public owner;
@@ -140,18 +145,32 @@ contract ETourFactory is ReentrancyGuard {
      *
      * @param playerCount Must be power of 2 in [2, 32]
      * @param entryFee Must be multiple of 0.001 ETH in [0.001 ETH, maxEntryFee]
-     * @param timeouts Timeout configuration for enrollment and match escalation
+     * @param enrollmentWindow Must be 2, 5, 10, or 30 minutes
+     * @param matchTimePerPlayer Must be 2, 5, 10, or 15 minutes
+     * @param timeIncrementPerMove Must be 15 or 30 seconds
      * @return instance Address of the newly deployed instance clone
      */
     function createInstance(
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig calldata timeouts
+        uint256 enrollmentWindow,
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove
     ) external payable virtual returns (address instance) {
         require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
         _validatePlayerCount(playerCount);
         _validateEntryFee(entryFee);
-        _validateTimeouts(timeouts);
+        _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
+
+        // Construct full TimeoutConfig with hardcoded escalation delays
+        ETourInstance_Base.TimeoutConfig memory timeouts = ETourInstance_Base.TimeoutConfig({
+            matchTimePerPlayer: matchTimePerPlayer,
+            timeIncrementPerMove: timeIncrementPerMove,
+            matchLevel2Delay: MATCH_LEVEL_2_DELAY,
+            matchLevel3Delay: MATCH_LEVEL_3_DELAY,
+            enrollmentWindow: enrollmentWindow,
+            enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
+        });
 
         bytes32 tierKey = _computeTierKey(playerCount, entryFee);
         if (!_tierExists(tierKey)) {
@@ -343,7 +362,7 @@ contract ETourFactory is ReentrancyGuard {
         bytes32 tierKey,
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig calldata timeouts
+        ETourInstance_Base.TimeoutConfig memory timeouts
     ) internal {
         tierRegistry[tierKey] = TierConfig({
             playerCount: playerCount,
@@ -370,39 +389,42 @@ contract ETourFactory is ReentrancyGuard {
         if (entryFee % FEE_INCREMENT != 0) revert InvalidEntryFee();
     }
 
-    function _validateTimeouts(ETourInstance_Base.TimeoutConfig calldata timeouts) internal pure {
+    /**
+     * @dev Validate user-provided timeout parameters.
+     * Escalation delays are hardcoded and not validated here.
+     */
+    function _validateUserTimeouts(
+        uint256 enrollmentWindow,
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove
+    ) internal pure {
         // Validate enrollment window: 2, 5, 10, or 30 minutes
         if (
-            timeouts.enrollmentWindow != 2 minutes &&
-            timeouts.enrollmentWindow != 5 minutes &&
-            timeouts.enrollmentWindow != 10 minutes &&
-            timeouts.enrollmentWindow != 30 minutes
+            enrollmentWindow != 2 minutes &&
+            enrollmentWindow != 5 minutes &&
+            enrollmentWindow != 10 minutes &&
+            enrollmentWindow != 30 minutes
         ) {
             revert InvalidTimeoutConfig();
         }
 
         // Validate time per player: 2, 5, 10, or 15 minutes
         if (
-            timeouts.matchTimePerPlayer != 2 minutes &&
-            timeouts.matchTimePerPlayer != 5 minutes &&
-            timeouts.matchTimePerPlayer != 10 minutes &&
-            timeouts.matchTimePerPlayer != 15 minutes
+            matchTimePerPlayer != 2 minutes &&
+            matchTimePerPlayer != 5 minutes &&
+            matchTimePerPlayer != 10 minutes &&
+            matchTimePerPlayer != 15 minutes
         ) {
             revert InvalidTimeoutConfig();
         }
 
         // Validate increment time: 15 or 30 seconds
         if (
-            timeouts.timeIncrementPerMove != 15 seconds &&
-            timeouts.timeIncrementPerMove != 30 seconds
+            timeIncrementPerMove != 15 seconds &&
+            timeIncrementPerMove != 30 seconds
         ) {
             revert InvalidTimeoutConfig();
         }
-
-        // Other timeout values can be any non-zero value (set by factory/defaults)
-        if (timeouts.matchLevel2Delay == 0) revert InvalidTimeoutConfig();
-        if (timeouts.matchLevel3Delay == 0) revert InvalidTimeoutConfig();
-        if (timeouts.enrollmentLevel2Delay == 0) revert InvalidTimeoutConfig();
     }
 
     // ============ Internal: EIP-1167 Clone ============

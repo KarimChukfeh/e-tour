@@ -44,12 +44,24 @@ contract ChessOnChainFactory is ETourFactory {
     function createInstance(
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig calldata timeouts
+        uint256 enrollmentWindow,
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove
     ) external payable override returns (address instance) {
         require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
         _validatePlayerCount(playerCount);
         _validateEntryFee(entryFee);
-        _validateTimeouts(timeouts);
+        _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
+
+        // Construct full TimeoutConfig with hardcoded escalation delays
+        ETourInstance_Base.TimeoutConfig memory timeouts = ETourInstance_Base.TimeoutConfig({
+            matchTimePerPlayer: matchTimePerPlayer,
+            timeIncrementPerMove: timeIncrementPerMove,
+            matchLevel2Delay: MATCH_LEVEL_2_DELAY,
+            matchLevel3Delay: MATCH_LEVEL_3_DELAY,
+            enrollmentWindow: enrollmentWindow,
+            enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
+        });
 
         bytes32 tierKey = _computeTierKey(playerCount, entryFee);
         if (!_tierExists(tierKey)) {

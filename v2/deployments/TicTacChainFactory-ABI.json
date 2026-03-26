@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-25T10:47:31.263Z",
+  "deployedAt": "2026-03-26T22:05:23.322Z",
   "modules": {
     "ETourInstance_Core": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
     "ETourInstance_Matches": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
@@ -9,10 +9,10 @@
     "ETourInstance_Escalation": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB"
+    "PlayerRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
   },
   "factory": {
-    "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
+    "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
     "abi": [
       {
         "inputs": [
@@ -209,7 +209,46 @@
       },
       {
         "inputs": [],
+        "name": "ENROLLMENT_LEVEL_2_DELAY",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "FEE_INCREMENT",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "MATCH_LEVEL_2_DELAY",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "MATCH_LEVEL_3_DELAY",
         "outputs": [
           {
             "internalType": "uint256",
@@ -330,41 +369,19 @@
             "type": "uint256"
           },
           {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "matchTimePerPlayer",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "timeIncrementPerMove",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "matchLevel2Delay",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "matchLevel3Delay",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "enrollmentWindow",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "enrollmentLevel2Delay",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct ETourInstance_Base.TimeoutConfig",
-            "name": "timeouts",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "enrollmentWindow",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "matchTimePerPlayer",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timeIncrementPerMove",
+            "type": "uint256"
           }
         ],
         "name": "createInstance",
@@ -844,7 +861,7 @@
     ]
   },
   "instance": {
-    "address": "0x5971B98C0066517Bae7D44021f42e50B77cfe1F9",
+    "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
     "abi": [
       {
         "inputs": [],

@@ -28,7 +28,7 @@ export default {
   },
   networks: {
     hardhat: {
-      chainId: 31337,
+      chainId: 412346,
       accounts: {
         count: 250,
         accountsBalance: "10000000000000000000000",
@@ -43,8 +43,7 @@ export default {
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 412346,
-      gas: 1000000000,
-      gasPrice: 100000000,
+      gasPrice: 1000000000,
       allowUnlimitedContractSize: true,
     },
   },

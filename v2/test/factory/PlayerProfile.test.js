@@ -60,31 +60,35 @@ async function deployAll() {
 }
 
 function defaultTimeouts() {
-    const ONE_HOUR = 3600n;
+    // These must match the validation in ETourFactory:
+    // - enrollmentWindow: 2, 5, 10, or 30 minutes
+    // - matchTimePerPlayer: 2, 5, 10, or 15 minutes
+    // - timeIncrementPerMove: 15 or 30 seconds
     return {
-        matchTimePerPlayer:    ONE_HOUR * 24n,
-        timeIncrementPerMove:  10n,
-        matchLevel2Delay:      ONE_HOUR,
-        matchLevel3Delay:      ONE_HOUR * 2n,
-        enrollmentWindow:      ONE_HOUR * 48n,
-        enrollmentLevel2Delay: ONE_HOUR * 24n,
+        enrollmentWindow:      2n * 60n,    // 2 minutes
+        matchTimePerPlayer:    5n * 60n,    // 5 minutes
+        timeIncrementPerMove:  15n,         // 15 seconds
     };
 }
 
 function shortTimeouts() {
+    // Minimum valid values for quick testing
     return {
-        matchTimePerPlayer:    30n,
-        timeIncrementPerMove:  5n,
-        matchLevel2Delay:      10n,
-        matchLevel3Delay:      20n,
-        enrollmentWindow:      30n,
-        enrollmentLevel2Delay: 15n,
+        enrollmentWindow:      2n * 60n,    // 2 minutes (minimum allowed)
+        matchTimePerPlayer:    2n * 60n,    // 2 minutes (minimum allowed)
+        timeIncrementPerMove:  15n,         // 15 seconds (minimum allowed)
     };
 }
 
 async function createInstance(factory, playerCount, entryFee, signer) {
+    const timeouts = defaultTimeouts();
     const tx = await factory.connect(signer).createInstance(
-        playerCount, entryFee, defaultTimeouts(), { value: entryFee }
+        playerCount,
+        entryFee,
+        timeouts.enrollmentWindow,
+        timeouts.matchTimePerPlayer,
+        timeouts.timeIncrementPerMove,
+        { value: entryFee }
     );
     const receipt = await tx.wait();
     const event = receipt.logs
@@ -293,7 +297,10 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
         const entryFee = hre.ethers.parseEther("0.01");
 
         // Use short enrollment window so we can force start
-        const tx = await factory.connect(solo).createInstance(2, entryFee, shortTimeouts(), { value: entryFee });
+        const timeouts = shortTimeouts();
+        const tx = await factory.connect(solo).createInstance(
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+        );
         const receipt = await tx.wait();
         const event = receipt.logs
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
@@ -302,8 +309,8 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        // Wait for enrollment window to expire
-        await advanceTime(31);
+        // Wait for enrollment window to expire (2 minutes + 1 second)
+        await advanceTime(121);
 
         const balanceBefore = await hre.ethers.provider.getBalance(solo.address);
         const forceTx = await instance.connect(solo).forceStartTournament();
@@ -322,7 +329,10 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
 
         const ownerBalanceBefore = await factory.ownerBalance();
 
-        const tx = await factory.connect(solo).createInstance(2, entryFee, shortTimeouts(), { value: entryFee });
+        const timeouts = shortTimeouts();
+        const tx = await factory.connect(solo).createInstance(
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+        );
         const receipt = await tx.wait();
         const event = receipt.logs
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
@@ -331,7 +341,7 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await advanceTime(31);
+        await advanceTime(121); // 2 minutes + 1 second
         await instance.connect(solo).forceStartTournament();
 
         const ownerBalanceAfter = await factory.ownerBalance();
@@ -342,7 +352,10 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
         const [solo] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
 
-        const tx = await factory.connect(solo).createInstance(2, entryFee, shortTimeouts(), { value: entryFee });
+        const timeouts = shortTimeouts();
+        const tx = await factory.connect(solo).createInstance(
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+        );
         const receipt = await tx.wait();
         const event = receipt.logs
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
@@ -351,7 +364,7 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await advanceTime(31);
+        await advanceTime(121); // 2 minutes + 1 second
         await instance.connect(solo).forceStartTournament();
 
         const balance = await hre.ethers.provider.getBalance(await instance.getAddress());
@@ -377,7 +390,9 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
 
         // Create a 4-player instance; only 2 enroll (p1 auto-enrolled, then p2)
         const to = shortTimeouts();
-        const tx = await factory.connect(p1).createInstance(4, entryFee, to, { value: entryFee });
+        const tx = await factory.connect(p1).createInstance(
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+        );
         const receipt = await tx.wait();
         const event = receipt.logs
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
@@ -387,8 +402,9 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
         );
         await instance.connect(p2).enrollInTournament({ value: entryFee });
 
-        // Advance past EL2 threshold (enrollmentWindow + enrollmentLevel2Delay)
-        await advanceTime(31 + 16);
+        // Advance past EL2 threshold (enrollmentWindow + ENROLLMENT_LEVEL_2_DELAY)
+        // enrollmentWindow = 2 minutes, EL2 delay = 2 minutes hardcoded
+        await advanceTime(121 + 121); // (2min + 1s) + (2min + 1s)
 
         const claimerBefore = await hre.ethers.provider.getBalance(claimer.address);
         const claimTx = await instance.connect(claimer).claimAbandonedPool();
@@ -408,7 +424,9 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
         const ownerBefore = await factory.ownerBalance();
 
         const to = shortTimeouts();
-        const tx = await factory.connect(p1).createInstance(4, entryFee, to, { value: entryFee });
+        const tx = await factory.connect(p1).createInstance(
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+        );
         const receipt = await tx.wait();
         const event = receipt.logs
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
@@ -417,7 +435,8 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await advanceTime(46);
+        // Wait for enrollment window + EL2 delay (2 min + 2 min = 4 min + buffer)
+        await advanceTime(121 + 121);
         await instance.connect(claimer).claimAbandonedPool();
 
         expect(await factory.ownerBalance()).to.equal(ownerBefore);
@@ -730,15 +749,17 @@ describe("Player count cap", function () {
 
     it("rejects playerCount of 64", async function () {
         const entryFee = hre.ethers.parseEther("0.001");
+        const to = defaultTimeouts();
         await expect(
-            factory.createInstance(64, entryFee, defaultTimeouts(), { value: entryFee })
+            factory.createInstance(64, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee })
         ).to.be.revertedWithCustomError(factory, "InvalidPlayerCount");
     });
 
     it("accepts playerCount of 32", async function () {
         const entryFee = hre.ethers.parseEther("0.001");
+        const to = defaultTimeouts();
         await expect(
-            factory.createInstance(32, entryFee, defaultTimeouts(), { value: entryFee })
+            factory.createInstance(32, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee })
         ).to.not.be.reverted;
     });
 });

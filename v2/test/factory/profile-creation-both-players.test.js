@@ -43,14 +43,10 @@ async function deployAll() {
 }
 
 function defaultTimeouts() {
-    const ONE_HOUR = 3600n;
     return {
-        matchTimePerPlayer:    ONE_HOUR * 24n,
-        timeIncrementPerMove:  10n,
-        matchLevel2Delay:      ONE_HOUR,
-        matchLevel3Delay:      ONE_HOUR * 2n,
-        enrollmentWindow:      ONE_HOUR * 48n,
-        enrollmentLevel2Delay: ONE_HOUR * 24n,
+        enrollmentWindow:      2n * 60n,    // 2 minutes
+        matchTimePerPlayer:    5n * 60n,    // 5 minutes
+        timeIncrementPerMove:  15n,         // 15 seconds
     };
 }
 
@@ -67,8 +63,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const entryFee = hre.ethers.parseEther("0.001");
 
         // Creator creates instance (auto-enrolls via enrollOnBehalf)
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -101,8 +98,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const [, creator] = signers;
         const entryFee = hre.ethers.parseEther("0.001");
 
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -130,8 +128,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const [, creator, joiner] = signers;
         const entryFee = hre.ethers.parseEther("0.001");
 
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -164,8 +163,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const [, creator, joiner] = signers;
         const entryFee = hre.ethers.parseEther("0.001");
 
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -201,8 +201,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const [, creator, joiner] = signers;
         const entryFee = hre.ethers.parseEther("0.001");
 
+        const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -280,8 +281,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         console.log("Factory NOT authorized - testing failure scenario");
 
         // Try to create instance and enroll
+        const to = defaultTimeouts();
         const tx = await unauthorizedFactory.connect(creator).createInstance(
-            2, entryFee, defaultTimeouts(), { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
