@@ -64,6 +64,7 @@ contract ETourInstance_Core is ETourInstance_Base {
 
         // All fee buckets stay on the instance until conclusion.
         // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
+        tournament.totalEntryFeesAccrued += msg.value;
         tournament.prizePool += participantsShare;
         tournament.ownerAccrued += ownerShare;
         tournament.protocolAccrued += protocolShare;
@@ -106,6 +107,7 @@ contract ETourInstance_Core is ETourInstance_Base {
 
         // All fee buckets stay on the instance until conclusion.
         // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
+        tournament.totalEntryFeesAccrued += msg.value;
         tournament.prizePool += participantsShare;
         tournament.ownerAccrued += ownerShare;
         tournament.protocolAccrued += protocolShare;
@@ -138,8 +140,10 @@ contract ETourInstance_Core is ETourInstance_Base {
     }
 
     /**
-     * @dev Claim abandoned enrollment pool (EL2).
-     * Anyone can call after escalation2Start if pool is non-empty.
+     * @dev Claim abandoned tournament resolution (EL2).
+     * Anyone can call after escalation2Start if at least one player enrolled.
+     * The caller becomes the tournament winner for the 90% prize pool, while
+     * the deferred owner share and per-instance raffle still execute normally.
      */
     function coreClaimAbandonedPool() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
@@ -151,15 +155,9 @@ contract ETourInstance_Core is ETourInstance_Base {
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation3_ExternalPlayers;
 
-        uint256 claimAmount = tournament.enrollmentTimeout.forfeitPool;
-        tournament.enrollmentTimeout.forfeitPool = 0;
-
         tournament.status = TournamentStatus.Concluded;
         _setTournamentResolution(TournamentResolutionReason.AbandonedTournamentClaimed);
         tournament.winner = msg.sender;
-
-        (bool ok, ) = payable(msg.sender).call{value: claimAmount}("");
-        require(ok, "Transfer failed");
     }
 
     // ============ Tournament Start ============
@@ -199,6 +197,10 @@ contract ETourInstance_Core is ETourInstance_Base {
 
             if (refundAmount > 0) {
                 (bool sent, ) = payable(soloWinner).call{value: refundAmount}("");
+                tournament.prizeRecipient = soloWinner;
+                tournament.prizeAwarded = sent ? refundAmount : 0;
+                tournament.raffleRecipient = address(0);
+                tournament.raffleAwarded = 0;
                 if (!sent) {
                     // Fallback: restore prize so rescueStuckFunds can recover it
                     tournament.prizePool = refundAmount;

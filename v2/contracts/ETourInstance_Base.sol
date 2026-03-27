@@ -139,6 +139,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         TournamentStatus status;
         uint8 currentRound;
         uint8 enrolledCount;
+        uint256 totalEntryFeesAccrued; // Gross entry fees collected for this instance
         uint256 prizePool;      // 90% of entry fees — distributed to winner(s)
         uint256 ownerAccrued;   // 7.5% of entry fees — sent to factory at conclusion
         uint256 protocolAccrued; // 2.5% of entry fees — raffled among players at conclusion
@@ -152,6 +153,10 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         TournamentResolutionCategory completionCategory;
         EnrollmentTimeoutState enrollmentTimeout;
         uint8 actualTotalRounds;
+        uint256 prizeAwarded;
+        address prizeRecipient;
+        uint256 raffleAwarded;
+        address raffleRecipient;
     }
 
     struct Round {
@@ -569,6 +574,12 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         address tournamentWinner = tournament.winner;
         uint256 winnersPot = tournament.prizePool;
+        if (tournament.completionReason != TournamentResolutionReason.SoloEnrollForceStart) {
+            tournament.prizeAwarded = 0;
+            tournament.prizeRecipient = tournamentWinner;
+        }
+        tournament.raffleAwarded = 0;
+        tournament.raffleRecipient = address(0);
 
         // ── Step 1: Distribute prize pool (90%) to winner(s) ──────────────────
         // Skip if prizePool is 0 — happens on EL1 solo force-start where the full
@@ -611,6 +622,10 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             if (prizes[i] > 0) {
                 emit Transfer(address(this), winners[i], prizes[i]);
             }
+        }
+
+        if (winners.length == 1 && winners[0] == tournamentWinner) {
+            tournament.prizeAwarded = prizes[0];
         }
 
         emit TournamentConcluded(
@@ -657,10 +672,13 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             }
         }
 
-        // ── Step 4: Per-tournament raffle — remaining balance (≈2.5%) ─────────
-        // address(this).balance now holds only the protocolAccrued (minus any
-        // gas costs from owner share send if that failed and left ETH here).
-        uint256 rafflePool = address(this).balance;
+        // ── Step 4: Per-tournament raffle — only this instance's protocol share ─
+        // Never derive the raffle from raw balance, because failed earlier sends
+        // or forced ETH can leave unrelated funds on the instance.
+        uint256 rafflePool = tournament.protocolAccrued;
+        if (rafflePool > address(this).balance) {
+            rafflePool = address(this).balance;
+        }
         if (rafflePool > 0 && enrolledPlayers.length > 0) {
             uint256 idx = uint256(keccak256(abi.encodePacked(
                 block.prevrandao,
@@ -671,6 +689,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             ))) % enrolledPlayers.length;
             address raffleWinner = enrolledPlayers[idx];
             (bool sent, ) = payable(raffleWinner).call{value: rafflePool}("");
+            tournament.raffleRecipient = raffleWinner;
+            tournament.raffleAwarded = sent ? rafflePool : 0;
             emit TournamentRaffleAwarded(address(this), raffleWinner, rafflePool, sent);
         }
     }
@@ -969,9 +989,14 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint256 startTime,
         TournamentStatus status,
         uint8 enrolledCount,
+        uint256 totalEntryFeesAccrued,
         address winner,
         TournamentResolutionReason completionReason,
-        TournamentResolutionCategory completionCategory
+        TournamentResolutionCategory completionCategory,
+        uint256 prizeAwarded,
+        address prizeRecipient,
+        uint256 raffleAwarded,
+        address raffleRecipient
     ) {
         return (
             tierConfig.tierKey,
@@ -982,9 +1007,14 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             tournament.startTime,
             tournament.status,
             tournament.enrolledCount,
+            tournament.totalEntryFeesAccrued,
             tournament.winner,
             tournament.completionReason,
-            tournament.completionCategory
+            tournament.completionCategory,
+            tournament.prizeAwarded,
+            tournament.prizeRecipient,
+            tournament.raffleAwarded,
+            tournament.raffleRecipient
         );
     }
 
