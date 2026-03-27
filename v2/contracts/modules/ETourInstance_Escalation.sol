@@ -137,6 +137,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
 
         this._completeMatchWithResult(matchId, address(0), false);
+        matches[matchId].completionReason = CompletionReason.ForceElimination;
 
         Round storage round = rounds[roundNumber];
         round.completedMatches++;
@@ -156,6 +157,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
 
         this._completeMatchWithResult(matchId, replacementPlayer, false);
+        matches[matchId].completionReason = CompletionReason.Replacement;
 
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[replacementPlayer]) {
