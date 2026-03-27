@@ -95,15 +95,12 @@ contract ChessInstance is ETourInstance {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
 
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao, block.timestamp, block.number,
-            roundNumber, matchNumber, player1, player2
-        )));
-        if (randomness % 2 == 0) {
-            m.player1 = player1; m.player2 = player2;
-        } else {
-            m.player1 = player2; m.player2 = player1;
-        }
+        (m.player1, m.player2) = _drawRandomizedPlayerOrder(
+            ENTROPY_MATCH_CREATE,
+            keccak256(abi.encodePacked(roundNumber, matchNumber, player1, player2)),
+            player1,
+            player2
+        );
         m.currentTurn = m.player1;
         m.firstPlayer = m.player1;
         m.status = MatchStatus.InProgress;
@@ -152,12 +149,12 @@ contract ChessInstance is ETourInstance {
         m.winner = address(0);
         m.moves = "";
 
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao, block.timestamp, block.number, matchId, m.player1, m.player2
-        )));
-        if (randomness % 2 == 1) {
-            (m.player1, m.player2) = (m.player2, m.player1);
-        }
+        (m.player1, m.player2) = _drawRandomizedPlayerOrder(
+            ENTROPY_MATCH_RESTART,
+            keccak256(abi.encodePacked(matchId, m.player1, m.player2)),
+            m.player1,
+            m.player2
+        );
         m.currentTurn = m.player1;
         m.firstPlayer = m.player1;
         m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;

@@ -67,9 +67,11 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
             address walkoverPlayer = address(0);
             if (tournament.enrolledCount % 2 == 1) {
-                uint8 walkoverIndex = uint8(uint256(keccak256(abi.encodePacked(
-                    block.prevrandao, block.timestamp, tournament.enrolledCount
-                ))) % tournament.enrolledCount);
+                uint8 walkoverIndex = uint8(_drawRandomIndex(
+                    ENTROPY_WALKOVER,
+                    keccak256(abi.encodePacked(roundNumber, tournament.enrolledCount)),
+                    tournament.enrolledCount
+                ));
 
                 walkoverPlayer = enrolledPlayers[walkoverIndex];
                 enrolledPlayers[walkoverIndex] = enrolledPlayers[tournament.enrolledCount - 1];
@@ -463,10 +465,12 @@ contract ETourInstance_Matches is ETourInstance_Base {
         address[] memory players,
         uint8 playerCount,
         uint8 roundNumber
-    ) internal view returns (address walkoverPlayer, uint8 newPlayerCount) {
-        uint8 walkoverIndex = uint8(uint256(keccak256(abi.encodePacked(
-            block.prevrandao, block.timestamp, roundNumber, playerCount
-        ))) % playerCount);
+    ) internal returns (address walkoverPlayer, uint8 newPlayerCount) {
+        uint8 walkoverIndex = uint8(_drawRandomIndex(
+            ENTROPY_WALKOVER,
+            keccak256(abi.encode(roundNumber, playerCount, players)),
+            playerCount
+        ));
         walkoverPlayer = players[walkoverIndex];
         players[walkoverIndex] = players[playerCount - 1];
         newPlayerCount = playerCount - 1;

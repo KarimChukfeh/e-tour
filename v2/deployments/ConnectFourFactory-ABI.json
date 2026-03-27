@@ -1,18 +1,18 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-27T12:31:12.702Z",
+  "deployedAt": "2026-03-27T14:07:35.664Z",
   "modules": {
-    "ETourInstance_Core": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
-    "ETourInstance_Matches": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
-    "ETourInstance_Prizes": "0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901",
-    "ETourInstance_Escalation": "0x7A9Ec1d04904907De0ED7b6839CcdD59c3716AC9"
+    "ETourInstance_Core": "0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8",
+    "ETourInstance_Matches": "0x40918Ba7f132E0aCba2CE4de4c4baF9BD2D7D849",
+    "ETourInstance_Prizes": "0xF32D39ff9f6Aa7a7A64d7a4F00a54826Ef791a55",
+    "ETourInstance_Escalation": "0xd6e1afe5cA8D00A2EFC01B89997abE2De47fdfAf"
   },
   "playerProfile": {
-    "PlayerRegistry": "0xf953b3A269d80e3eB0F2947630Da976B896A8C5b"
+    "PlayerRegistry": "0x638A246F0Ec8883eF68280293FFE8Cfbabe61B44"
   },
   "factory": {
-    "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
+    "address": "0x6C2d83262fF84cBaDb3e416D527403135D757892",
     "abi": [
       {
         "inputs": [
@@ -874,7 +874,7 @@
     ]
   },
   "instance": {
-    "address": "0x0F9019Dd30C7Cc5774d4883fba933aA0Caba9424",
+    "address": "0xC627db5183F77233F02857Af21976C1a0Ec8AC60",
     "abi": [
       {
         "inputs": [],

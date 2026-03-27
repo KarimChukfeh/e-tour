@@ -36,6 +36,14 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
     uint8 public constant NO_ROUND = 255;
 
+    bytes32 internal constant ENTROPY_INIT = keccak256("ETOUR_ENTROPY_INIT");
+    bytes32 internal constant ENTROPY_ENROLL = keccak256("ETOUR_ENTROPY_ENROLL");
+    bytes32 internal constant ENTROPY_MATCH_CREATE = keccak256("ETOUR_ENTROPY_MATCH_CREATE");
+    bytes32 internal constant ENTROPY_MATCH_RESTART = keccak256("ETOUR_ENTROPY_MATCH_RESTART");
+    bytes32 internal constant ENTROPY_MATCH_RESULT = keccak256("ETOUR_ENTROPY_MATCH_RESULT");
+    bytes32 internal constant ENTROPY_WALKOVER = keccak256("ETOUR_ENTROPY_WALKOVER");
+    bytes32 internal constant ENTROPY_RAFFLE = keccak256("ETOUR_ENTROPY_RAFFLE");
+
     // ============ Enums ============
 
     enum TournamentStatus { Enrolling, InProgress, Concluded }
@@ -251,6 +259,11 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     // Draw tracking: drawParticipants[roundNumber][matchNumber][player]
     mapping(uint8 => mapping(uint8 => mapping(address => bool))) public drawParticipants;
 
+    // Tournament-scoped entropy accumulator used for lightweight in-protocol random draws.
+    // Appended at the end of storage to preserve module layout compatibility.
+    bytes32 private _entropyState;
+    uint256 private _entropyNonce;
+
     // ============ Events ============
 
     event PlayerEnrolled(address indexed player, address indexed instance);
@@ -307,6 +320,17 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         tournament.status = TournamentStatus.Enrolling;
         tournament.createdAt = block.timestamp;
+
+        _mixEntropy(
+            ENTROPY_INIT,
+            keccak256(abi.encodePacked(
+                _factory,
+                _creator,
+                _tierConfig.playerCount,
+                _tierConfig.entryFee,
+                _tierConfig.totalRounds
+            ))
+        );
     }
 
     // ============ Modifiers ============
@@ -331,6 +355,61 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
      */
     function _getMatchId(uint8 roundNumber, uint8 matchNumber) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(roundNumber, matchNumber));
+    }
+
+    function _previousBlockHash() internal view returns (bytes32) {
+        if (block.number == 0) return bytes32(0);
+        return blockhash(block.number - 1);
+    }
+
+    function _mixEntropy(bytes32 domain, bytes32 salt) internal returns (bytes32 mixed) {
+        mixed = keccak256(abi.encodePacked(
+            _entropyState,
+            domain,
+            salt,
+            _entropyNonce,
+            address(this),
+            creator,
+            block.prevrandao,
+            _previousBlockHash(),
+            tournament.status,
+            tournament.currentRound,
+            tournament.enrolledCount,
+            tournament.totalEntryFeesAccrued
+        ));
+        _entropyState = mixed;
+        unchecked {
+            ++_entropyNonce;
+        }
+    }
+
+    function _drawRandomIndex(bytes32 domain, bytes32 salt, uint256 upperBound)
+        internal
+        returns (uint256)
+    {
+        require(upperBound > 0, "RB");
+        return uint256(_mixEntropy(domain, salt)) % upperBound;
+    }
+
+    function _drawRandomStarter(
+        bytes32 domain,
+        bytes32 salt,
+        address player1,
+        address player2
+    ) internal returns (address starter) {
+        return _drawRandomIndex(domain, salt, 2) == 0 ? player1 : player2;
+    }
+
+    function _drawRandomizedPlayerOrder(
+        bytes32 domain,
+        bytes32 salt,
+        address player1,
+        address player2
+    ) internal returns (address first, address second) {
+        if (_drawRandomIndex(domain, salt, 2) == 0) {
+            return (player1, player2);
+        }
+        return (player2, player1);
     }
 
     // ============ Math Helpers ============
@@ -544,6 +623,23 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         timeout.escalation2Start = 0;
         timeout.activeEscalation = EscalationLevel.None;
 
+        _mixEntropy(
+            ENTROPY_MATCH_RESULT,
+            keccak256(abi.encodePacked(
+                roundNumber,
+                matchNumber,
+                m.player1,
+                m.player2,
+                winner,
+                isDraw,
+                uint8(reason),
+                m.packedBoard,
+                m.packedState,
+                m.startTime,
+                m.lastMoveTime
+            ))
+        );
+
         (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
             abi.encodeWithSignature(
                 "completeMatch(uint8,uint8,address,bool,uint8)",
@@ -680,13 +776,17 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             rafflePool = address(this).balance;
         }
         if (rafflePool > 0 && enrolledPlayers.length > 0) {
-            uint256 idx = uint256(keccak256(abi.encodePacked(
-                block.prevrandao,
-                block.timestamp,
-                block.number,
-                address(this),
-                tournament.enrolledCount
-            ))) % enrolledPlayers.length;
+            uint256 idx = _drawRandomIndex(
+                ENTROPY_RAFFLE,
+                keccak256(abi.encodePacked(
+                    tournamentWinner,
+                    rafflePool,
+                    tournament.completionReason,
+                    enrolledPlayers.length,
+                    tournament.prizeAwarded
+                )),
+                enrolledPlayers.length
+            );
             address raffleWinner = enrolledPlayers[idx];
             (bool sent, ) = payable(raffleWinner).call{value: rafflePool}("");
             tournament.raffleRecipient = raffleWinner;
@@ -797,6 +897,15 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         );
         require(success, "Enrollment failed");
 
+        _mixEntropy(
+            ENTROPY_ENROLL,
+            keccak256(abi.encodePacked(
+                msg.sender,
+                tournament.enrolledCount,
+                tournament.totalEntryFeesAccrued
+            ))
+        );
+
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {
             initializeRound(0);
@@ -826,6 +935,15 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             abi.encodeWithSignature("coreEnrollOnBehalf(address)", player)
         );
         require(success, "Enrollment failed");
+
+        _mixEntropy(
+            ENTROPY_ENROLL,
+            keccak256(abi.encodePacked(
+                player,
+                tournament.enrolledCount,
+                tournament.totalEntryFeesAccrued
+            ))
+        );
 
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {

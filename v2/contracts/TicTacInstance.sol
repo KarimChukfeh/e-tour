@@ -80,11 +80,12 @@ contract TicTacInstance is ETourInstance {
         m.packedBoard = 0;
         m.moves = "";
 
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao, block.timestamp, block.number,
-            roundNumber, matchNumber, player1, player2
-        )));
-        m.currentTurn = (randomness % 2 == 0) ? player1 : player2;
+        m.currentTurn = _drawRandomStarter(
+            ENTROPY_MATCH_CREATE,
+            keccak256(abi.encodePacked(roundNumber, matchNumber, player1, player2)),
+            player1,
+            player2
+        );
         m.firstPlayer = m.currentTurn;
 
         m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
@@ -129,11 +130,12 @@ contract TicTacInstance is ETourInstance {
         m.winner = address(0);
         m.moves = "";
 
-        uint256 randomness = uint256(keccak256(abi.encodePacked(
-            block.prevrandao, block.timestamp, block.number,
-            matchId, m.player1, m.player2
-        )));
-        m.currentTurn = (randomness % 2 == 0) ? m.player1 : m.player2;
+        m.currentTurn = _drawRandomStarter(
+            ENTROPY_MATCH_RESTART,
+            keccak256(abi.encodePacked(matchId, m.player1, m.player2)),
+            m.player1,
+            m.player2
+        );
         m.firstPlayer = m.currentTurn;
         m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
         m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
