@@ -99,7 +99,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 matchNumber,
         address winner,
         bool isDraw,
-        CompletionReason reason
+        MatchCompletionReason reason
     ) public payable onlyDelegateCall {
         if (!isDraw) {
             if (roundNumber < tournament.actualTotalRounds - 1) {
@@ -144,7 +144,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
     // ============ Round Completion ============
 
-    function completeRound(uint8 roundNumber, CompletionReason reason) internal {
+    function completeRound(uint8 roundNumber, MatchCompletionReason reason) internal {
         if (_isActualFinalsRound(roundNumber)) {
             _handleFinalsCompletion(roundNumber, reason);
             return;
@@ -193,17 +193,21 @@ contract ETourInstance_Matches is ETourInstance_Base {
         return true;
     }
 
-    function _handleFinalsCompletion(uint8 roundNumber, CompletionReason reason) internal {
+    function _handleFinalsCompletion(uint8 roundNumber, MatchCompletionReason reason) internal {
         bytes32 finalMatchId = _getMatchId(roundNumber, 0);
         (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
 
         if (finalIsDraw) {
             tournament.finalsWasDraw = true;
-            tournament.completionReason = CompletionReason.AllDrawScenario;
+            _setTournamentResolution(TournamentResolutionReason.FinalsDraw);
             tournament.winner = address(0);
             completeTournament(address(0));
         } else {
-            tournament.completionReason = reason;
+            if (reason == MatchCompletionReason.Timeout) {
+                _setTournamentResolution(TournamentResolutionReason.Timeout);
+            } else {
+                _setTournamentResolution(TournamentResolutionReason.NormalWin);
+            }
             completeTournament(finalWinner);
         }
     }
@@ -259,7 +263,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);
-        tournament.completionReason = CompletionReason.AllDrawScenario;
+        _setTournamentResolution(TournamentResolutionReason.AllDrawScenario);
         remainingPlayers; // silence unused warning
     }
 

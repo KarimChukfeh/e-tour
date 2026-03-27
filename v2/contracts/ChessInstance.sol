@@ -130,7 +130,8 @@ contract ChessInstance is ETourInstance {
         m.startTime = 0; m.lastMoveTime = 0;
         m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
         m.moves = "";
-        m.completionReason = CompletionReason.NormalWin;
+        m.completionReason = MatchCompletionReason.NormalWin;
+        m.completionCategory = MatchCompletionCategory.None;
         // Increment nonce to invalidate stale position counts
         ++_gameNonce[matchId];
     }
@@ -262,11 +263,11 @@ contract ChessInstance is ETourInstance {
         emit MoveMade(matchId, msg.sender, from, to);
 
         if (gameEnd == 1) { // checkmate
-            _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+            _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, MatchCompletionReason.NormalWin);
         } else if (gameEnd == 2 || gameEnd == 3 || gameEnd == 4) { // stalemate / fifty-move / insufficient material
-            _completeMatchInternal(roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            _completeMatchInternal(roundNumber, matchNumber, address(0), true, MatchCompletionReason.Draw);
         } else if (posCount >= 3) { // threefold repetition
-            _completeMatchInternal(roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            _completeMatchInternal(roundNumber, matchNumber, address(0), true, MatchCompletionReason.Draw);
         } else {
             m.currentTurn = isWhite ? m.player2 : m.player1;
         }

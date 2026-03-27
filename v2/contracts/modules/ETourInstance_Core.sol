@@ -155,7 +155,7 @@ contract ETourInstance_Core is ETourInstance_Base {
         tournament.enrollmentTimeout.forfeitPool = 0;
 
         tournament.status = TournamentStatus.Concluded;
-        tournament.completionReason = CompletionReason.AbandonedTournamentClaimed;
+        _setTournamentResolution(TournamentResolutionReason.AbandonedTournamentClaimed);
         tournament.winner = msg.sender;
 
         (bool ok, ) = payable(msg.sender).call{value: claimAmount}("");
@@ -182,7 +182,7 @@ contract ETourInstance_Core is ETourInstance_Base {
             address soloWinner = enrolledPlayers[0];
             tournament.winner = soloWinner;
             tournament.status = TournamentStatus.Concluded;
-            tournament.completionReason = CompletionReason.SoloEnrollForceStart;
+            _setTournamentResolution(TournamentResolutionReason.SoloEnrollForceStart);
 
             // Full 100% refund: prize pool + owner accrued + protocol accrued.
             // Owner and protocol earn nothing — the tournament never ran.

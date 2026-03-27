@@ -135,16 +135,36 @@ contract ETourInstance_Escalation is ETourInstance_Base {
 
     function _completeMatchDoubleEliminationInternal(uint8 roundNumber, uint8 matchNumber) internal {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
 
         this._completeMatchWithResult(matchId, address(0), false);
-        matches[matchId].completionReason = CompletionReason.ForceElimination;
+        matchData.completionReason = MatchCompletionReason.ForceElimination;
+        matchData.completionCategory = _matchCompletionCategoryFor(MatchCompletionReason.ForceElimination);
 
         Round storage round = rounds[roundNumber];
         round.completedMatches++;
 
         if (round.completedMatches == round.totalMatches) {
-            _handleRoundCompletion(roundNumber);
+            _handleRoundCompletion(roundNumber, MatchCompletionReason.ForceElimination);
         }
+
+        _recordEscalationMatchOutcomes(
+            matchData,
+            roundNumber,
+            matchNumber,
+            msg.sender,
+            MatchCompletionReason.ForceElimination
+        );
+
+        emit MatchCompleted(
+            address(this),
+            roundNumber,
+            matchNumber,
+            address(0),
+            false,
+            matchData.completionReason,
+            matchData.completionCategory
+        );
 
         _clearEscalationState(matchId);
     }
@@ -155,9 +175,11 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         address replacementPlayer
     ) internal {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
+        Match storage matchData = matches[matchId];
 
         this._completeMatchWithResult(matchId, replacementPlayer, false);
-        matches[matchId].completionReason = CompletionReason.Replacement;
+        matchData.completionReason = MatchCompletionReason.Replacement;
+        matchData.completionCategory = _matchCompletionCategoryFor(MatchCompletionReason.Replacement);
 
         // Add replacement player to tournament if not already enrolled
         if (!isEnrolled[replacementPlayer]) {
@@ -174,8 +196,26 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         round.completedMatches++;
 
         if (round.completedMatches == round.totalMatches) {
-            _handleRoundCompletion(roundNumber);
+            _handleRoundCompletion(roundNumber, MatchCompletionReason.Replacement);
         }
+
+        _recordEscalationMatchOutcomes(
+            matchData,
+            roundNumber,
+            matchNumber,
+            replacementPlayer,
+            MatchCompletionReason.Replacement
+        );
+
+        emit MatchCompleted(
+            address(this),
+            roundNumber,
+            matchNumber,
+            replacementPlayer,
+            false,
+            matchData.completionReason,
+            matchData.completionCategory
+        );
 
         _clearEscalationState(matchId);
     }
@@ -202,7 +242,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         }
     }
 
-    function _handleRoundCompletion(uint8 roundNumber) internal {
+    function _handleRoundCompletion(uint8 roundNumber, MatchCompletionReason resolutionReason) internal {
         Round storage round = rounds[roundNumber];
         TournamentState storage t = tournament;
 
@@ -210,22 +250,19 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             bytes32 finalsMatchId = _getMatchId(roundNumber, 0);
             (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
             if (!isDraw && winner != address(0)) {
-                MatchTimeoutState storage finalsTimeout = matchTimeouts[finalsMatchId];
-                t.completionReason = (finalsTimeout.activeEscalation == EscalationLevel.Escalation3_ExternalPlayers)
-                    ? CompletionReason.Replacement
-                    : CompletionReason.NormalWin;
                 t.winner = winner;
                 t.status = TournamentStatus.Concluded;
+                _setTournamentResolution(TournamentResolutionReason.Replacement);
             } else if (isDraw) {
                 t.finalsWasDraw = true;
-                t.completionReason = CompletionReason.Draw;
                 t.status = TournamentStatus.Concluded;
+                _setTournamentResolution(TournamentResolutionReason.FinalsDraw);
             } else {
                 t.status = TournamentStatus.Concluded;
                 t.allDrawResolution = true;
                 t.allDrawRound = roundNumber;
                 t.winner = address(0);
-                t.completionReason = CompletionReason.ForceElimination;
+                _setTournamentResolution(TournamentResolutionReason.ForceElimination);
             }
         } else {
             uint8 winnersCount = 0;
@@ -262,7 +299,11 @@ contract ETourInstance_Escalation is ETourInstance_Base {
                 (winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0))) {
                 t.winner = playersInNextRound == 1 ? solePlayerInNextRound : lastWinner;
                 t.status = TournamentStatus.Concluded;
-                t.completionReason = CompletionReason.NormalWin;
+                _setTournamentResolution(
+                    resolutionReason == MatchCompletionReason.ForceElimination
+                        ? TournamentResolutionReason.ForceElimination
+                        : TournamentResolutionReason.Replacement
+                );
             }
         }
     }

@@ -48,15 +48,57 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         Escalation3_ExternalPlayers
     }
 
-    enum CompletionReason {
+    enum MatchCompletionCategory {
+        None,
+        MatchResult,
+        Escalation
+    }
+
+    enum MatchCompletionReason {
         NormalWin,                  // 0
         Timeout,                    // 1
         Draw,                       // 2
+        ForceElimination,           // 3 (ML2)
+        Replacement                 // 4 (ML3)
+    }
+
+    enum TournamentResolutionCategory {
+        None,
+        MatchResult,
+        Escalation,
+        DrawResolution,
+        EnrollmentResolution
+    }
+
+    enum TournamentResolutionReason {
+        NormalWin,                  // 0
+        Timeout,                    // 1
+        FinalsDraw,                 // 2
         ForceElimination,           // 3 (ML2)
         Replacement,                // 4 (ML3)
         AllDrawScenario,            // 5
         SoloEnrollForceStart,       // 6 (EL1)
         AbandonedTournamentClaimed  // 7 (EL2)
+    }
+
+    enum PlayerMatchOutcomeCategory {
+        None,
+        Victory,
+        Defeat,
+        Draw
+    }
+
+    enum PlayerMatchOutcome {
+        None,
+        NormalVictory,
+        NormalDefeat,
+        TimeoutVictory,
+        TimeoutDefeat,
+        Draw,
+        ForceEliminationVictory,
+        ForceEliminationDefeat,
+        ReplacementVictory,
+        ReplacementDefeat
     }
 
     // ============ Structs ============
@@ -106,7 +148,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         bool finalsWasDraw;
         bool allDrawResolution;
         uint8 allDrawRound;
-        CompletionReason completionReason;
+        TournamentResolutionReason completionReason;
+        TournamentResolutionCategory completionCategory;
         EnrollmentTimeoutState enrollmentTimeout;
         uint8 actualTotalRounds;
     }
@@ -141,7 +184,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
         string moves;
-        CompletionReason completionReason;
+        MatchCompletionReason completionReason;
+        MatchCompletionCategory completionCategory;
     }
 
     struct LeaderboardEntry {
@@ -206,8 +250,21 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
     event PlayerEnrolled(address indexed player, address indexed instance);
     event TournamentStarted(address indexed instance, uint8 playerCount);
-    event TournamentConcluded(address indexed instance, address winner, CompletionReason reason);
-    event MatchCompleted(address indexed instance, uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw);
+    event TournamentConcluded(
+        address indexed instance,
+        address winner,
+        TournamentResolutionReason reason,
+        TournamentResolutionCategory category
+    );
+    event MatchCompleted(
+        address indexed instance,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw,
+        MatchCompletionReason reason,
+        MatchCompletionCategory category
+    );
     event Transfer(address indexed from, address indexed to, uint256 value);
     event TournamentRaffleAwarded(address indexed instance, address indexed winner, uint256 amount, bool transferred);
 
@@ -282,6 +339,180 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         return result;
     }
 
+    function _matchCompletionCategoryFor(MatchCompletionReason reason)
+        internal
+        pure
+        returns (MatchCompletionCategory)
+    {
+        if (
+            reason == MatchCompletionReason.ForceElimination ||
+            reason == MatchCompletionReason.Replacement
+        ) {
+            return MatchCompletionCategory.Escalation;
+        }
+        return MatchCompletionCategory.MatchResult;
+    }
+
+    function _tournamentResolutionCategoryFor(TournamentResolutionReason reason)
+        internal
+        pure
+        returns (TournamentResolutionCategory)
+    {
+        if (
+            reason == TournamentResolutionReason.SoloEnrollForceStart ||
+            reason == TournamentResolutionReason.AbandonedTournamentClaimed
+        ) {
+            return TournamentResolutionCategory.EnrollmentResolution;
+        }
+        if (reason == TournamentResolutionReason.AllDrawScenario) {
+            return TournamentResolutionCategory.DrawResolution;
+        }
+        if (
+            reason == TournamentResolutionReason.ForceElimination ||
+            reason == TournamentResolutionReason.Replacement
+        ) {
+            return TournamentResolutionCategory.Escalation;
+        }
+        return TournamentResolutionCategory.MatchResult;
+    }
+
+    function _setTournamentResolution(TournamentResolutionReason reason) internal {
+        tournament.completionReason = reason;
+        tournament.completionCategory = _tournamentResolutionCategoryFor(reason);
+    }
+
+    function _getPlayerRegistry() internal view returns (address reg) {
+        (bool ok, bytes memory ret) = factory.staticcall(
+            abi.encodeWithSignature("PLAYER_REGISTRY()")
+        );
+        if (ok && ret.length >= 32) {
+            reg = abi.decode(ret, (address));
+        }
+    }
+
+    function _recordPlayerMatchOutcome(
+        address player,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        PlayerMatchOutcome outcome,
+        PlayerMatchOutcomeCategory category
+    ) internal {
+        if (player == address(0) || outcome == PlayerMatchOutcome.None) return;
+
+        address reg = _getPlayerRegistry();
+        if (reg == address(0)) return;
+
+        (bool recorded, ) = reg.call{gas: 150_000}(
+            abi.encodeWithSignature(
+                "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8)",
+                player,
+                address(this),
+                roundNumber,
+                matchNumber,
+                uint8(outcome),
+                uint8(category)
+            )
+        );
+        recorded;
+    }
+
+    function _recordStandardMatchOutcomes(
+        Match storage m,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address winner,
+        bool isDraw,
+        MatchCompletionReason reason
+    ) internal {
+        if (isDraw) {
+            _recordPlayerMatchOutcome(
+                m.player1,
+                roundNumber,
+                matchNumber,
+                PlayerMatchOutcome.Draw,
+                PlayerMatchOutcomeCategory.Draw
+            );
+            _recordPlayerMatchOutcome(
+                m.player2,
+                roundNumber,
+                matchNumber,
+                PlayerMatchOutcome.Draw,
+                PlayerMatchOutcomeCategory.Draw
+            );
+            return;
+        }
+
+        if (reason == MatchCompletionReason.Timeout) {
+            _recordPlayerMatchOutcome(
+                winner,
+                roundNumber,
+                matchNumber,
+                PlayerMatchOutcome.TimeoutVictory,
+                PlayerMatchOutcomeCategory.Victory
+            );
+            _recordPlayerMatchOutcome(
+                winner == m.player1 ? m.player2 : m.player1,
+                roundNumber,
+                matchNumber,
+                PlayerMatchOutcome.TimeoutDefeat,
+                PlayerMatchOutcomeCategory.Defeat
+            );
+            return;
+        }
+
+        _recordPlayerMatchOutcome(
+            winner,
+            roundNumber,
+            matchNumber,
+            PlayerMatchOutcome.NormalVictory,
+            PlayerMatchOutcomeCategory.Victory
+        );
+        _recordPlayerMatchOutcome(
+            winner == m.player1 ? m.player2 : m.player1,
+            roundNumber,
+            matchNumber,
+            PlayerMatchOutcome.NormalDefeat,
+            PlayerMatchOutcomeCategory.Defeat
+        );
+    }
+
+    function _recordEscalationMatchOutcomes(
+        Match storage m,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        address actor,
+        MatchCompletionReason reason
+    ) internal {
+        PlayerMatchOutcome victoryOutcome = reason == MatchCompletionReason.Replacement
+            ? PlayerMatchOutcome.ReplacementVictory
+            : PlayerMatchOutcome.ForceEliminationVictory;
+        PlayerMatchOutcome defeatOutcome = reason == MatchCompletionReason.Replacement
+            ? PlayerMatchOutcome.ReplacementDefeat
+            : PlayerMatchOutcome.ForceEliminationDefeat;
+
+        _recordPlayerMatchOutcome(
+            m.player1,
+            roundNumber,
+            matchNumber,
+            defeatOutcome,
+            PlayerMatchOutcomeCategory.Defeat
+        );
+        _recordPlayerMatchOutcome(
+            m.player2,
+            roundNumber,
+            matchNumber,
+            defeatOutcome,
+            PlayerMatchOutcomeCategory.Defeat
+        );
+        _recordPlayerMatchOutcome(
+            actor,
+            roundNumber,
+            matchNumber,
+            victoryOutcome,
+            PlayerMatchOutcomeCategory.Victory
+        );
+    }
+
     // ============ Match Completion (shared internal logic) ============
 
     function _completeMatchInternal(
@@ -289,7 +520,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint8 matchNumber,
         address winner,
         bool isDraw,
-        CompletionReason reason
+        MatchCompletionReason reason
     ) internal {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
@@ -298,6 +529,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         m.isDraw = isDraw;
         m.status = MatchStatus.Completed;
         m.completionReason = reason;
+        m.completionCategory = _matchCompletionCategoryFor(reason);
 
         _completeMatchGameSpecific(roundNumber, matchNumber, winner, isDraw);
 
@@ -315,7 +547,17 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         );
         require(completeSuccess, "CM");
 
-        emit MatchCompleted(address(this), roundNumber, matchNumber, winner, isDraw);
+        _recordStandardMatchOutcomes(m, roundNumber, matchNumber, winner, isDraw, reason);
+
+        emit MatchCompleted(
+            address(this),
+            roundNumber,
+            matchNumber,
+            winner,
+            isDraw,
+            m.completionReason,
+            m.completionCategory
+        );
 
         _handleTournamentConclusion();
     }
@@ -371,7 +613,12 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             }
         }
 
-        emit TournamentConcluded(address(this), tournamentWinner, tournament.completionReason);
+        emit TournamentConcluded(
+            address(this),
+            tournamentWinner,
+            tournament.completionReason,
+            tournament.completionCategory
+        );
 
         // ── Step 2: Send deferred owner share (7.5%) to factory ───────────────
         // Always call receiveOwnerShare() even if ownerShare == 0 (EL1/EL2).
@@ -388,25 +635,25 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         // ── Step 3: Profile callbacks — push result to each player's profile ──
         // Best-effort: individual failures must never revert conclusion.
         // Read PLAYER_REGISTRY from factory via low-level call to avoid circular import.
-        address reg;
-        {
-            (bool ok, bytes memory ret) = factory.staticcall(
-                abi.encodeWithSignature("PLAYER_REGISTRY()")
-            );
-            if (ok && ret.length >= 32) reg = abi.decode(ret, (address));
-        }
+        address reg = _getPlayerRegistry();
         if (reg != address(0)) {
             for (uint256 i = 0; i < enrolledPlayers.length; i++) {
                 address p = enrolledPlayers[i];
                 bool won = (tournament.winner == p);
                 uint256 prize = playerPrizes[p];
                 // 150k gas: registry call + profile SSTORE chain (cold slots ~20k each)
-                reg.call{gas: 150_000}(
+                (bool recorded, ) = reg.call{gas: 150_000}(
                     abi.encodeWithSignature(
-                        "recordResult(address,address,bool,uint256)",
-                        p, address(this), won, prize
+                        "recordResult(address,address,bool,uint256,uint8,uint8)",
+                        p,
+                        address(this),
+                        won,
+                        prize,
+                        uint8(tournament.completionReason),
+                        uint8(tournament.completionCategory)
                     )
                 );
+                recorded;
             }
         }
 
@@ -638,7 +885,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         );
         require(markSuccess, "MS");
 
-        _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, CompletionReason.Timeout);
+        _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, MatchCompletionReason.Timeout);
     }
 
     // ============ Escalation Availability Views ============
@@ -723,7 +970,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         TournamentStatus status,
         uint8 enrolledCount,
         address winner,
-        CompletionReason completionReason
+        TournamentResolutionReason completionReason,
+        TournamentResolutionCategory completionCategory
     ) {
         return (
             tierConfig.tierKey,
@@ -735,7 +983,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             tournament.status,
             tournament.enrolledCount,
             tournament.winner,
-            tournament.completionReason
+            tournament.completionReason,
+            tournament.completionCategory
         );
     }
 
@@ -766,11 +1015,23 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint256 startTime,
         uint256 lastMoveTime,
         string memory moves,
-        CompletionReason completionReason
+        MatchCompletionReason completionReason,
+        MatchCompletionCategory completionCategory
     ) {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
-        return (m.player1, m.player2, m.winner, m.isDraw, m.status, m.startTime, m.lastMoveTime, m.moves, m.completionReason);
+        return (
+            m.player1,
+            m.player2,
+            m.winner,
+            m.isDraw,
+            m.status,
+            m.startTime,
+            m.lastMoveTime,
+            m.moves,
+            m.completionReason,
+            m.completionCategory
+        );
     }
 
     function getMatchMoves(uint8 roundNumber, uint8 matchNumber) external view returns (string memory) {

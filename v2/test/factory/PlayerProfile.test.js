@@ -763,6 +763,41 @@ describe("Profile push — stats updated automatically at conclusion", function 
         expect(record.won).to.equal(true);
     });
 
+    it("stores tournament resolution metadata and per-match outcomes separately", async function () {
+        const [p1, p2] = signers;
+        const entryFee = hre.ethers.parseEther("0.002");
+
+        const instance = await createInstance(factory, 2, entryFee, p1);
+        await instance.connect(p2).enrollInTournament({ value: entryFee });
+
+        const winner = await playAndWin(instance, 0, 0, p1, p2);
+        const loser = winner === p1.address ? p2.address : p1.address;
+
+        const winnerProfileAddr = await getProfileForGame(registry, winner);
+        const loserProfileAddr = await getProfileForGame(registry, loser);
+
+        const winnerProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", winnerProfileAddr);
+        const loserProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", loserProfileAddr);
+
+        const instanceAddress = await instance.getAddress();
+        const [winnerTournamentRecord, loserTournamentRecord, winnerMatchRecord, loserMatchRecord] = await Promise.all([
+            winnerProfile.getEnrollmentByInstance(instanceAddress),
+            loserProfile.getEnrollmentByInstance(instanceAddress),
+            winnerProfile.getMatchRecordByKey(instanceAddress, 0, 0),
+            loserProfile.getMatchRecordByKey(instanceAddress, 0, 0),
+        ]);
+
+        expect(winnerTournamentRecord.tournamentResolutionReason).to.equal(0n); // NormalWin
+        expect(winnerTournamentRecord.tournamentResolutionCategory).to.equal(1n); // MatchResult
+        expect(loserTournamentRecord.tournamentResolutionReason).to.equal(0n);
+        expect(loserTournamentRecord.tournamentResolutionCategory).to.equal(1n);
+
+        expect(winnerMatchRecord.outcome).to.equal(1n); // NormalVictory
+        expect(winnerMatchRecord.category).to.equal(1n); // Victory
+        expect(loserMatchRecord.outcome).to.equal(2n); // NormalDefeat
+        expect(loserMatchRecord.category).to.equal(2n); // Defeat
+    });
+
     it("loser profile: concluded=true, won=false on enrollment record", async function () {
         const [p1, p2] = signers;
         const entryFee = hre.ethers.parseEther("0.002");

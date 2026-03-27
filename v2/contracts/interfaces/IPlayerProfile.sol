@@ -14,6 +14,18 @@ interface IPlayerProfile {
         bool    concluded;
         bool    won;
         uint256 prize;
+        uint8   tournamentResolutionReason;
+        uint8   tournamentResolutionCategory;
+    }
+
+    struct PlayerMatchRecord {
+        address instance;
+        uint8   gameType;
+        uint8   roundNumber;
+        uint8   matchNumber;
+        uint64  recordedAt;
+        uint8   outcome;
+        uint8   category;
     }
 
     struct PlayerStats {
@@ -34,7 +46,18 @@ interface IPlayerProfile {
     function recordResult(
         address instance,
         bool won,
-        uint256 prize
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
+    ) external;
+
+    function recordMatchOutcome(
+        address instance,
+        uint8 gameType,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 outcome,
+        uint8 category
     ) external;
 
     function getStats() external view returns (PlayerStats memory);
@@ -43,6 +66,11 @@ interface IPlayerProfile {
 
     function getEnrollments(uint256 offset, uint256 limit)
         external view returns (EnrollmentRecord[] memory);
+
+    function getMatchRecordCount() external view returns (uint256);
+
+    function getMatchRecords(uint256 offset, uint256 limit)
+        external view returns (PlayerMatchRecord[] memory);
 
     function owner() external view returns (address);
 }

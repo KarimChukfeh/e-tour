@@ -28,7 +28,23 @@ interface IPlayerRegistry {
         address player,
         address instance,
         bool won,
-        uint256 prize
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
+    ) external;
+
+    /**
+     * @dev Called by an instance whenever a match resolves.
+     * Records the player-specific outcome for that match, including
+     * advanced/replacement actors who were not one of the scheduled players.
+     */
+    function recordMatchOutcome(
+        address player,
+        address instance,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 outcome,
+        uint8 category
     ) external;
 
     /**

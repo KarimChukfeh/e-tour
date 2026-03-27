@@ -37,7 +37,24 @@ contract PlayerRegistry is IPlayerRegistry {
     event FactoryAuthorized(address indexed factory);
     event FactoryDeauthorized(address indexed factory);
     event EnrollmentRecorded(address indexed player, address indexed instance, uint8 gameType);
-    event ResultRecorded(address indexed player, address indexed instance, uint8 gameType, bool won, uint256 prize);
+    event ResultRecorded(
+        address indexed player,
+        address indexed instance,
+        uint8 gameType,
+        bool won,
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
+    );
+    event MatchOutcomeRecorded(
+        address indexed player,
+        address indexed instance,
+        uint8 gameType,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 outcome,
+        uint8 category
+    );
 
     // ============ State ============
 
@@ -113,7 +130,9 @@ contract PlayerRegistry is IPlayerRegistry {
         address player,
         address instance,
         bool won,
-        uint256 prize
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
     ) external override {
         // Validate: msg.sender must be an instance whose factory is authorized.
         // We read factory() from the instance (the caller itself).
@@ -125,8 +144,59 @@ contract PlayerRegistry is IPlayerRegistry {
         address profile = profiles[player][gameType];
         if (profile == address(0)) return; // no profile — player was never enrolled properly
 
-        try IPlayerProfile(profile).recordResult(instance, won, prize) {
-            emit ResultRecorded(player, instance, gameType, won, prize);
+        try IPlayerProfile(profile).recordResult(
+            instance,
+            won,
+            prize,
+            tournamentResolutionReason,
+            tournamentResolutionCategory
+        ) {
+            emit ResultRecorded(
+                player,
+                instance,
+                gameType,
+                won,
+                prize,
+                tournamentResolutionReason,
+                tournamentResolutionCategory
+            );
+        } catch { }
+    }
+
+    function recordMatchOutcome(
+        address player,
+        address instance,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 outcome,
+        uint8 category
+    ) external override {
+        (bool authorized, uint8 gameType) = _getAuthorizedInstanceGameType(msg.sender);
+        if (!authorized) return;
+        if (player == address(0)) return;
+
+        address profile = profiles[player][gameType];
+        if (profile == address(0)) {
+            profile = _getOrCreate(player, gameType);
+        }
+
+        try IPlayerProfile(profile).recordMatchOutcome(
+            instance,
+            gameType,
+            roundNumber,
+            matchNumber,
+            outcome,
+            category
+        ) {
+            emit MatchOutcomeRecorded(
+                player,
+                instance,
+                gameType,
+                roundNumber,
+                matchNumber,
+                outcome,
+                category
+            );
         } catch { }
     }
 

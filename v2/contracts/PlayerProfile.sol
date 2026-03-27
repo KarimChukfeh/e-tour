@@ -29,7 +29,20 @@ contract PlayerProfile is IPlayerProfile {
     // ============ Events ============
 
     event EnrollmentRecorded(address indexed instance, uint8 gameType, uint256 entryFee);
-    event ResultRecorded(address indexed instance, bool won, uint256 prize);
+    event ResultRecorded(
+        address indexed instance,
+        bool won,
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
+    );
+    event MatchOutcomeRecorded(
+        address indexed instance,
+        uint8 indexed roundNumber,
+        uint8 indexed matchNumber,
+        uint8 outcome,
+        uint8 category
+    );
 
     // ============ State ============
 
@@ -39,9 +52,11 @@ contract PlayerProfile is IPlayerProfile {
     address public registry;
 
     EnrollmentRecord[] private _enrollments;
+    PlayerMatchRecord[] private _matchRecords;
 
     // instance address → index+1 in _enrollments (0 = not found)
     mapping(address => uint256) private _enrollmentIndex;
+    mapping(bytes32 => uint256) private _matchRecordIndex;
 
     PlayerStats private _stats;
 
@@ -77,7 +92,9 @@ contract PlayerProfile is IPlayerProfile {
             entryFee:   entryFee,
             concluded:  false,
             won:        false,
-            prize:      0
+            prize:      0,
+            tournamentResolutionReason: 0,
+            tournamentResolutionCategory: 0
         }));
 
         _enrollmentIndex[instance] = _enrollments.length; // store index+1
@@ -93,7 +110,9 @@ contract PlayerProfile is IPlayerProfile {
     function recordResult(
         address instance,
         bool won,
-        uint256 prize
+        uint256 prize,
+        uint8 tournamentResolutionReason,
+        uint8 tournamentResolutionCategory
     ) external override {
         if (msg.sender != registry) revert Unauthorized();
 
@@ -105,6 +124,8 @@ contract PlayerProfile is IPlayerProfile {
         r.concluded = true;
         r.won       = won;
         r.prize     = prize;
+        r.tournamentResolutionReason = tournamentResolutionReason;
+        r.tournamentResolutionCategory = tournamentResolutionCategory;
 
         // Update running stats
         _stats.totalPlayed++;
@@ -116,7 +137,48 @@ contract PlayerProfile is IPlayerProfile {
         // Net earnings: prize received minus entry fee paid
         _stats.totalNetEarnings += int256(prize) - int256(r.entryFee);
 
-        emit ResultRecorded(instance, won, prize);
+        emit ResultRecorded(
+            instance,
+            won,
+            prize,
+            tournamentResolutionReason,
+            tournamentResolutionCategory
+        );
+    }
+
+    function recordMatchOutcome(
+        address instance,
+        uint8 gameType,
+        uint8 roundNumber,
+        uint8 matchNumber,
+        uint8 outcome,
+        uint8 category
+    ) external override {
+        if (msg.sender != registry) revert Unauthorized();
+
+        bytes32 key = keccak256(abi.encodePacked(instance, roundNumber, matchNumber));
+        uint256 idx1 = _matchRecordIndex[key];
+
+        if (idx1 == 0) {
+            _matchRecords.push(PlayerMatchRecord({
+                instance: instance,
+                gameType: gameType,
+                roundNumber: roundNumber,
+                matchNumber: matchNumber,
+                recordedAt: uint64(block.timestamp),
+                outcome: outcome,
+                category: category
+            }));
+            _matchRecordIndex[key] = _matchRecords.length;
+        } else {
+            PlayerMatchRecord storage record = _matchRecords[idx1 - 1];
+            record.gameType = gameType;
+            record.recordedAt = uint64(block.timestamp);
+            record.outcome = outcome;
+            record.category = category;
+        }
+
+        emit MatchOutcomeRecorded(instance, roundNumber, matchNumber, outcome, category);
     }
 
     // ============ View Functions ============
@@ -127,6 +189,10 @@ contract PlayerProfile is IPlayerProfile {
 
     function getEnrollmentCount() external view override returns (uint256) {
         return _enrollments.length;
+    }
+
+    function getMatchRecordCount() external view override returns (uint256) {
+        return _matchRecords.length;
     }
 
     /**
@@ -151,6 +217,22 @@ contract PlayerProfile is IPlayerProfile {
         }
     }
 
+    function getMatchRecords(uint256 offset, uint256 limit)
+        external view override
+        returns (PlayerMatchRecord[] memory result)
+    {
+        uint256 total = _matchRecords.length;
+        if (offset >= total) return new PlayerMatchRecord[](0);
+
+        uint256 available = total - offset;
+        uint256 count = (limit == 0 || limit > available) ? available : limit;
+
+        result = new PlayerMatchRecord[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = _matchRecords[total - 1 - offset - i];
+        }
+    }
+
     /**
      * @dev Get a single enrollment record by instance address.
      * Returns a zero-value record if not found (check enrolledAt != 0).
@@ -160,7 +242,22 @@ contract PlayerProfile is IPlayerProfile {
         returns (EnrollmentRecord memory)
     {
         uint256 idx1 = _enrollmentIndex[instance];
-        if (idx1 == 0) return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0);
+        if (idx1 == 0) {
+            return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0, 0, 0);
+        }
         return _enrollments[idx1 - 1];
+    }
+
+    function getMatchRecordByKey(
+        address instance,
+        uint8 roundNumber,
+        uint8 matchNumber
+    ) external view returns (PlayerMatchRecord memory) {
+        bytes32 key = keccak256(abi.encodePacked(instance, roundNumber, matchNumber));
+        uint256 idx1 = _matchRecordIndex[key];
+        if (idx1 == 0) {
+            return PlayerMatchRecord(address(0), 0, 0, 0, 0, 0, 0);
+        }
+        return _matchRecords[idx1 - 1];
     }
 }

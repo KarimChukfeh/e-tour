@@ -159,6 +159,7 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
         expect(tournament.status).to.equal(2);
         expect(tournament.winner).to.equal(C.address);
         expect(tournament.completionReason).to.equal(4);
+        expect(tournament.completionCategory).to.equal(2n);
 
         expect(await instance.playerPrizes(C.address)).to.equal(expectedPrize);
         expect(await instance.playerPrizes(A.address)).to.equal(0n);
@@ -171,6 +172,7 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
         expect(finalsAfterClaim.status).to.equal(2);
         expect(finalsAfterClaim.isDraw).to.equal(false);
         expect(finalsAfterClaim.completionReason).to.equal(4);
+        expect(finalsAfterClaim.completionCategory).to.equal(2n);
 
         const resultA = await instance.getPlayerResult(A.address);
         const resultC = await instance.getPlayerResult(C.address);
@@ -200,17 +202,35 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
             profileC.getEnrollmentByInstance(instanceAddress),
             profileD.getEnrollmentByInstance(instanceAddress),
         ]);
+        const [matchRecordA, matchRecordC, matchRecordD] = await Promise.all([
+            profileA.getMatchRecordByKey(instanceAddress, 1, 0),
+            profileC.getMatchRecordByKey(instanceAddress, 1, 0),
+            profileD.getMatchRecordByKey(instanceAddress, 1, 0),
+        ]);
 
         expect(recordA.concluded).to.be.true;
         expect(recordA.won).to.be.false;
         expect(recordA.prize).to.equal(0n);
+        expect(recordA.tournamentResolutionReason).to.equal(4n);
+        expect(recordA.tournamentResolutionCategory).to.equal(2n);
 
         expect(recordD.concluded).to.be.true;
         expect(recordD.won).to.be.false;
         expect(recordD.prize).to.equal(0n);
+        expect(recordD.tournamentResolutionReason).to.equal(4n);
+        expect(recordD.tournamentResolutionCategory).to.equal(2n);
 
         expect(recordC.concluded).to.be.true;
         expect(recordC.won).to.be.true;
         expect(recordC.prize).to.equal(expectedPrize);
+        expect(recordC.tournamentResolutionReason).to.equal(4n);
+        expect(recordC.tournamentResolutionCategory).to.equal(2n);
+
+        expect(matchRecordA.outcome).to.equal(9n); // ReplacementDefeat
+        expect(matchRecordA.category).to.equal(2n); // Defeat
+        expect(matchRecordD.outcome).to.equal(9n);
+        expect(matchRecordD.category).to.equal(2n);
+        expect(matchRecordC.outcome).to.equal(8n); // ReplacementVictory
+        expect(matchRecordC.category).to.equal(1n); // Victory
     });
 });

@@ -18,7 +18,8 @@ interface ITournamentInstance {
         TournamentStatus status,
         uint8 enrolledCount,
         address winner,
-        uint8 completionReason
+        uint8 completionReason,
+        uint8 completionCategory
     );
 
     function playerPrizes(address player) external view returns (uint256);

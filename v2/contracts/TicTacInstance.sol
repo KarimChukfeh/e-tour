@@ -107,7 +107,8 @@ contract TicTacInstance is ETourInstance {
         m.player1TimeRemaining = 0;
         m.player2TimeRemaining = 0;
         m.moves = "";
-        m.completionReason = CompletionReason.NormalWin;
+        m.completionReason = MatchCompletionReason.NormalWin;
+        m.completionCategory = MatchCompletionCategory.None;
     }
 
     function _getMatchResult(bytes32 matchId)
@@ -223,13 +224,13 @@ contract TicTacInstance is ETourInstance {
 
         // Check win condition
         if (_checkWin(m.packedBoard, playerValue)) {
-            _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, CompletionReason.NormalWin);
+            _completeMatchInternal(roundNumber, matchNumber, msg.sender, false, MatchCompletionReason.NormalWin);
             return;
         }
 
         // Check draw
         if (_checkDraw(m.packedBoard)) {
-            _completeMatchInternal(roundNumber, matchNumber, address(0), true, CompletionReason.Draw);
+            _completeMatchInternal(roundNumber, matchNumber, address(0), true, MatchCompletionReason.Draw);
             return;
         }
 

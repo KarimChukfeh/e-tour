@@ -1154,6 +1154,7 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         expect(semifinal1After.isDraw).to.be.false;
         expect(semifinal1After.status).to.equal(2);
         expect(semifinal1After.completionReason).to.equal(3);
+        expect(semifinal1After.completionCategory).to.equal(2n);
 
         for (const stalledPlayer of stalledPlayers) {
             const result = await freshInstance.getPlayerResult(stalledPlayer);
@@ -1165,12 +1166,38 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         const info = await freshInstance.getInstanceInfo();
         expect(info.status).to.equal(2);
         expect(info.winner).to.equal(finalist);
+        expect(info.completionReason).to.equal(3n);
+        expect(info.completionCategory).to.equal(2n);
 
         const expectedPrize = (ENTRY_FEE * 4n * 9000n) / 10000n;
         const finalistResult = await freshInstance.getPlayerResult(finalist);
         expect(finalistResult.participated).to.be.true;
         expect(finalistResult.isWinner).to.be.true;
         expect(finalistResult.prizeWon).to.equal(expectedPrize);
+
+        const [finalistProfileAddr, stalledProfileAAddr, stalledProfileBAddr] = await Promise.all([
+            factory.getPlayerProfile(finalist),
+            factory.getPlayerProfile(stalledPlayers[0]),
+            factory.getPlayerProfile(stalledPlayers[1]),
+        ]);
+        const [finalistProfile, stalledProfileA, stalledProfileB] = await Promise.all([
+            hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", finalistProfileAddr),
+            hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", stalledProfileAAddr),
+            hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", stalledProfileBAddr),
+        ]);
+        const instanceAddress = await freshInstance.getAddress();
+        const [finalistMatchRecord, stalledRecordA, stalledRecordB] = await Promise.all([
+            finalistProfile.getMatchRecordByKey(instanceAddress, 0, 1),
+            stalledProfileA.getMatchRecordByKey(instanceAddress, 0, 1),
+            stalledProfileB.getMatchRecordByKey(instanceAddress, 0, 1),
+        ]);
+
+        expect(finalistMatchRecord.outcome).to.equal(6n); // ForceEliminationVictory
+        expect(finalistMatchRecord.category).to.equal(1n); // Victory
+        expect(stalledRecordA.outcome).to.equal(7n); // ForceEliminationDefeat
+        expect(stalledRecordA.category).to.equal(2n); // Defeat
+        expect(stalledRecordB.outcome).to.equal(7n);
+        expect(stalledRecordB.category).to.equal(2n);
 
         const prizeDistribution = await freshInstance.getPrizeDistribution();
         const totalDistributed = prizeDistribution.amounts.reduce((sum, amount) => sum + amount, 0n);
@@ -2057,11 +2084,10 @@ describe("TicTacInstance — player activity: draw", function () {
         expect(total).to.equal((ENTRY_FEE * 2n * 9000n) / 10000n);
     });
 
-    it("completionReason is AllDrawScenario (5) for a 2-player finals draw", async function () {
-        // In v2, a 2-player match that ends in draw resolves as AllDrawScenario (5)
-        // because the entire finals was a draw — there is no further tiebreak round.
+    it("completionReason is FinalsDraw (2) for a 2-player finals draw", async function () {
         const info = await instance.getInstanceInfo();
-        expect(info.completionReason).to.equal(5);
+        expect(info.completionReason).to.equal(2n);
+        expect(info.completionCategory).to.equal(1n);
     });
 });
 

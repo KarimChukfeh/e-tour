@@ -1,19 +1,19 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-27T06:48:59.810Z",
+  "deployedAt": "2026-03-27T09:42:15.626Z",
   "modules": {
-    "ETourInstance_Core": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
-    "ETourInstance_Matches": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
-    "ETourInstance_Prizes": "0x9d4454B023096f34B160D6B654540c56A1F81688",
-    "ETourInstance_Escalation": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570",
-    "ChessRulesModule": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d"
+    "ETourInstance_Core": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
+    "ETourInstance_Matches": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
+    "ETourInstance_Prizes": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+    "ETourInstance_Escalation": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02",
+    "ChessRulesModule": "0xD84379CEae14AA33C123Af12424A37803F885889"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x04C89607413713Ec9775E14b954286519d836FEf"
+    "PlayerRegistry": "0xfbC22278A96299D91d41C453234d97b4F5Eb9B2d"
   },
   "factory": {
-    "address": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
+    "address": "0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E",
     "abi": [
       {
         "inputs": [
@@ -893,8 +893,8 @@
     ]
   },
   "instance": {
-    "address": "0x86699f95700424A20eDf530041f3869480604aC9",
-    "abi": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d",
+    "address": "0x179961c9e51F1449c85Be5699e623F38b652Fb84",
+    "abi": "0xD84379CEae14AA33C123Af12424A37803F885889",
     "instanceAbi": [
       {
         "inputs": [],
@@ -933,6 +933,18 @@
             "internalType": "bool",
             "name": "isDraw",
             "type": "bool"
+          },
+          {
+            "indexed": false,
+            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
+            "name": "reason",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "name": "category",
+            "type": "uint8"
           }
         ],
         "name": "MatchCompleted",
@@ -1005,8 +1017,14 @@
           },
           {
             "indexed": false,
-            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
             "name": "reason",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "name": "category",
             "type": "uint8"
           }
         ],
@@ -1772,8 +1790,13 @@
             "type": "address"
           },
           {
-            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
             "name": "completionReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "name": "completionCategory",
             "type": "uint8"
           }
         ],
@@ -1836,8 +1859,13 @@
             "type": "string"
           },
           {
-            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
             "name": "completionReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "name": "completionCategory",
             "type": "uint8"
           }
         ],
@@ -2389,8 +2417,13 @@
             "type": "string"
           },
           {
-            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
             "name": "completionReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "name": "completionCategory",
             "type": "uint8"
           }
         ],
@@ -2598,8 +2631,13 @@
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.CompletionReason",
+            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
             "name": "completionReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "name": "completionCategory",
             "type": "uint8"
           },
           {
