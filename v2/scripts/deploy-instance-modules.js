@@ -18,11 +18,37 @@ function normalizeBytecode(bytecode) {
     return typeof bytecode === "string" ? bytecode.toLowerCase() : "0x";
 }
 
+function zeroImmutableRefs(bytecode, immutableReferences = {}) {
+    if (!bytecode || bytecode === "0x") return "0x";
+
+    const chars = bytecode.slice(2).split("");
+    for (const refs of Object.values(immutableReferences)) {
+        for (const ref of refs) {
+            const start = ref.start * 2;
+            const end = start + ref.length * 2;
+            for (let i = start; i < end; i++) {
+                chars[i] = "0";
+            }
+        }
+    }
+    return `0x${chars.join("")}`;
+}
+
+async function getImmutableReferences(fqName) {
+    const [sourceName, contractName] = fqName.split(":");
+    const buildInfo = await hre.artifacts.getBuildInfo(fqName);
+    return buildInfo?.output?.contracts?.[sourceName]?.[contractName]?.evm?.deployedBytecode?.immutableReferences ?? {};
+}
+
 async function getCurrentArtifactHashes() {
     const entries = await Promise.all(
         Object.entries(MODULE_ARTIFACTS).map(async ([key, fqName]) => {
             const artifact = await hre.artifacts.readArtifact(fqName);
-            const artifactBytecode = normalizeBytecode(artifact.deployedBytecode);
+            const immutableReferences = await getImmutableReferences(fqName);
+            const artifactBytecode = zeroImmutableRefs(
+                normalizeBytecode(artifact.deployedBytecode),
+                immutableReferences
+            );
             return [key, hre.ethers.keccak256(artifactBytecode)];
         })
     );
@@ -33,7 +59,12 @@ async function getCurrentArtifactHashes() {
 async function getOnchainCodeHashes(modules) {
     const entries = await Promise.all(
         Object.entries(modules).map(async ([key, address]) => {
-            const onchainCode = normalizeBytecode(await hre.ethers.provider.getCode(address));
+            const fqName = MODULE_ARTIFACTS[key];
+            const immutableReferences = await getImmutableReferences(fqName);
+            const onchainCode = zeroImmutableRefs(
+                normalizeBytecode(await hre.ethers.provider.getCode(address)),
+                immutableReferences
+            );
             return [key, onchainCode === "0x" ? null : hre.ethers.keccak256(onchainCode)];
         })
     );
@@ -63,7 +94,11 @@ async function validateExistingInstanceModules(deployment) {
             return { ok: false, reason: `Cached module '${key}' is missing an address.` };
         }
 
-        const onchainCode = normalizeBytecode(await hre.ethers.provider.getCode(address));
+        const immutableReferences = await getImmutableReferences(MODULE_ARTIFACTS[key]);
+        const onchainCode = zeroImmutableRefs(
+            normalizeBytecode(await hre.ethers.provider.getCode(address)),
+            immutableReferences
+        );
         if (onchainCode === "0x") {
             return { ok: false, reason: `No contract code found for cached module '${key}' at ${address}.` };
         }

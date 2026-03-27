@@ -517,16 +517,18 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     function enrollInTournament() external payable virtual notConcluded {
         TournamentStatus oldStatus = tournament.status;
 
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("coreEnroll()")
-        );
-        require(success, "Enrollment failed");
-
         // Register player on factory — routes to PlayerRegistry (best effort)
+        // Do this before the heavier enrollment delegatecall so first-time
+        // profile creation has enough gas to deploy and initialize the clone.
         (bool regOk, ) = factory.call(
             abi.encodeWithSignature("registerPlayer(address,uint256)", msg.sender, tierConfig.entryFee)
         );
         regOk; // intentionally ignore
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("coreEnroll()")
+        );
+        require(success, "Enrollment failed");
 
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {
@@ -545,16 +547,18 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         require(msg.sender == factory, "Only factory");
         TournamentStatus oldStatus = tournament.status;
 
-        (bool success, ) = MODULE_CORE.delegatecall(
-            abi.encodeWithSignature("coreEnrollOnBehalf(address)", player)
-        );
-        require(success, "Enrollment failed");
-
         // Register player on factory — routes to PlayerRegistry (best effort)
+        // Do this before the heavier enrollment delegatecall so first-time
+        // profile creation has enough gas to deploy and initialize the clone.
         (bool regOk, ) = factory.call(
             abi.encodeWithSignature("registerPlayer(address,uint256)", player, tierConfig.entryFee)
         );
         regOk;
+
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("coreEnrollOnBehalf(address)", player)
+        );
+        require(success, "Enrollment failed");
 
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {

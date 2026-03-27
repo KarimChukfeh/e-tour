@@ -1,17 +1,17 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-03-26T23:12:04.963Z",
+  "deployedAt": "2026-03-27T02:37:31.261Z",
   "modules": {
-    "ETourInstance_Core": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
-    "ETourInstance_Matches": "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
-    "ETourInstance_Prizes": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
-    "ETourInstance_Escalation": "0xc351628EB244ec633d5f21fBD6621e1a683B1181",
-    "ChessRulesModule": "0xFD471836031dc5108809D173A067e8486B9047A3"
+    "ETourInstance_Core": "0x998abeb3E57409262aE5b751f60747921B33613E",
+    "ETourInstance_Matches": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+    "ETourInstance_Prizes": "0x4826533B4897376654Bb4d4AD88B7faFD0C98528",
+    "ETourInstance_Escalation": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+    "ChessRulesModule": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575"
   },
   "playerProfile": {
     "PlayerProfileImpl": {
-      "address": "0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc",
+      "address": "0xCD8a1C3ba11CF5ECfa6267617243239504a98d90",
       "abi": [
         {
           "inputs": [],
@@ -336,7 +336,7 @@
       ]
     },
     "PlayerRegistry": {
-      "address": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+      "address": "0x82e01223d51Eb87e16A03E24687EDF0F294da6f1",
       "abi": [
         {
           "inputs": [
@@ -426,6 +426,12 @@
             },
             {
               "indexed": true,
+              "internalType": "uint8",
+              "name": "gameType",
+              "type": "uint8"
+            },
+            {
+              "indexed": true,
               "internalType": "address",
               "name": "profile",
               "type": "address"
@@ -448,6 +454,12 @@
               "internalType": "address",
               "name": "instance",
               "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "gameType",
+              "type": "uint8"
             },
             {
               "indexed": false,
@@ -516,6 +528,11 @@
               "internalType": "address",
               "name": "player",
               "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "gameType",
+              "type": "uint8"
             }
           ],
           "name": "getProfile",
@@ -561,6 +578,11 @@
               "internalType": "address",
               "name": "",
               "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
             }
           ],
           "name": "profiles",
@@ -648,7 +670,7 @@
   },
   "factories": {
     "TicTacChainFactory": {
-      "address": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07",
+      "address": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
       "abi": [
         {
           "inputs": [
@@ -1029,6 +1051,19 @@
             }
           ],
           "stateMutability": "payable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "gameType",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {
@@ -1497,7 +1532,7 @@
       ]
     },
     "ConnectFourFactory": {
-      "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+      "address": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
       "abi": [
         {
           "inputs": [
@@ -1878,6 +1913,19 @@
             }
           ],
           "stateMutability": "payable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "gameType",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {
@@ -2346,7 +2394,7 @@
       ]
     },
     "ChessOnChainFactory": {
-      "address": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d",
+      "address": "0xFD471836031dc5108809D173A067e8486B9047A3",
       "abi": [
         {
           "inputs": [
@@ -2745,6 +2793,19 @@
             }
           ],
           "stateMutability": "payable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "gameType",
+          "outputs": [
+            {
+              "internalType": "uint8",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {
@@ -3215,7 +3276,7 @@
   },
   "instances": {
     "TicTacInstance": {
-      "address": "0x7B6fCB97Fc1B74e16CBe577054a4426d3487837C",
+      "address": "0x33791c463B145298c575b4409d52c2BcF743BF67",
       "abi": [
         {
           "inputs": [],
@@ -4821,7 +4882,7 @@
       ]
     },
     "ConnectFourInstance": {
-      "address": "0x6f296714F25f552834E91f221540976120530367",
+      "address": "0xcfe53426950562347a6D2B90bE99D98167eac32d",
       "abi": [
         {
           "inputs": [],
@@ -6443,7 +6504,7 @@
       ]
     },
     "ChessInstance": {
-      "address": "0xf6cB1Bc71F7ed659E64C8a56dA5759494480e333",
+      "address": "0x3063527AEE58c9470AD00E31e4fc6A613b84a8b1",
       "abi": [
         {
           "inputs": [],

@@ -1,23 +1,23 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-03-27T00:33:39.886Z",
+  "timestamp": "2026-03-27T02:26:54.455Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+    "core": "0x998abeb3E57409262aE5b751f60747921B33613E",
+    "matches": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+    "prizes": "0x4826533B4897376654Bb4d4AD88B7faFD0C98528",
+    "escalation": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf"
   },
   "artifactHashes": {
-    "core": "0xdd077462ea69aa31d89fefd172f409717bad19a264dbae135df86d4d1c1e64c0",
-    "matches": "0xb34272eea31c50f676772df2d948bcbb940df72dae3a576ae425e9cd14814ab8",
-    "prizes": "0x5205f0cc83d996ab85ff08f76d97b89dbc3d993a2b297bf2e77ddc6760209279",
-    "escalation": "0xdb70499d539338a3e41b29de3afb27e2f272f4dbc04805f97e5bbca79ace9146"
+    "core": "0x2482d61799a986ce01f7cfd5ec3e9f302f6a2e691eb0764e71add489a4d9b3ec",
+    "matches": "0x75f19e3d49f7f1cc41f92cb31eb96cb219a3c1fc82442050f57323cbfd1c7ae9",
+    "prizes": "0x4f97f619d4d926211f3b42e2f9422798d3012defd8620d4f25cd974a49431c0c",
+    "escalation": "0x9a28d4b9ea9350f860044b77323cf2fa2f3d8549d6f118fd709bfde0b5763199"
   },
   "codeHashes": {
-    "core": "0x9986dcaa67067eec387ce3e194bf425a1c21d53835b5b00398433d5d7f58a0b5",
-    "matches": "0xd71abb3e72b123589172ae1f0946d1f3a44280e705913ef4fd6d0655fbfa2b41",
-    "prizes": "0xafb70f9b3dd1b1a1145536fcd84e0a24587635471bd82bfac880b7f1d0e7ec15",
-    "escalation": "0xdc1af1c7421df4fee436aaab5d6e61f7de0f7c81ae0b6b40993f2d382cf1d2a1"
+    "core": "0x2482d61799a986ce01f7cfd5ec3e9f302f6a2e691eb0764e71add489a4d9b3ec",
+    "matches": "0x75f19e3d49f7f1cc41f92cb31eb96cb219a3c1fc82442050f57323cbfd1c7ae9",
+    "prizes": "0x4f97f619d4d926211f3b42e2f9422798d3012defd8620d4f25cd974a49431c0c",
+    "escalation": "0x9a28d4b9ea9350f860044b77323cf2fa2f3d8549d6f118fd709bfde0b5763199"
   }
 }
