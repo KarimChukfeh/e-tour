@@ -1,12 +1,12 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-03-26T23:12:04.595Z",
+  "timestamp": "2026-03-27T00:33:39.886Z",
   "modules": {
-    "core": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
-    "matches": "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
-    "prizes": "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650",
-    "escalation": "0xc351628EB244ec633d5f21fBD6621e1a683B1181"
+    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "artifactHashes": {
     "core": "0xdd077462ea69aa31d89fefd172f409717bad19a264dbae135df86d4d1c1e64c0",
@@ -15,9 +15,9 @@
     "escalation": "0xdb70499d539338a3e41b29de3afb27e2f272f4dbc04805f97e5bbca79ace9146"
   },
   "codeHashes": {
-    "core": "0x85f722b6e1079c1973b284a8c872ba99380124e097cd0fd4af22c6dd80838ac8",
-    "matches": "0x83b13a157225e479e9986a03717f80b146b01d8ef9f7a12c42ab0f5bbd8b93f2",
-    "prizes": "0xd145dc795e966936513d47c61b9d08558dcd338cfb16e1822fc372a02f27a6a4",
-    "escalation": "0xaf6dcb3ec4439696fcb6d3ecdd25a3847140b7126f3ed3b17e1ccea72edd2edf"
+    "core": "0x9986dcaa67067eec387ce3e194bf425a1c21d53835b5b00398433d5d7f58a0b5",
+    "matches": "0xd71abb3e72b123589172ae1f0946d1f3a44280e705913ef4fd6d0655fbfa2b41",
+    "prizes": "0xafb70f9b3dd1b1a1145536fcd84e0a24587635471bd82bfac880b7f1d0e7ec15",
+    "escalation": "0xdc1af1c7421df4fee436aaab5d6e61f7de0f7c81ae0b6b40993f2d382cf1d2a1"
   }
 }
