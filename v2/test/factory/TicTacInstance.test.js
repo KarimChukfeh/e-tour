@@ -1117,6 +1117,65 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         expect(m0.status).to.equal(2); // Completed
         expect(m0.winner).to.equal(hre.ethers.ZeroAddress); // no winner — both eliminated
     });
+
+    it("a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament", async function () {
+        const freshInstance = await createInstance(factory, 4, ENTRY_FEE, owner, shortTimeouts({
+            matchTimePerPlayer:   MATCH_TIME,
+            timeIncrementPerMove: 15n,
+            enrollmentWindow:     30n * 60n,
+        }));
+        await enrollAll(freshInstance, [p1, p2, p3], ENTRY_FEE);
+
+        const allPlayers = [owner, p1, p2, p3];
+
+        const semifinal0Id = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const semifinal0 = await freshInstance.matches(semifinal0Id);
+        const semifinal0P1 = allPlayers.find((signer) => signer.address === semifinal0.player1);
+        const semifinal0P2 = allPlayers.find((signer) => signer.address === semifinal0.player2);
+        const finalist = await playAndWin(freshInstance, 0, 0, semifinal0P1, semifinal0P2);
+
+        const finalsBeforeMl2 = await freshInstance.getMatch(1, 0);
+        expect(
+            finalsBeforeMl2.player1 === finalist || finalsBeforeMl2.player2 === finalist
+        ).to.be.true;
+
+        const semifinal1Id = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 1]);
+        const semifinal1Before = await freshInstance.matches(semifinal1Id);
+        const stalledPlayers = [semifinal1Before.player1, semifinal1Before.player2];
+        const firstMover = allPlayers.find((signer) => signer.address === semifinal1Before.currentTurn);
+        await freshInstance.connect(firstMover).makeMove(0, 1, 0);
+        await advanceTime(Number(MATCH_TIME) + Number(ML2_DELAY) + 5);
+
+        const advancedPlayer = await hre.ethers.getSigner(finalist);
+        await freshInstance.connect(advancedPlayer).forceEliminateStalledMatch(0, 1);
+
+        const semifinal1After = await freshInstance.getMatch(0, 1);
+        expect(semifinal1After.matchWinner).to.equal(hre.ethers.ZeroAddress);
+        expect(semifinal1After.isDraw).to.be.false;
+        expect(semifinal1After.status).to.equal(2);
+        expect(semifinal1After.completionReason).to.equal(3);
+
+        for (const stalledPlayer of stalledPlayers) {
+            const result = await freshInstance.getPlayerResult(stalledPlayer);
+            expect(result.participated).to.be.true;
+            expect(result.isWinner).to.be.false;
+            expect(result.prizeWon).to.equal(0n);
+        }
+
+        const info = await freshInstance.getInstanceInfo();
+        expect(info.status).to.equal(2);
+        expect(info.winner).to.equal(finalist);
+
+        const expectedPrize = (ENTRY_FEE * 4n * 9000n) / 10000n;
+        const finalistResult = await freshInstance.getPlayerResult(finalist);
+        expect(finalistResult.participated).to.be.true;
+        expect(finalistResult.isWinner).to.be.true;
+        expect(finalistResult.prizeWon).to.equal(expectedPrize);
+
+        const prizeDistribution = await freshInstance.getPrizeDistribution();
+        const totalDistributed = prizeDistribution.amounts.reduce((sum, amount) => sum + amount, 0n);
+        expect(totalDistributed).to.equal(expectedPrize);
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

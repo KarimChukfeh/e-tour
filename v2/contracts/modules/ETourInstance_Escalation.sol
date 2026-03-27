@@ -258,9 +258,9 @@ contract ETourInstance_Escalation is ETourInstance_Base {
                 }
             }
 
-            if ((winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0)) ||
-                (winnersCount == 0 && playersInNextRound == 1 && solePlayerInNextRound != address(0))) {
-                t.winner = winnersCount == 1 ? lastWinner : solePlayerInNextRound;
+            if ((playersInNextRound == 1 && solePlayerInNextRound != address(0)) ||
+                (winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0))) {
+                t.winner = playersInNextRound == 1 ? solePlayerInNextRound : lastWinner;
                 t.status = TournamentStatus.Concluded;
                 t.completionReason = CompletionReason.NormalWin;
             }

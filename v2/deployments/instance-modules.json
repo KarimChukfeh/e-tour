@@ -1,23 +1,23 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-03-27T06:05:14.944Z",
+  "timestamp": "2026-03-27T06:48:31.054Z",
   "modules": {
-    "core": "0x59b670e9fA9D0A427751Af201D676719a970857b",
-    "matches": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
-    "prizes": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-    "escalation": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f"
+    "core": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+    "matches": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+    "prizes": "0x9d4454B023096f34B160D6B654540c56A1F81688",
+    "escalation": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570"
   },
   "artifactHashes": {
     "core": "0x2482d61799a986ce01f7cfd5ec3e9f302f6a2e691eb0764e71add489a4d9b3ec",
     "matches": "0x75f19e3d49f7f1cc41f92cb31eb96cb219a3c1fc82442050f57323cbfd1c7ae9",
     "prizes": "0x4f97f619d4d926211f3b42e2f9422798d3012defd8620d4f25cd974a49431c0c",
-    "escalation": "0x40c1506824b260632c9ded645b7dff8690b7de07807bd95744a04bd92fc9ca74"
+    "escalation": "0xe3d67b2650ca618031794cf4d0cd8925cc9c540582b959bfd8e271180cf7de85"
   },
   "codeHashes": {
     "core": "0x2482d61799a986ce01f7cfd5ec3e9f302f6a2e691eb0764e71add489a4d9b3ec",
     "matches": "0x75f19e3d49f7f1cc41f92cb31eb96cb219a3c1fc82442050f57323cbfd1c7ae9",
     "prizes": "0x4f97f619d4d926211f3b42e2f9422798d3012defd8620d4f25cd974a49431c0c",
-    "escalation": "0x40c1506824b260632c9ded645b7dff8690b7de07807bd95744a04bd92fc9ca74"
+    "escalation": "0xe3d67b2650ca618031794cf4d0cd8925cc9c540582b959bfd8e271180cf7de85"
   }
 }
