@@ -1157,11 +1157,21 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         await freshInstance.connect(advancedPlayer).forceEliminateStalledMatch(0, 1);
 
         const semifinal1After = await freshInstance.getMatch(0, 1);
+        const finalsAfterMl2 = await freshInstance.getMatch(1, 0);
         expect(semifinal1After.matchWinner).to.equal(hre.ethers.ZeroAddress);
         expect(semifinal1After.isDraw).to.be.false;
         expect(semifinal1After.status).to.equal(2);
         expect(semifinal1After.completionReason).to.equal(3);
         expect(semifinal1After.completionCategory).to.equal(2n);
+
+        expect(
+            finalsAfterMl2.player1 === finalist || finalsAfterMl2.player2 === finalist
+        ).to.be.true;
+        expect(finalsAfterMl2.matchWinner).to.equal(finalist);
+        expect(finalsAfterMl2.isDraw).to.be.false;
+        expect(finalsAfterMl2.status).to.equal(2);
+        expect(finalsAfterMl2.completionReason).to.equal(3);
+        expect(finalsAfterMl2.completionCategory).to.equal(2n);
 
         for (const stalledPlayer of stalledPlayers) {
             const result = await freshInstance.getPlayerResult(stalledPlayer);

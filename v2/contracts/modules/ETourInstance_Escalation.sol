@@ -242,6 +242,59 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         }
     }
 
+    function _materializeEscalationFinalMatch(
+        uint8 finalRound,
+        address winner,
+        MatchCompletionReason reason
+    ) internal {
+        if (winner == address(0)) return;
+
+        Round storage finalRoundStruct = rounds[finalRound];
+        if (!finalRoundStruct.initialized) {
+            finalRoundStruct.initialized = true;
+            finalRoundStruct.totalMatches = 1;
+            finalRoundStruct.completedMatches = 0;
+            finalRoundStruct.drawCount = 0;
+            finalRoundStruct.playerCount = 1;
+        } else if (finalRoundStruct.totalMatches == 0) {
+            finalRoundStruct.totalMatches = 1;
+        }
+
+        bytes32 finalMatchId = _getMatchId(finalRound, 0);
+        Match storage finalMatch = matches[finalMatchId];
+
+        if (finalMatch.player1 == address(0) && finalMatch.player2 == address(0)) {
+            finalMatch.player1 = winner;
+        }
+
+        if (
+            finalMatch.status == MatchStatus.Completed &&
+            finalMatch.winner == winner &&
+            finalMatch.completionReason == reason
+        ) {
+            finalRoundStruct.completedMatches = finalRoundStruct.totalMatches;
+            return;
+        }
+
+        finalMatch.winner = winner;
+        finalMatch.isDraw = false;
+        finalMatch.status = MatchStatus.Completed;
+        finalMatch.completionReason = reason;
+        finalMatch.completionCategory = _matchCompletionCategoryFor(reason);
+
+        finalRoundStruct.completedMatches = finalRoundStruct.totalMatches;
+
+        emit MatchCompleted(
+            address(this),
+            finalRound,
+            0,
+            winner,
+            false,
+            finalMatch.completionReason,
+            finalMatch.completionCategory
+        );
+    }
+
     function _handleRoundCompletion(uint8 roundNumber, MatchCompletionReason resolutionReason) internal {
         Round storage round = rounds[roundNumber];
         TournamentState storage t = tournament;
@@ -297,7 +350,11 @@ contract ETourInstance_Escalation is ETourInstance_Base {
 
             if ((playersInNextRound == 1 && solePlayerInNextRound != address(0)) ||
                 (winnersCount == 1 && playersInNextRound == 0 && lastWinner != address(0))) {
-                t.winner = playersInNextRound == 1 ? solePlayerInNextRound : lastWinner;
+                address champion = playersInNextRound == 1 ? solePlayerInNextRound : lastWinner;
+                if (nextRound == t.actualTotalRounds - 1) {
+                    _materializeEscalationFinalMatch(nextRound, champion, resolutionReason);
+                }
+                t.winner = champion;
                 t.status = TournamentStatus.Concluded;
                 _setTournamentResolution(
                     resolutionReason == MatchCompletionReason.ForceElimination
