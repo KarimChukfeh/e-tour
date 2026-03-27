@@ -4,6 +4,8 @@
 import { expect } from "chai";
 import hre from "hardhat";
 
+const TICTAC_GAME_TYPE = 0;
+
 async function deployAll() {
     const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
@@ -75,7 +77,7 @@ describe("Debug: factory.players() mapping population", function () {
         console.log("factory.getPlayerProfile(creator):", creatorProfileFromGetter);
 
         // Check registry directly
-        const creatorProfileFromRegistry = await registry.getProfile(creator.address);
+        const creatorProfileFromRegistry = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
         console.log("registry.getProfile(creator):", creatorProfileFromRegistry);
 
         expect(creatorProfileFromMapping).to.not.equal(hre.ethers.ZeroAddress, "factory.players() should be set");
@@ -115,7 +117,7 @@ describe("Debug: factory.players() mapping population", function () {
         console.log("factory.getPlayerProfile(joiner):", joinerProfileFromGetter);
 
         // Check registry directly
-        const joinerProfileFromRegistry = await registry.getProfile(joiner.address);
+        const joinerProfileFromRegistry = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
         console.log("registry.getProfile(joiner):", joinerProfileFromRegistry);
 
         expect(joinerProfileFromMapping).to.not.equal(hre.ethers.ZeroAddress, "factory.players() should be set");

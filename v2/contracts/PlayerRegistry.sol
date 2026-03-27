@@ -6,7 +6,7 @@ import "./interfaces/IPlayerProfile.sol";
 
 /**
  * @title PlayerRegistry
- * @dev Singleton contract that manages per-player PlayerProfile clones.
+ * @dev Singleton contract that manages per-player, per-game PlayerProfile clones.
  *
  * Deployed once. All game factories hold its address and call into it on
  * enrollment and tournament conclusion.
@@ -33,18 +33,18 @@ contract PlayerRegistry is IPlayerRegistry {
 
     // ============ Events ============
 
-    event ProfileCreated(address indexed player, address indexed profile);
+    event ProfileCreated(address indexed player, uint8 indexed gameType, address indexed profile);
     event FactoryAuthorized(address indexed factory);
     event FactoryDeauthorized(address indexed factory);
     event EnrollmentRecorded(address indexed player, address indexed instance, uint8 gameType);
-    event ResultRecorded(address indexed player, address indexed instance, bool won, uint256 prize);
+    event ResultRecorded(address indexed player, address indexed instance, uint8 gameType, bool won, uint256 prize);
 
     // ============ State ============
 
     address public owner;
     address public immutable profileImplementation;
 
-    mapping(address => address) public profiles;          // player → profile address
+    mapping(address => mapping(uint8 => address)) public profiles; // player → gameType → profile address
     mapping(address => bool)    public authorizedFactories;
 
     // ============ Constructor ============
@@ -96,7 +96,7 @@ contract PlayerRegistry is IPlayerRegistry {
         if (!authorizedFactories[msg.sender]) revert Unauthorized();
         if (player == address(0)) return;
 
-        address profile = _getOrCreate(player);
+        address profile = _getOrCreate(player, gameType);
 
         // Best-effort — failure must not revert enrollment
         try IPlayerProfile(profile).recordEnrollment(instance, gameType, entryFee) {
@@ -118,21 +118,22 @@ contract PlayerRegistry is IPlayerRegistry {
         // Validate: msg.sender must be an instance whose factory is authorized.
         // We read factory() from the instance (the caller itself).
         // If the call fails or factory is not authorized, silently return.
-        if (!_isAuthorizedInstance(msg.sender)) return;
+        (bool authorized, uint8 gameType) = _getAuthorizedInstanceGameType(msg.sender);
+        if (!authorized) return;
         if (player == address(0)) return;
 
-        address profile = profiles[player];
+        address profile = profiles[player][gameType];
         if (profile == address(0)) return; // no profile — player was never enrolled properly
 
         try IPlayerProfile(profile).recordResult(instance, won, prize) {
-            emit ResultRecorded(player, instance, won, prize);
+            emit ResultRecorded(player, instance, gameType, won, prize);
         } catch { }
     }
 
     // ============ IPlayerRegistry — View ============
 
-    function getProfile(address player) external view override returns (address) {
-        return profiles[player];
+    function getProfile(address player, uint8 gameType) external view override returns (address) {
+        return profiles[player][gameType];
     }
 
     // ============ Internal ============
@@ -140,28 +141,35 @@ contract PlayerRegistry is IPlayerRegistry {
     /**
      * @dev Get existing profile or deploy a new clone for the player.
      */
-    function _getOrCreate(address player) internal returns (address profile) {
-        profile = profiles[player];
+    function _getOrCreate(address player, uint8 gameType) internal returns (address profile) {
+        profile = profiles[player][gameType];
         if (profile != address(0)) return profile;
 
         profile = _clone(profileImplementation);
         IPlayerProfile(profile).initialize(player, address(this));
-        profiles[player] = profile;
+        profiles[player][gameType] = profile;
 
-        emit ProfileCreated(player, profile);
+        emit ProfileCreated(player, gameType, profile);
     }
 
     /**
      * @dev Check whether msg.sender is an instance whose parent factory is authorized.
      * Reads factory() from the calling contract. Returns false on any failure.
      */
-    function _isAuthorizedInstance(address instance) internal view returns (bool) {
+    function _getAuthorizedInstanceGameType(address instance) internal view returns (bool authorized, uint8 gameType) {
         (bool ok, bytes memory ret) = instance.staticcall(
             abi.encodeWithSignature("factory()")
         );
-        if (!ok || ret.length < 32) return false;
+        if (!ok || ret.length < 32) return (false, 0);
         address factoryAddr = abi.decode(ret, (address));
-        return authorizedFactories[factoryAddr];
+        if (!authorizedFactories[factoryAddr]) return (false, 0);
+
+        (ok, ret) = factoryAddr.staticcall(
+            abi.encodeWithSignature("gameType()")
+        );
+        if (!ok || ret.length < 32) return (false, 0);
+
+        return (true, abi.decode(ret, (uint8)));
     }
 
     /**

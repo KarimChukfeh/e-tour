@@ -6,6 +6,8 @@
 import { expect } from "chai";
 import hre from "hardhat";
 
+const TICTAC_GAME_TYPE = 0;
+
 async function deployAll() {
     const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
@@ -79,13 +81,13 @@ describe("Profile creation — both players (creator + joiner)", function () {
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
 
         // Check creator's profile
-        const creatorProfile = await registry.getProfile(creator.address);
+        const creatorProfile = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
         console.log("Creator address:", creator.address);
         console.log("Creator profile:", creatorProfile);
         expect(creatorProfile).to.not.equal(hre.ethers.ZeroAddress, "Creator should have a profile");
 
         // Check joiner's profile
-        const joinerProfile = await registry.getProfile(joiner.address);
+        const joinerProfile = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
         console.log("Joiner address: ", joiner.address);
         console.log("Joiner profile: ", joinerProfile);
         expect(joinerProfile).to.not.equal(hre.ethers.ZeroAddress, "Joiner should have a profile");
@@ -107,7 +109,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
 
-        const creatorProfileAddr = await registry.getProfile(creator.address);
+        const creatorProfileAddr = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
         expect(creatorProfileAddr).to.not.equal(hre.ethers.ZeroAddress);
 
         const profile = await hre.ethers.getContractAt(
@@ -142,7 +144,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
 
-        const joinerProfileAddr = await registry.getProfile(joiner.address);
+        const joinerProfileAddr = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
         expect(joinerProfileAddr).to.not.equal(hre.ethers.ZeroAddress);
 
         const profile = await hre.ethers.getContractAt(
@@ -179,7 +181,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
 
         // Check creator's enrollment record
-        const creatorProfileAddr = await registry.getProfile(creator.address);
+        const creatorProfileAddr = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
         const creatorProfile = await hre.ethers.getContractAt(
             "contracts/PlayerProfile.sol:PlayerProfile", creatorProfileAddr
         );
@@ -187,7 +189,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         expect(creatorEnrollments[0].instance).to.equal(instanceAddr);
 
         // Check joiner's enrollment record
-        const joinerProfileAddr = await registry.getProfile(joiner.address);
+        const joinerProfileAddr = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
         const joinerProfile = await hre.ethers.getContractAt(
             "contracts/PlayerProfile.sol:PlayerProfile", joinerProfileAddr
         );
@@ -228,7 +230,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         await instance.connect(first).makeMove(0, 0, 2); // winning move
 
         // Check creator's stats
-        const creatorProfileAddr = await registry.getProfile(creator.address);
+        const creatorProfileAddr = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
         const creatorProfile = await hre.ethers.getContractAt(
             "contracts/PlayerProfile.sol:PlayerProfile", creatorProfileAddr
         );
@@ -296,8 +298,8 @@ describe("Profile creation — both players (creator + joiner)", function () {
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
 
         // Check that NEITHER player has a profile
-        const creatorProfile = await unauthorizedRegistry.getProfile(creator.address);
-        const joinerProfile = await unauthorizedRegistry.getProfile(joiner.address);
+        const creatorProfile = await unauthorizedRegistry.getProfile(creator.address, TICTAC_GAME_TYPE);
+        const joinerProfile = await unauthorizedRegistry.getProfile(joiner.address, TICTAC_GAME_TYPE);
 
         console.log("Creator profile (should be zero):", creatorProfile);
         console.log("Joiner profile (should be zero): ", joinerProfile);

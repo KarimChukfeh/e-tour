@@ -5,6 +5,7 @@ import { expect } from "chai";
 import hre from "hardhat";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const TICTAC_GAME_TYPE = 0;
 
 async function deployAll() {
     const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
@@ -86,13 +87,13 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
 
     describe("Step 1: PlayerRegistry has profiles for BOTH players", function () {
         it("registry.getProfile(creator) returns non-zero address", async function () {
-            const creatorProfile = await registry.getProfile(creator.address);
+            const creatorProfile = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
             console.log("registry.getProfile(creator):", creatorProfile);
             expect(creatorProfile).to.not.equal(ZERO_ADDRESS);
         });
 
         it("registry.getProfile(joiner) returns non-zero address", async function () {
-            const joinerProfile = await registry.getProfile(joiner.address);
+            const joinerProfile = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
             console.log("registry.getProfile(joiner): ", joinerProfile);
             expect(joinerProfile).to.not.equal(ZERO_ADDRESS);
         });
@@ -130,7 +131,7 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
         let creatorProfile;
 
         before(async function () {
-            const addr = await registry.getProfile(creator.address);
+            const addr = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
             creatorProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", addr);
         });
 
@@ -161,7 +162,7 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
         it("creator profile: enrollment record has correct gameType (TicTac = 0)", async function () {
             const enrollments = await creatorProfile.getEnrollments(0, 10);
             console.log("creator enrollment[0].gameType:", enrollments[0].gameType.toString());
-            expect(enrollments[0].gameType).to.equal(0n); // TicTac
+            expect(enrollments[0].gameType).to.equal(BigInt(TICTAC_GAME_TYPE));
         });
 
         it("creator profile: getEnrollmentByInstance() returns correct data", async function () {
@@ -175,7 +176,7 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
         let joinerProfile;
 
         before(async function () {
-            const addr = await registry.getProfile(joiner.address);
+            const addr = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
             joinerProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", addr);
         });
 
@@ -206,7 +207,7 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
         it("joiner profile: enrollment record has correct gameType (TicTac = 0)", async function () {
             const enrollments = await joinerProfile.getEnrollments(0, 10);
             console.log("joiner enrollment[0].gameType:", enrollments[0].gameType.toString());
-            expect(enrollments[0].gameType).to.equal(0n); // TicTac
+            expect(enrollments[0].gameType).to.equal(BigInt(TICTAC_GAME_TYPE));
         });
 
         it("joiner profile: getEnrollmentByInstance() returns correct data", async function () {

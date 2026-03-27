@@ -85,8 +85,8 @@ contract ETourFactory is ReentrancyGuard {
     // Instance tracking (global list for this factory)
     address[] public instances;
 
-    // Player profile tracking: player wallet → profile contract address
-    // Populated on first enrollment; mirrors PlayerRegistry.profiles for quick lookup.
+    // Player profile tracking for this factory's game only: player wallet → profile contract address.
+    // Populated on first enrollment; mirrors PlayerRegistry.getProfile(player, gameType()) for quick lookup.
     mapping(address => address) public players;
 
     // Tournament lifecycle tracking
@@ -221,11 +221,13 @@ contract ETourFactory is ReentrancyGuard {
      * Delegates to PlayerRegistry to create/update the player's profile.
      */
     function registerPlayer(address player, uint256 entryFee) external {
+        uint8 game = _gameType();
+
         // Delegate to PlayerRegistry (best-effort — failure must not block enrollment)
         (bool ok, ) = PLAYER_REGISTRY.call(
             abi.encodeWithSignature(
                 "recordEnrollment(address,address,uint8,uint256)",
-                player, msg.sender, _gameType(), entryFee
+                player, msg.sender, game, entryFee
             )
         );
         ok; // intentionally ignore
@@ -233,7 +235,7 @@ contract ETourFactory is ReentrancyGuard {
         // Mirror the profile address locally (first enrollment creates the profile)
         if (players[player] == address(0)) {
             (bool pOk, bytes memory pRet) = PLAYER_REGISTRY.staticcall(
-                abi.encodeWithSignature("getProfile(address)", player)
+                abi.encodeWithSignature("getProfile(address,uint8)", player, game)
             );
             if (pOk && pRet.length >= 32) {
                 address profile = abi.decode(pRet, (address));
@@ -297,10 +299,14 @@ contract ETourFactory is ReentrancyGuard {
         address local = players[player];
         if (local != address(0)) return local;
         (bool ok, bytes memory ret) = PLAYER_REGISTRY.staticcall(
-            abi.encodeWithSignature("getProfile(address)", player)
+            abi.encodeWithSignature("getProfile(address,uint8)", player, _gameType())
         );
         if (!ok || ret.length < 32) return address(0);
         return abi.decode(ret, (address));
+    }
+
+    function gameType() external view returns (uint8) {
+        return _gameType();
     }
 
     function getActiveTournamentCount() external view returns (uint256) {

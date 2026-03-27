@@ -1430,7 +1430,7 @@ describe("TicTacInstance — players, activeTournaments, pastTournaments", funct
 
     it("players[owner] matches registry getProfile(owner)", async function () {
         const fromFactory = await factory.players(owner.address);
-        const fromRegistry = await registry.getProfile(owner.address);
+        const fromRegistry = await registry.getProfile(owner.address, 0);
         expect(fromFactory).to.equal(fromRegistry);
     });
 

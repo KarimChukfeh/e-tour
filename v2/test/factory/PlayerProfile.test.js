@@ -20,6 +20,8 @@ const PARTICIPANTS_SHARE_BPS = 9000n;
 const OWNER_SHARE_BPS        = 750n;
 const PROTOCOL_SHARE_BPS     = 250n;
 const BASIS_POINTS           = 10000n;
+const TICTAC_GAME_TYPE       = 0;
+const CONNECT_FOUR_GAME_TYPE = 1;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Deploy helpers
@@ -57,6 +59,56 @@ async function deployAll() {
     await registry.authorizeFactory(await factory.getAddress());
 
     return { factory, registry, profileImpl };
+}
+
+async function deployTwoFactories() {
+    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
+            .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+            .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
+            .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
+            .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
+    ]);
+
+    const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
+    const profileImpl = await ProfileImpl.deploy();
+    await profileImpl.waitForDeployment();
+
+    const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
+    const registry = await Registry.deploy(await profileImpl.getAddress());
+    await registry.waitForDeployment();
+
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const ticTacFactory = await TicTacFactory.deploy(
+        await moduleCore.getAddress(),
+        await moduleMatches.getAddress(),
+        await modulePrizes.getAddress(),
+        await moduleEscalation.getAddress(),
+        await registry.getAddress()
+    );
+    await ticTacFactory.waitForDeployment();
+
+    const ConnectFourFactory = await hre.ethers.getContractFactory("contracts/ConnectFourFactory.sol:ConnectFourFactory");
+    const connectFourFactory = await ConnectFourFactory.deploy(
+        await moduleCore.getAddress(),
+        await moduleMatches.getAddress(),
+        await modulePrizes.getAddress(),
+        await moduleEscalation.getAddress(),
+        await registry.getAddress()
+    );
+    await connectFourFactory.waitForDeployment();
+
+    await registry.authorizeFactory(await ticTacFactory.getAddress());
+    await registry.authorizeFactory(await connectFourFactory.getAddress());
+
+    return { registry, ticTacFactory, connectFourFactory };
+}
+
+async function getProfileForGame(registry, player, gameType = TICTAC_GAME_TYPE) {
+    return registry.getProfile(player, gameType);
 }
 
 function defaultTimeouts() {
@@ -132,7 +184,7 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
         await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
 
-        const profileAddr = await registry.getProfile(signers[0].address);
+        const profileAddr = await getProfileForGame(registry, signers[0].address);
         expect(profileAddr).to.not.equal(hre.ethers.ZeroAddress);
     });
 
@@ -140,14 +192,47 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const instance1 = await createInstance(factory, 2, entryFee, signers[0]);
         await instance1.connect(signers[1]).enrollInTournament({ value: entryFee });
-        const profile1 = await registry.getProfile(signers[0].address);
+        const profile1 = await getProfileForGame(registry, signers[0].address);
 
         // Enroll same player in a second tournament
         const instance2 = await createInstance(factory, 2, entryFee, signers[0]);
         await instance2.connect(signers[1]).enrollInTournament({ value: entryFee });
-        const profile2 = await registry.getProfile(signers[0].address);
+        const profile2 = await getProfileForGame(registry, signers[0].address);
 
         expect(profile1).to.equal(profile2);
+    });
+
+    it("creates distinct profiles for the same player in different games", async function () {
+        const entryFee = hre.ethers.parseEther("0.001");
+        const { registry: sharedRegistry, ticTacFactory, connectFourFactory } = await deployTwoFactories();
+        const to = defaultTimeouts();
+
+        await ticTacFactory.connect(signers[0]).createInstance(
+            2,
+            entryFee,
+            to.enrollmentWindow,
+            to.matchTimePerPlayer,
+            to.timeIncrementPerMove,
+            { value: entryFee }
+        );
+
+        await connectFourFactory.connect(signers[0]).createInstance(
+            2,
+            entryFee,
+            to.enrollmentWindow,
+            to.matchTimePerPlayer,
+            to.timeIncrementPerMove,
+            { value: entryFee }
+        );
+
+        const ticTacProfile = await getProfileForGame(sharedRegistry, signers[0].address, TICTAC_GAME_TYPE);
+        const connectFourProfile = await getProfileForGame(sharedRegistry, signers[0].address, CONNECT_FOUR_GAME_TYPE);
+
+        expect(ticTacProfile).to.not.equal(hre.ethers.ZeroAddress);
+        expect(connectFourProfile).to.not.equal(hre.ethers.ZeroAddress);
+        expect(ticTacProfile).to.not.equal(connectFourProfile);
+        expect(await ticTacFactory.getPlayerProfile(signers[0].address)).to.equal(ticTacProfile);
+        expect(await connectFourFactory.getPlayerProfile(signers[0].address)).to.equal(connectFourProfile);
     });
 
     it("rejects recordEnrollment from unauthorized caller", async function () {
@@ -209,7 +294,7 @@ describe("PlayerProfile — enrollment & result recording", function () {
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
         await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
 
-        const profileAddr = await registry.getProfile(signers[0].address);
+        const profileAddr = await getProfileForGame(registry, signers[0].address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
 
         expect(await profile.getEnrollmentCount()).to.equal(1n);
@@ -219,14 +304,14 @@ describe("PlayerProfile — enrollment & result recording", function () {
         const entryFee = hre.ethers.parseEther("0.002");
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
 
-        const profileAddr = await registry.getProfile(signers[0].address);
+        const profileAddr = await getProfileForGame(registry, signers[0].address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
 
         const records = await profile.getEnrollments(0, 10);
         expect(records.length).to.equal(1);
         expect(records[0].instance).to.equal(await instance.getAddress());
         expect(records[0].entryFee).to.equal(entryFee);
-        expect(records[0].gameType).to.equal(0n); // TicTac = 0
+        expect(records[0].gameType).to.equal(BigInt(TICTAC_GAME_TYPE));
         expect(records[0].concluded).to.equal(false);
     });
 });
@@ -632,7 +717,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
 
-        const profileAddr = await registry.getProfile(winnerSigner.address);
+        const profileAddr = await getProfileForGame(registry, winnerSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const stats = await profile.getStats();
 
@@ -651,7 +736,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
 
-        const profileAddr = await registry.getProfile(loserSigner.address);
+        const profileAddr = await getProfileForGame(registry, loserSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const stats = await profile.getStats();
 
@@ -670,7 +755,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
 
-        const profileAddr = await registry.getProfile(winnerSigner.address);
+        const profileAddr = await getProfileForGame(registry, winnerSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const record = await profile.getEnrollmentByInstance(await instance.getAddress());
 
@@ -688,7 +773,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
 
-        const profileAddr = await registry.getProfile(loserSigner.address);
+        const profileAddr = await getProfileForGame(registry, loserSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const record = await profile.getEnrollmentByInstance(await instance.getAddress());
 
@@ -708,7 +793,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
 
-        const profileAddr = await registry.getProfile(winnerSigner.address);
+        const profileAddr = await getProfileForGame(registry, winnerSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const stats = await profile.getStats();
 
@@ -727,7 +812,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
 
-        const profileAddr = await registry.getProfile(loserSigner.address);
+        const profileAddr = await getProfileForGame(registry, loserSigner.address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
         const stats = await profile.getStats();
 

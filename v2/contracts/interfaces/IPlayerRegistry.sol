@@ -32,7 +32,8 @@ interface IPlayerRegistry {
     ) external;
 
     /**
-     * @dev Returns the profile contract address for a player, or address(0) if none.
+     * @dev Returns the profile contract address for a player in a specific game,
+     * or address(0) if none exists for that player/game pair.
      */
-    function getProfile(address player) external view returns (address);
+    function getProfile(address player, uint8 gameType) external view returns (address);
 }

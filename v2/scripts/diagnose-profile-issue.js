@@ -69,6 +69,8 @@ async function main() {
 }
 
 async function diagnosePlayer(factory, registry, playerAddr) {
+    const gameType = await factory.gameType();
+
     console.log("\n--- Step 1: factory.players() mapping ---");
     const fromMapping = await factory.players(playerAddr);
     console.log("factory.players(player):", fromMapping);
@@ -87,9 +89,9 @@ async function diagnosePlayer(factory, registry, playerAddr) {
         console.log("✅ getPlayerProfile works");
     }
 
-    console.log("\n--- Step 3: registry.getProfile() ---");
-    const fromRegistry = await registry.getProfile(playerAddr);
-    console.log("registry.getProfile(player):", fromRegistry);
+    console.log("\n--- Step 3: registry.getProfile(player, gameType) ---");
+    const fromRegistry = await registry.getProfile(playerAddr, gameType);
+    console.log("registry.getProfile(player, gameType):", fromRegistry);
     if (fromRegistry === ZERO_ADDRESS) {
         console.log("❌ PROBLEM: Player has NO profile in registry!");
         console.log("   This player was never enrolled, or enrollment failed.");
