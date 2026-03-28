@@ -1,0 +1,22 @@
+{
+  "network": "arbitrum",
+  "chainId": "42161",
+  "deployer": "0xAF44A0De1684cBa4511ff539B2b4D2010bc93c6f",
+  "timestamp": "2026-03-28T02:27:23.303Z",
+  "blockNumber": 446394774,
+  "modules": {
+    "ETourInstance_Core": "0x71f2aE22CE34E998754bD4604d4C40201Acb49D3",
+    "ETourInstance_Matches": "0x5c47d7ED1d0de7FA3836fc84b9aDcb77744eCabc",
+    "ETourInstance_Prizes": "0x5a9de501506D35FC91daeE2E1CA738D7020123AB",
+    "ETourInstance_Escalation": "0x238bC5FDaC0B068fDB49f27db3479bBd391D1378"
+  },
+  "playerProfile": {
+    "PlayerRegistry": "0x6F04EF102b5E6196EC19d72e466E59d2608ce97A"
+  },
+  "factory": {
+    "TicTacChainFactory": "0xde36111581f8Fe8253F53FC48396F72Dd0F942fB"
+  },
+  "implementation": {
+    "TicTacInstance": "0xC33cd5B5F313565D80aac3259617463351da4cB7"
+  }
+}

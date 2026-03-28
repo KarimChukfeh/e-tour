@@ -1,0 +1,23 @@
+{
+  "network": "arbitrum",
+  "chainId": "42161",
+  "deployer": "0xAF44A0De1684cBa4511ff539B2b4D2010bc93c6f",
+  "timestamp": "2026-03-28T02:27:42.453Z",
+  "blockNumber": 446394850,
+  "modules": {
+    "ETourInstance_Core": "0x71f2aE22CE34E998754bD4604d4C40201Acb49D3",
+    "ETourInstance_Matches": "0x5c47d7ED1d0de7FA3836fc84b9aDcb77744eCabc",
+    "ETourInstance_Prizes": "0x5a9de501506D35FC91daeE2E1CA738D7020123AB",
+    "ETourInstance_Escalation": "0x238bC5FDaC0B068fDB49f27db3479bBd391D1378",
+    "ChessRulesModule": "0x567673470525Ab03d18458B8CA5947b2d0a5F52a"
+  },
+  "playerProfile": {
+    "PlayerRegistry": "0x5320305d9153B777Be20DDE976ECd6f18596Da54"
+  },
+  "factory": {
+    "ChessOnChainFactory": "0x8b533DF79F1c19fD388108668b6111EEb993922E"
+  },
+  "implementation": {
+    "ChessInstance": "0x494dc1DDAF9e1810137bAC44B98cC84D6a0B5aBd"
+  }
+}

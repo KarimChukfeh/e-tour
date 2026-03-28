@@ -2,21 +2,21 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-03-27T15:56:56.039Z",
-  "blockNumber": 43162,
+  "timestamp": "2026-03-28T02:11:48.036Z",
+  "blockNumber": 29,
   "modules": {
-    "ETourInstance_Core": "0x870526b7973b56163a6997bB7C886F5E4EA53638",
-    "ETourInstance_Matches": "0xD49a0e9A4CD5979aE36840f542D2d7f02C4817Be",
-    "ETourInstance_Prizes": "0xc582Bc0317dbb0908203541971a358c44b1F3766",
-    "ETourInstance_Escalation": "0xB377a2EeD7566Ac9fCb0BA673604F9BF875e2Bab"
+    "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "ETourInstance_Prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "ETourInstance_Escalation": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x70bDA08DBe07363968e9EE53d899dFE48560605B"
+    "PlayerRegistry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
   },
   "factory": {
-    "TicTacChainFactory": "0x26B862f640357268Bd2d9E95bc81553a2Aa81D7E"
+    "TicTacChainFactory": "0x9A676e781A523b5d0C0e43731313A708CB607508"
   },
   "implementation": {
-    "TicTacInstance": "0x9cC6B73A48997d2Dcc2337CeA529Bb1C2C05B803"
+    "TicTacInstance": "0x8e80FFe6Dc044F4A766Afd6e5a8732Fe0977A493"
   }
 }
