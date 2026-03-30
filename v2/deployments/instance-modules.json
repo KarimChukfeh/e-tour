@@ -1,12 +1,12 @@
 {
-  "network": "localhost",
-  "chainId": "412346",
-  "timestamp": "2026-03-30T12:22:46.557Z",
+  "network": "arbitrum",
+  "chainId": "42161",
+  "timestamp": "2026-03-30T15:30:55.266Z",
   "modules": {
-    "core": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
-    "matches": "0x9A676e781A523b5d0C0e43731313A708CB607508",
-    "prizes": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-    "escalation": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+    "core": "0xaa539b224d74d863aC1AdD8465B8326059CDB526",
+    "matches": "0xE185e4cA9789CDdf46c12E4Fe489502264E30584",
+    "prizes": "0xC853e24BD4659F1652876fdb061b4822288277c2",
+    "escalation": "0xc80d793bf7A3f33955B82b2f019228FcFE3532CD"
   },
   "artifactHashes": {
     "core": "0x9acff223fce784aa7c0a7ac99667aac4cd8c27f97139becf530b6ed62a2690e5",

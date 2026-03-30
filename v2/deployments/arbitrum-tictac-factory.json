@@ -2,21 +2,22 @@
   "network": "arbitrum",
   "chainId": "42161",
   "deployer": "0xAF44A0De1684cBa4511ff539B2b4D2010bc93c6f",
-  "timestamp": "2026-03-28T02:27:23.303Z",
-  "blockNumber": 446394774,
+  "timestamp": "2026-03-30T15:31:03.836Z",
+  "blockNumber": 447270420,
   "modules": {
-    "ETourInstance_Core": "0x71f2aE22CE34E998754bD4604d4C40201Acb49D3",
-    "ETourInstance_Matches": "0x5c47d7ED1d0de7FA3836fc84b9aDcb77744eCabc",
-    "ETourInstance_Prizes": "0x5a9de501506D35FC91daeE2E1CA738D7020123AB",
-    "ETourInstance_Escalation": "0x238bC5FDaC0B068fDB49f27db3479bBd391D1378"
+    "ETourInstance_Core": "0xaa539b224d74d863aC1AdD8465B8326059CDB526",
+    "ETourInstance_Matches": "0xE185e4cA9789CDdf46c12E4Fe489502264E30584",
+    "ETourInstance_Prizes": "0xC853e24BD4659F1652876fdb061b4822288277c2",
+    "ETourInstance_Escalation": "0xc80d793bf7A3f33955B82b2f019228FcFE3532CD"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x6F04EF102b5E6196EC19d72e466E59d2608ce97A"
+    "PlayerProfileImpl": "0x681C83774C07815e56f9239f8d8536bC44eD1DdD",
+    "PlayerRegistry": "0xe5e0c14b399096ab328fBD35b25c713860Cdc5EC"
   },
   "factory": {
-    "TicTacChainFactory": "0xde36111581f8Fe8253F53FC48396F72Dd0F942fB"
+    "TicTacChainFactory": "0x9677EdA724c88531C02684Db5E268cb991467f22"
   },
   "implementation": {
-    "TicTacInstance": "0xC33cd5B5F313565D80aac3259617463351da4cB7"
+    "TicTacInstance": "0x1921c807712816b1F4a90b9414F6900e6aF7b7F3"
   }
 }
