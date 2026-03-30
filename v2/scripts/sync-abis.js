@@ -14,6 +14,8 @@ const FILES_TO_SYNC = [
     "ConnectFourFactory-ABI.json",
     "ChessOnChainFactory-ABI.json",
     "ETour-Factory-ABIs.json",
+    "PlayerProfile-ABI.json",
+    "PlayerRegistry-ABI.json",
     "localhost-tictac-factory.json",
     "localhost-connectfour-factory.json",
     "localhost-chess-factory.json",

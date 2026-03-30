@@ -40,6 +40,7 @@ async function main() {
 
     // ── 3. PlayerProfile + PlayerRegistry ────────────────────────────────────
     let registryAddr = process.env.REGISTRY;
+    let profileImplAddr;
     if (registryAddr) {
         console.log("Using existing PlayerRegistry:", registryAddr);
     } else {
@@ -47,7 +48,7 @@ async function main() {
         const PlayerProfile = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
         const profileImpl = await PlayerProfile.deploy();
         await profileImpl.waitForDeployment();
-        const profileImplAddr = await profileImpl.getAddress();
+        profileImplAddr = await profileImpl.getAddress();
 
         const PlayerRegistry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
         const registry = await PlayerRegistry.deploy(profileImplAddr);
@@ -69,6 +70,9 @@ async function main() {
     const implAddr    = await factory.implementation();
 
     const registry = await hre.ethers.getContractAt("contracts/PlayerRegistry.sol:PlayerRegistry", registryAddr);
+    if (!profileImplAddr) {
+        profileImplAddr = await registry.profileImplementation();
+    }
     await (await registry.authorizeFactory(factoryAddr)).wait();
     console.log("  ChessOnChainFactory:", factoryAddr, "[authorized]");
     console.log("  ChessInstance impl: ", implAddr);
@@ -89,7 +93,10 @@ async function main() {
             ETourInstance_Escalation: modules.escalation,
             ChessRulesModule:         chessRulesAddr,
         },
-        playerProfile: { PlayerRegistry: registryAddr },
+        playerProfile: {
+            PlayerProfileImpl: profileImplAddr,
+            PlayerRegistry: registryAddr,
+        },
         factory: { ChessOnChainFactory: factoryAddr },
         implementation: { ChessInstance: implAddr },
     };
@@ -97,18 +104,46 @@ async function main() {
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-chess-factory.json`);
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
 
-    const [factoryArt, instanceArt] = await Promise.all([
+    const [factoryArt, instanceArt, profileArt, registryArt] = await Promise.all([
         hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
         hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
+        hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
+        hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
     ]);
+
+    const playerProfileArtifacts = {
+        PlayerProfileImpl: { address: profileImplAddr, abi: profileArt.abi },
+        PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
+    };
+
     const abiFile = path.join(DEPLOYMENTS_DIR, "ChessOnChainFactory-ABI.json");
     fs.writeFileSync(abiFile, JSON.stringify({
         network, chainId: chainId.toString(), deployedAt: timestamp,
         modules: deployment.modules,
-        playerProfile: deployment.playerProfile,
+        playerProfile: playerProfileArtifacts,
         factory:  { address: factoryAddr, abi: factoryArt.abi },
-        instance: { address: implAddr,    abi: chessRulesAddr, instanceAbi: instanceArt.abi },
+        instance: { address: implAddr, abi: instanceArt.abi },
     }, null, 2));
+
+    fs.writeFileSync(
+        path.join(DEPLOYMENTS_DIR, "PlayerProfile-ABI.json"),
+        JSON.stringify({
+            network,
+            chainId: chainId.toString(),
+            deployedAt: timestamp,
+            contract: playerProfileArtifacts.PlayerProfileImpl,
+        }, null, 2)
+    );
+
+    fs.writeFileSync(
+        path.join(DEPLOYMENTS_DIR, "PlayerRegistry-ABI.json"),
+        JSON.stringify({
+            network,
+            chainId: chainId.toString(),
+            deployedAt: timestamp,
+            contract: playerProfileArtifacts.PlayerRegistry,
+        }, null, 2)
+    );
 
     console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
     console.log("  Artifacts:", deployFile);

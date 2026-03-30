@@ -127,7 +127,7 @@ async function main() {
         },
         playerProfile: {
             PlayerProfileImpl: profileImplAddr,
-            PlayerRegistry:    registryAddr,
+            PlayerRegistry: registryAddr,
         },
         factories: {
             TicTacChainFactory:  ticTacFactoryAddr,
@@ -158,15 +158,16 @@ async function main() {
         ]);
 
     const abiFile = path.join(deploymentsDir, "ETour-Factory-ABIs.json");
+    const playerProfileArtifacts = {
+        PlayerProfileImpl: { address: profileImplAddr, abi: profileArt.abi },
+        PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
+    };
     fs.writeFileSync(abiFile, JSON.stringify({
         network,
         chainId: chainId.toString(),
         deployedAt: timestamp,
         modules: deployment.modules,
-        playerProfile: {
-            PlayerProfileImpl: { address: profileImplAddr, abi: profileArt.abi },
-            PlayerRegistry:    { address: registryAddr,    abi: registryArt.abi },
-        },
+        playerProfile: playerProfileArtifacts,
         factories: {
             TicTacChainFactory:  { address: ticTacFactoryAddr,  abi: ticTacArt.abi },
             ConnectFourFactory:  { address: c4FactoryAddr,       abi: c4Art.abi },
@@ -179,6 +180,25 @@ async function main() {
         },
     }, null, 2));
     console.log("ABI file saved to:", abiFile);
+
+    fs.writeFileSync(
+        path.join(deploymentsDir, "PlayerProfile-ABI.json"),
+        JSON.stringify({
+            network,
+            chainId: chainId.toString(),
+            deployedAt: timestamp,
+            contract: playerProfileArtifacts.PlayerProfileImpl,
+        }, null, 2)
+    );
+    fs.writeFileSync(
+        path.join(deploymentsDir, "PlayerRegistry-ABI.json"),
+        JSON.stringify({
+            network,
+            chainId: chainId.toString(),
+            deployedAt: timestamp,
+            contract: playerProfileArtifacts.PlayerRegistry,
+        }, null, 2)
+    );
 
     const perGameDeploymentFiles = [
         {
@@ -195,7 +215,10 @@ async function main() {
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: {
+                    PlayerProfileImpl: profileImplAddr,
+                    PlayerRegistry: registryAddr,
+                },
                 factory: { TicTacChainFactory: ticTacFactoryAddr },
                 implementation: { TicTacInstance: ticTacImplAddr },
             },
@@ -214,7 +237,10 @@ async function main() {
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: {
+                    PlayerProfileImpl: profileImplAddr,
+                    PlayerRegistry: registryAddr,
+                },
                 factory: { ConnectFourFactory: c4FactoryAddr },
                 implementation: { ConnectFourInstance: c4ImplAddr },
             },
@@ -234,7 +260,10 @@ async function main() {
                     ETourInstance_Escalation: modules.escalation,
                     ChessRulesModule: chessRulesAddr,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: {
+                    PlayerProfileImpl: profileImplAddr,
+                    PlayerRegistry: registryAddr,
+                },
                 factory: { ChessOnChainFactory: chessFactoryAddr },
                 implementation: { ChessInstance: chessImplAddr },
             },
@@ -259,7 +288,7 @@ async function main() {
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: playerProfileArtifacts,
                 factory: { address: ticTacFactoryAddr, abi: ticTacArt.abi },
                 instance: { address: ticTacImplAddr, abi: ticTacInstArt.abi },
             },
@@ -276,7 +305,7 @@ async function main() {
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: playerProfileArtifacts,
                 factory: { address: c4FactoryAddr, abi: c4Art.abi },
                 instance: { address: c4ImplAddr, abi: c4InstArt.abi },
             },
@@ -294,7 +323,7 @@ async function main() {
                     ETourInstance_Escalation: modules.escalation,
                     ChessRulesModule: chessRulesAddr,
                 },
-                playerProfile: { PlayerRegistry: registryAddr },
+                playerProfile: playerProfileArtifacts,
                 factory: { address: chessFactoryAddr, abi: chessArt.abi },
                 instance: { address: chessImplAddr, abi: chessInstArt.abi },
             },
