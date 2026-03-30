@@ -167,6 +167,23 @@ async function playAndWin(instance, roundNumber, matchNumber, player1, player2) 
     return first.address;
 }
 
+async function playDraw(instance, roundNumber, matchNumber, player1, player2) {
+    const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [roundNumber, matchNumber]);
+    const matchData = await instance.matches(matchId);
+    const first = matchData.currentTurn === player1.address ? player1 : player2;
+    const second = first === player1 ? player2 : player1;
+
+    await instance.connect(first).makeMove(roundNumber, matchNumber, 0);
+    await instance.connect(second).makeMove(roundNumber, matchNumber, 1);
+    await instance.connect(first).makeMove(roundNumber, matchNumber, 2);
+    await instance.connect(second).makeMove(roundNumber, matchNumber, 4);
+    await instance.connect(first).makeMove(roundNumber, matchNumber, 3);
+    await instance.connect(second).makeMove(roundNumber, matchNumber, 5);
+    await instance.connect(first).makeMove(roundNumber, matchNumber, 7);
+    await instance.connect(second).makeMove(roundNumber, matchNumber, 6);
+    await instance.connect(first).makeMove(roundNumber, matchNumber, 8);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Suite 1: PlayerRegistry — authorization & clone idempotency
 // ─────────────────────────────────────────────────────────────────────────────
@@ -859,6 +876,40 @@ describe("Profile push — stats updated automatically at conclusion", function 
         expect(stats.totalPlayed).to.equal(1n);
         expect(stats.totalWins).to.equal(0n);
         expect(stats.totalLosses).to.equal(1n);
+    });
+
+    it("records EvenSplit payout metadata for every player when an entire round draws", async function () {
+        const [p1, p2, p3, p4] = signers;
+        const entryFee = hre.ethers.parseEther("0.002");
+        const expectedPayout = (entryFee * 4n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS) / 4n;
+
+        const instance = await createInstance(factory, 4, entryFee, p1);
+        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p3).enrollInTournament({ value: entryFee });
+        await instance.connect(p4).enrollInTournament({ value: entryFee });
+
+        for (const matchNumber of [0, 1]) {
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNumber]);
+            const match = await instance.matches(matchId);
+            const player1 = signers.find(signer => signer.address === match.player1);
+            const player2 = signers.find(signer => signer.address === match.player2);
+            await playDraw(instance, 0, matchNumber, player1, player2);
+        }
+
+        const instanceAddress = await instance.getAddress();
+        for (const player of [p1, p2, p3, p4]) {
+            const profileAddr = await getProfileForGame(registry, player.address);
+            const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
+            const record = await profile.getEnrollmentByInstance(instanceAddress);
+
+            expect(record.concluded).to.equal(true);
+            expect(record.won).to.equal(false);
+            expect(record.prize).to.equal(entryFee * 4n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS);
+            expect(record.payout).to.equal(expectedPayout);
+            expect(record.payoutReason).to.equal(2n); // EvenSplit
+            expect(record.tournamentResolutionReason).to.equal(5n); // AllDrawScenario
+            expect(record.tournamentResolutionCategory).to.equal(3n); // DrawResolution
+        }
     });
 
     it("winner profile: concluded=true, won=true on enrollment record", async function () {

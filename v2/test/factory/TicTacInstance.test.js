@@ -836,6 +836,42 @@ describe("TicTacInstance — 2-player draw in finals, equal prize split", functi
     });
 });
 
+describe("TicTacInstance — 4-player all-draw round pays every player equally", function () {
+    this.timeout(60_000);
+
+    let factory, instance;
+    let players;
+    const ENTRY_FEE = hre.ethers.parseEther("0.002");
+
+    before(async function () {
+        players = await hre.ethers.getSigners();
+        ({ factory } = await deployFactory());
+        instance = await createInstance(factory, 4, ENTRY_FEE, players[0]);
+        await enrollAll(instance, [players[1], players[2], players[3]], ENTRY_FEE);
+
+        for (const matchNumber of [0, 1]) {
+            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNumber]);
+            const match = await instance.matches(matchId);
+            const player1 = players.find(signer => signer.address === match.player1);
+            const player2 = players.find(signer => signer.address === match.player2);
+            await playDraw(instance, 0, matchNumber, player1, player2);
+        }
+    });
+
+    it("sets the same payout and EvenSplit payoutReason for every player", async function () {
+        const expectedPayout = (ENTRY_FEE * 4n * 9000n) / 10000n / 4n;
+
+        for (const player of players.slice(0, 4)) {
+            const result = await instance.getPlayerResult(player.address);
+            expect(result.participated).to.equal(true);
+            expect(result.isWinner).to.equal(false);
+            expect(result.prizeWon).to.equal(expectedPayout);
+            expect(result.payout).to.equal(expectedPayout);
+            expect(result.payoutReason).to.equal(2n); // EvenSplit
+        }
+    });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Suite E: Move validation edge cases
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1818,8 +1854,16 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.be.reverted;
     });
 
-    it("rejects entry fee that is not a multiple of 0.001 ETH", async function () {
-        const oddFee = hre.ethers.parseEther("0.0015"); // 1.5x increment
+    it("accepts the new minimum entry fee of 0.0005 ETH", async function () {
+        const minFee = hre.ethers.parseEther("0.0005");
+        await expect(
+            factory.connect(owner).createInstance(2, minFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: minFee }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("rejects entry fee that is not a multiple of 0.0005 ETH", async function () {
+        const oddFee = hre.ethers.parseEther("0.00075");
         await expect(
             factory.connect(owner).createInstance(2, oddFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: oddFee }
             )
@@ -1829,6 +1873,14 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects zero entry fee", async function () {
         await expect(
             factory.connect(owner).createInstance(2, 0n, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: 0n }
+            )
+        ).to.be.reverted;
+    });
+
+    it("rejects entry fee above the 1 ETH max", async function () {
+        const tooHighFee = hre.ethers.parseEther("1.0005");
+        await expect(
+            factory.connect(owner).createInstance(2, tooHighFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: tooHighFee }
             )
         ).to.be.reverted;
     });

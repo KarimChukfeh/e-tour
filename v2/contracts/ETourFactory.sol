@@ -24,7 +24,7 @@ import "./interfaces/IPlayerRegistry.sol";
  *
  * GUARDRAILS:
  * - playerCount: must be power of 2, in [2, 32]
- * - entryFee: must be a multiple of 0.001 ETH, in [0.001 ETH, maxEntryFee]
+ * - entryFee: must be a multiple of 0.0005 ETH, in [0.0005 ETH, maxEntryFee]
  *
  * FEE MODEL (deferred):
  * All fee buckets (90% prize, 7.5% owner, 2.5% protocol raffle) stay on the instance
@@ -54,8 +54,8 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Constants ============
 
-    uint256 public constant MIN_ENTRY_FEE = 0.001 ether;
-    uint256 public constant FEE_INCREMENT = 0.001 ether;
+    uint256 public constant MIN_ENTRY_FEE = 0.0005 ether;
+    uint256 public constant FEE_INCREMENT = 0.0005 ether;
     uint256 public constant BASIS_POINTS = 10000;
 
     // Escalation delay constants (not user-configurable)
@@ -75,7 +75,7 @@ contract ETourFactory is ReentrancyGuard {
     address public immutable MODULE_PRIZES;
     address public immutable MODULE_ESCALATION;
 
-    uint256 public maxEntryFee = 10 ether;
+    uint256 public maxEntryFee = 1 ether;
 
     // Tier registry
     mapping(bytes32 => TierConfig) public tierRegistry;
@@ -144,7 +144,7 @@ contract ETourFactory is ReentrancyGuard {
      * Validates parameters, looks up or creates the tier config, deploys a clone.
      *
      * @param playerCount Must be power of 2 in [2, 32]
-     * @param entryFee Must be multiple of 0.001 ETH in [0.001 ETH, maxEntryFee]
+     * @param entryFee Must be multiple of 0.0005 ETH in [0.0005 ETH, maxEntryFee]
      * @param enrollmentWindow Must be 2, 5, 10, or 30 minutes
      * @param matchTimePerPlayer Must be 2, 5, 10, or 15 minutes
      * @param timeIncrementPerMove Must be 15 or 30 seconds
