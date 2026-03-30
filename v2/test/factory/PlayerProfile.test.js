@@ -3,8 +3,8 @@
 //   - PlayerProfile: enrollment recording, result push, stats accuracy
 //   - PlayerRegistry: clone idempotency, authorization gating
 //   - Deferred fee invariant: prizePool + ownerAccrued + protocolAccrued == entryFee × enrolled
-//   - EL1: solo enroll → forceStart → 100% refund, owner gets 0
-//   - EL2: partial enroll → timeout → claim → 100% of enrolled fees, owner gets 0
+//   - EL0: solo enroll → cancel → 100% refund, owner gets 0
+//   - EL2: partial enroll → timeout → claim → 90% to claimant, 7.5% owner, 2.5% raffle
 //   - Normal conclusion: owner gets 7.5%, winner gets ~90%, raffle gets ~2.5%
 //   - Per-tournament raffle: winner is always an enrolled player, event emitted
 //   - Profile auto-updated at conclusion (push model)
@@ -366,22 +366,22 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued + protocolAccrue
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suite 4: EL1 — solo force start → 100% refund
+// Suite 4: EL0 — solo cancel → 100% refund
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("EL1 — solo enroll → forceStart → 100% refund", function () {
-    let factory, signers;
+describe("EL0 — solo enroll → cancel → 100% refund", function () {
+    let factory, registry, signers;
 
     beforeEach(async function () {
         signers = await hre.ethers.getSigners();
-        ({ factory } = await deployAll());
+        ({ factory, registry } = await deployAll());
     });
 
     it("solo player receives 100% of entry fee back", async function () {
         const [solo] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
 
-        // Use short enrollment window so we can force start
+        // Use short enrollment window so we can cancel quickly.
         const timeouts = shortTimeouts();
         const tx = await factory.connect(solo).createInstance(
             2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
@@ -394,13 +394,10 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        // Wait for enrollment window to expire (2 minutes + 1 second)
-        await advanceTime(121);
-
         const balanceBefore = await hre.ethers.provider.getBalance(solo.address);
-        const forceTx = await instance.connect(solo).forceStartTournament();
-        const forceReceipt = await forceTx.wait();
-        const gasUsed = forceReceipt.gasUsed * forceReceipt.gasPrice;
+        const cancelTx = await instance.connect(solo).cancelTournament();
+        const cancelReceipt = await cancelTx.wait();
+        const gasUsed = cancelReceipt.gasUsed * cancelReceipt.gasPrice;
         const balanceAfter = await hre.ethers.provider.getBalance(solo.address);
 
         // Net change should be ~+entryFee (got full refund back, minus gas)
@@ -408,7 +405,7 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
         expect(netChange).to.equal(entryFee);
     });
 
-    it("owner receives nothing on EL1", async function () {
+    it("owner receives nothing on EL0", async function () {
         const [solo] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
 
@@ -426,14 +423,13 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await advanceTime(121); // 2 minutes + 1 second
-        await instance.connect(solo).forceStartTournament();
+        await instance.connect(solo).cancelTournament();
 
         const ownerBalanceAfter = await factory.ownerBalance();
         expect(ownerBalanceAfter).to.equal(ownerBalanceBefore);
     });
 
-    it("instance balance is 0 after EL1", async function () {
+    it("instance balance is 0 after EL0", async function () {
         const [solo] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
 
@@ -449,29 +445,64 @@ describe("EL1 — solo enroll → forceStart → 100% refund", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await advanceTime(121); // 2 minutes + 1 second
-        await instance.connect(solo).forceStartTournament();
+        await instance.connect(solo).cancelTournament();
 
         const balance = await hre.ethers.provider.getBalance(await instance.getAddress());
         expect(balance).to.equal(0n);
     });
+
+    it("profile result stores refund separately from prize on EL0 cancel", async function () {
+        const [solo] = signers;
+        const entryFee = hre.ethers.parseEther("0.01");
+
+        const timeouts = shortTimeouts();
+        const tx = await factory.connect(solo).createInstance(
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+        );
+        const receipt = await tx.wait();
+        const event = receipt.logs
+            .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
+            .find(e => e && e.name === "InstanceDeployed");
+        const instance = await hre.ethers.getContractAt(
+            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+        );
+
+        await instance.connect(solo).cancelTournament();
+
+        const profileAddr = await getProfileForGame(registry, solo.address);
+        const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
+        const [record, stats] = await Promise.all([
+            profile.getEnrollmentByInstance(await instance.getAddress()),
+            profile.getStats(),
+        ]);
+
+        expect(record.prize).to.equal(0n);
+        expect(record.payout).to.equal(entryFee);
+        expect(record.payoutReason).to.equal(4n); // Cancelation
+        expect(record.rafflePool).to.equal(0n);
+        expect(record.wonRaffle).to.equal(false);
+        expect(record.tournamentResolutionReason).to.equal(6n); // SoloEnrollCancelled
+        expect(record.tournamentResolutionCategory).to.equal(4n); // EnrollmentResolution
+        expect(stats.totalNetEarnings).to.equal(0n);
+    });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suite 5: EL2 — abandoned pool claim → 100% refund
+// Suite 5: EL2 — abandoned pool claim → standard fee splits
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees", function () {
-    let factory, signers;
+describe("EL2 — partial enroll → abandoned claim → standard fee splits", function () {
+    let factory, registry, signers;
 
     beforeEach(async function () {
         signers = await hre.ethers.getSigners();
-        ({ factory } = await deployAll());
+        ({ factory, registry } = await deployAll());
     });
 
-    it("claimer receives 100% of all enrolled entry fees", async function () {
+    it("claimer receives 90% of all enrolled entry fees", async function () {
         const [p1, p2, claimer] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
+        const expectedPrize = entryFee * 2n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS;
 
         // Create a 4-player instance; only 2 enroll (p1 auto-enrolled, then p2)
         const to = shortTimeouts();
@@ -497,14 +528,15 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
         const gasUsed = claimReceipt.gasUsed * claimReceipt.gasPrice;
         const claimerAfter = await hre.ethers.provider.getBalance(claimer.address);
 
-        // Claimer should receive 2 × entryFee (100% of both enrolled fees)
+        // Claimer should receive the 90% prize pool from both enrolled fees.
         const netGain = claimerAfter - claimerBefore + gasUsed;
-        expect(netGain).to.equal(entryFee * 2n);
+        expect(netGain).to.equal(expectedPrize);
     });
 
-    it("owner receives nothing on EL2", async function () {
+    it("owner receives the deferred 7.5% share on EL2", async function () {
         const [p1, , claimer] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
+        const expectedOwnerShare = entryFee * OWNER_SHARE_BPS / BASIS_POINTS;
 
         const ownerBefore = await factory.ownerBalance();
 
@@ -524,7 +556,53 @@ describe("EL2 — partial enroll → abandoned claim → 100% of enrolled fees",
         await advanceTime(121 + 121);
         await instance.connect(claimer).claimAbandonedPool();
 
-        expect(await factory.ownerBalance()).to.equal(ownerBefore);
+        expect(await factory.ownerBalance() - ownerBefore).to.equal(expectedOwnerShare);
+    });
+
+    it("non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result", async function () {
+        const [p1, p2, claimer] = signers;
+        const entryFee = hre.ethers.parseEther("0.01");
+        const expectedPrize = entryFee * 2n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS;
+
+        const to = shortTimeouts();
+        const tx = await factory.connect(p1).createInstance(
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+        );
+        const receipt = await tx.wait();
+        const event = receipt.logs
+            .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
+            .find(e => e && e.name === "InstanceDeployed");
+        const instance = await hre.ethers.getContractAt(
+            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+        );
+        await instance.connect(p2).enrollInTournament({ value: entryFee });
+
+        await advanceTime(121 + 121);
+        await instance.connect(claimer).claimAbandonedPool();
+
+        const profileAddr = await getProfileForGame(registry, claimer.address);
+        expect(profileAddr).to.not.equal(hre.ethers.ZeroAddress);
+
+        const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
+        const [record, stats] = await Promise.all([
+            profile.getEnrollmentByInstance(await instance.getAddress()),
+            profile.getStats(),
+        ]);
+
+        expect(record.entryFee).to.equal(0n);
+        expect(record.concluded).to.equal(true);
+        expect(record.won).to.equal(true);
+        expect(record.prize).to.equal(expectedPrize);
+        expect(record.payout).to.equal(expectedPrize);
+        expect(record.payoutReason).to.equal(1n); // Victory
+        expect(record.rafflePool).to.equal(entryFee * 2n * PROTOCOL_SHARE_BPS / BASIS_POINTS);
+        expect(record.tournamentResolutionReason).to.equal(7n); // AbandonedTournamentClaimed
+        expect(record.tournamentResolutionCategory).to.equal(4n); // EnrollmentResolution
+
+        expect(stats.totalPlayed).to.equal(1n);
+        expect(stats.totalWins).to.equal(1n);
+        expect(stats.totalLosses).to.equal(0n);
+        expect(stats.totalNetEarnings).to.equal(expectedPrize);
     });
 });
 
@@ -705,6 +783,44 @@ describe("Profile push — stats updated automatically at conclusion", function 
     beforeEach(async function () {
         signers = await hre.ethers.getSigners();
         ({ factory, registry } = await deployAll());
+    });
+
+    it("finalizes both winner and loser profiles when the winning move uses estimated gas", async function () {
+        const [p1, p2] = signers;
+        const entryFee = hre.ethers.parseEther("0.002");
+
+        const instance = await createInstance(factory, 2, entryFee, p1);
+        await instance.connect(p2).enrollInTournament({ value: entryFee });
+
+        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
+        const matchData = await instance.matches(matchId);
+        const first = matchData.currentTurn === p1.address ? p1 : p2;
+        const second = first === p1 ? p2 : p1;
+
+        await instance.connect(first).makeMove(0, 0, 0);
+        await instance.connect(second).makeMove(0, 0, 3);
+        await instance.connect(first).makeMove(0, 0, 1);
+        await instance.connect(second).makeMove(0, 0, 4);
+
+        const estimatedGas = await instance.connect(first).makeMove.estimateGas(0, 0, 2);
+        await (await instance.connect(first).makeMove(0, 0, 2, { gasLimit: estimatedGas })).wait();
+
+        const winnerProfileAddr = await getProfileForGame(registry, first.address);
+        const loserProfileAddr = await getProfileForGame(registry, second.address);
+
+        const winnerProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", winnerProfileAddr);
+        const loserProfile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", loserProfileAddr);
+        const instanceAddress = await instance.getAddress();
+
+        const [winnerRecord, loserRecord] = await Promise.all([
+            winnerProfile.getEnrollmentByInstance(instanceAddress),
+            loserProfile.getEnrollmentByInstance(instanceAddress),
+        ]);
+
+        expect(winnerRecord.concluded).to.equal(true);
+        expect(winnerRecord.won).to.equal(true);
+        expect(loserRecord.concluded).to.equal(true);
+        expect(loserRecord.won).to.equal(false);
     });
 
     it("winner profile: totalWins=1, totalPlayed=1 after conclusion", async function () {

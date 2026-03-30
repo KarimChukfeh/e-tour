@@ -1,6 +1,6 @@
 {
-  "network": "arbitrum",
-  "generatedAt": "2026-03-30T03:26:20.114Z",
+  "network": "localhost",
+  "generatedAt": "2026-03-30T12:23:14.327Z",
   "contract": {
     "abi": [
       {
@@ -184,8 +184,20 @@
           {
             "indexed": false,
             "internalType": "uint256",
-            "name": "prize",
+            "name": "payout",
             "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "rafflePool",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "bool",
+            "name": "wonRaffle",
+            "type": "bool"
           },
           {
             "indexed": false,
@@ -411,6 +423,26 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "payout",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "payoutReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rafflePool",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "wonRaffle",
+            "type": "bool"
+          },
+          {
             "internalType": "uint8",
             "name": "tournamentResolutionReason",
             "type": "uint8"
@@ -442,8 +474,8 @@
     ]
   },
   "addressesByGame": {
-    "TicTacChainFactory": "0x6F04EF102b5E6196EC19d72e466E59d2608ce97A",
-    "ConnectFourFactory": "0x9675eC50E8e8d5DA0f2dEb4D94b3AEda65fB997b",
-    "ChessOnChainFactory": "0x5320305d9153B777Be20DDE976ECd6f18596Da54"
+    "TicTacChainFactory": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+    "ConnectFourFactory": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+    "ChessOnChainFactory": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44"
   }
 }

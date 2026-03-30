@@ -2,22 +2,23 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-03-28T02:12:36.028Z",
-  "blockNumber": 77,
+  "timestamp": "2026-03-30T12:22:58.314Z",
+  "blockNumber": 1086,
   "modules": {
-    "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "ETourInstance_Prizes": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "ETourInstance_Escalation": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    "ChessRulesModule": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+    "ETourInstance_Core": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "ETourInstance_Matches": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "ETourInstance_Prizes": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "ETourInstance_Escalation": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "ChessRulesModule": "0x59b670e9fA9D0A427751Af201D676719a970857b"
   },
   "playerProfile": {
-    "PlayerRegistry": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
+    "PlayerProfileImpl": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
+    "PlayerRegistry": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44"
   },
   "factory": {
-    "ChessOnChainFactory": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
+    "ChessOnChainFactory": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f"
   },
   "implementation": {
-    "ChessInstance": "0xeC4cFde48EAdca2bC63E94BB437BbeAcE1371bF3"
+    "ChessInstance": "0x763e69d24a03c0c8B256e470D9fE9e0753504D07"
   }
 }

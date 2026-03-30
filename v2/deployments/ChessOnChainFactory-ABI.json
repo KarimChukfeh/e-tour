@@ -1,17 +1,17 @@
 {
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-03-28T02:27:42.453Z",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-03-30T12:22:58.314Z",
   "modules": {
-    "ETourInstance_Core": "0x71f2aE22CE34E998754bD4604d4C40201Acb49D3",
-    "ETourInstance_Matches": "0x5c47d7ED1d0de7FA3836fc84b9aDcb77744eCabc",
-    "ETourInstance_Prizes": "0x5a9de501506D35FC91daeE2E1CA738D7020123AB",
-    "ETourInstance_Escalation": "0x238bC5FDaC0B068fDB49f27db3479bBd391D1378",
-    "ChessRulesModule": "0x567673470525Ab03d18458B8CA5947b2d0a5F52a"
+    "ETourInstance_Core": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "ETourInstance_Matches": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "ETourInstance_Prizes": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "ETourInstance_Escalation": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "ChessRulesModule": "0x59b670e9fA9D0A427751Af201D676719a970857b"
   },
   "playerProfile": {
     "PlayerProfileImpl": {
-      "address": null,
+      "address": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
       "abi": [
         {
           "inputs": [],
@@ -108,8 +108,26 @@
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "prize",
+              "name": "payout",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "payoutReason",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "rafflePool",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "wonRaffle",
+              "type": "bool"
             },
             {
               "indexed": false,
@@ -173,6 +191,26 @@
                   "internalType": "uint256",
                   "name": "prize",
                   "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "payout",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "payoutReason",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "rafflePool",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "wonRaffle",
+                  "type": "bool"
                 },
                 {
                   "internalType": "uint8",
@@ -257,6 +295,26 @@
                   "internalType": "uint256",
                   "name": "prize",
                   "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "payout",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "payoutReason",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "rafflePool",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "wonRaffle",
+                  "type": "bool"
                 },
                 {
                   "internalType": "uint8",
@@ -562,6 +620,26 @@
               "type": "uint256"
             },
             {
+              "internalType": "uint256",
+              "name": "payout",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "payoutReason",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rafflePool",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "wonRaffle",
+              "type": "bool"
+            },
+            {
               "internalType": "uint8",
               "name": "tournamentResolutionReason",
               "type": "uint8"
@@ -593,7 +671,7 @@
       ]
     },
     "PlayerRegistry": {
-      "address": "0x5320305d9153B777Be20DDE976ECd6f18596Da54",
+      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
       "abi": [
         {
           "inputs": [
@@ -776,8 +854,20 @@
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "prize",
+              "name": "payout",
               "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "rafflePool",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "wonRaffle",
+              "type": "bool"
             },
             {
               "indexed": false,
@@ -1003,6 +1093,26 @@
               "type": "uint256"
             },
             {
+              "internalType": "uint256",
+              "name": "payout",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "payoutReason",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rafflePool",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "wonRaffle",
+              "type": "bool"
+            },
+            {
               "internalType": "uint8",
               "name": "tournamentResolutionReason",
               "type": "uint8"
@@ -1035,7 +1145,7 @@
     }
   },
   "factory": {
-    "address": "0x8b533DF79F1c19fD388108668b6111EEb993922E",
+    "address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
     "abi": [
       {
         "inputs": [
@@ -1915,7 +2025,7 @@
     ]
   },
   "instance": {
-    "address": "0x494dc1DDAF9e1810137bAC44B98cC84D6a0B5aBd",
+    "address": "0x763e69d24a03c0c8B256e470D9fE9e0753504D07",
     "abi": [
       {
         "inputs": [],
@@ -2549,6 +2659,52 @@
       },
       {
         "inputs": [],
+        "name": "canCancelTournament",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "canForceStartTournament",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "canResetEnrollmentWindow",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "cancelTournament",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "claimAbandonedPool",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -2965,6 +3121,26 @@
           {
             "internalType": "bool",
             "name": "isWinner",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "payout",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum ETourInstance_Base.PayoutReason",
+            "name": "payoutReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rafflePool",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "wonRaffle",
             "type": "bool"
           }
         ],
@@ -3484,6 +3660,25 @@
             "type": "address"
           }
         ],
+        "name": "playerPayoutReasons",
+        "outputs": [
+          {
+            "internalType": "enum ETourInstance_Base.PayoutReason",
+            "name": "",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
         "name": "playerPrizes",
         "outputs": [
           {
@@ -3504,6 +3699,13 @@
           }
         ],
         "name": "rescueStuckFunds",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "resetEnrollmentWindow",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

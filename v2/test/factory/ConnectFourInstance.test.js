@@ -210,19 +210,22 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
 
         expect(recordA.concluded).to.be.true;
         expect(recordA.won).to.be.false;
-        expect(recordA.prize).to.equal(0n);
+        expect(recordA.prize).to.equal(expectedPrize);
+        expect(recordA.payout).to.equal(0n);
         expect(recordA.tournamentResolutionReason).to.equal(4n);
         expect(recordA.tournamentResolutionCategory).to.equal(2n);
 
         expect(recordD.concluded).to.be.true;
         expect(recordD.won).to.be.false;
-        expect(recordD.prize).to.equal(0n);
+        expect(recordD.prize).to.equal(expectedPrize);
+        expect(recordD.payout).to.equal(0n);
         expect(recordD.tournamentResolutionReason).to.equal(4n);
         expect(recordD.tournamentResolutionCategory).to.equal(2n);
 
         expect(recordC.concluded).to.be.true;
         expect(recordC.won).to.be.true;
         expect(recordC.prize).to.equal(expectedPrize);
+        expect(recordC.payout).to.equal(expectedPrize);
         expect(recordC.tournamentResolutionReason).to.equal(4n);
         expect(recordC.tournamentResolutionCategory).to.equal(2n);
 

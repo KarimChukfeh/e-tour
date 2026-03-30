@@ -6,6 +6,14 @@ pragma solidity ^0.8.20;
  * @dev Interface for per-player profile contracts. Used by PlayerRegistry.
  */
 interface IPlayerProfile {
+    enum PayoutReason {
+        None,
+        Victory,
+        EvenSplit,
+        WalletRejected,
+        Cancelation
+    }
+
     struct EnrollmentRecord {
         address instance;
         uint8   gameType;
@@ -14,6 +22,10 @@ interface IPlayerProfile {
         bool    concluded;
         bool    won;
         uint256 prize;
+        uint256 payout;
+        uint8   payoutReason;
+        uint256 rafflePool;
+        bool    wonRaffle;
         uint8   tournamentResolutionReason;
         uint8   tournamentResolutionCategory;
     }
@@ -47,6 +59,10 @@ interface IPlayerProfile {
         address instance,
         bool won,
         uint256 prize,
+        uint256 payout,
+        uint8 payoutReason,
+        uint256 rafflePool,
+        bool wonRaffle,
         uint8 tournamentResolutionReason,
         uint8 tournamentResolutionCategory
     ) external;

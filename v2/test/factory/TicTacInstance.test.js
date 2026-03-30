@@ -1276,20 +1276,23 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suite J: Enrollment window / force start (EL1 — solo enrollment)
+// Suite J: Enrollment window escalations (EL0 solo cancel, EL1 force start)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — force start with solo enrollment (EL1)", function () {
+describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
     this.timeout(60_000);
 
     let factory, instance;
-    let owner;
+    let owner, joiner;
     const ENTRY_FEE          = hre.ethers.parseEther("0.002");
     const ENROLLMENT_WINDOW  = 2n * 60n; // 2 minutes (valid - shortest allowed)
 
     before(async function () {
-        [owner] = await hre.ethers.getSigners();
+        [owner, joiner] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
+    });
+
+    beforeEach(async function () {
         const timeouts = shortTimeouts({
             enrollmentWindow:     ENROLLMENT_WINDOW,
             enrollmentLevel2Delay: 5n,
@@ -1297,7 +1300,7 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
             matchLevel2Delay:     3600n,
             matchLevel3Delay:     7200n,
         });
-        // Only owner enrolls (1 of 4 needed)
+        // Only owner enrolls (1 of 4 needed).
         instance = await createInstance(factory, 4, ENTRY_FEE, owner, timeouts);
     });
 
@@ -1307,23 +1310,35 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
         expect(t.enrolledCount).to.equal(1);
     });
 
+    it("solo enrolled player can cancel and reset immediately, but cannot force start", async function () {
+        expect(await instance.connect(owner).canCancelTournament()).to.equal(true);
+        expect(await instance.connect(owner).canResetEnrollmentWindow()).to.equal(true);
+        expect(await instance.connect(owner).canForceStartTournament()).to.equal(false);
+    });
+
     it("forceStartTournament reverts before the enrollment window expires", async function () {
         await expect(
             instance.connect(owner).forceStartTournament()
         ).to.be.revertedWith("Force start failed");
     });
 
-    it("forceStartTournament succeeds after enrollment window expires", async function () {
+    it("forceStartTournament still reverts after the enrollment window expires if only 1 player is enrolled", async function () {
         await advanceTime(Number(ENROLLMENT_WINDOW) + 5);
 
-        const tx = await instance.connect(owner).forceStartTournament();
+        await expect(
+            instance.connect(owner).forceStartTournament()
+        ).to.be.revertedWith("Force start failed");
+    });
+
+    it("cancelTournament succeeds immediately for a solo enrolled player", async function () {
+        const tx = await instance.connect(owner).cancelTournament();
         const receipt = await tx.wait();
 
-        // Solo enrollment → fast-path: tournament concludes immediately
+        // Solo enrollment -> canceled immediately with a full refund.
         const t = await instance.tournament();
         expect(t.status).to.equal(2); // Concluded
         expect(t.winner).to.equal(owner.address);
-        expect(t.completionReason).to.equal(6); // SoloEnrollForceStart
+        expect(t.completionReason).to.equal(6); // SoloEnrollCancelled
 
         const raffleEvent = findParsedLog(receipt, instance, "TournamentRaffleAwarded");
         expect(raffleEvent).to.equal(undefined);
@@ -1336,9 +1351,73 @@ describe("TicTacInstance — force start with solo enrollment (EL1)", function (
         expect(info.raffleRecipient).to.equal(hre.ethers.ZeroAddress);
     });
 
-    it("solo winner received 100% of entry fee (full refund on EL1)", async function () {
-        // With deferred fees, EL1 refunds the full entry fee — owner and protocol get nothing.
+    it("solo player received 100% of entry fee back on EL0 cancel", async function () {
+        await instance.connect(owner).cancelTournament();
         expect(await instance.playerPrizes(owner.address)).to.equal(ENTRY_FEE);
+    });
+
+    it("cancelTournament is not available once a second player enrolls", async function () {
+        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+
+        expect(await instance.connect(owner).canCancelTournament()).to.equal(false);
+        expect(await instance.connect(owner).canResetEnrollmentWindow()).to.equal(false);
+        await expect(
+            instance.connect(owner).cancelTournament()
+        ).to.be.revertedWith("Cancel failed");
+        await expect(
+            instance.connect(owner).resetEnrollmentWindow()
+        ).to.be.revertedWith("Reset failed");
+    });
+
+    it("resetEnrollmentWindow pushes EL1 and EL2 deadlines forward for the solo player", async function () {
+        await advanceTime(Number(ENROLLMENT_WINDOW) + 10);
+
+        const beforeReset = await instance.tournament();
+        const oldEl1 = beforeReset.enrollmentTimeout.escalation1Start;
+        const oldEl2 = beforeReset.enrollmentTimeout.escalation2Start;
+
+        expect(oldEl1).to.be.gt(0n);
+        expect(oldEl2).to.be.gt(oldEl1);
+
+        await instance.connect(owner).resetEnrollmentWindow();
+
+        const afterReset = await instance.tournament();
+        expect(afterReset.enrollmentTimeout.escalation1Start).to.be.gt(oldEl1);
+        expect(afterReset.enrollmentTimeout.escalation2Start).to.be.gt(oldEl2);
+        expect(afterReset.enrollmentTimeout.activeEscalation).to.equal(0);
+
+        const blockAfterReset = await hre.ethers.provider.getBlock("latest");
+        expect(afterReset.enrollmentTimeout.escalation2Start).to.be.gt(BigInt(blockAfterReset.timestamp));
+
+        const secondsUntilEl2 = Number(afterReset.enrollmentTimeout.escalation2Start - BigInt(blockAfterReset.timestamp));
+        await advanceTime(secondsUntilEl2 + 1);
+        const blockAfterDelay = await hre.ethers.provider.getBlock("latest");
+        expect(BigInt(blockAfterDelay.timestamp)).to.be.gte(afterReset.enrollmentTimeout.escalation2Start);
+    });
+
+    it("forceStartTournament succeeds after enrollment window expires when 2 players are enrolled", async function () {
+        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+
+        await advanceTime(Number(ENROLLMENT_WINDOW) + 5);
+
+        expect(await instance.connect(owner).canForceStartTournament()).to.equal(true);
+
+        const tx = await instance.connect(owner).forceStartTournament();
+        const receipt = await tx.wait();
+
+        const startedEvent = findParsedLog(receipt, instance, "TournamentStarted");
+        expect(startedEvent).to.not.equal(undefined);
+        expect(startedEvent.args.playerCount).to.equal(2);
+
+        const t = await instance.tournament();
+        expect(t.status).to.equal(1); // InProgress
+        expect(t.enrolledCount).to.equal(2);
+        expect(t.winner).to.equal(hre.ethers.ZeroAddress);
+
+        const info = await instance.getInstanceInfo();
+        expect(info.startTime).to.be.gt(0n);
+        expect(info.prizeAwarded).to.equal(0n);
+        expect(info.raffleAwarded).to.equal(0n);
     });
 });
 
@@ -1690,14 +1769,12 @@ describe("TicTacInstance — players, activeTournaments, pastTournaments", funct
         expect(active1).to.not.equal(instBAddr);
     });
 
-    it("EL1 conclusion also moves instance to pastTournaments (even with 0 owner share)", async function () {
+    it("EL0 cancel also moves instance to pastTournaments (even with 0 owner share)", async function () {
         const inst2 = await createInstance(factory, 2, ENTRY_FEE, owner);
         const activeBefore = await factory.getActiveTournamentCount();
 
-        // Force start with only 1 player enrolled (EL1)
-        await hre.network.provider.send("evm_increaseTime", [3600 * 49]);
-        await hre.network.provider.send("evm_mine");
-        await inst2.forceStartTournament();
+        // Cancel immediately with only 1 player enrolled (EL0).
+        await inst2.cancelTournament();
 
         expect(await factory.getActiveTournamentCount()).to.equal(activeBefore - 1n);
         const pastCount = await factory.getPastTournamentCount();

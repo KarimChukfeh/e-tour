@@ -11,7 +11,7 @@ import "../ETourInstance_Base.sol";
  * - No tierId/instanceId parameters — operates on flat instance storage
  * - No registerTier() — tier config is baked in at initialize()
  * - No resetTournamentAfterCompletion() — instances are permanent records
- * - No resetEnrollmentWindow() — instances don't cycle
+ * - Solo player may reset the enrollment window without cycling instance state
  * - Fee routing: owner share goes to factory.owner(), protocol share to factory
  * - On enrollment, registers player on factory via factory.registerPlayer()
  *
@@ -123,7 +123,42 @@ contract ETourInstance_Core is ETourInstance_Base {
     }
 
     /**
+     * @dev Cancel a solo-enrolled tournament at any time while enrollment is open.
+     * Called via delegatecall from ETourInstance_Base.cancelTournament().
+     */
+    function coreCancelTournament() external payable onlyDelegateCall {
+        require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
+        require(isEnrolled[msg.sender], "Not enrolled");
+        require(tournament.enrolledCount == 1, "Only solo player can cancel");
+
+        tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation0_SoloCancel;
+        tournament.status = TournamentStatus.Concluded;
+        tournament.winner = msg.sender;
+        _setTournamentResolution(TournamentResolutionReason.SoloEnrollCancelled);
+
+        _refundSoloPlayer(msg.sender);
+    }
+
+    /**
+     * @dev Reset enrollment deadlines for a solo-enrolled tournament at any time.
+     * Called via delegatecall from ETourInstance_Base.resetEnrollmentWindow().
+     */
+    function coreResetEnrollmentWindow() external payable onlyDelegateCall {
+        require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
+        require(isEnrolled[msg.sender], "Not enrolled");
+        require(tournament.enrolledCount == 1, "Only solo player can reset");
+
+        tournament.enrollmentTimeout.escalation1Start =
+            block.timestamp + tierConfig.timeouts.enrollmentWindow;
+        tournament.enrollmentTimeout.escalation2Start =
+            tournament.enrollmentTimeout.escalation1Start +
+            tierConfig.timeouts.enrollmentLevel2Delay;
+        tournament.enrollmentTimeout.activeEscalation = EscalationLevel.None;
+    }
+
+    /**
      * @dev Force start if enrollment window expired and caller is enrolled.
+     * Requires at least 2 enrolled players.
      * Called via delegatecall from ETourInstance_Base.forceStartTournament().
      */
     function coreForceStart() external payable onlyDelegateCall {
@@ -133,7 +168,7 @@ contract ETourInstance_Core is ETourInstance_Base {
             block.timestamp >= tournament.enrollmentTimeout.escalation1Start,
             "Enrollment window not expired"
         );
-        require(tournament.enrolledCount >= 1, "Need at least 1 player");
+        require(tournament.enrolledCount >= 2, "Need at least 2 players");
 
         tournament.enrollmentTimeout.activeEscalation = EscalationLevel.Escalation1_OpponentClaim;
         _startTournament();
@@ -176,45 +211,36 @@ contract ETourInstance_Core is ETourInstance_Base {
             tournament.actualTotalRounds = isPow2 ? log2Floor : log2Floor + 1;
         }
 
-        if (tournament.enrolledCount == 1) {
-            address soloWinner = enrolledPlayers[0];
-            tournament.winner = soloWinner;
-            tournament.status = TournamentStatus.Concluded;
-            _setTournamentResolution(TournamentResolutionReason.SoloEnrollForceStart);
-
-            // Full 100% refund: prize pool + owner accrued + protocol accrued.
-            // Owner and protocol earn nothing — the tournament never ran.
-            uint256 refundAmount = tournament.prizePool
-                + tournament.ownerAccrued
-                + tournament.protocolAccrued;
-
-            // Zero out all buckets so _handleTournamentConclusion skips fee steps.
-            tournament.prizePool = 0;
-            tournament.ownerAccrued = 0;
-            tournament.protocolAccrued = 0;
-
-            playerPrizes[soloWinner] = refundAmount;
-
-            if (refundAmount > 0) {
-                (bool sent, ) = payable(soloWinner).call{value: refundAmount}("");
-                tournament.prizeRecipient = soloWinner;
-                tournament.prizeAwarded = sent ? refundAmount : 0;
-                tournament.raffleRecipient = address(0);
-                tournament.raffleAwarded = 0;
-                if (!sent) {
-                    // Fallback: restore prize so rescueStuckFunds can recover it
-                    tournament.prizePool = refundAmount;
-                    playerPrizes[soloWinner] = refundAmount;
-                }
-            }
-            // Note: TournamentConcluded event is emitted by the instance after forceStartTournament returns
-        }
         // Note: initializeRound(0) is called by the instance after this returns
     }
 
-    // ============ Enrollment Window Reset ============
-    // NOTE: resetEnrollmentWindow is INTENTIONALLY OMITTED.
-    // Instances are single-use. If you want a fresh enrollment window, deploy a new instance.
+    function _refundSoloPlayer(address soloPlayer) internal {
+        // Full 100% refund: prize pool + owner accrued + protocol accrued.
+        // Owner and protocol earn nothing — the tournament never ran.
+        uint256 refundAmount = tournament.prizePool
+            + tournament.ownerAccrued
+            + tournament.protocolAccrued;
+
+        // Zero out all buckets so _handleTournamentConclusion skips fee steps.
+        tournament.prizePool = 0;
+        tournament.ownerAccrued = 0;
+        tournament.protocolAccrued = 0;
+        tournament.raffleRecipient = address(0);
+        tournament.raffleAwarded = 0;
+
+        playerPrizes[soloPlayer] = refundAmount;
+
+        if (refundAmount > 0) {
+            (bool sent, ) = payable(soloPlayer).call{value: refundAmount}("");
+            tournament.prizeRecipient = soloPlayer;
+            tournament.prizeAwarded = sent ? refundAmount : 0;
+            if (!sent) {
+                // Fallback: restore prize so rescueStuckFunds can recover it
+                tournament.prizePool = refundAmount;
+                playerPrizes[soloPlayer] = refundAmount;
+            }
+        }
+    }
 
     // ============ View Helpers ============
 
@@ -228,6 +254,6 @@ contract ETourInstance_Core is ETourInstance_Base {
         return tournament.status == TournamentStatus.Enrolling &&
                isEnrolled[msg.sender] &&
                block.timestamp >= tournament.enrollmentTimeout.escalation1Start &&
-               tournament.enrolledCount >= 1;
+               tournament.enrolledCount >= 2;
     }
 }

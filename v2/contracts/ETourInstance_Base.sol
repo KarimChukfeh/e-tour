@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * KEY DIFFERENCES from ETour_Base:
  * - No tierId/instanceId in storage mappings — this contract IS the instance
  * - No resetTournamentAfterCompletion — instances are permanent records
- * - No resetEnrollmentWindow — instances don't cycle
+ * - Enrollment window can be reset by the solo enrolled player without cycling instance state
  * - Module addresses come from factory (set at initialize() time)
  * - Fee splits route to factory address (not a hardcoded owner)
  * - Match IDs: keccak256(roundNumber, matchNumber) — no tierId/instanceId
@@ -51,6 +51,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
     enum EscalationLevel {
         None,
+        Escalation0_SoloCancel,
         Escalation1_OpponentClaim,
         Escalation2_AdvancedPlayers,
         Escalation3_ExternalPlayers
@@ -85,7 +86,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         ForceElimination,           // 3 (ML2)
         Replacement,                // 4 (ML3)
         AllDrawScenario,            // 5
-        SoloEnrollForceStart,       // 6 (EL1)
+        SoloEnrollCancelled,        // 6 (EL0)
         AbandonedTournamentClaimed  // 7 (EL2)
     }
 
@@ -107,6 +108,14 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         ForceEliminationDefeat,
         ReplacementVictory,
         ReplacementDefeat
+    }
+
+    enum PayoutReason {
+        None,
+        Victory,
+        EvenSplit,
+        WalletRejected,
+        Cancelation
     }
 
     // ============ Structs ============
@@ -263,6 +272,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     // Appended at the end of storage to preserve module layout compatibility.
     bytes32 private _entropyState;
     uint256 private _entropyNonce;
+    mapping(address => PayoutReason) public playerPayoutReasons;
 
     // ============ Events ============
 
@@ -443,7 +453,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         returns (TournamentResolutionCategory)
     {
         if (
-            reason == TournamentResolutionReason.SoloEnrollForceStart ||
+            reason == TournamentResolutionReason.SoloEnrollCancelled ||
             reason == TournamentResolutionReason.AbandonedTournamentClaimed
         ) {
             return TournamentResolutionCategory.EnrollmentResolution;
@@ -670,7 +680,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         address tournamentWinner = tournament.winner;
         uint256 winnersPot = tournament.prizePool;
-        if (tournament.completionReason != TournamentResolutionReason.SoloEnrollForceStart) {
+        if (tournament.completionReason != TournamentResolutionReason.SoloEnrollCancelled) {
             tournament.prizeAwarded = 0;
             tournament.prizeRecipient = tournamentWinner;
         }
@@ -678,13 +688,13 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         tournament.raffleRecipient = address(0);
 
         // ── Step 1: Distribute prize pool (90%) to winner(s) ──────────────────
-        // Skip if prizePool is 0 — happens on EL1 solo force-start where the full
-        // refund was already sent and all buckets zeroed in _startTournament.
+        // Skip if prizePool is 0 — happens on EL0 solo cancel where the full
+        // refund was already sent and all buckets zeroed before conclusion.
         address[] memory winners;
         uint256[] memory prizes;
 
         if (winnersPot == 0) {
-            // EL1 solo force-start: refund already sent, nothing to distribute
+            // EL0 solo cancel: refund already sent, nothing to distribute
             winners = new address[](0);
             prizes  = new uint256[](0);
         } else if (tournament.allDrawResolution) {
@@ -731,44 +741,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             tournament.completionCategory
         );
 
-        // ── Step 2: Send deferred owner share (7.5%) to factory ───────────────
-        // Always call receiveOwnerShare() even if ownerShare == 0 (EL1/EL2).
-        // The factory uses this call to move the instance from activeTournaments → pastTournaments.
-        uint256 ownerShare = tournament.ownerAccrued;
-        {
-            // Best-effort — failure leaves funds on instance for rescue
-            (bool _ownerOk, ) = factory.call{value: ownerShare}(
-                abi.encodeWithSignature("receiveOwnerShare()")
-            );
-            _ownerOk;
-        }
-
-        // ── Step 3: Profile callbacks — push result to each player's profile ──
-        // Best-effort: individual failures must never revert conclusion.
-        // Read PLAYER_REGISTRY from factory via low-level call to avoid circular import.
-        address reg = _getPlayerRegistry();
-        if (reg != address(0)) {
-            for (uint256 i = 0; i < enrolledPlayers.length; i++) {
-                address p = enrolledPlayers[i];
-                bool won = (tournament.winner == p);
-                uint256 prize = playerPrizes[p];
-                // 150k gas: registry call + profile SSTORE chain (cold slots ~20k each)
-                (bool recorded, ) = reg.call{gas: 150_000}(
-                    abi.encodeWithSignature(
-                        "recordResult(address,address,bool,uint256,uint8,uint8)",
-                        p,
-                        address(this),
-                        won,
-                        prize,
-                        uint8(tournament.completionReason),
-                        uint8(tournament.completionCategory)
-                    )
-                );
-                recorded;
-            }
-        }
-
-        // ── Step 4: Per-tournament raffle — only this instance's protocol share ─
+        // ── Step 2: Per-tournament raffle — only this instance's protocol share ─
         // Never derive the raffle from raw balance, because failed earlier sends
         // or forced ETH can leave unrelated funds on the instance.
         uint256 rafflePool = tournament.protocolAccrued;
@@ -792,6 +765,37 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             tournament.raffleRecipient = raffleWinner;
             tournament.raffleAwarded = sent ? rafflePool : 0;
             emit TournamentRaffleAwarded(address(this), raffleWinner, rafflePool, sent);
+        }
+
+        // ── Step 3: Profile callbacks — push final result to each player's profile ─
+        // Best-effort: individual failures must never revert conclusion.
+        // Run this after the raffle so wonRaffle/rafflePool are final in the record.
+        // Keep this ahead of the deferred owner-share call so gas estimation for
+        // ordinary user actions includes the profile writes instead of starving
+        // later callbacks and silently leaving records unresolved.
+        address reg = _getPlayerRegistry();
+        if (reg != address(0)) {
+            for (uint256 i = 0; i < enrolledPlayers.length; i++) {
+                _recordPlayerProfileResult(reg, enrolledPlayers[i]);
+            }
+
+            // EL2 can conclude with an external claimer as winner; ensure they
+            // still get a profile result after their synthetic zero-fee enrollment.
+            if (tournamentWinner != address(0) && !isEnrolled[tournamentWinner]) {
+                _recordPlayerProfileResult(reg, tournamentWinner);
+            }
+        }
+
+        // ── Step 4: Send deferred owner share (7.5%) to factory ───────────────
+        // Always call receiveOwnerShare() even if ownerShare == 0 (EL1/EL2).
+        // The factory uses this call to move the instance from activeTournaments → pastTournaments.
+        uint256 ownerShare = tournament.ownerAccrued;
+        {
+            // Best-effort — failure leaves funds on instance for rescue
+            (bool _ownerOk, ) = factory.call{value: ownerShare}(
+                abi.encodeWithSignature("receiveOwnerShare()")
+            );
+            _ownerOk;
         }
     }
 
@@ -866,6 +870,51 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             matchNumber: matchNumber,
             isCached: false
         });
+    }
+
+    function _registerPlayerProfileEnrollment(address player, uint256 entryFee) internal {
+        (bool regOk, ) = factory.call(
+            abi.encodeWithSignature("registerPlayer(address,uint256)", player, entryFee)
+        );
+        regOk;
+    }
+
+    function _recordPlayerProfileResult(address reg, address player) internal {
+        bool won = (tournament.winner == player);
+        uint256 prize = tournament.prizePool;
+        uint256 payout = playerPrizes[player];
+        PayoutReason payoutReason = playerPayoutReasons[player];
+        uint256 rafflePool = tournament.protocolAccrued;
+        bool wonRaffle = (
+            tournament.raffleAwarded > 0 &&
+            tournament.raffleRecipient == player
+        );
+
+        if (tournament.completionReason == TournamentResolutionReason.SoloEnrollCancelled) {
+            prize = 0;
+            payoutReason = PayoutReason.Cancelation;
+            rafflePool = 0;
+            wonRaffle = false;
+        }
+
+        // Keep a cap so profile writes can't dominate conclusion gas, but leave
+        // enough headroom for the registry validation path plus profile SSTOREs.
+        (bool recorded, ) = reg.call{gas: 400_000}(
+            abi.encodeWithSignature(
+                "recordResult(address,address,bool,uint256,uint256,uint8,uint256,bool,uint8,uint8)",
+                player,
+                address(this),
+                won,
+                prize,
+                payout,
+                uint8(payoutReason),
+                rafflePool,
+                wonRaffle,
+                uint8(tournament.completionReason),
+                uint8(tournament.completionCategory)
+            )
+        );
+        recorded;
     }
 
     function _completeMatchGameSpecific(
@@ -976,6 +1025,40 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         }
     }
 
+    function cancelTournament() external virtual notConcluded {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("coreCancelTournament()")
+        );
+        require(success, "Cancel failed");
+        _handleTournamentConclusion();
+    }
+
+    function resetEnrollmentWindow() external virtual notConcluded {
+        (bool success, ) = MODULE_CORE.delegatecall(
+            abi.encodeWithSignature("coreResetEnrollmentWindow()")
+        );
+        require(success, "Reset failed");
+    }
+
+    function canForceStartTournament() external view returns (bool) {
+        return tournament.status == TournamentStatus.Enrolling &&
+            isEnrolled[msg.sender] &&
+            block.timestamp >= tournament.enrollmentTimeout.escalation1Start &&
+            tournament.enrolledCount >= 2;
+    }
+
+    function canCancelTournament() external view returns (bool) {
+        return tournament.status == TournamentStatus.Enrolling &&
+            isEnrolled[msg.sender] &&
+            tournament.enrolledCount == 1;
+    }
+
+    function canResetEnrollmentWindow() external view returns (bool) {
+        return tournament.status == TournamentStatus.Enrolling &&
+            isEnrolled[msg.sender] &&
+            tournament.enrolledCount == 1;
+    }
+
     /**
      * @dev Rescue any ETH stuck on a concluded instance (e.g. failed raffle transfer).
      * Only callable by the factory owner.
@@ -991,10 +1074,17 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     }
 
     function claimAbandonedPool() external notConcluded {
+        bool claimerWasEnrolled = isEnrolled[msg.sender];
+
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("coreClaimAbandonedPool()")
         );
         require(success, "Claim failed");
+
+        if (!claimerWasEnrolled) {
+            _registerPlayerProfileEnrollment(msg.sender, 0);
+        }
+
         _handleTournamentConclusion();
     }
 
@@ -1201,10 +1291,21 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     function getPlayerResult(address player) external view returns (
         bool participated,
         uint256 prizeWon,
-        bool isWinner
+        bool isWinner,
+        uint256 payout,
+        PayoutReason payoutReason,
+        uint256 rafflePool,
+        bool wonRaffle
     ) {
         participated = isEnrolled[player];
         prizeWon = playerPrizes[player];
         isWinner = (tournament.winner == player);
+        payout = playerPrizes[player];
+        payoutReason = playerPayoutReasons[player];
+        rafflePool = tournament.protocolAccrued;
+        wonRaffle = (
+            tournament.raffleAwarded > 0 &&
+            tournament.raffleRecipient == player
+        );
     }
 }

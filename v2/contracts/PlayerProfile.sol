@@ -32,7 +32,10 @@ contract PlayerProfile is IPlayerProfile {
     event ResultRecorded(
         address indexed instance,
         bool won,
-        uint256 prize,
+        uint256 payout,
+        uint8 payoutReason,
+        uint256 rafflePool,
+        bool wonRaffle,
         uint8 tournamentResolutionReason,
         uint8 tournamentResolutionCategory
     );
@@ -93,6 +96,10 @@ contract PlayerProfile is IPlayerProfile {
             concluded:  false,
             won:        false,
             prize:      0,
+            payout:     0,
+            payoutReason: uint8(PayoutReason.None),
+            rafflePool: 0,
+            wonRaffle:  false,
             tournamentResolutionReason: 0,
             tournamentResolutionCategory: 0
         }));
@@ -111,6 +118,10 @@ contract PlayerProfile is IPlayerProfile {
         address instance,
         bool won,
         uint256 prize,
+        uint256 payout,
+        uint8 payoutReason,
+        uint256 rafflePool,
+        bool wonRaffle,
         uint8 tournamentResolutionReason,
         uint8 tournamentResolutionCategory
     ) external override {
@@ -124,6 +135,10 @@ contract PlayerProfile is IPlayerProfile {
         r.concluded = true;
         r.won       = won;
         r.prize     = prize;
+        r.payout    = payout;
+        r.payoutReason = payoutReason;
+        r.rafflePool = rafflePool;
+        r.wonRaffle = wonRaffle;
         r.tournamentResolutionReason = tournamentResolutionReason;
         r.tournamentResolutionCategory = tournamentResolutionCategory;
 
@@ -134,13 +149,16 @@ contract PlayerProfile is IPlayerProfile {
         } else {
             _stats.totalLosses++;
         }
-        // Net earnings: prize received minus entry fee paid
-        _stats.totalNetEarnings += int256(prize) - int256(r.entryFee);
+        // Net earnings track the recorded payout minus the entry fee.
+        _stats.totalNetEarnings += int256(payout) - int256(r.entryFee);
 
         emit ResultRecorded(
             instance,
             won,
-            prize,
+            payout,
+            payoutReason,
+            rafflePool,
+            wonRaffle,
             tournamentResolutionReason,
             tournamentResolutionCategory
         );
@@ -243,7 +261,7 @@ contract PlayerProfile is IPlayerProfile {
     {
         uint256 idx1 = _enrollmentIndex[instance];
         if (idx1 == 0) {
-            return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0, 0, 0);
+            return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0, 0, uint8(PayoutReason.None), 0, false, 0, 0);
         }
         return _enrollments[idx1 - 1];
     }

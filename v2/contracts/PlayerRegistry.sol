@@ -42,7 +42,9 @@ contract PlayerRegistry is IPlayerRegistry {
         address indexed instance,
         uint8 gameType,
         bool won,
-        uint256 prize,
+        uint256 payout,
+        uint256 rafflePool,
+        bool wonRaffle,
         uint8 tournamentResolutionReason,
         uint8 tournamentResolutionCategory
     );
@@ -131,6 +133,10 @@ contract PlayerRegistry is IPlayerRegistry {
         address instance,
         bool won,
         uint256 prize,
+        uint256 payout,
+        uint8 payoutReason,
+        uint256 rafflePool,
+        bool wonRaffle,
         uint8 tournamentResolutionReason,
         uint8 tournamentResolutionCategory
     ) external override {
@@ -148,6 +154,10 @@ contract PlayerRegistry is IPlayerRegistry {
             instance,
             won,
             prize,
+            payout,
+            payoutReason,
+            rafflePool,
+            wonRaffle,
             tournamentResolutionReason,
             tournamentResolutionCategory
         ) {
@@ -156,7 +166,9 @@ contract PlayerRegistry is IPlayerRegistry {
                 instance,
                 gameType,
                 won,
-                prize,
+                payout,
+                rafflePool,
+                wonRaffle,
                 tournamentResolutionReason,
                 tournamentResolutionCategory
             );

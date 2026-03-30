@@ -1,6 +1,6 @@
 {
-  "network": "arbitrum",
-  "generatedAt": "2026-03-30T03:26:20.114Z",
+  "network": "localhost",
+  "generatedAt": "2026-03-30T12:23:14.327Z",
   "contract": {
     "abi": [
       {
@@ -98,8 +98,26 @@
           {
             "indexed": false,
             "internalType": "uint256",
-            "name": "prize",
+            "name": "payout",
             "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "payoutReason",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "rafflePool",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "bool",
+            "name": "wonRaffle",
+            "type": "bool"
           },
           {
             "indexed": false,
@@ -163,6 +181,26 @@
                 "internalType": "uint256",
                 "name": "prize",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "payout",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint8",
+                "name": "payoutReason",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "rafflePool",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "wonRaffle",
+                "type": "bool"
               },
               {
                 "internalType": "uint8",
@@ -247,6 +285,26 @@
                 "internalType": "uint256",
                 "name": "prize",
                 "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "payout",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint8",
+                "name": "payoutReason",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint256",
+                "name": "rafflePool",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "wonRaffle",
+                "type": "bool"
               },
               {
                 "internalType": "uint8",
@@ -550,6 +608,26 @@
             "internalType": "uint256",
             "name": "prize",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "payout",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "payoutReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rafflePool",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "wonRaffle",
+            "type": "bool"
           },
           {
             "internalType": "uint8",
