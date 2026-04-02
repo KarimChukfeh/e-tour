@@ -31,10 +31,7 @@ interface IPlayerRegistry {
         uint256 prize,
         uint256 payout,
         uint8 payoutReason,
-        uint256 rafflePool,
-        bool wonRaffle,
-        uint8 tournamentResolutionReason,
-        uint8 tournamentResolutionCategory
+        uint8 tournamentResolutionReason
     ) external;
 
     /**

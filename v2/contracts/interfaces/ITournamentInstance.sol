@@ -22,9 +22,7 @@ interface ITournamentInstance {
         uint8 completionReason,
         uint8 completionCategory,
         uint256 prizeAwarded,
-        address prizeRecipient,
-        uint256 raffleAwarded,
-        address raffleRecipient
+        address prizeRecipient
     );
 
     function playerPrizes(address player) external view returns (uint256);

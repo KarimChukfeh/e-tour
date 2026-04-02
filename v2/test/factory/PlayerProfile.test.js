@@ -2,11 +2,10 @@
 // Tests for:
 //   - PlayerProfile: enrollment recording, result push, stats accuracy
 //   - PlayerRegistry: clone idempotency, authorization gating
-//   - Deferred fee invariant: prizePool + ownerAccrued + protocolAccrued == entryFee × enrolled
+//   - Deferred fee invariant: prizePool + ownerAccrued == entryFee × enrolled
 //   - EL0: solo enroll → cancel → 100% refund, owner gets 0
-//   - EL2: partial enroll → timeout → claim → 90% to claimant, 7.5% owner, 2.5% raffle
-//   - Normal conclusion: owner gets 7.5%, winner gets ~90%, raffle gets ~2.5%
-//   - Per-tournament raffle: winner is always an enrolled player, event emitted
+//   - EL2: partial enroll → timeout → claim → 95% to claimant, 5% owner
+//   - Normal conclusion: owner gets 5%, winner gets ~95%
 //   - Profile auto-updated at conclusion (push model)
 
 import { expect } from "chai";
@@ -16,12 +15,31 @@ import hre from "hardhat";
 // Constants mirroring the contracts
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PARTICIPANTS_SHARE_BPS = 9000n;
-const OWNER_SHARE_BPS        = 750n;
-const PROTOCOL_SHARE_BPS     = 250n;
+const PARTICIPANTS_SHARE_BPS = 9500n;
+const OWNER_SHARE_BPS        = 500n;
 const BASIS_POINTS           = 10000n;
 const TICTAC_GAME_TYPE       = 0;
 const CONNECT_FOUR_GAME_TYPE = 1;
+
+// Resolution code legend:
+// - R0  -> Normal Resolution (win)
+// - R1  -> Draw Resolution
+// - R2  -> Uncontested Finals Resolution (finalist auto-wins because everyone in the previous round drew)
+// - EL0 -> Tournament Canceled (by solo enrolled player)
+// - EL2 -> Abandoned Pool Claimed (tournament never started so pool was claimed by outsider)
+// - ML1 -> Timeout (match/tournament ended because player claimed Timeout victory)
+// - ML2 -> Force Elimination (advanced player force eliminated both players in a stalled match)
+// - ML3 -> Replacement (outside player replaced both players in a stalled match)
+const TOURNAMENT_REASON = {
+    R0: 0,
+    ML1: 1,
+    R1: 2,
+    ML2: 3,
+    ML3: 4,
+    EL0: 5,
+    EL2: 6,
+    R2: 7,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Deploy helpers
@@ -337,7 +355,7 @@ describe("PlayerProfile — enrollment & result recording", function () {
 // Suite 3: Deferred fees invariant
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("Deferred fees — invariant: prizePool + ownerAccrued + protocolAccrued == entryFee × enrolled", function () {
+describe("Deferred fees — invariant: prizePool + ownerAccrued == entryFee × enrolled", function () {
     let factory, signers;
 
     beforeEach(async function () {
@@ -350,7 +368,7 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued + protocolAccrue
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
 
         const t = await instance.tournament();
-        expect(t.prizePool + t.ownerAccrued + t.protocolAccrued).to.equal(entryFee);
+        expect(t.prizePool + t.ownerAccrued).to.equal(entryFee);
     });
 
     it("holds for 2 enrolled players", async function () {
@@ -359,7 +377,7 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued + protocolAccrue
         await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
 
         const t = await instance.tournament();
-        expect(t.prizePool + t.ownerAccrued + t.protocolAccrued).to.equal(entryFee * 2n);
+        expect(t.prizePool + t.ownerAccrued).to.equal(entryFee * 2n);
     });
 
     it("instance ETH balance equals total deferred fees", async function () {
@@ -378,7 +396,6 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued + protocolAccrue
         const t = await instance.tournament();
         expect(t.prizePool).to.equal(entryFee * PARTICIPANTS_SHARE_BPS / BASIS_POINTS);
         expect(t.ownerAccrued).to.equal(entryFee * OWNER_SHARE_BPS / BASIS_POINTS);
-        expect(t.protocolAccrued).to.equal(entryFee * PROTOCOL_SHARE_BPS / BASIS_POINTS);
     });
 });
 
@@ -496,10 +513,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
         expect(record.prize).to.equal(0n);
         expect(record.payout).to.equal(entryFee);
         expect(record.payoutReason).to.equal(4n); // Cancelation
-        expect(record.rafflePool).to.equal(0n);
-        expect(record.wonRaffle).to.equal(false);
-        expect(record.tournamentResolutionReason).to.equal(6n); // SoloEnrollCancelled
-        expect(record.tournamentResolutionCategory).to.equal(4n); // EnrollmentResolution
+        expect(record.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.EL0)); // EL0: SoloEnrollCancelled
         expect(stats.totalNetEarnings).to.equal(0n);
     });
 });
@@ -516,7 +530,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         ({ factory, registry } = await deployAll());
     });
 
-    it("claimer receives 90% of all enrolled entry fees", async function () {
+    it("claimer receives 95% of all enrolled entry fees", async function () {
         const [p1, p2, claimer] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
         const expectedPrize = entryFee * 2n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS;
@@ -545,12 +559,12 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         const gasUsed = claimReceipt.gasUsed * claimReceipt.gasPrice;
         const claimerAfter = await hre.ethers.provider.getBalance(claimer.address);
 
-        // Claimer should receive the 90% prize pool from both enrolled fees.
+        // Claimer should receive the 95% prize pool from both enrolled fees.
         const netGain = claimerAfter - claimerBefore + gasUsed;
         expect(netGain).to.equal(expectedPrize);
     });
 
-    it("owner receives the deferred 7.5% share on EL2", async function () {
+    it("owner receives the deferred 5% share on EL2", async function () {
         const [p1, , claimer] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
         const expectedOwnerShare = entryFee * OWNER_SHARE_BPS / BASIS_POINTS;
@@ -612,9 +626,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         expect(record.prize).to.equal(expectedPrize);
         expect(record.payout).to.equal(expectedPrize);
         expect(record.payoutReason).to.equal(1n); // Victory
-        expect(record.rafflePool).to.equal(entryFee * 2n * PROTOCOL_SHARE_BPS / BASIS_POINTS);
-        expect(record.tournamentResolutionReason).to.equal(7n); // AbandonedTournamentClaimed
-        expect(record.tournamentResolutionCategory).to.equal(4n); // EnrollmentResolution
+        expect(record.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.EL2)); // EL2: AbandonedTournamentClaimed
 
         expect(stats.totalPlayed).to.equal(1n);
         expect(stats.totalWins).to.equal(1n);
@@ -635,7 +647,7 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         ({ factory } = await deployAll());
     });
 
-    it("owner receives exactly 7.5% × 2 players at conclusion", async function () {
+    it("owner receives exactly 5% × 2 players at conclusion", async function () {
         const [p1, p2] = signers;
         const entryFee = hre.ethers.parseEther("0.004");
 
@@ -665,7 +677,7 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         expect(balance).to.equal(0n);
     });
 
-    it("winner receives ~90% of total pot", async function () {
+    it("winner receives ~95% of total pot", async function () {
         const [p1, p2] = signers;
         const entryFee = hre.ethers.parseEther("0.004");
         const totalPot  = entryFee * 2n;
@@ -684,109 +696,12 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         const p1After = await hre.ethers.provider.getBalance(p1.address);
         const p2After = await hre.ethers.provider.getBalance(p2.address);
 
-        // The winner's net gain (ignoring gas) should roughly equal the prize
-        // We check it's >= 90% prize (raffle may also go to winner, making it higher)
+        // The winner's net gain (ignoring gas) should roughly equal the prize.
         if (isP1Winner) {
-            // p1 received prize + possibly raffle; at minimum they got the prize
             expect(p1After - p1Before).to.be.gte(expectedPrize - hre.ethers.parseEther("0.002")); // gas tolerance
         } else {
             expect(p2After - p2Before).to.be.gte(expectedPrize - hre.ethers.parseEther("0.002"));
         }
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Suite 7: Per-tournament raffle
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("Per-tournament raffle", function () {
-    let factory, signers;
-
-    beforeEach(async function () {
-        signers = await hre.ethers.getSigners();
-        ({ factory } = await deployAll());
-    });
-
-    it("emits TournamentRaffleAwarded after a 2-player tournament", async function () {
-        const [p1, p2] = signers;
-        const entryFee = hre.ethers.parseEther("0.004");
-
-        const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
-
-        // Play to conclusion and watch for raffle event
-        const tx = await (async () => {
-            const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
-            const matchData = await instance.matches(matchId);
-            const first  = matchData.currentTurn === p1.address ? p1 : p2;
-            const second = first === p1 ? p2 : p1;
-            await instance.connect(first).makeMove(0, 0, 0);
-            await instance.connect(second).makeMove(0, 0, 3);
-            await instance.connect(first).makeMove(0, 0, 1);
-            await instance.connect(second).makeMove(0, 0, 4);
-            return instance.connect(first).makeMove(0, 0, 2); // winning move
-        })();
-        const receipt = await tx.wait();
-
-        const raffleEvent = receipt.logs
-            .map(log => { try { return instance.interface.parseLog(log); } catch { return null; } })
-            .find(e => e && e.name === "TournamentRaffleAwarded");
-
-        expect(raffleEvent).to.not.be.null;
-        expect(raffleEvent.args.transferred).to.equal(true);
-        expect(raffleEvent.args.amount).to.be.gt(0n);
-    });
-
-    it("raffle winner is always one of the enrolled players", async function () {
-        const [p1, p2] = signers;
-        const entryFee = hre.ethers.parseEther("0.004");
-        const enrolledAddresses = [p1.address.toLowerCase(), p2.address.toLowerCase()];
-
-        const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
-
-        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
-        const matchData = await instance.matches(matchId);
-        const first  = matchData.currentTurn === p1.address ? p1 : p2;
-        const second = first === p1 ? p2 : p1;
-        await instance.connect(first).makeMove(0, 0, 0);
-        await instance.connect(second).makeMove(0, 0, 3);
-        await instance.connect(first).makeMove(0, 0, 1);
-        await instance.connect(second).makeMove(0, 0, 4);
-        const tx = await instance.connect(first).makeMove(0, 0, 2);
-        const receipt = await tx.wait();
-
-        const raffleEvent = receipt.logs
-            .map(log => { try { return instance.interface.parseLog(log); } catch { return null; } })
-            .find(e => e && e.name === "TournamentRaffleAwarded");
-
-        expect(enrolledAddresses).to.include(raffleEvent.args.winner.toLowerCase());
-    });
-
-    it("raffle amount equals protocolAccrued (2.5% × enrolled)", async function () {
-        const [p1, p2] = signers;
-        const entryFee = hre.ethers.parseEther("0.004");
-        const expectedRaffle = entryFee * 2n * PROTOCOL_SHARE_BPS / BASIS_POINTS;
-
-        const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
-
-        const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
-        const matchData = await instance.matches(matchId);
-        const first  = matchData.currentTurn === p1.address ? p1 : p2;
-        const second = first === p1 ? p2 : p1;
-        await instance.connect(first).makeMove(0, 0, 0);
-        await instance.connect(second).makeMove(0, 0, 3);
-        await instance.connect(first).makeMove(0, 0, 1);
-        await instance.connect(second).makeMove(0, 0, 4);
-        const tx = await instance.connect(first).makeMove(0, 0, 2);
-        const receipt = await tx.wait();
-
-        const raffleEvent = receipt.logs
-            .map(log => { try { return instance.interface.parseLog(log); } catch { return null; } })
-            .find(e => e && e.name === "TournamentRaffleAwarded");
-
-        expect(raffleEvent.args.amount).to.equal(expectedRaffle);
     });
 });
 
@@ -907,8 +822,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
             expect(record.prize).to.equal(entryFee * 4n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS);
             expect(record.payout).to.equal(expectedPayout);
             expect(record.payoutReason).to.equal(2n); // EvenSplit
-            expect(record.tournamentResolutionReason).to.equal(5n); // AllDrawScenario
-            expect(record.tournamentResolutionCategory).to.equal(3n); // DrawResolution
+            expect(record.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.R1)); // R1: Draw
         }
     });
 
@@ -954,10 +868,8 @@ describe("Profile push — stats updated automatically at conclusion", function 
             loserProfile.getMatchRecordByKey(instanceAddress, 0, 0),
         ]);
 
-        expect(winnerTournamentRecord.tournamentResolutionReason).to.equal(0n); // NormalWin
-        expect(winnerTournamentRecord.tournamentResolutionCategory).to.equal(1n); // MatchResult
-        expect(loserTournamentRecord.tournamentResolutionReason).to.equal(0n);
-        expect(loserTournamentRecord.tournamentResolutionCategory).to.equal(1n);
+        expect(winnerTournamentRecord.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.R0)); // R0: NormalWin
+        expect(loserTournamentRecord.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.R0));
 
         expect(winnerMatchRecord.outcome).to.equal(1n); // NormalVictory
         expect(winnerMatchRecord.category).to.equal(1n); // Victory

@@ -309,7 +309,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             } else if (isDraw) {
                 t.finalsWasDraw = true;
                 t.status = TournamentStatus.Concluded;
-                _setTournamentResolution(TournamentResolutionReason.FinalsDraw);
+                _setTournamentResolution(TournamentResolutionReason.Draw);
             } else {
                 t.status = TournamentStatus.Concluded;
                 t.allDrawResolution = true;

@@ -154,6 +154,13 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         Round storage round = rounds[roundNumber];
         if (round.drawCount == round.totalMatches && round.totalMatches > 0) {
+            (uint8 playersInNextRound, address soleAdvancedPlayer) =
+                _getAdvancedPlayersInRound(roundNumber + 1);
+            if (playersInNextRound == 1 && soleAdvancedPlayer != address(0)) {
+                _completeTournamentAsUncontestedFinalsWin(soleAdvancedPlayer);
+                return;
+            }
+
             address[] memory remainingPlayers = getRemainingPlayers(roundNumber);
             completeTournamentAllDraw(roundNumber, remainingPlayers);
             return;
@@ -172,7 +179,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
             bytes32 finalsMatchId = _getMatchId(nextRound, 0);
             (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
             if ((fp1 != address(0) && fp2 == address(0)) || (fp2 != address(0) && fp1 == address(0))) {
-                completeTournament(fp1 != address(0) ? fp1 : fp2);
+                _completeTournamentAsUncontestedFinalsWin(fp1 != address(0) ? fp1 : fp2);
             }
         }
     }
@@ -201,7 +208,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         if (finalIsDraw) {
             tournament.finalsWasDraw = true;
-            _setTournamentResolution(TournamentResolutionReason.FinalsDraw);
+            _setTournamentResolution(TournamentResolutionReason.Draw);
             tournament.winner = address(0);
             completeTournament(address(0));
         } else {
@@ -244,7 +251,11 @@ contract ETourInstance_Matches is ETourInstance_Base {
             unchecked { m++; }
         }
         if (playersInNextRound == 0) {
-            completeTournament(soleWinner);
+            if (nextRound == tournament.actualTotalRounds - 1) {
+                _completeTournamentAsUncontestedFinalsWin(soleWinner);
+            } else {
+                completeTournament(soleWinner);
+            }
             return true;
         }
         return false;
@@ -265,7 +276,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
         tournament.allDrawResolution = true;
         tournament.allDrawRound = roundNumber;
         tournament.winner = address(0);
-        _setTournamentResolution(TournamentResolutionReason.AllDrawScenario);
+        _setTournamentResolution(TournamentResolutionReason.Draw);
         remainingPlayers; // silence unused warning
     }
 
@@ -435,31 +446,46 @@ contract ETourInstance_Matches is ETourInstance_Base {
         if (roundNumber >= tournament.actualTotalRounds - 1) return;
 
         uint8 nextRound = roundNumber + 1;
-        Round storage nextRoundData = rounds[nextRound];
-        if (!nextRoundData.initialized) return;
-
-        address soleWinner = address(0);
-        uint8 advancedPlayerCount = 0;
-
-        for (uint8 i = 0; i < nextRoundData.totalMatches;) {
-            bytes32 matchId = _getMatchId(nextRound, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
-            if (p1 != address(0)) { soleWinner = p1; advancedPlayerCount++; }
-            if (p2 != address(0)) { soleWinner = p2; advancedPlayerCount++; }
-            unchecked { i++; }
+        (uint8 advancedPlayerCount, address soleWinner) = _getAdvancedPlayersInRound(nextRound);
+        if (advancedPlayerCount == 1) {
+            if (nextRound == tournament.actualTotalRounds - 1) {
+                _completeTournamentAsUncontestedFinalsWin(soleWinner);
+            } else {
+                completeTournament(soleWinner);
+            }
         }
-
-        if (nextRoundData.playerCount % 2 == 1) {
-            bytes32 byeMatchId = _getMatchId(nextRound, nextRoundData.totalMatches);
-            (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
-            if (byeP1 != address(0)) { soleWinner = byeP1; advancedPlayerCount++; }
-            if (byeP2 != address(0)) { soleWinner = byeP2; advancedPlayerCount++; }
-        }
-
-        if (advancedPlayerCount == 1) completeTournament(soleWinner);
     }
 
     // ============ Helper ============
+
+    function _completeTournamentAsUncontestedFinalsWin(address winner) internal {
+        _setTournamentResolution(TournamentResolutionReason.UncontestedFinalsWin);
+        completeTournament(winner);
+    }
+
+    function _getAdvancedPlayersInRound(uint8 roundNumber)
+        internal
+        view
+        returns (uint8 playerCount, address solePlayer)
+    {
+        Round storage round = rounds[roundNumber];
+        if (!round.initialized) return (0, address(0));
+
+        for (uint8 i = 0; i < round.totalMatches;) {
+            bytes32 matchId = _getMatchId(roundNumber, i);
+            (address p1, address p2) = this._getMatchPlayers(matchId);
+            if (p1 != address(0)) { solePlayer = p1; playerCount++; }
+            if (p2 != address(0)) { solePlayer = p2; playerCount++; }
+            unchecked { i++; }
+        }
+
+        if (round.playerCount % 2 == 1) {
+            bytes32 byeMatchId = _getMatchId(roundNumber, round.totalMatches);
+            (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+            if (byeP1 != address(0)) { solePlayer = byeP1; playerCount++; }
+            if (byeP2 != address(0)) { solePlayer = byeP2; playerCount++; }
+        }
+    }
 
     function _selectWalkoverPlayer(
         address[] memory players,

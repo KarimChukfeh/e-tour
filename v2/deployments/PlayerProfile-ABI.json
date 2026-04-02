@@ -1,6 +1,6 @@
 {
-  "network": "arbitrum",
-  "generatedAt": "2026-03-30T17:08:27.170Z",
+  "network": "localhost",
+  "generatedAt": "2026-04-02T03:48:48.665Z",
   "contract": {
     "abi": [
       {
@@ -109,26 +109,8 @@
           },
           {
             "indexed": false,
-            "internalType": "uint256",
-            "name": "rafflePool",
-            "type": "uint256"
-          },
-          {
-            "indexed": false,
-            "internalType": "bool",
-            "name": "wonRaffle",
-            "type": "bool"
-          },
-          {
-            "indexed": false,
             "internalType": "uint8",
             "name": "tournamentResolutionReason",
-            "type": "uint8"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint8",
-            "name": "tournamentResolutionCategory",
             "type": "uint8"
           }
         ],
@@ -193,23 +175,8 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint256",
-                "name": "rafflePool",
-                "type": "uint256"
-              },
-              {
-                "internalType": "bool",
-                "name": "wonRaffle",
-                "type": "bool"
-              },
-              {
                 "internalType": "uint8",
                 "name": "tournamentResolutionReason",
-                "type": "uint8"
-              },
-              {
-                "internalType": "uint8",
-                "name": "tournamentResolutionCategory",
                 "type": "uint8"
               }
             ],
@@ -297,23 +264,8 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint256",
-                "name": "rafflePool",
-                "type": "uint256"
-              },
-              {
-                "internalType": "bool",
-                "name": "wonRaffle",
-                "type": "bool"
-              },
-              {
                 "internalType": "uint8",
                 "name": "tournamentResolutionReason",
-                "type": "uint8"
-              },
-              {
-                "internalType": "uint8",
-                "name": "tournamentResolutionCategory",
                 "type": "uint8"
               }
             ],
@@ -620,23 +572,8 @@
             "type": "uint8"
           },
           {
-            "internalType": "uint256",
-            "name": "rafflePool",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "wonRaffle",
-            "type": "bool"
-          },
-          {
             "internalType": "uint8",
             "name": "tournamentResolutionReason",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint8",
-            "name": "tournamentResolutionCategory",
             "type": "uint8"
           }
         ],

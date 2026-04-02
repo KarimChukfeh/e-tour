@@ -6,8 +6,36 @@ const ENTRY_FEE = hre.ethers.parseEther("0.001");
 const PLAYER_COUNT = 4;
 const MATCH_TIME = 2n * 60n;
 const MATCH_LEVEL_3_DELAY = 3n * 60n;
-const PARTICIPANTS_SHARE_BPS = 9000n;
+const PARTICIPANTS_SHARE_BPS = 9500n;
 const BASIS_POINTS = 10000n;
+
+// Resolution code legend:
+// - R0  -> Normal Resolution (win)
+// - R1  -> Draw Resolution
+// - R2  -> Uncontested Finals Resolution
+// - EL0 -> Tournament Canceled
+// - EL2 -> Abandoned Pool Claimed
+// - ML1 -> Timeout
+// - ML2 -> Force Elimination
+// - ML3 -> Replacement
+const MATCH_REASON = {
+    R0: 0,
+    ML1: 1,
+    R1: 2,
+    ML2: 3,
+    ML3: 4,
+};
+
+const TOURNAMENT_REASON = {
+    R0: 0,
+    ML1: 1,
+    R1: 2,
+    ML2: 3,
+    ML3: 4,
+    EL0: 5,
+    EL2: 6,
+    R2: 7,
+};
 
 async function deployFactory() {
     const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
@@ -158,7 +186,7 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
 
         expect(tournament.status).to.equal(2);
         expect(tournament.winner).to.equal(C.address);
-        expect(tournament.completionReason).to.equal(4);
+        expect(tournament.completionReason).to.equal(TOURNAMENT_REASON.ML3); // ML3: Replacement
         expect(tournament.completionCategory).to.equal(2n);
 
         expect(await instance.playerPrizes(C.address)).to.equal(expectedPrize);
@@ -171,7 +199,7 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
         expect(finalsAfterClaim.matchWinner).to.equal(C.address);
         expect(finalsAfterClaim.status).to.equal(2);
         expect(finalsAfterClaim.isDraw).to.equal(false);
-        expect(finalsAfterClaim.completionReason).to.equal(4);
+        expect(finalsAfterClaim.completionReason).to.equal(MATCH_REASON.ML3); // ML3: Replacement
         expect(finalsAfterClaim.completionCategory).to.equal(2n);
 
         const resultA = await instance.getPlayerResult(A.address);
@@ -212,22 +240,19 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
         expect(recordA.won).to.be.false;
         expect(recordA.prize).to.equal(expectedPrize);
         expect(recordA.payout).to.equal(0n);
-        expect(recordA.tournamentResolutionReason).to.equal(4n);
-        expect(recordA.tournamentResolutionCategory).to.equal(2n);
+        expect(recordA.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.ML3)); // ML3: Replacement
 
         expect(recordD.concluded).to.be.true;
         expect(recordD.won).to.be.false;
         expect(recordD.prize).to.equal(expectedPrize);
         expect(recordD.payout).to.equal(0n);
-        expect(recordD.tournamentResolutionReason).to.equal(4n);
-        expect(recordD.tournamentResolutionCategory).to.equal(2n);
+        expect(recordD.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.ML3)); // ML3: Replacement
 
         expect(recordC.concluded).to.be.true;
         expect(recordC.won).to.be.true;
         expect(recordC.prize).to.equal(expectedPrize);
         expect(recordC.payout).to.equal(expectedPrize);
-        expect(recordC.tournamentResolutionReason).to.equal(4n);
-        expect(recordC.tournamentResolutionCategory).to.equal(2n);
+        expect(recordC.tournamentResolutionReason).to.equal(BigInt(TOURNAMENT_REASON.ML3)); // ML3: Replacement
 
         expect(matchRecordA.outcome).to.equal(9n); // ReplacementDefeat
         expect(matchRecordA.category).to.equal(2n); // Defeat

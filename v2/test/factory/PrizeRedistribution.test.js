@@ -8,6 +8,8 @@ const PAYOUT_REASON = {
     WalletRejected: 3n,
     Cancelation: 4n,
 };
+const PARTICIPANTS_SHARE_BPS = 9500n;
+const BASIS_POINTS = 10000n;
 
 async function deployFactory() {
     const Core = await hre.ethers.getContractFactory(
@@ -169,19 +171,14 @@ describe("ETourInstance_Prizes redistribution on failed payouts", function () {
         await opponentPlayer.enroll(entryFee);
         await playWinningGame(instance, 0, 0, creatorPlayer, opponentPlayer, creatorPlayer);
 
-        const winnersPot = (entryFee * 2n * 9000n) / 10000n;
-        const expectedRafflePool = (entryFee * 2n * 250n) / 10000n;
+        const winnersPot = (entryFee * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const winnerResult = await instance.getPlayerResult(creator.address);
         const loserResult = await instance.getPlayerResult(opponent.address);
 
         expect(winnerResult.payout).to.equal(winnersPot);
         expect(winnerResult.payoutReason).to.equal(PAYOUT_REASON.Victory);
-        expect(winnerResult.rafflePool).to.equal(expectedRafflePool);
         expect(loserResult.payout).to.equal(0n);
         expect(loserResult.payoutReason).to.equal(PAYOUT_REASON.None);
-        expect(loserResult.rafflePool).to.equal(expectedRafflePool);
-        expect(winnerResult.wonRaffle === true || loserResult.wonRaffle === true).to.equal(true);
-        expect(winnerResult.wonRaffle && loserResult.wonRaffle).to.equal(false);
 
         const winnerProfileAddr = await registry.getProfile(creator.address, 0);
         const loserProfileAddr = await registry.getProfile(opponent.address, 0);
@@ -193,13 +190,9 @@ describe("ETourInstance_Prizes redistribution on failed payouts", function () {
         expect(winnerRecord.prize).to.equal(winnersPot);
         expect(winnerRecord.payout).to.equal(winnersPot);
         expect(winnerRecord.payoutReason).to.equal(PAYOUT_REASON.Victory);
-        expect(winnerRecord.rafflePool).to.equal(expectedRafflePool);
         expect(loserRecord.prize).to.equal(winnersPot);
         expect(loserRecord.payout).to.equal(0n);
         expect(loserRecord.payoutReason).to.equal(PAYOUT_REASON.None);
-        expect(loserRecord.rafflePool).to.equal(expectedRafflePool);
-        expect(Boolean(winnerRecord.wonRaffle) === true || Boolean(loserRecord.wonRaffle) === true).to.equal(true);
-        expect(Boolean(winnerRecord.wonRaffle) && Boolean(loserRecord.wonRaffle)).to.equal(false);
     });
 
     it("redistributes a rejecting winner's full prize across the other enrolled player", async function () {
@@ -226,7 +219,7 @@ describe("ETourInstance_Prizes redistribution on failed payouts", function () {
             }
         );
 
-        const winnersPot = (entryFee * 2n * 9000n) / 10000n;
+        const winnersPot = (entryFee * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const winnerResult = await instance.getPlayerResult(rejectingWinner.address);
         const loserResult = await instance.getPlayerResult(creator.address);
 
@@ -277,14 +270,16 @@ describe("ETourInstance_Prizes redistribution on failed payouts", function () {
             }
         );
 
-        const winnersPot = (entryFee * 4n * 9000n) / 10000n;
+        const winnersPot = (entryFee * 4n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const firstRedistributionShare = winnersPot / 3n;
-        const finalAcceptingShare = firstRedistributionShare + (firstRedistributionShare / 2n);
+        const rejectedLoserShare = firstRedistributionShare + 1n;
+        const creatorShare = rejectedLoserShare + ((rejectedLoserShare + 1n) / 2n);
+        const fourthPlayerShare = (winnersPot - creatorShare);
 
         expect(await instance.playerPrizes(rejectingWinner.address)).to.equal(0n);
         expect(await instance.playerPrizes(rejectingLoser.address)).to.equal(0n);
-        expect(await instance.playerPrizes(creator.address)).to.equal(finalAcceptingShare);
-        expect(await instance.playerPrizes(fourthPlayer.address)).to.equal(finalAcceptingShare);
+        expect(await instance.playerPrizes(creator.address)).to.equal(creatorShare);
+        expect(await instance.playerPrizes(fourthPlayer.address)).to.equal(fourthPlayerShare);
 
         const winnerResult = await instance.getPlayerResult(rejectingWinner.address);
         const loserResult = await instance.getPlayerResult(rejectingLoser.address);
@@ -293,9 +288,9 @@ describe("ETourInstance_Prizes redistribution on failed payouts", function () {
 
         expect(winnerResult.payoutReason).to.equal(PAYOUT_REASON.WalletRejected);
         expect(loserResult.payoutReason).to.equal(PAYOUT_REASON.WalletRejected);
-        expect(creatorResult.payout).to.equal(finalAcceptingShare);
+        expect(creatorResult.payout).to.equal(creatorShare);
         expect(creatorResult.payoutReason).to.equal(PAYOUT_REASON.EvenSplit);
-        expect(fourthResult.payout).to.equal(finalAcceptingShare);
+        expect(fourthResult.payout).to.equal(fourthPlayerShare);
         expect(fourthResult.payoutReason).to.equal(PAYOUT_REASON.EvenSplit);
     });
 });

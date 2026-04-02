@@ -43,10 +43,7 @@ contract PlayerRegistry is IPlayerRegistry {
         uint8 gameType,
         bool won,
         uint256 payout,
-        uint256 rafflePool,
-        bool wonRaffle,
-        uint8 tournamentResolutionReason,
-        uint8 tournamentResolutionCategory
+        uint8 tournamentResolutionReason
     );
     event MatchOutcomeRecorded(
         address indexed player,
@@ -135,10 +132,7 @@ contract PlayerRegistry is IPlayerRegistry {
         uint256 prize,
         uint256 payout,
         uint8 payoutReason,
-        uint256 rafflePool,
-        bool wonRaffle,
-        uint8 tournamentResolutionReason,
-        uint8 tournamentResolutionCategory
+        uint8 tournamentResolutionReason
     ) external override {
         // Validate: msg.sender must be an instance whose factory is authorized.
         // We read factory() from the instance (the caller itself).
@@ -156,10 +150,7 @@ contract PlayerRegistry is IPlayerRegistry {
             prize,
             payout,
             payoutReason,
-            rafflePool,
-            wonRaffle,
-            tournamentResolutionReason,
-            tournamentResolutionCategory
+            tournamentResolutionReason
         ) {
             emit ResultRecorded(
                 player,
@@ -167,10 +158,7 @@ contract PlayerRegistry is IPlayerRegistry {
                 gameType,
                 won,
                 payout,
-                rafflePool,
-                wonRaffle,
-                tournamentResolutionReason,
-                tournamentResolutionCategory
+                tournamentResolutionReason
             );
         } catch { }
     }

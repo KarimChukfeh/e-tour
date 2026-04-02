@@ -12,7 +12,7 @@ import "../ETourInstance_Base.sol";
  * - No registerTier() — tier config is baked in at initialize()
  * - No resetTournamentAfterCompletion() — instances are permanent records
  * - Solo player may reset the enrollment window without cycling instance state
- * - Fee routing: owner share goes to factory.owner(), protocol share to factory
+ * - Fee routing: owner share goes to factory.owner()
  * - On enrollment, registers player on factory via factory.registerPlayer()
  *
  * DELEGATECALL SEMANTICS: All storage reads/writes target the instance contract's
@@ -60,14 +60,11 @@ contract ETourInstance_Core is ETourInstance_Base {
 
         uint256 participantsShare = (msg.value * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         uint256 ownerShare = (msg.value * OWNER_SHARE_BPS) / BASIS_POINTS;
-        uint256 protocolShare = (msg.value * PROTOCOL_SHARE_BPS) / BASIS_POINTS;
-
         // All fee buckets stay on the instance until conclusion.
         // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
         tournament.totalEntryFeesAccrued += msg.value;
         tournament.prizePool += participantsShare;
         tournament.ownerAccrued += ownerShare;
-        tournament.protocolAccrued += protocolShare;
         tournament.enrollmentTimeout.forfeitPool += msg.value;
 
         enrolledPlayers.push(msg.sender);
@@ -103,14 +100,11 @@ contract ETourInstance_Core is ETourInstance_Base {
 
         uint256 participantsShare = (msg.value * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         uint256 ownerShare = (msg.value * OWNER_SHARE_BPS) / BASIS_POINTS;
-        uint256 protocolShare = (msg.value * PROTOCOL_SHARE_BPS) / BASIS_POINTS;
-
         // All fee buckets stay on the instance until conclusion.
         // forfeitPool holds full entry fee so EL1/EL2 can refund 100%.
         tournament.totalEntryFeesAccrued += msg.value;
         tournament.prizePool += participantsShare;
         tournament.ownerAccrued += ownerShare;
-        tournament.protocolAccrued += protocolShare;
         tournament.enrollmentTimeout.forfeitPool += msg.value;
 
         enrolledPlayers.push(player);
@@ -177,8 +171,8 @@ contract ETourInstance_Core is ETourInstance_Base {
     /**
      * @dev Claim abandoned tournament resolution (EL2).
      * Anyone can call after escalation2Start if at least one player enrolled.
-     * The caller becomes the tournament winner for the 90% prize pool, while
-     * the deferred owner share and per-instance raffle still execute normally.
+     * The caller becomes the tournament winner for the 95% prize pool, while
+     * the deferred owner share still executes normally.
      */
     function coreClaimAbandonedPool() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
@@ -215,18 +209,14 @@ contract ETourInstance_Core is ETourInstance_Base {
     }
 
     function _refundSoloPlayer(address soloPlayer) internal {
-        // Full 100% refund: prize pool + owner accrued + protocol accrued.
-        // Owner and protocol earn nothing — the tournament never ran.
+        // Full 100% refund: prize pool + owner accrued.
+        // Owner earns nothing — the tournament never ran.
         uint256 refundAmount = tournament.prizePool
-            + tournament.ownerAccrued
-            + tournament.protocolAccrued;
+            + tournament.ownerAccrued;
 
         // Zero out all buckets so _handleTournamentConclusion skips fee steps.
         tournament.prizePool = 0;
         tournament.ownerAccrued = 0;
-        tournament.protocolAccrued = 0;
-        tournament.raffleRecipient = address(0);
-        tournament.raffleAwarded = 0;
 
         playerPrizes[soloPlayer] = refundAmount;
 

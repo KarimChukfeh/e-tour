@@ -1,23 +1,23 @@
 {
-  "network": "arbitrum",
-  "chainId": "42161",
-  "timestamp": "2026-03-30T15:30:55.266Z",
+  "network": "localhost",
+  "chainId": "412346",
+  "timestamp": "2026-04-02T03:48:11.245Z",
   "modules": {
-    "core": "0xaa539b224d74d863aC1AdD8465B8326059CDB526",
-    "matches": "0xE185e4cA9789CDdf46c12E4Fe489502264E30584",
-    "prizes": "0xC853e24BD4659F1652876fdb061b4822288277c2",
-    "escalation": "0xc80d793bf7A3f33955B82b2f019228FcFE3532CD"
+    "core": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+    "matches": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
+    "prizes": "0xCD8a1C3ba11CF5ECfa6267617243239504a98d90",
+    "escalation": "0x82e01223d51Eb87e16A03E24687EDF0F294da6f1"
   },
   "artifactHashes": {
-    "core": "0x9acff223fce784aa7c0a7ac99667aac4cd8c27f97139becf530b6ed62a2690e5",
-    "matches": "0x764f3982486513d130788f3bdde98cf1d777ba435b2b2bceab2a6ea888b65811",
-    "prizes": "0xb8c89f15882e1fffd622ff54e0af639b1569c1cc9283a49cc159ab7fa7bfc97c",
-    "escalation": "0xeb040d4f5057245de234fdea67b9c69af82e90d58594e7784b08fbabfd6c237d"
+    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
+    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
+    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
+    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
   },
   "codeHashes": {
-    "core": "0x9acff223fce784aa7c0a7ac99667aac4cd8c27f97139becf530b6ed62a2690e5",
-    "matches": "0x764f3982486513d130788f3bdde98cf1d777ba435b2b2bceab2a6ea888b65811",
-    "prizes": "0xb8c89f15882e1fffd622ff54e0af639b1569c1cc9283a49cc159ab7fa7bfc97c",
-    "escalation": "0xeb040d4f5057245de234fdea67b9c69af82e90d58594e7784b08fbabfd6c237d"
+    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
+    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
+    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
+    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
   }
 }

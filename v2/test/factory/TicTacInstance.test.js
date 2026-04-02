@@ -4,6 +4,38 @@
 import { expect } from "chai";
 import hre from "hardhat";
 
+const PARTICIPANTS_SHARE_BPS = 9500n;
+const OWNER_SHARE_BPS = 500n;
+const BASIS_POINTS = 10000n;
+
+// Resolution code legend:
+// - R0  -> Normal Resolution (win)
+// - R1  -> Draw Resolution
+// - R2  -> Uncontested Finals Resolution (finalist auto-wins because everyone in the previous round drew)
+// - EL0 -> Tournament Canceled (by solo enrolled player)
+// - EL2 -> Abandoned Pool Claimed (tournament never started so pool was claimed by outsider)
+// - ML1 -> Timeout (match/tournament ended because player claimed Timeout victory)
+// - ML2 -> Force Elimination (advanced player force eliminated both players in a stalled match)
+// - ML3 -> Replacement (outside player replaced both players in a stalled match)
+const MATCH_REASON = {
+    R0: 0,
+    ML1: 1,
+    R1: 2,
+    ML2: 3,
+    ML3: 4,
+};
+
+const TOURNAMENT_REASON = {
+    R0: 0,
+    ML1: 1,
+    R1: 2,
+    ML2: 3,
+    ML3: 4,
+    EL0: 5,
+    EL2: 6,
+    R2: 7,
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,13 +338,11 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             // All buckets accumulate on the instance.
             const t = await instance.tournament();
             // 2 enrollments (owner + p1)
-            const expectedPrize    = (ENTRY_FEE * 2n * 9000n) / 10000n;
-            const expectedOwner    = (ENTRY_FEE * 2n * 750n)  / 10000n;
-            const expectedProtocol = (ENTRY_FEE * 2n * 250n)  / 10000n;
+            const expectedPrize = (ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
+            const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
             expect(t.totalEntryFeesAccrued).to.equal(ENTRY_FEE * 2n);
             expect(t.prizePool).to.equal(expectedPrize);
             expect(t.ownerAccrued).to.equal(expectedOwner);
-            expect(t.protocolAccrued).to.equal(expectedProtocol);
             // Factory ownerBalance is still 0 — owner share not forwarded yet
             expect(await factory.ownerBalance()).to.equal(0n);
         });
@@ -342,10 +372,10 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             expect(t.enrolledCount).to.equal(4);
         });
 
-        it("prize pool equals 90% of total fees collected", async function () {
+        it("prize pool equals 95% of total fees collected", async function () {
             const t = await instance.tournament();
             const totalFees = ENTRY_FEE * BigInt(PLAYER_COUNT);
-            const expectedPrizePool = (totalFees * 9000n) / 10000n;
+            const expectedPrizePool = (totalFees * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
             expect(t.prizePool).to.equal(expectedPrizePool);
         });
     });
@@ -496,7 +526,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
         it("tournament winner is recorded on-chain", async function () {
             const t = await instance.tournament();
             expect(t.winner).to.equal(champion.address);
-            expect(t.completionReason).to.equal(0); // NormalWin
+            expect(t.completionReason).to.equal(TOURNAMENT_REASON.R0); // R0: NormalWin
         });
 
         it("instance is permanently locked — no further enrollment", async function () {
@@ -538,18 +568,15 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             await playAndWin(instance, 1, 0, fP1, fP2);
         });
 
-        it("factory received correct owner balance (7.5% × 4 players) at conclusion", async function () {
+        it("factory received correct owner balance (5% × 4 players) at conclusion", async function () {
             // Deferred: owner share is forwarded at conclusion, not enrollment.
             // This test runs after the 4-player tournament has fully concluded.
             const totalFees = ENTRY_FEE * BigInt(PLAYER_COUNT);
-            const expectedOwnerBalance = (totalFees * 750n) / 10000n;
+            const expectedOwnerBalance = (totalFees * OWNER_SHARE_BPS) / BASIS_POINTS;
             expect(await factory.ownerBalance()).to.equal(expectedOwnerBalance);
         });
 
-        it("protocol share stays on instance (raffled at conclusion, not accumulated on factory)", async function () {
-            // accumulatedProtocolShare no longer exists on factory.
-            // Protocol share is raffled per-tournament directly on the instance.
-            // After conclusion the instance balance should be 0 (raffle was paid out).
+        it("instance balance is 0 after prize and owner-share settlement", async function () {
             const instanceAddr = await instance.getAddress();
             const balance = await hre.ethers.provider.getBalance(instanceAddr);
             expect(balance).to.equal(0n);
@@ -647,7 +674,7 @@ describe("TicTacInstance — 2-player, 0.001 ETH, single-round tournament", func
         const t = await instance.tournament();
         expect(t.status).to.equal(2); // Concluded
         expect(t.winner).to.equal(winner);
-        expect(t.completionReason).to.equal(0); // NormalWin
+        expect(t.completionReason).to.equal(TOURNAMENT_REASON.R0); // R0: NormalWin
     });
 
     it("champion received the prize pool (instance balance = 0)", async function () {
@@ -655,9 +682,9 @@ describe("TicTacInstance — 2-player, 0.001 ETH, single-round tournament", func
         expect(bal).to.equal(0n);
     });
 
-    it("prize pool was 90% of 2 × entry fee", async function () {
+    it("prize pool was 95% of 2 × entry fee", async function () {
         const t = await instance.tournament();
-        const expectedPrize = (ENTRY_FEE * 2n * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         expect(await instance.playerPrizes(t.winner)).to.equal(expectedPrize);
     });
 });
@@ -768,7 +795,7 @@ describe("TicTacInstance — 8-player, 0.003 ETH, 3-round bracket", function () 
 
     it("champion received the full prize pool", async function () {
         const t = await instance.tournament();
-        const expectedPrize = (ENTRY_FEE * BigInt(PLAYER_COUNT) * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * BigInt(PLAYER_COUNT) * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         expect(await instance.playerPrizes(t.winner)).to.equal(expectedPrize);
         expect(await hre.ethers.provider.getBalance(await instance.getAddress())).to.equal(0n);
     });
@@ -818,7 +845,7 @@ describe("TicTacInstance — 2-player draw in finals, equal prize split", functi
 
     it("prize pool is split equally between both players", async function () {
         const totalFees = ENTRY_FEE * 2n;
-        const prizePool = (totalFees * 9000n) / 10000n;
+        const prizePool = (totalFees * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const halfPrize = prizePool / 2n;
 
         const ownerPrize = await instance.playerPrizes(owner.address);
@@ -859,7 +886,7 @@ describe("TicTacInstance — 4-player all-draw round pays every player equally",
     });
 
     it("sets the same payout and EvenSplit payoutReason for every player", async function () {
-        const expectedPayout = (ENTRY_FEE * 4n * 9000n) / 10000n / 4n;
+        const expectedPayout = (ENTRY_FEE * 4n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS / 4n;
 
         for (const player of players.slice(0, 4)) {
             const result = await instance.getPlayerResult(player.address);
@@ -1085,7 +1112,7 @@ describe("TicTacInstance — timeout claim (claimTimeoutWin)", function () {
         const t = await instance.tournament();
         expect(t.status).to.equal(2); // Concluded
         expect(t.winner).to.equal(waitingPlayer.address);
-        expect(t.completionReason).to.equal(1); // Timeout
+        expect(t.completionReason).to.equal(TOURNAMENT_REASON.ML1); // ML1: Timeout
     });
 });
 
@@ -1197,7 +1224,7 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         expect(semifinal1After.matchWinner).to.equal(hre.ethers.ZeroAddress);
         expect(semifinal1After.isDraw).to.be.false;
         expect(semifinal1After.status).to.equal(2);
-        expect(semifinal1After.completionReason).to.equal(3);
+        expect(semifinal1After.completionReason).to.equal(MATCH_REASON.ML2); // ML2: ForceElimination
         expect(semifinal1After.completionCategory).to.equal(2n);
 
         expect(
@@ -1206,7 +1233,7 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         expect(finalsAfterMl2.matchWinner).to.equal(finalist);
         expect(finalsAfterMl2.isDraw).to.be.false;
         expect(finalsAfterMl2.status).to.equal(2);
-        expect(finalsAfterMl2.completionReason).to.equal(3);
+        expect(finalsAfterMl2.completionReason).to.equal(MATCH_REASON.ML2); // ML2: ForceElimination
         expect(finalsAfterMl2.completionCategory).to.equal(2n);
 
         for (const stalledPlayer of stalledPlayers) {
@@ -1219,10 +1246,10 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
         const info = await freshInstance.getInstanceInfo();
         expect(info.status).to.equal(2);
         expect(info.winner).to.equal(finalist);
-        expect(info.completionReason).to.equal(3n);
+        expect(info.completionReason).to.equal(BigInt(TOURNAMENT_REASON.ML2)); // ML2: ForceElimination
         expect(info.completionCategory).to.equal(2n);
 
-        const expectedPrize = (ENTRY_FEE * 4n * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * 4n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const finalistResult = await freshInstance.getPlayerResult(finalist);
         expect(finalistResult.participated).to.be.true;
         expect(finalistResult.isWinner).to.be.true;
@@ -1374,17 +1401,12 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
         const t = await instance.tournament();
         expect(t.status).to.equal(2); // Concluded
         expect(t.winner).to.equal(owner.address);
-        expect(t.completionReason).to.equal(6); // SoloEnrollCancelled
-
-        const raffleEvent = findParsedLog(receipt, instance, "TournamentRaffleAwarded");
-        expect(raffleEvent).to.equal(undefined);
+        expect(t.completionReason).to.equal(TOURNAMENT_REASON.EL0); // EL0: SoloEnrollCancelled
 
         const info = await instance.getInstanceInfo();
         expect(info.totalEntryFeesAccrued).to.equal(ENTRY_FEE);
         expect(info.prizeAwarded).to.equal(ENTRY_FEE);
         expect(info.prizeRecipient).to.equal(owner.address);
-        expect(info.raffleAwarded).to.equal(0n);
-        expect(info.raffleRecipient).to.equal(hre.ethers.ZeroAddress);
     });
 
     it("solo player received 100% of entry fee back on EL0 cancel", async function () {
@@ -1453,15 +1475,54 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
         const info = await instance.getInstanceInfo();
         expect(info.startTime).to.be.gt(0n);
         expect(info.prizeAwarded).to.equal(0n);
-        expect(info.raffleAwarded).to.equal(0n);
+    });
+
+    it("awards the auto-advanced player if the only played EL1 semifinal ends in a draw", async function () {
+        const [, , playerB] = await hre.ethers.getSigners();
+        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(playerB).enrollInTournament({ value: ENTRY_FEE });
+
+        await advanceTime(Number(ENROLLMENT_WINDOW) + 5);
+        await instance.connect(owner).forceStartTournament();
+
+        const round0Match = await instance.getMatch(0, 0);
+        const enrolledSigners = [owner, joiner, playerB];
+        const playerA = enrolledSigners.find(signer => signer.address === round0Match.player1);
+        const playerBInMatch = enrolledSigners.find(signer => signer.address === round0Match.player2);
+        const playerCByBye = enrolledSigners.find(
+            signer =>
+                signer.address !== round0Match.player1 &&
+                signer.address !== round0Match.player2
+        );
+
+        expect(playerA).to.not.equal(undefined);
+        expect(playerBInMatch).to.not.equal(undefined);
+        expect(playerCByBye).to.not.equal(undefined);
+
+        const finalsBeforeDraw = await instance.getMatch(1, 0);
+        expect([finalsBeforeDraw.player1, finalsBeforeDraw.player2]).to.include(playerCByBye.address);
+        expect([finalsBeforeDraw.player1, finalsBeforeDraw.player2]).to.include(hre.ethers.ZeroAddress);
+
+        await playDraw(instance, 0, 0, playerA, playerBInMatch);
+
+        const t = await instance.tournament();
+        expect(t.status).to.equal(2); // Concluded
+        expect(t.winner).to.equal(playerCByBye.address);
+        expect(t.completionReason).to.equal(TOURNAMENT_REASON.R2); // R2: UncontestedFinalsWin
+        expect(t.allDrawResolution).to.equal(false);
+
+        const expectedPrize = (ENTRY_FEE * 3n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
+        expect(await instance.playerPrizes(playerCByBye.address)).to.equal(expectedPrize);
+        expect(await instance.playerPrizes(playerA.address)).to.equal(0n);
+        expect(await instance.playerPrizes(playerBInMatch.address)).to.equal(0n);
     });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suite K: Per-tournament instant raffle (replaces factory-level community raffle)
+// Suite K: Conclusion settlement
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — per-tournament instant raffle at conclusion", function () {
+describe("TicTacInstance — conclusion settlement", function () {
     this.timeout(120_000);
 
     let factory, signers;
@@ -1472,29 +1533,27 @@ describe("TicTacInstance — per-tournament instant raffle at conclusion", funct
         ({ factory } = await deployFactory());
     });
 
-    it("factory has no accumulatedProtocolShare (removed)", async function () {
-        // accumulatedProtocolShare no longer exists on the factory
+    it("factory has no legacy protocol raffle API", async function () {
         expect(factory.accumulatedProtocolShare).to.equal(undefined);
         expect(factory.executeProtocolRaffle).to.equal(undefined);
     });
 
-    it("protocol share stays on instance until conclusion", async function () {
+    it("owner share stays on instance until conclusion", async function () {
         const inst = await createInstance(factory, 2, ENTRY_FEE, signers[0]);
         await inst.connect(signers[1]).enrollInTournament({ value: ENTRY_FEE });
 
         const t = await inst.tournament();
-        const expectedProtocol = (ENTRY_FEE * 2n * 250n) / 10000n;
-        expect(t.protocolAccrued).to.equal(expectedProtocol);
+        const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
+        expect(t.ownerAccrued).to.equal(expectedOwner);
         // Factory has nothing
         expect(await factory.ownerBalance()).to.equal(0n);
     });
 
-    it("TournamentRaffleAwarded event emitted at conclusion with correct amount", async function () {
+    it("forwards the deferred 5% owner share at conclusion", async function () {
         const [p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
         await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
-
-        const expectedRaffle = (ENTRY_FEE * 2n * 250n) / 10000n;
+        const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
 
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const matchData = await inst.matches(matchId);
@@ -1504,26 +1563,17 @@ describe("TicTacInstance — per-tournament instant raffle at conclusion", funct
         await inst.connect(second).makeMove(0, 0, 3);
         await inst.connect(first).makeMove(0, 0, 1);
         await inst.connect(second).makeMove(0, 0, 4);
-        const tx = await inst.connect(first).makeMove(0, 0, 2);
-        const receipt = await tx.wait();
+        await inst.connect(first).makeMove(0, 0, 2);
 
-        const raffleEvent = findParsedLog(receipt, inst, "TournamentRaffleAwarded");
-
-        expect(raffleEvent).to.not.be.null;
-        expect(raffleEvent.args.amount).to.equal(expectedRaffle);
-        expect(raffleEvent.args.transferred).to.equal(true);
-        expect([p1.address, p2.address]).to.include(raffleEvent.args.winner);
-
-        const expectedPrize = (ENTRY_FEE * 2n * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const info = await inst.getInstanceInfo();
         expect(info.totalEntryFeesAccrued).to.equal(ENTRY_FEE * 2n);
         expect(info.prizeAwarded).to.equal(expectedPrize);
         expect(info.prizeRecipient).to.equal(first.address);
-        expect(info.raffleAwarded).to.equal(expectedRaffle);
-        expect([p1.address, p2.address]).to.include(info.raffleRecipient);
+        expect(await factory.ownerBalance()).to.equal(expectedOwner);
     });
 
-    it("raffle remains capped to protocolAccrued even if extra ETH is forced onto the instance", async function () {
+    it("extra forced ETH remains untouched after conclusion", async function () {
         const [p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
         await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
@@ -1536,8 +1586,6 @@ describe("TicTacInstance — per-tournament instant raffle at conclusion", funct
             hre.ethers.toBeHex(balanceBefore + extraEth),
         ]);
 
-        const expectedRaffle = (ENTRY_FEE * 2n * 250n) / 10000n;
-
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const matchData = await inst.matches(matchId);
         const first = matchData.currentTurn === p1.address ? p1 : p2;
@@ -1546,40 +1594,27 @@ describe("TicTacInstance — per-tournament instant raffle at conclusion", funct
         await inst.connect(second).makeMove(0, 0, 3);
         await inst.connect(first).makeMove(0, 0, 1);
         await inst.connect(second).makeMove(0, 0, 4);
-        const tx = await inst.connect(first).makeMove(0, 0, 2);
-        const receipt = await tx.wait();
-
-        const raffleEvent = findParsedLog(receipt, inst, "TournamentRaffleAwarded");
-        expect(raffleEvent).to.not.equal(undefined);
-        expect(raffleEvent.args.amount).to.equal(expectedRaffle);
+        await inst.connect(first).makeMove(0, 0, 2);
 
         const balanceAfter = await hre.ethers.provider.getBalance(instAddr);
         expect(balanceAfter).to.equal(extraEth);
     });
 
-    it("EL2 gives the claimant the 90% prize pool and still raffles the instance 2.5% to an enrolled player", async function () {
+    it("EL2 gives the claimant the 95% prize pool and forwards 5% to the owner", async function () {
         const [creator, outsider] = await hre.ethers.getSigners();
         const { factory: el2Factory } = await deployFactory();
         const inst = await createInstance(el2Factory, 2, ENTRY_FEE, creator, shortTimeouts());
-        const expectedPrize = (ENTRY_FEE * 9000n) / 10000n;
-        const expectedOwner = (ENTRY_FEE * 750n) / 10000n;
-        const expectedRaffle = (ENTRY_FEE * 250n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
+        const expectedOwner = (ENTRY_FEE * OWNER_SHARE_BPS) / BASIS_POINTS;
 
         await advanceTime(10 * 60);
 
-        const tx = await inst.connect(outsider).claimAbandonedPool();
-        const receipt = await tx.wait();
-
-        const raffleEvent = findParsedLog(receipt, inst, "TournamentRaffleAwarded");
-        expect(raffleEvent).to.not.equal(undefined);
-        expect(raffleEvent.args.amount).to.equal(expectedRaffle);
-        expect(raffleEvent.args.transferred).to.equal(true);
-        expect(raffleEvent.args.winner).to.equal(creator.address);
+        await inst.connect(outsider).claimAbandonedPool();
 
         const t = await inst.tournament();
         expect(t.status).to.equal(2); // Concluded
         expect(t.winner).to.equal(outsider.address);
-        expect(t.completionReason).to.equal(7); // AbandonedTournamentClaimed
+        expect(t.completionReason).to.equal(TOURNAMENT_REASON.EL2); // EL2: AbandonedTournamentClaimed
         expect(await inst.playerPrizes(outsider.address)).to.equal(expectedPrize);
         expect(await el2Factory.ownerBalance()).to.equal(expectedOwner);
 
@@ -1587,14 +1622,12 @@ describe("TicTacInstance — per-tournament instant raffle at conclusion", funct
         expect(info.totalEntryFeesAccrued).to.equal(ENTRY_FEE);
         expect(info.prizeAwarded).to.equal(expectedPrize);
         expect(info.prizeRecipient).to.equal(outsider.address);
-        expect(info.raffleAwarded).to.equal(expectedRaffle);
-        expect(info.raffleRecipient).to.equal(creator.address);
 
         const balance = await hre.ethers.provider.getBalance(await inst.getAddress());
         expect(balance).to.equal(0n);
     });
 
-    it("instance balance is 0 after conclusion (raffle paid out)", async function () {
+    it("instance balance is 0 after conclusion", async function () {
         const [p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
         await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
@@ -2105,7 +2138,7 @@ describe("TicTacInstance — permanent record view functions", function () {
     it("getPrizeDistribution shows winner received the prize", async function () {
         const { players, amounts } = await instance.getPrizeDistribution();
         const totalPrize = amounts.reduce((a, b) => a + b, 0n);
-        expect(totalPrize).to.equal((ENTRY_FEE * 2n * 9000n) / 10000n);
+        expect(totalPrize).to.equal((ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS);
     });
 
     it("getPlayerResult shows correct result for each player", async function () {
@@ -2189,18 +2222,18 @@ describe("TicTacInstance — player activity: normal win", function () {
         expect(moves).to.not.equal("");
     });
 
-    it("getPrizeDistribution: winner received 90% of pool", async function () {
+    it("getPrizeDistribution: winner received 95% of pool", async function () {
         const t = await instance.tournament();
         const { players, amounts } = await instance.getPrizeDistribution();
         const winnerIdx = players.indexOf(t.winner);
         expect(winnerIdx).to.be.gte(0);
-        const expectedPrize = (ENTRY_FEE * 2n * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         expect(amounts[winnerIdx]).to.equal(expectedPrize);
     });
 
-    it("completionReason is NormalWin (0)", async function () {
+    it("completionReason is R0 / NormalWin (0)", async function () {
         const info = await instance.getInstanceInfo();
-        expect(info.completionReason).to.equal(0);
+        expect(info.completionReason).to.equal(TOURNAMENT_REASON.R0);
     });
 });
 
@@ -2262,9 +2295,9 @@ describe("TicTacInstance — player activity: timeout win (ML1)", function () {
         expect(detail.status).to.equal(2); // Completed
     });
 
-    it("completionReason is Timeout (1)", async function () {
+    it("completionReason is ML1 / Timeout (1)", async function () {
         const info = await instance.getInstanceInfo();
-        expect(info.completionReason).to.equal(1);
+        expect(info.completionReason).to.equal(TOURNAMENT_REASON.ML1);
     });
 });
 
@@ -2299,7 +2332,7 @@ describe("TicTacInstance — player activity: draw", function () {
     });
 
     it("prize split equally between both players", async function () {
-        const expectedEach = (ENTRY_FEE * 2n * 9000n) / 10000n / 2n;
+        const expectedEach = (ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS / 2n;
         const r1 = await instance.getPlayerResult(owner.address);
         const r2 = await instance.getPlayerResult(p1.address);
         expect(r1.prizeWon).to.equal(expectedEach);
@@ -2313,16 +2346,16 @@ describe("TicTacInstance — player activity: draw", function () {
         expect(detail.status).to.equal(2); // Completed
     });
 
-    it("getPrizeDistribution: total equals 90% of pool", async function () {
+    it("getPrizeDistribution: total equals 95% of pool", async function () {
         const { amounts } = await instance.getPrizeDistribution();
         const total = amounts.reduce((a, b) => a + b, 0n);
-        expect(total).to.equal((ENTRY_FEE * 2n * 9000n) / 10000n);
+        expect(total).to.equal((ENTRY_FEE * 2n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS);
     });
 
-    it("completionReason is FinalsDraw (2) for a 2-player finals draw", async function () {
+    it("completionReason is R1 / Draw (2) for a 2-player finals draw", async function () {
         const info = await instance.getInstanceInfo();
-        expect(info.completionReason).to.equal(2n);
-        expect(info.completionCategory).to.equal(1n);
+        expect(info.completionReason).to.equal(BigInt(TOURNAMENT_REASON.R1));
+        expect(info.completionCategory).to.equal(3n);
     });
 });
 
@@ -2512,11 +2545,11 @@ describe("TicTacInstance — player activity: multi-round match tracking", funct
         expect(t.winner).to.equal(champion);
     });
 
-    it("champion: isWinner=true, prizeWon = 90% of pool", async function () {
+    it("champion: isWinner=true, prizeWon = 95% of pool", async function () {
         const result = await instance.getPlayerResult(champion);
         expect(result.participated).to.be.true;
         expect(result.isWinner).to.be.true;
-        const expectedPrize = (ENTRY_FEE * 8n * 9000n) / 10000n;
+        const expectedPrize = (ENTRY_FEE * 8n * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         expect(result.prizeWon).to.equal(expectedPrize);
     });
 

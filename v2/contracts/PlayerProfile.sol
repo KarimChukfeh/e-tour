@@ -34,10 +34,7 @@ contract PlayerProfile is IPlayerProfile {
         bool won,
         uint256 payout,
         uint8 payoutReason,
-        uint256 rafflePool,
-        bool wonRaffle,
-        uint8 tournamentResolutionReason,
-        uint8 tournamentResolutionCategory
+        uint8 tournamentResolutionReason
     );
     event MatchOutcomeRecorded(
         address indexed instance,
@@ -98,10 +95,7 @@ contract PlayerProfile is IPlayerProfile {
             prize:      0,
             payout:     0,
             payoutReason: uint8(PayoutReason.None),
-            rafflePool: 0,
-            wonRaffle:  false,
-            tournamentResolutionReason: 0,
-            tournamentResolutionCategory: 0
+            tournamentResolutionReason: 0
         }));
 
         _enrollmentIndex[instance] = _enrollments.length; // store index+1
@@ -120,10 +114,7 @@ contract PlayerProfile is IPlayerProfile {
         uint256 prize,
         uint256 payout,
         uint8 payoutReason,
-        uint256 rafflePool,
-        bool wonRaffle,
-        uint8 tournamentResolutionReason,
-        uint8 tournamentResolutionCategory
+        uint8 tournamentResolutionReason
     ) external override {
         if (msg.sender != registry) revert Unauthorized();
 
@@ -137,10 +128,7 @@ contract PlayerProfile is IPlayerProfile {
         r.prize     = prize;
         r.payout    = payout;
         r.payoutReason = payoutReason;
-        r.rafflePool = rafflePool;
-        r.wonRaffle = wonRaffle;
         r.tournamentResolutionReason = tournamentResolutionReason;
-        r.tournamentResolutionCategory = tournamentResolutionCategory;
 
         // Update running stats
         _stats.totalPlayed++;
@@ -157,10 +145,7 @@ contract PlayerProfile is IPlayerProfile {
             won,
             payout,
             payoutReason,
-            rafflePool,
-            wonRaffle,
-            tournamentResolutionReason,
-            tournamentResolutionCategory
+            tournamentResolutionReason
         );
     }
 
@@ -261,7 +246,7 @@ contract PlayerProfile is IPlayerProfile {
     {
         uint256 idx1 = _enrollmentIndex[instance];
         if (idx1 == 0) {
-            return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0, 0, uint8(PayoutReason.None), 0, false, 0, 0);
+            return EnrollmentRecord(address(0), 0, 0, 0, false, false, 0, 0, uint8(PayoutReason.None), 0);
         }
         return _enrollments[idx1 - 1];
     }

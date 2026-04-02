@@ -27,9 +27,9 @@ import "./interfaces/IPlayerRegistry.sol";
  * - entryFee: must be a multiple of 0.0005 ETH, in [0.0005 ETH, maxEntryFee]
  *
  * FEE MODEL (deferred):
- * All fee buckets (90% prize, 7.5% owner, 2.5% protocol raffle) stay on the instance
- * until tournament conclusion. The owner share is forwarded here at conclusion time
- * via receiveOwnerShare(). The protocol share is raffled among players on the instance.
+ * All fee buckets (95% prize, 5% owner) stay on the instance until tournament
+ * conclusion. The owner share is forwarded here at conclusion time via
+ * receiveOwnerShare().
  * This ensures 100% refund on EL1/EL2 (tournaments that never ran).
  */
 contract ETourFactory is ReentrancyGuard {
