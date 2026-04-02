@@ -1,6 +1,6 @@
 {
-  "network": "localhost",
-  "generatedAt": "2026-04-02T03:48:48.665Z",
+  "network": "arbitrum",
+  "generatedAt": "2026-04-02T04:28:16.696Z",
   "contract": {
     "abi": [
       {
@@ -441,8 +441,8 @@
     ]
   },
   "addressesByGame": {
-    "TicTacChainFactory": "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0",
-    "ConnectFourFactory": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
-    "ChessOnChainFactory": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f"
+    "TicTacChainFactory": "0xc1ffC96A00A21c00Ab5C90EE0264a9D873f1bb76",
+    "ConnectFourFactory": "0x96cB8cf2Bc14A94dA9Ba7c27BFd95E3e4A3c0e2c",
+    "ChessOnChainFactory": "0x6a18b5aA834d0092aadeEAA3D35B807d64865363"
   }
 }
