@@ -96,15 +96,15 @@ async function deployFactory() {
 /**
  * Build a TimeoutConfig with generous defaults for testing.
  * Uses valid values that comply with factory validation:
- * - enrollmentWindow: 2, 5, 10, or 30 minutes
- * - matchTimePerPlayer: 2, 5, 10, or 15 minutes
- * - timeIncrementPerMove: 15 or 30 seconds
+ * - enrollmentWindow: whole minutes in [2, 30]
+ * - matchTimePerPlayer: whole minutes in [1, 20]
+ * - timeIncrementPerMove: whole seconds in [0, 60]
  */
 function defaultTimeouts() {
     return {
-        enrollmentWindow:      30n * 60n,       // 30 minutes to fill up (valid option)
-        matchTimePerPlayer:    15n * 60n,       // 15 minutes per player (valid option)
-        timeIncrementPerMove:  30n,             // 30 seconds after each move (valid option)
+        enrollmentWindow:      30n * 60n,       // 30 minutes to fill up
+        matchTimePerPlayer:    15n * 60n,       // 15 minutes per player
+        timeIncrementPerMove:  30n,             // 30 seconds after each move
     };
 }
 
@@ -114,9 +114,9 @@ function defaultTimeouts() {
  */
 function shortTimeouts(overrides = {}) {
     return {
-        enrollmentWindow:      overrides.enrollmentWindow      ?? (2n * 60n),  // 2 minutes (valid)
-        matchTimePerPlayer:    overrides.matchTimePerPlayer    ?? (2n * 60n),  // 2 minutes (valid)
-        timeIncrementPerMove:  overrides.timeIncrementPerMove  ?? 15n,         // 15 seconds (valid)
+        enrollmentWindow:      overrides.enrollmentWindow      ?? (2n * 60n),  // minimum enrollment window
+        matchTimePerPlayer:    overrides.matchTimePerPlayer    ?? (2n * 60n),  // short per-player clock
+        timeIncrementPerMove:  overrides.timeIncrementPerMove  ?? 15n,         // short increment
     };
 }
 
@@ -613,10 +613,29 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             expect(tierKey1).to.equal(tierKey2);
         });
 
+        it("changing only timeout params creates a different tierKey", async function () {
+            const inst1 = await createInstance(factory, PLAYER_COUNT, ENTRY_FEE, owner, {
+                ...defaultTimeouts(),
+                enrollmentWindow: 7n * 60n,
+            });
+            const inst2 = await createInstance(factory, PLAYER_COUNT, ENTRY_FEE, owner, {
+                ...defaultTimeouts(),
+                enrollmentWindow: 8n * 60n,
+            });
+
+            const tierKey1 = (await inst1.tierConfig()).tierKey;
+            const tierKey2 = (await inst2.tierConfig()).tierKey;
+            expect(tierKey1).to.not.equal(tierKey2);
+
+            expect((await inst1.tierConfig()).timeouts.enrollmentWindow).to.equal(7n * 60n);
+            expect((await inst2.tierConfig()).timeouts.enrollmentWindow).to.equal(8n * 60n);
+        });
+
         it("factory has exactly one tier entry for that config", async function () {
             expect(await factory.tierKeys(0)).to.not.be.undefined;
-            // Accessing tierKeys(1) should revert (only one tier registered)
-            await expect(factory.tierKeys(1)).to.be.reverted;
+            expect(await factory.tierKeys(1)).to.not.be.undefined;
+            expect(await factory.tierKeys(2)).to.not.be.undefined;
+            await expect(factory.tierKeys(3)).to.be.reverted;
         });
     });
 });
@@ -1887,16 +1906,16 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.be.reverted;
     });
 
-    it("accepts the new minimum entry fee of 0.0005 ETH", async function () {
-        const minFee = hre.ethers.parseEther("0.0005");
+    it("accepts the new minimum entry fee of 0.0001 ETH", async function () {
+        const minFee = hre.ethers.parseEther("0.0001");
         await expect(
             factory.connect(owner).createInstance(2, minFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: minFee }
             )
         ).to.not.be.reverted;
     });
 
-    it("rejects entry fee that is not a multiple of 0.0005 ETH", async function () {
-        const oddFee = hre.ethers.parseEther("0.00075");
+    it("rejects entry fee that is not a multiple of 0.0001 ETH", async function () {
+        const oddFee = hre.ethers.parseEther("0.00015");
         await expect(
             factory.connect(owner).createInstance(2, oddFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: oddFee }
             )
@@ -1911,7 +1930,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
     });
 
     it("rejects entry fee above the 1 ETH max", async function () {
-        const tooHighFee = hre.ethers.parseEther("1.0005");
+        const tooHighFee = hre.ethers.parseEther("1.0001");
         await expect(
             factory.connect(owner).createInstance(2, tooHighFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: tooHighFee }
             )
@@ -1927,10 +1946,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
     });
 
     // Timeout validation tests
-    it("rejects invalid enrollment window (3 minutes)", async function () {
+    it("rejects enrollment window below 2 minutes", async function () {
         const invalidTimeouts = {
             ...defaultTimeouts(),
-            enrollmentWindow: 3n * 60n // 3 minutes (not allowed)
+            enrollmentWindow: 1n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
@@ -1938,32 +1957,43 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.be.reverted;
     });
 
-    it("accepts valid enrollment window (2 minutes)", async function () {
-        const validTimeouts = {
+    it("rejects enrollment window above 30 minutes", async function () {
+        const invalidTimeouts = {
             ...defaultTimeouts(),
-            enrollmentWindow: 2n * 60n // 2 minutes (allowed)
+            enrollmentWindow: 31n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0015"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0015") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("rejects enrollment window that is not a whole minute", async function () {
+        const invalidTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 150n
+        };
+        await expect(
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.002"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.002") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("accepts enrollment window at the minimum boundary", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            enrollmentWindow: 2n * 60n
+        };
+        await expect(
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0025"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0025") }
             )
         ).to.not.be.reverted;
     });
 
-    it("accepts valid enrollment window (5 minutes)", async function () {
+    it("accepts enrollment window for an in-range custom minute value", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            enrollmentWindow: 5n * 60n // 5 minutes (allowed)
-        };
-        await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.002"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.002") }
-            )
-        ).to.not.be.reverted;
-    });
-
-    it("accepts valid enrollment window (10 minutes)", async function () {
-        const validTimeouts = {
-            ...defaultTimeouts(),
-            enrollmentWindow: 10n * 60n // 10 minutes (allowed)
+            enrollmentWindow: 3n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.003"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.003") }
@@ -1971,10 +2001,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("accepts valid enrollment window (30 minutes)", async function () {
+    it("accepts enrollment window at the maximum boundary", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            enrollmentWindow: 30n * 60n // 30 minutes (allowed)
+            enrollmentWindow: 30n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.004"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.004") }
@@ -1982,10 +2012,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("rejects invalid time per player (3 minutes)", async function () {
+    it("rejects time per player below 1 minute", async function () {
         const invalidTimeouts = {
             ...defaultTimeouts(),
-            matchTimePerPlayer: 3n * 60n // 3 minutes (not allowed)
+            matchTimePerPlayer: 0n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.005"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.005") }
@@ -1993,21 +2023,32 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.be.reverted;
     });
 
-    it("accepts valid time per player (2 minutes)", async function () {
-        const validTimeouts = {
+    it("rejects time per player above 20 minutes", async function () {
+        const invalidTimeouts = {
             ...defaultTimeouts(),
-            matchTimePerPlayer: 2n * 60n // 2 minutes (allowed)
+            matchTimePerPlayer: 21n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.006"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.006") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.006"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.006") }
             )
-        ).to.not.be.reverted;
+        ).to.be.reverted;
     });
 
-    it("accepts valid time per player (5 minutes)", async function () {
+    it("rejects time per player that is not a whole minute", async function () {
+        const invalidTimeouts = {
+            ...defaultTimeouts(),
+            matchTimePerPlayer: 90n
+        };
+        await expect(
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0065"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0065") }
+            )
+        ).to.be.reverted;
+    });
+
+    it("accepts time per player at the minimum boundary", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            matchTimePerPlayer: 5n * 60n // 5 minutes (allowed)
+            matchTimePerPlayer: 1n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.007"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.007") }
@@ -2015,10 +2056,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("accepts valid time per player (10 minutes)", async function () {
+    it("accepts time per player for an in-range custom minute value", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            matchTimePerPlayer: 10n * 60n // 10 minutes (allowed)
+            matchTimePerPlayer: 3n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.008"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.008") }
@@ -2026,10 +2067,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("accepts valid time per player (15 minutes)", async function () {
+    it("accepts time per player at the maximum boundary", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            matchTimePerPlayer: 15n * 60n // 15 minutes (allowed)
+            matchTimePerPlayer: 20n * 60n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.009"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.009") }
@@ -2037,10 +2078,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("rejects invalid increment time (10 seconds)", async function () {
+    it("rejects increment time above 60 seconds", async function () {
         const invalidTimeouts = {
             ...defaultTimeouts(),
-            timeIncrementPerMove: 10n // 10 seconds (not allowed)
+            timeIncrementPerMove: 61n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.010"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.010") }
@@ -2048,10 +2089,10 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.be.reverted;
     });
 
-    it("accepts valid increment time (15 seconds)", async function () {
+    it("accepts increment time at the minimum boundary", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            timeIncrementPerMove: 15n // 15 seconds (allowed)
+            timeIncrementPerMove: 0n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.011"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.011") }
@@ -2059,13 +2100,24 @@ describe("TicTacInstance — factory creation guardrails", function () {
         ).to.not.be.reverted;
     });
 
-    it("accepts valid increment time (30 seconds)", async function () {
+    it("accepts increment time for an in-range custom second value", async function () {
         const validTimeouts = {
             ...defaultTimeouts(),
-            timeIncrementPerMove: 30n // 30 seconds (allowed)
+            timeIncrementPerMove: 17n
         };
         await expect(
             factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.012"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.012") }
+            )
+        ).to.not.be.reverted;
+    });
+
+    it("accepts increment time at the maximum boundary", async function () {
+        const validTimeouts = {
+            ...defaultTimeouts(),
+            timeIncrementPerMove: 60n
+        };
+        await expect(
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0125"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0125") }
             )
         ).to.not.be.reverted;
     });

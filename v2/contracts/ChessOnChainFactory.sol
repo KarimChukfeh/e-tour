@@ -63,7 +63,7 @@ contract ChessOnChainFactory is ETourFactory {
             enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
         });
 
-        bytes32 tierKey = _computeTierKey(playerCount, entryFee);
+        bytes32 tierKey = _computeTierKey(playerCount, entryFee, timeouts);
         if (!_tierExists(tierKey)) {
             _registerTier(tierKey, playerCount, entryFee, timeouts);
         }

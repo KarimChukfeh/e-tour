@@ -24,7 +24,7 @@ import "./interfaces/IPlayerRegistry.sol";
  *
  * GUARDRAILS:
  * - playerCount: must be power of 2, in [2, 32]
- * - entryFee: must be a multiple of 0.0005 ETH, in [0.0005 ETH, maxEntryFee]
+ * - entryFee: must be a multiple of 0.0001 ETH, in [0.0001 ETH, maxEntryFee]
  *
  * FEE MODEL (deferred):
  * All fee buckets (95% prize, 5% owner) stay on the instance until tournament
@@ -54,8 +54,8 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Constants ============
 
-    uint256 public constant MIN_ENTRY_FEE = 0.0005 ether;
-    uint256 public constant FEE_INCREMENT = 0.0005 ether;
+    uint256 public constant MIN_ENTRY_FEE = 0.0001 ether;
+    uint256 public constant FEE_INCREMENT = 0.0001 ether;
     uint256 public constant BASIS_POINTS = 10000;
 
     // Escalation delay constants (not user-configurable)
@@ -144,10 +144,10 @@ contract ETourFactory is ReentrancyGuard {
      * Validates parameters, looks up or creates the tier config, deploys a clone.
      *
      * @param playerCount Must be power of 2 in [2, 32]
-     * @param entryFee Must be multiple of 0.0005 ETH in [0.0005 ETH, maxEntryFee]
-     * @param enrollmentWindow Must be 2, 5, 10, or 30 minutes
-     * @param matchTimePerPlayer Must be 2, 5, 10, or 15 minutes
-     * @param timeIncrementPerMove Must be 15 or 30 seconds
+     * @param entryFee Must be multiple of 0.0001 ETH in [0.0001 ETH, maxEntryFee]
+     * @param enrollmentWindow Whole minutes in [2, 30]
+     * @param matchTimePerPlayer Whole minutes in [1, 20]
+     * @param timeIncrementPerMove Whole seconds in [0, 60]
      * @return instance Address of the newly deployed instance clone
      */
     function createInstance(
@@ -172,7 +172,7 @@ contract ETourFactory is ReentrancyGuard {
             enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
         });
 
-        bytes32 tierKey = _computeTierKey(playerCount, entryFee);
+        bytes32 tierKey = _computeTierKey(playerCount, entryFee, timeouts);
         if (!_tierExists(tierKey)) {
             _registerTier(tierKey, playerCount, entryFee, timeouts);
         }
@@ -356,8 +356,23 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Internal: Tier Management ============
 
-    function _computeTierKey(uint8 playerCount, uint256 entryFee) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(playerCount, entryFee));
+    function _computeTierKey(
+        uint8 playerCount,
+        uint256 entryFee,
+        ETourInstance_Base.TimeoutConfig memory timeouts
+    ) internal pure returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                playerCount,
+                entryFee,
+                timeouts.matchTimePerPlayer,
+                timeouts.timeIncrementPerMove,
+                timeouts.matchLevel2Delay,
+                timeouts.matchLevel3Delay,
+                timeouts.enrollmentWindow,
+                timeouts.enrollmentLevel2Delay
+            )
+        );
     }
 
     function _tierExists(bytes32 tierKey) internal view returns (bool) {
@@ -404,31 +419,26 @@ contract ETourFactory is ReentrancyGuard {
         uint256 matchTimePerPlayer,
         uint256 timeIncrementPerMove
     ) internal pure {
-        // Validate enrollment window: 2, 5, 10, or 30 minutes
+        // Validate enrollment window: whole minutes in [2, 30]
         if (
-            enrollmentWindow != 2 minutes &&
-            enrollmentWindow != 5 minutes &&
-            enrollmentWindow != 10 minutes &&
-            enrollmentWindow != 30 minutes
+            enrollmentWindow < 2 minutes ||
+            enrollmentWindow > 30 minutes ||
+            enrollmentWindow % 1 minutes != 0
         ) {
             revert InvalidTimeoutConfig();
         }
 
-        // Validate time per player: 2, 5, 10, or 15 minutes
+        // Validate time per player: whole minutes in [1, 20]
         if (
-            matchTimePerPlayer != 2 minutes &&
-            matchTimePerPlayer != 5 minutes &&
-            matchTimePerPlayer != 10 minutes &&
-            matchTimePerPlayer != 15 minutes
+            matchTimePerPlayer < 1 minutes ||
+            matchTimePerPlayer > 20 minutes ||
+            matchTimePerPlayer % 1 minutes != 0
         ) {
             revert InvalidTimeoutConfig();
         }
 
-        // Validate increment time: 15 or 30 seconds
-        if (
-            timeIncrementPerMove != 15 seconds &&
-            timeIncrementPerMove != 30 seconds
-        ) {
+        // Validate increment time: whole seconds in [0, 60]
+        if (timeIncrementPerMove > 60 seconds) {
             revert InvalidTimeoutConfig();
         }
     }

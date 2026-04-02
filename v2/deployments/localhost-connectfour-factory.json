@@ -2,22 +2,22 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-04-02T03:48:43.946Z",
-  "blockNumber": 13817,
+  "timestamp": "2026-04-02T05:35:53.620Z",
+  "blockNumber": 20246,
   "modules": {
-    "ETourInstance_Core": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
-    "ETourInstance_Matches": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
-    "ETourInstance_Prizes": "0xCD8a1C3ba11CF5ECfa6267617243239504a98d90",
-    "ETourInstance_Escalation": "0x82e01223d51Eb87e16A03E24687EDF0F294da6f1"
+    "ETourInstance_Core": "0x04C89607413713Ec9775E14b954286519d836FEf",
+    "ETourInstance_Matches": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
+    "ETourInstance_Prizes": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823",
+    "ETourInstance_Escalation": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2"
   },
   "playerProfile": {
-    "PlayerProfileImpl": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-    "PlayerRegistry": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f"
+    "PlayerProfileImpl": "0x86A2EE8FAf9A840F7a2c64CA3d51209F9A02081D",
+    "PlayerRegistry": "0xA4899D35897033b927acFCf422bc745916139776"
   },
   "factory": {
-    "ConnectFourFactory": "0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d"
+    "ConnectFourFactory": "0xf953b3A269d80e3eB0F2947630Da976B896A8C5b"
   },
   "implementation": {
-    "ConnectFourInstance": "0xf6cB1Bc71F7ed659E64C8a56dA5759494480e333"
+    "ConnectFourInstance": "0xeb221B91642a102CaaBC75Ab3589cF5864CA6ecA"
   }
 }

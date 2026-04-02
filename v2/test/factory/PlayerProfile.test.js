@@ -131,9 +131,9 @@ async function getProfileForGame(registry, player, gameType = TICTAC_GAME_TYPE) 
 
 function defaultTimeouts() {
     // These must match the validation in ETourFactory:
-    // - enrollmentWindow: 2, 5, 10, or 30 minutes
-    // - matchTimePerPlayer: 2, 5, 10, or 15 minutes
-    // - timeIncrementPerMove: 15 or 30 seconds
+    // - enrollmentWindow: whole minutes in [2, 30]
+    // - matchTimePerPlayer: whole minutes in [1, 20]
+    // - timeIncrementPerMove: whole seconds in [0, 60]
     return {
         enrollmentWindow:      2n * 60n,    // 2 minutes
         matchTimePerPlayer:    5n * 60n,    // 5 minutes
@@ -145,8 +145,8 @@ function shortTimeouts() {
     // Minimum valid values for quick testing
     return {
         enrollmentWindow:      2n * 60n,    // 2 minutes (minimum allowed)
-        matchTimePerPlayer:    2n * 60n,    // 2 minutes (minimum allowed)
-        timeIncrementPerMove:  15n,         // 15 seconds (minimum allowed)
+        matchTimePerPlayer:    1n * 60n,    // 1 minute (minimum allowed)
+        timeIncrementPerMove:  0n,          // 0 seconds (minimum allowed)
     };
 }
 
