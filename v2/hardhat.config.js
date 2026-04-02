@@ -57,6 +57,19 @@ export default {
       chainId: 42161,
     },
   },
+  etherscan: {
+    apiKey: process.env.ARBISCAN_API_KEY || "",
+    customChains: [
+      {
+        network: "arbitrum",
+        chainId: 42161,
+        urls: {
+          apiURL: "https://api.arbiscan.io/api",
+          browserURL: "https://arbiscan.io",
+        },
+      },
+    ],
+  },
   gasReporter: {
     enabled: process.env.REPORT_GAS ? true : false,
     currency: "USD",
