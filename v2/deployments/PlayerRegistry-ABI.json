@@ -1,0 +1,448 @@
+{
+  "network": "arbitrum",
+  "generatedAt": "2026-04-02T05:42:43.899Z",
+  "contract": {
+    "abi": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_profileImplementation",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      {
+        "inputs": [],
+        "name": "CloneFailed",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "Unauthorized",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ZeroAddress",
+        "type": "error"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          }
+        ],
+        "name": "EnrollmentRecorded",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "factory",
+            "type": "address"
+          }
+        ],
+        "name": "FactoryAuthorized",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "factory",
+            "type": "address"
+          }
+        ],
+        "name": "FactoryDeauthorized",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "roundNumber",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "matchNumber",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "outcome",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "category",
+            "type": "uint8"
+          }
+        ],
+        "name": "MatchOutcomeRecorded",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "profile",
+            "type": "address"
+          }
+        ],
+        "name": "ProfileCreated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "bool",
+            "name": "won",
+            "type": "bool"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "payout",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "tournamentResolutionReason",
+            "type": "uint8"
+          }
+        ],
+        "name": "ResultRecorded",
+        "type": "event"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "factory",
+            "type": "address"
+          }
+        ],
+        "name": "authorizeFactory",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "authorizedFactories",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "factory",
+            "type": "address"
+          }
+        ],
+        "name": "deauthorizeFactory",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          }
+        ],
+        "name": "getProfile",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "profileImplementation",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "",
+            "type": "uint8"
+          }
+        ],
+        "name": "profiles",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "gameType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "entryFee",
+            "type": "uint256"
+          }
+        ],
+        "name": "recordEnrollment",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "uint8",
+            "name": "roundNumber",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "matchNumber",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "outcome",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "category",
+            "type": "uint8"
+          }
+        ],
+        "name": "recordMatchOutcome",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "won",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "prize",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "payout",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "payoutReason",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tournamentResolutionReason",
+            "type": "uint8"
+          }
+        ],
+        "name": "recordResult",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "newOwner",
+            "type": "address"
+          }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ]
+  },
+  "addressesByGame": {
+    "TicTacChainFactory": "0x717A2d2A71eCb8D1f53dC56Ef4Bf446Aa541D2F0",
+    "ConnectFourFactory": "0x9C969A64703B2aF4026bfF9D71F86343768EE7d4",
+    "ChessOnChainFactory": "0xe8e4752610A94b62bD94De0030C963d6836a75CA"
+  }
+}

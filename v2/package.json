@@ -1,0 +1,25 @@
+{
+  "name": "e-tour-v2",
+  "version": "2.0.0",
+  "description": "ETour factory/instance architecture (v2)",
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile --config v2/hardhat.config.js",
+    "test": "hardhat test --config v2/hardhat.config.js",
+    "sync:abis": "node v2/scripts/sync-abis.js",
+    "deploy:modules": "hardhat run v2/scripts/deploy-instance-modules.js --config v2/hardhat.config.js --network localhost",
+    "deploy:tictac": "hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:connectfour": "hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:chess": "hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:factories": "hardhat run v2/scripts/deploy-factories.js --config v2/hardhat.config.js --network localhost",
+    "deploy:all": "hardhat run v2/scripts/deploy-all-factory.js --config v2/hardhat.config.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "network": "arbitrum",
+  "chainId": "42161",
+  "timestamp": "2026-04-02T05:41:28.230Z",
+  "modules": {
+    "core": "0x82533c127dB9fda79e9dE2D53DA576bf8AA17d58",
+    "matches": "0x392BDF33438FfE60E31830E35e52f9F159AeB9f5",
+    "prizes": "0x10Ce922Ad8aeF6AC0eb0820b07021D3854363F51",
+    "escalation": "0xc6778C2E5D7ECC7C02cF4d867e351F0A2eb854df"
+  },
+  "artifactHashes": {
+    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
+    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
+    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
+    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
+  },
+  "codeHashes": {
+    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
+    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
+    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
+    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
+  }
+}
