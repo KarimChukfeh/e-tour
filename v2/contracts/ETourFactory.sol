@@ -205,11 +205,7 @@ contract ETourFactory is ReentrancyGuard {
             MODULE_ESCALATION
         );
 
-        // Track instance
-        instances.push(instance);
-        tierInstances[tierKey].push(instance);
-        activeTournaments.push(instance);
-        _activeTournamentIndex[instance] = activeTournaments.length; // store index+1
+        _trackNewInstance(instance, tierKey);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
 
@@ -354,6 +350,13 @@ contract ETourFactory is ReentrancyGuard {
         for (uint256 i = 0; i < tierKeys.length; i++) {
             configs[i] = tierRegistry[tierKeys[i]];
         }
+    }
+
+    function _trackNewInstance(address instance, bytes32 tierKey) internal {
+        instances.push(instance);
+        tierInstances[tierKey].push(instance);
+        activeTournaments.push(instance);
+        _activeTournamentIndex[instance] = activeTournaments.length; // store index+1
     }
 
     // ============ Internal: Game Type ============

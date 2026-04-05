@@ -1,7 +1,7 @@
 {
   "network": "arbitrum",
   "chainId": "42161",
-  "generatedAt": "2026-04-05T09:20:25.730Z",
+  "generatedAt": "2026-04-05T15:30:41.205Z",
   "playerProfile": {
     "PlayerProfileImpl": {
       "abi": [
@@ -2769,7 +2769,7 @@
       "playerProfileImpl": "0x08cD9eDf5ff6119AAB38624AdEa1b2A98B6f2728"
     },
     "ChessOnChainFactory": {
-      "address": "0x6DA319B2B7Aa0e0776Fa87f800430A0ce58AB3a5",
+      "address": "0xE5f8E1e145f029844DaA172848411Eb100Ea7F95",
       "abi": [
         {
           "inputs": [
@@ -3647,8 +3647,8 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x5836309C786dA68705538355CF414FcFBEd99b6e",
-      "playerProfileImpl": "0x51136B31BB2379b26Fb3Fe50299F801cdF72D6D1"
+      "playerRegistry": "0xcb7983f1c7190dfcBa160C4e50728004271a8dd3",
+      "playerProfileImpl": "0x3567CED96181B344D2D0AC9F5b268f0EFc078733"
     }
   },
   "instances": {
@@ -7113,7 +7113,7 @@
       ]
     },
     "ChessOnChainInstance": {
-      "address": "0x247e94807A466458940e2e0be463c171211407Fe",
+      "address": "0xbE0596D264Ac9B07c2B8C3b3b8a80eD76a426A6D",
       "abi": [
         {
           "inputs": [],

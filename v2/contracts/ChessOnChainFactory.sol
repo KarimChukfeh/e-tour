@@ -91,8 +91,7 @@ contract ChessOnChainFactory is ETourFactory {
             CHESS_RULES
         );
 
-        instances.push(instance);
-        tierInstances[tierKey].push(instance);
+        _trackNewInstance(instance, tierKey);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
 
