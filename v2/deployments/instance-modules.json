@@ -1,23 +1,26 @@
 {
-  "network": "arbitrum",
-  "chainId": "42161",
-  "timestamp": "2026-04-05T09:19:22.035Z",
+  "network": "localhost",
+  "chainId": "412346",
+  "timestamp": "2026-04-05T21:16:53.096Z",
   "modules": {
-    "core": "0xA3FD255d2AcA64A1cf2EADb86745b1fD57284cbC",
-    "matches": "0x90a75Be8Fb9f36665053a889C37E5E168C9385d2",
-    "prizes": "0x3DE67419cC996d41ae5B397E0c7065dD2bB49A07",
-    "escalation": "0xfBc63d14288055fD5990cAccf0a93C8Dc5482FEC"
+    "core": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "matches": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "matchesResolution": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "prizes": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "escalation": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE"
   },
   "artifactHashes": {
-    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
-    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
-    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
-    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
+    "core": "0xba477acc3e6f053c9c5269e4af5e6a75c0a283e1139f7903602d13b717192ebc",
+    "matches": "0x5d83e10836b15786fe1d1bcc0f524eb834e111f6c1a006f605c1d7f600598926",
+    "matchesResolution": "0x37d5d6c931ef988b70f690807c13e150c21446a5e50303cb792940394b4b2ad6",
+    "prizes": "0xa4a751b5817a8940eab43e0b09760e03fd397fc5239f907aa10c7a5539599073",
+    "escalation": "0x36474beac15f1c2387cbdf11589dfee96eaf7500443e245289388033692c889d"
   },
   "codeHashes": {
-    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
-    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
-    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
-    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
+    "core": "0xba477acc3e6f053c9c5269e4af5e6a75c0a283e1139f7903602d13b717192ebc",
+    "matches": "0x5d83e10836b15786fe1d1bcc0f524eb834e111f6c1a006f605c1d7f600598926",
+    "matchesResolution": "0x37d5d6c931ef988b70f690807c13e150c21446a5e50303cb792940394b4b2ad6",
+    "prizes": "0xa4a751b5817a8940eab43e0b09760e03fd397fc5239f907aa10c7a5539599073",
+    "escalation": "0x36474beac15f1c2387cbdf11589dfee96eaf7500443e245289388033692c889d"
   }
 }

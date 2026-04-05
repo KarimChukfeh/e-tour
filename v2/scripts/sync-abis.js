@@ -37,6 +37,13 @@ const MODULE_SPECS = [
         contractName: "ETourInstance_Matches",
     },
     {
+        label: "ETourInstance_MatchesResolution",
+        deploymentKey: "ETourInstance_MatchesResolution",
+        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "modules", "ETourInstance_MatchesResolution.sol", "ETourInstance_MatchesResolution.json"),
+        sourceName: "contracts/modules/ETourInstance_MatchesResolution.sol",
+        contractName: "ETourInstance_MatchesResolution",
+    },
+    {
         label: "ETourInstance_Prizes",
         deploymentKey: "ETourInstance_Prizes",
         artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "modules", "ETourInstance_Prizes.sol", "ETourInstance_Prizes.json"),

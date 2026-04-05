@@ -1,6 +1,6 @@
 {
-  "network": "arbitrum",
-  "generatedAt": "2026-04-05T15:30:41.205Z",
+  "network": "localhost",
+  "generatedAt": "2026-04-05T21:17:39.480Z",
   "contract": {
     "abi": [
       {

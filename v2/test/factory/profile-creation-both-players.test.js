@@ -9,16 +9,21 @@ import hre from "hardhat";
 const TICTAC_GAME_TYPE = 0;
 
 async function deployAll() {
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+    const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
-        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
     ]);
+
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
     const profileImpl = await ProfileImpl.deploy();
@@ -250,16 +255,21 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const entryFee = hre.ethers.parseEther("0.001");
 
         // Deploy WITHOUT authorizing factory
-        const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+        const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation] = await Promise.all([
             hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
                 .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
-            hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+            hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
                 .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
             hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
                 .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
             hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
                 .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
         ]);
+
+        const moduleMatches = await hre.ethers
+            .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+            .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+        await moduleMatches.waitForDeployment();
 
         const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
         const profileImpl = await ProfileImpl.deploy();

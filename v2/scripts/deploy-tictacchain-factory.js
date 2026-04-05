@@ -87,6 +87,7 @@ async function main() {
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
+            ETourInstance_MatchesResolution: modules.matchesResolution,
             ETourInstance_Prizes:     modules.prizes,
             ETourInstance_Escalation: modules.escalation,
         },
@@ -145,6 +146,8 @@ async function main() {
     console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
     console.log("  Artifacts:", deployFile);
     const n = network;
+    console.log(`npx hardhat verify --network ${n} ${modules.matchesResolution}`);
+    console.log(`npx hardhat verify --network ${n} ${modules.matches} "${modules.matchesResolution}"`);
     console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}"`);
 }
 

@@ -45,26 +45,30 @@ const TOURNAMENT_REASON = {
  * Returns { factory }.
  */
 async function deployFactory() {
-    const Core = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Core.sol:ETourInstance_Core"
-    );
-    const Matches = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches"
-    );
-    const Prizes = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes"
-    );
-    const Escalation = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation"
-    );
+    const [
+        moduleCore,
+        moduleMatchesResolution,
+        modulePrizes,
+        moduleEscalation,
+    ] = await Promise.all([
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+    ]);
 
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] =
-        await Promise.all([
-            Core.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Matches.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Prizes.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Escalation.deploy().then(c => c.waitForDeployment().then(() => c)),
-        ]);
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     // Deploy PlayerProfile implementation + PlayerRegistry
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");

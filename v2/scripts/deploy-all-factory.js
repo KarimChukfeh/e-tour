@@ -121,6 +121,7 @@ async function main() {
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
+            ETourInstance_MatchesResolution: modules.matchesResolution,
             ETourInstance_Prizes:     modules.prizes,
             ETourInstance_Escalation: modules.escalation,
             ChessRulesModule:         chessRulesAddr,
@@ -212,6 +213,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
@@ -234,6 +236,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
@@ -256,6 +259,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                     ChessRulesModule: chessRulesAddr,
@@ -285,6 +289,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
@@ -302,6 +307,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                 },
@@ -319,6 +325,7 @@ async function main() {
                 modules: {
                     ETourInstance_Core: modules.core,
                     ETourInstance_Matches: modules.matches,
+                    ETourInstance_MatchesResolution: modules.matchesResolution,
                     ETourInstance_Prizes: modules.prizes,
                     ETourInstance_Escalation: modules.escalation,
                     ChessRulesModule: chessRulesAddr,
@@ -345,6 +352,7 @@ async function main() {
     console.log("Instance Modules:");
     console.log("  ETourInstance_Core:      ", modules.core);
     console.log("  ETourInstance_Matches:   ", modules.matches);
+    console.log("  ETourInstance_MatchesResolution:", modules.matchesResolution);
     console.log("  ETourInstance_Prizes:    ", modules.prizes);
     console.log("  ETourInstance_Escalation:", modules.escalation);
     console.log("  ChessRulesModule:        ", chessRulesAddr);
@@ -370,7 +378,8 @@ async function main() {
     const n = network;
     console.log("Verification Commands:");
     console.log(`npx hardhat verify --network ${n} ${modules.core}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.matches}`);
+    console.log(`npx hardhat verify --network ${n} ${modules.matchesResolution}`);
+    console.log(`npx hardhat verify --network ${n} ${modules.matches} "${modules.matchesResolution}"`);
     console.log(`npx hardhat verify --network ${n} ${modules.prizes}`);
     console.log(`npx hardhat verify --network ${n} ${modules.escalation}`);
     console.log(`npx hardhat verify --network ${n} ${chessRulesAddr}`);

@@ -38,11 +38,11 @@ const TOURNAMENT_REASON = {
 };
 
 async function deployFactory() {
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+    const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
-        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
@@ -52,6 +52,11 @@ async function deployFactory() {
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
     ]);
+
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
     const profileImpl = await ProfileImpl.deploy();
