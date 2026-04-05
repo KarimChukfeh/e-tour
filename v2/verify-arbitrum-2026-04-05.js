@@ -64,19 +64,33 @@ function runCommand(command, args) {
 }
 
 function runVerify(address, args = []) {
+  let contract;
+  let constructorArgs = args;
+
+  if (!Array.isArray(args) && args && typeof args === "object") {
+    contract = args.contract;
+    constructorArgs = args.args || [];
+  }
+
   console.log("");
   console.log(`Verifying ${address}`);
 
-  const result = runCommand("npx", [
+  const verifyArgs = [
     "hardhat",
     "verify",
     "--config",
     CONFIG_PATH,
     "--network",
     "arbitrum",
-    address,
-    ...args,
-  ]);
+  ];
+
+  if (contract) {
+    verifyArgs.push("--contract", contract);
+  }
+
+  verifyArgs.push(address, ...constructorArgs);
+
+  const result = runCommand("npx", verifyArgs);
 
   if (result.output) {
     console.log(result.output);
@@ -142,26 +156,32 @@ function main() {
   runVerify(DEPLOYMENTS.ticTac.playerProfileImpl);
   runVerify(DEPLOYMENTS.ticTac.playerRegistry, [DEPLOYMENTS.ticTac.playerProfileImpl]);
   runVerify(DEPLOYMENTS.ticTac.instance);
-  runVerify(DEPLOYMENTS.ticTac.factory, [
-    SHARED_MODULES.core,
-    SHARED_MODULES.matches,
-    SHARED_MODULES.prizes,
-    SHARED_MODULES.escalation,
-    DEPLOYMENTS.ticTac.playerRegistry,
-  ]);
+  runVerify(DEPLOYMENTS.ticTac.factory, {
+    contract: "contracts/TicTacChainFactory.sol:TicTacChainFactory",
+    args: [
+      SHARED_MODULES.core,
+      SHARED_MODULES.matches,
+      SHARED_MODULES.prizes,
+      SHARED_MODULES.escalation,
+      DEPLOYMENTS.ticTac.playerRegistry,
+    ],
+  });
 
   console.log("");
   console.log("ConnectFour");
   runVerify(DEPLOYMENTS.connectFour.playerProfileImpl);
   runVerify(DEPLOYMENTS.connectFour.playerRegistry, [DEPLOYMENTS.connectFour.playerProfileImpl]);
   runVerify(DEPLOYMENTS.connectFour.instance);
-  runVerify(DEPLOYMENTS.connectFour.factory, [
-    SHARED_MODULES.core,
-    SHARED_MODULES.matches,
-    SHARED_MODULES.prizes,
-    SHARED_MODULES.escalation,
-    DEPLOYMENTS.connectFour.playerRegistry,
-  ]);
+  runVerify(DEPLOYMENTS.connectFour.factory, {
+    contract: "contracts/ConnectFourFactory.sol:ConnectFourFactory",
+    args: [
+      SHARED_MODULES.core,
+      SHARED_MODULES.matches,
+      SHARED_MODULES.prizes,
+      SHARED_MODULES.escalation,
+      DEPLOYMENTS.connectFour.playerRegistry,
+    ],
+  });
 
   console.log("");
   console.log("Chess");
@@ -169,14 +189,17 @@ function main() {
   runVerify(DEPLOYMENTS.chess.playerProfileImpl);
   runVerify(DEPLOYMENTS.chess.playerRegistry, [DEPLOYMENTS.chess.playerProfileImpl]);
   runVerify(DEPLOYMENTS.chess.instance);
-  runVerify(DEPLOYMENTS.chess.factory, [
-    SHARED_MODULES.core,
-    SHARED_MODULES.matches,
-    SHARED_MODULES.prizes,
-    SHARED_MODULES.escalation,
-    DEPLOYMENTS.chess.chessRules,
-    DEPLOYMENTS.chess.playerRegistry,
-  ]);
+  runVerify(DEPLOYMENTS.chess.factory, {
+    contract: "contracts/ChessOnChainFactory.sol:ChessOnChainFactory",
+    args: [
+      SHARED_MODULES.core,
+      SHARED_MODULES.matches,
+      SHARED_MODULES.prizes,
+      SHARED_MODULES.escalation,
+      DEPLOYMENTS.chess.chessRules,
+      DEPLOYMENTS.chess.playerRegistry,
+    ],
+  });
 
   console.log("");
   console.log("Verification run complete.");
