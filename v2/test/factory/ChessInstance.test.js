@@ -51,7 +51,7 @@ async function deployFactory() {
     await factory.waitForDeployment();
     await registry.authorizeFactory(await factory.getAddress());
 
-    return { factory };
+    return { factory, chessRules };
 }
 
 async function createInstance(factory, signer) {
@@ -79,11 +79,12 @@ describe("ChessOnChainFactory active tournament tracking", function () {
     this.timeout(60_000);
 
     let factory;
+    let chessRules;
     let creator;
 
     beforeEach(async function () {
         [creator] = await hre.ethers.getSigners();
-        ({ factory } = await deployFactory());
+        ({ factory, chessRules } = await deployFactory());
     });
 
     it("tracks newly created chess instances in activeTournaments", async function () {
@@ -92,6 +93,11 @@ describe("ChessOnChainFactory active tournament tracking", function () {
 
         expect(await factory.getActiveTournamentCount()).to.equal(1n);
         expect(await factory.activeTournaments(0)).to.equal(instanceAddress);
+    });
+
+    it("configures CHESS_RULES through the factory post-initialize hook", async function () {
+        const instance = await createInstance(factory, creator);
+        expect(await instance.CHESS_RULES()).to.equal(await chessRules.getAddress());
     });
 
     it("moves concluded chess instances from activeTournaments to pastTournaments", async function () {

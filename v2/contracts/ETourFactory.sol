@@ -194,16 +194,8 @@ contract ETourFactory is ReentrancyGuard {
         // Deploy EIP-1167 clone
         instance = _clone(implementation);
 
-        // Initialize the clone
-        ETourInstance_Base(instance).initialize(
-            instanceTierConfig,
-            address(this),
-            msg.sender,
-            MODULE_CORE,
-            MODULE_MATCHES,
-            MODULE_PRIZES,
-            MODULE_ESCALATION
-        );
+        _initializeInstance(instance, instanceTierConfig, msg.sender);
+        _postInitializeInstance(instance, instanceTierConfig, msg.sender);
 
         _trackNewInstance(instance, tierKey);
 
@@ -211,6 +203,32 @@ contract ETourFactory is ReentrancyGuard {
 
         // Auto-enroll the creator on their behalf
         ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
+    }
+
+    function _initializeInstance(
+        address instance,
+        ETourInstance_Base.TierConfig memory config,
+        address creator_
+    ) internal virtual {
+        ETourInstance_Base(instance).initialize(
+            config,
+            address(this),
+            creator_,
+            MODULE_CORE,
+            MODULE_MATCHES,
+            MODULE_PRIZES,
+            MODULE_ESCALATION
+        );
+    }
+
+    function _postInitializeInstance(
+        address instance,
+        ETourInstance_Base.TierConfig memory config,
+        address creator_
+    ) internal virtual {
+        instance;
+        config;
+        creator_;
     }
 
     // ============ Player Registration (called by instances on enrollment) ============

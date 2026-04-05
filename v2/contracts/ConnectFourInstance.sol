@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETourInstance.sol";
+import "./ETourGame.sol";
 
 /**
  * @title ConnectFourInstance
@@ -11,7 +11,7 @@ import "./ETourInstance.sol";
  * Win condition: 4 in a row (horizontal, vertical, diagonal, anti-diagonal)
  * Gravity: pieces drop to the lowest empty row in a column.
  */
-contract ConnectFourInstance is ETourInstance {
+contract ConnectFourInstance is ETourGame {
 
     error InvalidColumn();
     error ColumnFull();
@@ -74,97 +74,13 @@ contract ConnectFourInstance is ETourInstance {
             || _checkLine(board, piece, row, col, 1, -1); // anti-diagonal
     }
 
-    // ============ ETourInstance_Base Abstract Implementations ============
+    function _playerAssignmentMode() internal pure override returns (PlayerAssignmentMode) {
+        return PlayerAssignmentMode.RandomizePlayerOrder;
+    }
 
-    function _createMatchGame(uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
-        require(player1 != player2 && player1 != address(0) && player2 != address(0), "IP");
-
-        bytes32 matchId = _getMatchId(roundNumber, matchNumber);
+    function _initializeGameState(bytes32 matchId, bool) internal override {
         Match storage m = matches[matchId];
-
-        (m.player1, m.player2) = _drawRandomizedPlayerOrder(
-            ENTROPY_MATCH_CREATE,
-            keccak256(abi.encodePacked(roundNumber, matchNumber, player1, player2)),
-            player1,
-            player2
-        );
-        m.currentTurn = m.player1;
-        m.firstPlayer = m.player1;
-        m.status = MatchStatus.InProgress;
-        m.startTime = block.timestamp;
-        m.lastMoveTime = block.timestamp;
-        m.isDraw = false;
         m.packedBoard = 0;
-        m.moves = "";
-        m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-        m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-    }
-
-    function _resetMatchGame(bytes32 matchId) public override {
-        Match storage m = matches[matchId];
-        m.player1 = address(0); m.player2 = address(0); m.winner = address(0);
-        m.currentTurn = address(0); m.firstPlayer = address(0);
-        m.status = MatchStatus.NotStarted; m.isDraw = false;
-        m.packedBoard = 0; m.packedState = 0;
-        m.startTime = 0; m.lastMoveTime = 0;
-        m.player1TimeRemaining = 0; m.player2TimeRemaining = 0;
-        m.moves = "";
-        m.completionReason = MatchCompletionReason.NormalWin;
-        m.completionCategory = MatchCompletionCategory.None;
-    }
-
-    function _getMatchResult(bytes32 matchId) public view override returns (address winner, bool isDraw, MatchStatus status) {
-        Match storage m = matches[matchId];
-        return (m.winner, m.isDraw, m.status);
-    }
-
-    function _initializeMatchForPlay(bytes32 matchId) public override {
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.InProgress;
-        m.startTime = block.timestamp;
-        m.lastMoveTime = block.timestamp;
-        m.packedBoard = 0;
-        m.isDraw = false;
-        m.winner = address(0);
-        m.moves = "";
-
-        (m.player1, m.player2) = _drawRandomizedPlayerOrder(
-            ENTROPY_MATCH_RESTART,
-            keccak256(abi.encodePacked(matchId, m.player1, m.player2)),
-            m.player1,
-            m.player2
-        );
-        m.currentTurn = m.player1;
-        m.firstPlayer = m.player1;
-        m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-        m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-    }
-
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.Completed;
-        m.winner = isDraw ? address(0) : winner;
-        m.isDraw = isDraw;
-    }
-
-    function _completeMatchGameSpecific(uint8 roundNumber, uint8 matchNumber, address winner, bool isDraw) internal override {
-        bytes32 matchId = _getMatchId(roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.Completed;
-        m.winner = isDraw ? address(0) : winner;
-        m.isDraw = isDraw;
-    }
-
-    function _getTimeIncrement() public view override returns (uint256) {
-        return tierConfig.timeouts.timeIncrementPerMove;
-    }
-
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
-        Match storage m = matches[matchId];
-        if (m.status != MatchStatus.InProgress) return false;
-        uint256 elapsed = block.timestamp - m.lastMoveTime;
-        uint256 t = (m.currentTurn == m.player1) ? m.player1TimeRemaining : m.player2TimeRemaining;
-        return elapsed >= t;
     }
 
     // ============ Game Logic ============
@@ -184,18 +100,7 @@ contract ConnectFourInstance is ETourInstance {
         require(msg.sender == m.player1 || msg.sender == m.player2, "NP");
         require(msg.sender == m.currentTurn, "NT");
 
-        // Update time bank
-        uint256 elapsed = block.timestamp - m.lastMoveTime;
-        if (m.currentTurn == m.player1) {
-            m.player1TimeRemaining = (m.player1TimeRemaining > elapsed)
-                ? m.player1TimeRemaining - elapsed + _getTimeIncrement()
-                : _getTimeIncrement();
-        } else {
-            m.player2TimeRemaining = (m.player2TimeRemaining > elapsed)
-                ? m.player2TimeRemaining - elapsed + _getTimeIncrement()
-                : _getTimeIncrement();
-        }
-        m.lastMoveTime = block.timestamp;
+        _consumeTurnClock(m);
 
         // Find landing row (gravity)
         uint8 targetRow = ROWS; // sentinel: no empty cell found
@@ -214,11 +119,7 @@ contract ConnectFourInstance is ETourInstance {
         m.moves = string(abi.encodePacked(m.moves, column));
 
         // Clear any escalation state
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-        timeout.isStalled = false;
-        timeout.escalation1Start = 0;
-        timeout.escalation2Start = 0;
-        timeout.activeEscalation = EscalationLevel.None;
+        _clearMatchEscalation(matchId);
 
         emit MoveMade(matchId, msg.sender, column, targetRow);
 
@@ -231,7 +132,7 @@ contract ConnectFourInstance is ETourInstance {
             return;
         }
 
-        m.currentTurn = (m.currentTurn == m.player1) ? m.player2 : m.player1;
+        _switchTurn(m);
     }
 
     // ============ View ============

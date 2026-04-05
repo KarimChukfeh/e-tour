@@ -25,13 +25,9 @@ contract ETourInstance_Core is ETourInstance_Base {
 
     // ============ Abstract Stubs (required for deployment, never called directly) ============
 
-    function _createMatchGame(uint8, uint8, address, address) public override { revert("Module stub"); }
-    function _resetMatchGame(bytes32) public override { revert("Module stub"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module stub"); }
-    function _initializeMatchForPlay(bytes32) public override { revert("Module stub"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
+    function moduleCreateMatch(uint8, uint8, address, address) public override { revert("Module stub"); }
+    function moduleResetMatch(bytes32) public override { revert("Module stub"); }
+    function moduleInitializeMatchForPlay(bytes32) public override { revert("Module stub"); }
     function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Enrollment ============

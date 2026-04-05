@@ -292,6 +292,12 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
         it("factory tracks the new instance", async function () {
             expect(await factory.instances(0)).to.equal(await instance.getAddress());
         });
+
+        it("rejects direct external calls to lifecycle bridge functions", async function () {
+            await expect(
+                instance.moduleCreateMatch(0, 0, owner.address, p1.address)
+            ).to.be.revertedWith("Only self");
+        });
     });
 
     // ── Enrollment ───────────────────────────────────────────────────────────

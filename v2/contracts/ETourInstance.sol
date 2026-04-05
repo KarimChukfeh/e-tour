@@ -11,18 +11,9 @@ import "./ETourInstance_Base.sol";
  * implementation. Cheap clones point to this; each clone holds state for one
  * tournament instance.
  *
- * Game-specific contracts (TicTacInstance, ChessInstance, ConnectFourInstance)
- * inherit this and implement:
- * - _createMatchGame()
- * - _resetMatchGame()
- * - _getMatchResult()
- * - _initializeMatchForPlay()
- * - _completeMatchWithResult()
- * - _completeMatchGameSpecific()
- * - _getTimeIncrement()
- * - _hasCurrentPlayerTimedOut()
- * - makeMove() (game-specific)
- * - initializeRound() (delegates to MODULE_MATCHES)
+ * Concrete game contracts should typically inherit this through ETourGame,
+ * which supplies the shared lifecycle bridges and narrow internal hook surface
+ * used by game authors.
  *
  * PERMANENT RECORD: Once status == Concluded, all write functions revert
  * (enforced by the `notConcluded` modifier on ETourInstance_Base).
