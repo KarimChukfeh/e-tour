@@ -13,7 +13,8 @@ import "./interfaces/IPlayerRegistry.sol";
  * - Deploys new tournament instance clones via EIP-1167 minimal proxy pattern
  * - Manages demand-driven tier registry (tiers created on first use)
  * - Tracks all instance addresses per tier
- * - Accumulates owner share from child instances (sent at tournament conclusion)
+ * - Receives owner share from child instances at conclusion and forwards it to the owner
+ *   immediately when possible
  * - Delegates player profile management to PlayerRegistry
  *
  * Each game type deploys its own factory inheriting this contract.
@@ -28,8 +29,9 @@ import "./interfaces/IPlayerRegistry.sol";
  *
  * FEE MODEL (deferred):
  * All fee buckets (95% prize, 5% owner) stay on the instance until tournament
- * conclusion. The owner share is forwarded here at conclusion time via
- * receiveOwnerShare().
+ * conclusion. The owner share is sent here at conclusion time via
+ * receiveOwnerShare(), which immediately forwards it to the owner wallet when
+ * possible and falls back to ownerBalance only if that transfer fails.
  * This ensures 100% refund on EL1/EL2 (tournaments that never ran).
  */
 contract ETourFactory is ReentrancyGuard {
@@ -94,7 +96,9 @@ contract ETourFactory is ReentrancyGuard {
     address[] public pastTournaments;     // concluded instances
     mapping(address => uint256) private _activeTournamentIndex; // instance → index+1 (0 = not tracked)
 
-    // Owner share accumulation (received from instances at conclusion)
+    // Owner-share fallback bucket. Successful conclusion payouts are forwarded
+    // to owner immediately; this balance is only used for direct ETH receipts
+    // or if an owner-forwarding attempt fails.
     uint256 public ownerBalance;
 
     // ============ Events ============
@@ -251,10 +255,18 @@ contract ETourFactory is ReentrancyGuard {
     /**
      * @dev Receive owner share from an instance at tournament conclusion.
      * Called by instances unconditionally (even when ownerShare == 0 on EL1/EL2).
+     * Attempts to forward the ETH to owner immediately. If that send fails, the
+     * amount is retained in ownerBalance as a manual-withdraw fallback.
      * Also moves the instance from activeTournaments → pastTournaments.
      */
-    function receiveOwnerShare() external payable {
-        ownerBalance += msg.value;
+    function receiveOwnerShare() external payable nonReentrant {
+        if (msg.value > 0) {
+            (bool ok, ) = payable(owner).call{value: msg.value}("");
+            if (!ok) {
+                ownerBalance += msg.value;
+            }
+        }
+
         emit OwnerShareReceived(msg.sender, msg.value);
 
         // Swap-and-pop: move msg.sender from activeTournaments → pastTournaments
@@ -468,7 +480,8 @@ contract ETourFactory is ReentrancyGuard {
     // ============ Receive ============
 
     receive() external payable {
-        // Accept ETH sent directly (e.g. rescue fallback)
+        // Accept ETH sent directly (e.g. rescue fallback) into the manual
+        // withdrawal bucket.
         ownerBalance += msg.value;
     }
 }

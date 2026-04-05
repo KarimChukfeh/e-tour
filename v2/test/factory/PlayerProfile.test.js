@@ -564,12 +564,11 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         expect(netGain).to.equal(expectedPrize);
     });
 
-    it("owner receives the deferred 5% share on EL2", async function () {
-        const [p1, , claimer] = signers;
+    it("owner wallet receives the 5% share on EL2", async function () {
+        const [owner, p1, , claimer] = signers;
         const entryFee = hre.ethers.parseEther("0.01");
         const expectedOwnerShare = entryFee * OWNER_SHARE_BPS / BASIS_POINTS;
-
-        const ownerBefore = await factory.ownerBalance();
+        const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
         const to = shortTimeouts();
         const tx = await factory.connect(p1).createInstance(
@@ -587,7 +586,9 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         await advanceTime(121 + 121);
         await instance.connect(claimer).claimAbandonedPool();
 
-        expect(await factory.ownerBalance() - ownerBefore).to.equal(expectedOwnerShare);
+        const ownerAfter = await hre.ethers.provider.getBalance(owner.address);
+        expect(ownerAfter - ownerBefore).to.equal(expectedOwnerShare);
+        expect(await factory.ownerBalance()).to.equal(0n);
     });
 
     it("non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result", async function () {
@@ -647,11 +648,10 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         ({ factory } = await deployAll());
     });
 
-    it("owner receives exactly 5% × 2 players at conclusion", async function () {
-        const [p1, p2] = signers;
+    it("owner wallet receives exactly 5% × 2 players at conclusion", async function () {
+        const [owner, p1, p2] = signers;
         const entryFee = hre.ethers.parseEther("0.004");
-
-        const ownerBefore = await factory.ownerBalance();
+        const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
         const instance = await createInstance(factory, 2, entryFee, p1);
         await instance.connect(p2).enrollInTournament({ value: entryFee });
@@ -659,9 +659,10 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         // Play and win
         await playAndWin(instance, 0, 0, p1, p2);
 
-        const ownerAfter = await factory.ownerBalance();
+        const ownerAfter = await hre.ethers.provider.getBalance(owner.address);
         const expectedOwnerCut = entryFee * 2n * OWNER_SHARE_BPS / BASIS_POINTS;
         expect(ownerAfter - ownerBefore).to.equal(expectedOwnerCut);
+        expect(await factory.ownerBalance()).to.equal(0n);
     });
 
     it("instance balance is 0 after conclusion", async function () {

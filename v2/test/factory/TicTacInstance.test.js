@@ -545,15 +545,21 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
     // ── Fee Accounting ────────────────────────────────────────────────────────
 
     describe("Fee Accounting on Factory", function () {
+        let ownerWalletBefore;
+        let ownerWalletAfter;
+
         before(async function () {
             [owner, p1, p2, p3, p4] = await hre.ethers.getSigners();
             ({ factory } = await deployFactory());
-            // owner auto-enrolled; enroll 3 more → 4 total
-            instance = await createInstance(factory, PLAYER_COUNT, ENTRY_FEE, owner);
-            await enrollAll(instance, [p1, p2, p3], ENTRY_FEE);
+            ownerWalletBefore = await hre.ethers.provider.getBalance(owner.address);
+
+            // Keep the factory owner out of the tournament so wallet balance
+            // changes reflect only the automatic owner payout.
+            instance = await createInstance(factory, PLAYER_COUNT, ENTRY_FEE, p1);
+            await enrollAll(instance, [p2, p3, p4], ENTRY_FEE);
 
             // Play through both rounds to trigger conclusion + deferred fee forwarding
-            const allPlayers = [owner, p1, p2, p3];
+            const allPlayers = [p1, p2, p3, p4];
             for (let matchNum = 0; matchNum < 2; matchNum++) {
                 const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNum]);
                 const m = await instance.matches(matchId);
@@ -566,14 +572,18 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             const fP1 = allPlayers.find(s => s.address === finalMatch.player1);
             const fP2 = allPlayers.find(s => s.address === finalMatch.player2);
             await playAndWin(instance, 1, 0, fP1, fP2);
+
+            ownerWalletAfter = await hre.ethers.provider.getBalance(owner.address);
         });
 
-        it("factory received correct owner balance (5% × 4 players) at conclusion", async function () {
-            // Deferred: owner share is forwarded at conclusion, not enrollment.
-            // This test runs after the 4-player tournament has fully concluded.
+        it("owner wallet received the correct 5% share at conclusion", async function () {
             const totalFees = ENTRY_FEE * BigInt(PLAYER_COUNT);
             const expectedOwnerBalance = (totalFees * OWNER_SHARE_BPS) / BASIS_POINTS;
-            expect(await factory.ownerBalance()).to.equal(expectedOwnerBalance);
+            expect(ownerWalletAfter - ownerWalletBefore).to.equal(expectedOwnerBalance);
+        });
+
+        it("factory ownerBalance stays at 0 after successful owner payout", async function () {
+            expect(await factory.ownerBalance()).to.equal(0n);
         });
 
         it("instance balance is 0 after prize and owner-share settlement", async function () {
@@ -582,17 +592,17 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             expect(balance).to.equal(0n);
         });
 
-        it("owner can withdraw their balance", async function () {
-            const ownerBal = await factory.ownerBalance();
-            expect(ownerBal).to.be.gt(0n);
-            await expect(factory.connect(owner).withdrawOwnerBalance()).to.not.be.reverted;
-            expect(await factory.ownerBalance()).to.equal(0n);
-        });
+        it("falls back to ownerBalance when the owner address rejects ETH", async function () {
+            const rejectingOwner = await factory.MODULE_CORE();
+            await factory.connect(owner).transferOwnership(rejectingOwner);
 
-        it("non-owner cannot withdraw owner balance", async function () {
-            await expect(
-                factory.connect(p1).withdrawOwnerBalance()
-            ).to.be.reverted;
+            const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
+            await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+
+            const expectedOwnerBalance = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
+            await playAndWin(inst, 0, 0, p1, p2);
+
+            expect(await factory.ownerBalance()).to.equal(expectedOwnerBalance);
         });
     });
 
@@ -1568,11 +1578,12 @@ describe("TicTacInstance — conclusion settlement", function () {
         expect(await factory.ownerBalance()).to.equal(0n);
     });
 
-    it("forwards the deferred 5% owner share at conclusion", async function () {
-        const [p1, p2] = signers;
+    it("pays the deferred 5% owner share to the owner wallet at conclusion", async function () {
+        const [owner, p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
         await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
         const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
+        const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const matchData = await inst.matches(matchId);
@@ -1589,7 +1600,10 @@ describe("TicTacInstance — conclusion settlement", function () {
         expect(info.totalEntryFeesAccrued).to.equal(ENTRY_FEE * 2n);
         expect(info.prizeAwarded).to.equal(expectedPrize);
         expect(info.prizeRecipient).to.equal(first.address);
-        expect(await factory.ownerBalance()).to.equal(expectedOwner);
+
+        const ownerAfter = await hre.ethers.provider.getBalance(owner.address);
+        expect(ownerAfter - ownerBefore).to.equal(expectedOwner);
+        expect(await factory.ownerBalance()).to.equal(0n);
     });
 
     it("extra forced ETH remains untouched after conclusion", async function () {
@@ -1619,12 +1633,13 @@ describe("TicTacInstance — conclusion settlement", function () {
         expect(balanceAfter).to.equal(extraEth);
     });
 
-    it("EL2 gives the claimant the 95% prize pool and forwards 5% to the owner", async function () {
-        const [creator, outsider] = await hre.ethers.getSigners();
+    it("EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet", async function () {
+        const [owner, creator, outsider] = await hre.ethers.getSigners();
         const { factory: el2Factory } = await deployFactory();
         const inst = await createInstance(el2Factory, 2, ENTRY_FEE, creator, shortTimeouts());
         const expectedPrize = (ENTRY_FEE * PARTICIPANTS_SHARE_BPS) / BASIS_POINTS;
         const expectedOwner = (ENTRY_FEE * OWNER_SHARE_BPS) / BASIS_POINTS;
+        const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
         await advanceTime(10 * 60);
 
@@ -1635,7 +1650,10 @@ describe("TicTacInstance — conclusion settlement", function () {
         expect(t.winner).to.equal(outsider.address);
         expect(t.completionReason).to.equal(TOURNAMENT_REASON.EL2); // EL2: AbandonedTournamentClaimed
         expect(await inst.playerPrizes(outsider.address)).to.equal(expectedPrize);
-        expect(await el2Factory.ownerBalance()).to.equal(expectedOwner);
+
+        const ownerAfter = await hre.ethers.provider.getBalance(owner.address);
+        expect(ownerAfter - ownerBefore).to.equal(expectedOwner);
+        expect(await el2Factory.ownerBalance()).to.equal(0n);
 
         const info = await inst.getInstanceInfo();
         expect(info.totalEntryFeesAccrued).to.equal(ENTRY_FEE);

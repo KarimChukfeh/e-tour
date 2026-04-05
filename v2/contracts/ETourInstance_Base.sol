@@ -165,7 +165,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint8 enrolledCount;
         uint256 totalEntryFeesAccrued; // Gross entry fees collected for this instance
         uint256 prizePool;      // 95% of entry fees — distributed to winner(s)
-        uint256 ownerAccrued;   // 5% of entry fees — sent to factory at conclusion
+        uint256 ownerAccrued;   // 5% of entry fees — sent to factory at conclusion for immediate owner payout
         uint256 protocolAccrued; // Deprecated raffle bucket, kept only for layout compatibility
         uint256 startTime;
         uint256 createdAt;
@@ -764,7 +764,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         // ── Step 3: Send deferred owner share (5%) to factory ─────────────────
         // Always call receiveOwnerShare() even if ownerShare == 0 (EL1/EL2).
-        // The factory uses this call to move the instance from activeTournaments → pastTournaments.
+        // The factory uses this call to move the instance from activeTournaments
+        // → pastTournaments and immediately forwards the owner share when possible.
         uint256 ownerShare = tournament.ownerAccrued;
         {
             // Best-effort — failure leaves funds on instance for rescue

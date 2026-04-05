@@ -1,23 +1,23 @@
 {
   "network": "arbitrum",
   "chainId": "42161",
-  "timestamp": "2026-04-02T05:41:28.230Z",
+  "timestamp": "2026-04-05T09:19:22.035Z",
   "modules": {
-    "core": "0x82533c127dB9fda79e9dE2D53DA576bf8AA17d58",
-    "matches": "0x392BDF33438FfE60E31830E35e52f9F159AeB9f5",
-    "prizes": "0x10Ce922Ad8aeF6AC0eb0820b07021D3854363F51",
-    "escalation": "0xc6778C2E5D7ECC7C02cF4d867e351F0A2eb854df"
+    "core": "0xA3FD255d2AcA64A1cf2EADb86745b1fD57284cbC",
+    "matches": "0x90a75Be8Fb9f36665053a889C37E5E168C9385d2",
+    "prizes": "0x3DE67419cC996d41ae5B397E0c7065dD2bB49A07",
+    "escalation": "0xfBc63d14288055fD5990cAccf0a93C8Dc5482FEC"
   },
   "artifactHashes": {
-    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
-    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
-    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
-    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
+    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
+    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
+    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
+    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
   },
   "codeHashes": {
-    "core": "0x2f894b8aae9144ca22d6a363edfff5a6d39da36016e75b7d48e297c0aba59c62",
-    "matches": "0x0bc8df3ef66bfa0d5c332b02d6848b59eb19e8a992b4cb603aea2c8ff7ef7273",
-    "prizes": "0x1ae67fdf7ad61b9d3611871163b13dc151a796110de965a47f85112d6e271628",
-    "escalation": "0xce670c38ce40e889f64c46d5a7f231de1fb98f2fe0ac994e4684aafbf31df862"
+    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
+    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
+    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
+    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
   }
 }

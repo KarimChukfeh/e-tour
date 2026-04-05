@@ -1,7 +1,7 @@
 {
   "network": "arbitrum",
   "chainId": "42161",
-  "generatedAt": "2026-04-02T05:42:43.899Z",
+  "generatedAt": "2026-04-05T09:20:25.730Z",
   "playerProfile": {
     "PlayerProfileImpl": {
       "abi": [
@@ -1041,7 +1041,7 @@
   },
   "factories": {
     "TicTacChainFactory": {
-      "address": "0xf5443410Ec5c540619855111692B603c374B07e2",
+      "address": "0xbB37b8A1580abb5A4ac45D483b11Ddc22976b10b",
       "abi": [
         {
           "inputs": [
@@ -1901,11 +1901,11 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x717A2d2A71eCb8D1f53dC56Ef4Bf446Aa541D2F0",
-      "playerProfileImpl": "0xB6C56D29688baD605592AF67f25eaE57c1CA3733"
+      "playerRegistry": "0x0DfACcA93A63d6C2392c325b5323B01FAc600796",
+      "playerProfileImpl": "0xA527D18D65e9857ac9A92F80534ed85752BA2931"
     },
     "ConnectFourFactory": {
-      "address": "0xe7Bf30FA457cA5Ff22F1b21E48D20395556427a3",
+      "address": "0x44De941fBe070F922259c7D08B082259377539bB",
       "abi": [
         {
           "inputs": [
@@ -2765,11 +2765,11 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x9C969A64703B2aF4026bfF9D71F86343768EE7d4",
-      "playerProfileImpl": "0x46f7B004577850fE0a0A52a857532C6C11746519"
+      "playerRegistry": "0xF4Aaa91aFB1A41a92a7A82A704D739C54197a5a2",
+      "playerProfileImpl": "0x08cD9eDf5ff6119AAB38624AdEa1b2A98B6f2728"
     },
     "ChessOnChainFactory": {
-      "address": "0x52bec690e6AD2ea4277cBe2F6293A094a049dcA2",
+      "address": "0x6DA319B2B7Aa0e0776Fa87f800430A0ce58AB3a5",
       "abi": [
         {
           "inputs": [
@@ -3647,13 +3647,13 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0xe8e4752610A94b62bD94De0030C963d6836a75CA",
-      "playerProfileImpl": "0x9972297A029b5e7c0b16cA1a1a04Ec9Be4654Cbf"
+      "playerRegistry": "0x5836309C786dA68705538355CF414FcFBEd99b6e",
+      "playerProfileImpl": "0x51136B31BB2379b26Fb3Fe50299F801cdF72D6D1"
     }
   },
   "instances": {
     "TicTacChainInstance": {
-      "address": "0x0d221c77A1af507B1Fd5eCEaeB8e0a98777BA3aF",
+      "address": "0xdF6DCF15d292441aE080437Fd05f24af1b29C34F",
       "abi": [
         {
           "inputs": [],
@@ -5375,7 +5375,7 @@
       ]
     },
     "ConnectFourInstance": {
-      "address": "0x5c69762E8D8bd244129a7C369CD470e3Be8D02E7",
+      "address": "0xc6f1924ADBD504518d28629A3f6233a898aE7F5a",
       "abi": [
         {
           "inputs": [],
@@ -7113,7 +7113,7 @@
       ]
     },
     "ChessOnChainInstance": {
-      "address": "0xDA40A06A880fB972751989031C3425918b9f93DC",
+      "address": "0x247e94807A466458940e2e0be463c171211407Fe",
       "abi": [
         {
           "inputs": [],
