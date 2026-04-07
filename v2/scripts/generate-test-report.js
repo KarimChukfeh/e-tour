@@ -93,6 +93,12 @@ function lowerFirst(text) {
 
 function humanizeCodeTerms(text) {
     const replacements = [
+        [/ChessFactory/g, "Chess factory"],
+        [/ConnectFourFactory/g, "Connect Four factory"],
+        [/TicTacToeFactory/g, "Tic-Tac-Toe factory"],
+        [/PlayerProfile/g, "player profile"],
+        [/PlayerRegistry/g, "player registry"],
+        [/CHESS_RULES/g, "the chess-rules configuration"],
         [/activeTournaments/g, "the active tournament list"],
         [/pastTournaments/g, "the completed tournament list"],
         [/factory\.players\(\)/g, "the factory's player-profile mapping"],
