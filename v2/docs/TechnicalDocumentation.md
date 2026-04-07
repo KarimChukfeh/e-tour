@@ -1,14 +1,38 @@
-# ETour Protocol
-## Understanding ETour's fully on-chain architecture.
+## Introduction
 
-This document explains:
+This is a technical document that explains how ETour delivers on: 
 
-- how each ETour V2 module works and what it does,
-- how factories, instance implementations, and modules fit together,
-- how tournament state is stored and mutated,
-- how match progression, escalations, and payouts work,
-- why the contracts are split the way they are,
-- how to build new games using ETour protocol.
+- Fully on-chain tournament infrastructure
+- ETH-only with no special tokens
+- Self-sustaining without need for VCs
+- Grief-proof with garunteed fair resolution
+
+If you are looking to validate ETour's claims, question its assumptions, or just understand how it really works under the hood, then you're in the right place.
+
+If you are a developer who simply wants to build on ETour rather than study its internal design, then you can safely skip ahead to the final section.
+
+## What to Expect
+
+In this document we'll go over:
+
+- How ETour modules work and what they do,
+- How factories, instance implementations, and modules fit together,
+- How tournament state is stored and mutated,
+- How match progression, escalations, and payouts work,
+- Why the contracts are split the way they are,
+- How to build new games using ETour protocol.
+
+## Key Terms
+
+Before going deeper, it helps to define the terms ETour V2 uses repeatedly.
+
+- Game Contract: the concrete implementation for a specific game such as Tic-Tac-Toe, Connect Four, or Chess.
+- Module: a shared infrastructure contract that the clone executes through `delegatecall` so it can reuse logic without copying code.
+- Tier: a reusable configuration bucket defined by player count, entry fee, and timeout settings.
+- Factory: a contract that creates new tournament instances for one game type and tracks them over time.
+- Implementation: the deployed logic contract that clone instances point to.
+- Clone: a minimal proxy for one specific tournament; this is where the tournament's permanent state lives.
+- Instance: in V2, this usually means the tournament clone itself, not the implementation contract.
 
 ## Core Principles
 
@@ -20,32 +44,6 @@ ETour is optimized around five constraints:
 4. Deployable contracts must remain under the EVM contract-size limit.
 5. The developer-facing extension surface should be explicit and stable.
 
-The resulting system is a hybrid of:
-
-- EIP-1167 minimal proxies for cheap per-tournament deployments,
-- shared delegatecall modules for infra logic reuse,
-- thin game-specific implementation contracts for move validation and state updates.
-
-## High-Level Architecture
-
-```mermaid
-flowchart TD
-    A["Game Factory"] --> B["Game Implementation<br/>EIP-1167 clone target"]
-    A --> C["PlayerRegistry"]
-    A --> D["ETourInstance_Core"]
-    A --> E["ETourInstance_Matches"]
-    E --> F["ETourInstance_MatchesResolution"]
-    A --> G["ETourInstance_Prizes"]
-    A --> H["ETourInstance_Escalation"]
-
-    I["Tournament Clone"] --> A
-    I --> D
-    I --> E
-    I --> G
-    I --> H
-    I --> C
-```
-
 The important design choice is this:
 
 - the clone owns all tournament state,
@@ -53,36 +51,14 @@ The important design choice is this:
 - the modules execute against clone storage through `delegatecall`,
 - the game contract supplies only the game-specific hooks and `makeMove(...)`.
 
-## Key Terms
+The resulting system is a hybrid of:
 
-Before going deeper, it helps to define the terms ETour V2 uses repeatedly.
+- EIP-1167 minimal proxies for cheap per-tournament deployments,
+- shared delegatecall modules for infra logic reuse,
+- thin game-specific implementation contracts for move validation and state updates.
 
-- factory: a contract that creates new tournament instances for one game type and tracks them over time.
-- implementation: the deployed logic contract that clone instances point to.
-- clone: a minimal proxy for one specific tournament; this is where the tournament's permanent state lives.
-- module: a shared infrastructure contract that the clone executes through `delegatecall` so it can reuse logic without copying code.
-- game contract: the concrete implementation for a specific game such as Tic-Tac-Toe, Connect Four, or Chess.
-- tier: a reusable configuration bucket defined by player count, entry fee, and timeout settings.
-- instance: in V2, this usually means the tournament clone itself, not the implementation contract.
 
-## Main Contracts
-
-### Factory Layer
-
-The factory layer is the deployment and orchestration layer for a game family.
-
-A factory contract does not hold match state for individual tournaments. Instead, it:
-
-- creates new tournament clones,
-- validates creation parameters,
-- tracks active and past tournaments,
-- stores tier metadata,
-- connects tournaments to the shared player-profile system.
-
-- [`ETourFactory.sol`](../contracts/ETourFactory.sol): common factory behavior for all V2 games.
-- [`TicTacToeFactory.sol`](../contracts/TicTacToeFactory.sol): Tic-Tac-Toe factory.
-- [`ConnectFourFactory.sol`](../contracts/ConnectFourFactory.sol): Connect Four factory.
-- [`ChessFactory.sol`](../contracts/ChessFactory.sol): Chess factory with post-init chess rules wiring.
+## Contracts
 
 ### Instance Layer
 
@@ -94,7 +70,7 @@ These contracts define the logic that tournament clones run. One implementation 
 - [`ETourInstance.sol`](../contracts/ETourInstance.sol): instance-level delegating entrypoints.
 - [`ETourGame.sol`](../contracts/ETourGame.sol): shared game template for concrete games.
 
-### Shared Modules
+### ETour Modules
 
 The shared module layer is the reusable infrastructure layer.
 
@@ -115,6 +91,23 @@ They do not reimplement the whole tournament protocol. Their job is to define ga
 - [`TicTacToe.sol`](../contracts/TicTacToe.sol)
 - [`ConnectFour.sol`](../contracts/ConnectFour.sol)
 - [`Chess.sol`](../contracts/Chess.sol)
+
+### Factory Layer
+
+The factory layer is the deployment and orchestration layer for a game family.
+
+A factory contract does not hold match state for individual tournaments. Instead, it:
+
+- creates new tournament clones,
+- validates creation parameters,
+- tracks active and past tournaments,
+- stores tier metadata,
+- connects tournaments to the shared player-profile system.
+
+- [`ETourFactory.sol`](../contracts/ETourFactory.sol): common factory behavior for all V2 games.
+- [`TicTacToeFactory.sol`](../contracts/TicTacToeFactory.sol): Tic-Tac-Toe factory.
+- [`ConnectFourFactory.sol`](../contracts/ConnectFourFactory.sol): Connect Four factory.
+- [`ChessFactory.sol`](../contracts/ChessFactory.sol): Chess factory with post-init chess rules wiring.
 
 ### Supporting Contracts
 
@@ -758,7 +751,7 @@ There is one important extension to that rule:
 
 - normal enrollees are registered through the factory with their real `entryFee`,
 - EL2 abandoned-pool claimants are explicitly registered with `entryFee = 0` before conclusion,
-- ML3 replacement players are explicitly registered with `entryFee = 0` when they are added to the tournament by replacement.
+- ML3 replacement players are match-level replacements, so they can receive profile match records without automatically receiving a tournament enrollment record.
 
 ### Conclusion-Time Result Push
 
@@ -776,7 +769,7 @@ That means:
 
 - enrolled players get both match-level and tournament-level profile data,
 - EL2 claimants also get a tournament-level profile record because the contract explicitly registers them before conclusion,
-- ML3 replacement outsiders also get a tournament-level enrollment/result record for that instance because replacement now routes them through the same profile-enrollment path used by other edge-case entrants.
+- ML3 replacement outsiders can still get match records through `recordMatchOutcome(...)`, but if they were never enrolled into the tournament profile path, they do not get a normal enrollment/result record for that instance.
 
 The profile system is therefore a permanent-record sink, not the source of truth for tournament state.
 
