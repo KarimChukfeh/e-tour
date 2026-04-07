@@ -35,6 +35,7 @@ interface IPlayerProfile {
         uint64  recordedAt;
         uint8   outcome;
         uint8   category;
+        uint8   resolutionReason;
     }
 
     struct PlayerStats {
@@ -67,7 +68,8 @@ interface IPlayerProfile {
         uint8 roundNumber,
         uint8 matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     ) external;
 
     function getStats() external view returns (PlayerStats memory);

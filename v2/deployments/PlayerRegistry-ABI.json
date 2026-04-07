@@ -1,9 +1,9 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-04-07T03:41:28.087Z",
+  "deployedAt": "2026-04-07T07:32:33.800Z",
   "contract": {
-    "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "address": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
     "abi": [
       {
         "inputs": [
@@ -125,6 +125,12 @@
             "indexed": false,
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],
@@ -376,6 +382,11 @@
           {
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],

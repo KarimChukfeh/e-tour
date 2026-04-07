@@ -758,7 +758,7 @@ There is one important extension to that rule:
 
 - normal enrollees are registered through the factory with their real `entryFee`,
 - EL2 abandoned-pool claimants are explicitly registered with `entryFee = 0` before conclusion,
-- ML3 replacement players are match-level replacements, so they can receive profile match records without automatically receiving a tournament enrollment record.
+- ML3 replacement players are explicitly registered with `entryFee = 0` when they are added to the tournament by replacement.
 
 ### Conclusion-Time Result Push
 
@@ -776,7 +776,7 @@ That means:
 
 - enrolled players get both match-level and tournament-level profile data,
 - EL2 claimants also get a tournament-level profile record because the contract explicitly registers them before conclusion,
-- ML3 replacement outsiders can still get match records through `recordMatchOutcome(...)`, but if they were never enrolled into the tournament profile path, they do not get a normal enrollment/result record for that instance.
+- ML3 replacement outsiders also get a tournament-level enrollment/result record for that instance because replacement now routes them through the same profile-enrollment path used by other edge-case entrants.
 
 The profile system is therefore a permanent-record sink, not the source of truth for tournament state.
 

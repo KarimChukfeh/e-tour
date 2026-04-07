@@ -182,6 +182,7 @@ contract ETourInstance_Escalation is ETourTournamentBase {
             enrolledPlayers.push(replacementPlayer);
             isEnrolled[replacementPlayer] = true;
             tournament.enrolledCount++;
+            _registerPlayerProfileEnrollment(replacementPlayer, 0);
         }
 
         if (roundNumber < tournament.actualTotalRounds - 1) {

@@ -1313,10 +1313,13 @@ describe("TicTacToe — ML2 escalation (forceEliminateStalledMatch)", function (
 
         expect(finalistMatchRecord.outcome).to.equal(6n); // ForceEliminationVictory
         expect(finalistMatchRecord.category).to.equal(1n); // Victory
+        expect(finalistMatchRecord.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
         expect(stalledRecordA.outcome).to.equal(7n); // ForceEliminationDefeat
         expect(stalledRecordA.category).to.equal(2n); // Defeat
+        expect(stalledRecordA.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
         expect(stalledRecordB.outcome).to.equal(7n);
         expect(stalledRecordB.category).to.equal(2n);
+        expect(stalledRecordB.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
 
         const prizeDistribution = await freshInstance.getPrizeDistribution();
         const totalDistributed = prizeDistribution.amounts.reduce((sum, amount) => sum + amount, 0n);

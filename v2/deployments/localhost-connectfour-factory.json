@@ -2,23 +2,23 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-04-07T03:41:28.087Z",
-  "blockNumber": 159,
+  "timestamp": "2026-04-07T07:32:33.800Z",
+  "blockNumber": 14024,
   "modules": {
-    "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "ETourInstance_Matches": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "ETourInstance_MatchesResolution": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "ETourInstance_Prizes": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "ETourInstance_Escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "ETourInstance_Core": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+    "ETourInstance_Matches": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "ETourInstance_MatchesResolution": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+    "ETourInstance_Prizes": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+    "ETourInstance_Escalation": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB"
   },
   "playerProfile": {
-    "PlayerProfileImpl": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-    "PlayerRegistry": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+    "PlayerProfileImpl": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
+    "PlayerRegistry": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8"
   },
   "factory": {
-    "ConnectFourFactory": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+    "ConnectFourFactory": "0x95401dc811bb5740090279Ba06cfA8fcF6113778"
   },
   "implementation": {
-    "ConnectFour": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321"
+    "ConnectFour": "0x3fA4E6e03Fbd434A577387924aF39efd3b4b50F2"
   }
 }

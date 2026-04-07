@@ -1,9 +1,9 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-04-07T03:41:28.087Z",
+  "deployedAt": "2026-04-07T07:32:33.800Z",
   "contract": {
-    "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
     "abi": [
       {
         "inputs": [],
@@ -76,6 +76,12 @@
             "indexed": false,
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],
@@ -335,6 +341,11 @@
                 "internalType": "uint8",
                 "name": "category",
                 "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "resolutionReason",
+                "type": "uint8"
               }
             ],
             "internalType": "struct IPlayerProfile.PlayerMatchRecord",
@@ -408,6 +419,11 @@
               {
                 "internalType": "uint8",
                 "name": "category",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "resolutionReason",
                 "type": "uint8"
               }
             ],
@@ -538,6 +554,11 @@
           {
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],

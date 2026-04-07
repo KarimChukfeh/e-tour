@@ -41,6 +41,8 @@ const TOURNAMENT_REASON = {
     R2: 7,
 };
 
+const MATCH_REASON = TOURNAMENT_REASON;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Deploy helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -884,8 +886,10 @@ describe("Profile push — stats updated automatically at conclusion", function 
 
         expect(winnerMatchRecord.outcome).to.equal(1n); // NormalVictory
         expect(winnerMatchRecord.category).to.equal(1n); // Victory
+        expect(winnerMatchRecord.resolutionReason).to.equal(BigInt(MATCH_REASON.R0));
         expect(loserMatchRecord.outcome).to.equal(2n); // NormalDefeat
         expect(loserMatchRecord.category).to.equal(2n); // Defeat
+        expect(loserMatchRecord.resolutionReason).to.equal(BigInt(MATCH_REASON.R0));
     });
 
     it("loser profile: concluded=true, won=false on enrollment record", async function () {

@@ -52,7 +52,8 @@ contract PlayerRegistry is IPlayerRegistry {
         uint8 roundNumber,
         uint8 matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     );
 
     // ============ State ============
@@ -169,7 +170,8 @@ contract PlayerRegistry is IPlayerRegistry {
         uint8 roundNumber,
         uint8 matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     ) external override {
         (bool authorized, uint8 gameType) = _getAuthorizedInstanceGameType(msg.sender);
         if (!authorized) return;
@@ -186,7 +188,8 @@ contract PlayerRegistry is IPlayerRegistry {
             roundNumber,
             matchNumber,
             outcome,
-            category
+            category,
+            resolutionReason
         ) {
             emit MatchOutcomeRecorded(
                 player,
@@ -195,7 +198,8 @@ contract PlayerRegistry is IPlayerRegistry {
                 roundNumber,
                 matchNumber,
                 outcome,
-                category
+                category,
+                resolutionReason
             );
         } catch { }
     }

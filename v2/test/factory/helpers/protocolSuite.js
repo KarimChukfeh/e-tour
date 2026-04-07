@@ -150,7 +150,8 @@ const CONNECT_FOUR_DRAW_COLUMNS = [
  *       roundNumber?: bigint,
  *       matchNumber?: bigint,
  *       outcome?: bigint,
- *       category?: bigint
+ *       category?: bigint,
+ *       resolutionReason?: bigint
  *     }>
  *   }
  * }} ExpectedPlayerState
@@ -572,12 +573,15 @@ function assertPlayerSnapshot(snapshot, address, expected) {
                 if (recordExpectation.matchNumber !== undefined) expect(record.matchNumber).to.equal(recordExpectation.matchNumber);
                 if (recordExpectation.outcome !== undefined) expect(record.outcome).to.equal(recordExpectation.outcome);
                 if (recordExpectation.category !== undefined) expect(record.category).to.equal(recordExpectation.category);
+                if (recordExpectation.resolutionReason !== undefined) expect(record.resolutionReason).to.equal(recordExpectation.resolutionReason);
             }
         }
     }
 }
 
 function assertSnapshot(snapshot, expected) {
+    const expectedTournamentReason = expected.tournament?.completionReason;
+
     if (expected.tournament) {
         if (expected.tournament.status !== undefined) expect(snapshot.tournament.status).to.equal(expected.tournament.status);
         if (expected.tournament.winner !== undefined) expect(snapshot.tournament.winner).to.equal(expected.tournament.winner);
@@ -658,7 +662,35 @@ function assertSnapshot(snapshot, expected) {
 
     if (expected.playersState) {
         for (const [address, playerExpectation] of Object.entries(expected.playersState)) {
-            assertPlayerSnapshot(snapshot, address, playerExpectation);
+            const normalizedExpectation = {
+                ...playerExpectation,
+                profile: playerExpectation.profile ? {
+                    ...playerExpectation.profile,
+                    tournamentResolutionReason:
+                        playerExpectation.profile.tournamentResolutionReason !== undefined
+                            ? playerExpectation.profile.tournamentResolutionReason
+                            : (playerExpectation.profile.concluded === true && expectedTournamentReason !== undefined
+                                ? expectedTournamentReason
+                                : playerExpectation.profile.tournamentResolutionReason),
+                    matchRecords: playerExpectation.profile.matchRecords
+                        ? Object.fromEntries(
+                            Object.entries(playerExpectation.profile.matchRecords).map(([key, recordExpectation]) => {
+                                const expectedMatchReason = expected.matches?.[key]?.completionReason;
+                                const resolvedReason = recordExpectation.resolutionReason !== undefined
+                                    ? recordExpectation.resolutionReason
+                                    : (recordExpectation.instance === hre.ethers.ZeroAddress
+                                        ? 0n
+                                        : (expectedMatchReason !== undefined ? expectedMatchReason : undefined));
+                                return [key, {
+                                    ...recordExpectation,
+                                    ...(resolvedReason !== undefined ? { resolutionReason: resolvedReason } : {}),
+                                }];
+                            })
+                        )
+                        : playerExpectation.profile.matchRecords,
+                } : playerExpectation.profile,
+            };
+            assertPlayerSnapshot(snapshot, address, normalizedExpectation);
         }
     }
 
@@ -1649,6 +1681,31 @@ export function installReplacementSection(adapter) {
                             },
                         },
                     },
+                    [outsider.address]: {
+                        factoryProfile: true,
+                        result: {
+                            participated: true,
+                            prizeWon: 0n,
+                            isWinner: false,
+                            payout: 0n,
+                            payoutReason: PAYOUT_REASON.None,
+                        },
+                        profile: {
+                            instance: snapshot.instanceAddress,
+                            gameType: BigInt(adapter.gameType),
+                            entryFee: 0n,
+                            concluded: false,
+                            won: false,
+                            prize: 0n,
+                            payout: 0n,
+                            payoutReason: PAYOUT_REASON.None,
+                            tournamentResolutionReason: 0n,
+                            stats: { totalPlayed: 0, totalWins: 0, totalLosses: 0 },
+                            matchRecords: {
+                                "0-0": { outcome: PLAYER_MATCH_OUTCOME.ReplacementVictory, category: PLAYER_MATCH_CATEGORY.Victory },
+                            },
+                        },
+                    },
                 },
             });
         });
@@ -2306,23 +2363,25 @@ export function installPlayerRecordEdgeCasesSection(adapter) {
                         },
                     },
                     [outsider.address]: {
-                        factoryProfile: "registry",
+                        factoryProfile: true,
                         result: {
+                            participated: true,
                             prizeWon: expectedPot,
                             isWinner: true,
                             payout: expectedPot,
                             payoutReason: PAYOUT_REASON.Victory,
                         },
                         profile: {
-                            instance: hre.ethers.ZeroAddress,
-                            gameType: 0n,
+                            instance: snapshot.instanceAddress,
+                            gameType: BigInt(adapter.gameType),
                             entryFee: 0n,
-                            concluded: false,
-                            won: false,
-                            prize: 0n,
-                            payout: 0n,
-                            payoutReason: PAYOUT_REASON.None,
-                            tournamentResolutionReason: 0n,
+                            concluded: true,
+                            won: true,
+                            prize: expectedPot,
+                            payout: expectedPot,
+                            payoutReason: PAYOUT_REASON.Victory,
+                            tournamentResolutionReason: TOURNAMENT_REASON.ML3,
+                            stats: { totalPlayed: 1, totalWins: 1, totalLosses: 0 },
                             matchRecords: {
                                 "0-0": {
                                     instance: snapshot.instanceAddress,
@@ -2797,7 +2856,7 @@ export function installPlayerRecordEdgeCasesSection(adapter) {
                         },
                     },
                     [outsider.address]: {
-                        factoryProfile: "registry",
+                        factoryProfile: true,
                         result: {
                             participated: true,
                             prizeWon: expectedPot,
@@ -2806,15 +2865,16 @@ export function installPlayerRecordEdgeCasesSection(adapter) {
                             payoutReason: PAYOUT_REASON.Victory,
                         },
                         profile: {
-                            instance: hre.ethers.ZeroAddress,
-                            gameType: 0n,
+                            instance: snapshot.instanceAddress,
+                            gameType: BigInt(adapter.gameType),
                             entryFee: 0n,
-                            concluded: false,
-                            won: false,
-                            prize: 0n,
-                            payout: 0n,
-                            payoutReason: PAYOUT_REASON.None,
-                            tournamentResolutionReason: 0n,
+                            concluded: true,
+                            won: true,
+                            prize: expectedPot,
+                            payout: expectedPot,
+                            payoutReason: PAYOUT_REASON.Victory,
+                            tournamentResolutionReason: TOURNAMENT_REASON.ML3,
+                            stats: { totalPlayed: 1, totalWins: 1, totalLosses: 0 },
                             matchRecords: {
                                 "0-1": {
                                     instance: snapshot.instanceAddress,

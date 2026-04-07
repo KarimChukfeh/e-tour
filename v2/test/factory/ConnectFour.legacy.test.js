@@ -261,9 +261,12 @@ describe("ConnectFour — finals ML3 replacement", function () {
 
         expect(matchRecordA.outcome).to.equal(9n); // ReplacementDefeat
         expect(matchRecordA.category).to.equal(2n); // Defeat
+        expect(matchRecordA.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
         expect(matchRecordD.outcome).to.equal(9n);
         expect(matchRecordD.category).to.equal(2n);
+        expect(matchRecordD.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
         expect(matchRecordC.outcome).to.equal(8n); // ReplacementVictory
         expect(matchRecordC.category).to.equal(1n); // Victory
+        expect(matchRecordC.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
     });
 });

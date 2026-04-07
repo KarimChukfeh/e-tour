@@ -503,7 +503,8 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
         uint8 roundNumber,
         uint8 matchNumber,
         PlayerMatchOutcome outcome,
-        PlayerMatchOutcomeCategory category
+        PlayerMatchOutcomeCategory category,
+        MatchCompletionReason resolutionReason
     ) internal {
         if (player == address(0) || outcome == PlayerMatchOutcome.None) return;
 
@@ -514,13 +515,14 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
         // match write; give the registry enough headroom to complete that.
         (bool recorded, ) = reg.call{gas: 400_000}(
             abi.encodeWithSignature(
-                "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8)",
+                "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8,uint8)",
                 player,
                 address(this),
                 roundNumber,
                 matchNumber,
                 uint8(outcome),
-                uint8(category)
+                uint8(category),
+                uint8(resolutionReason)
             )
         );
         recorded;
@@ -540,14 +542,16 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.Draw,
-                PlayerMatchOutcomeCategory.Draw
+                PlayerMatchOutcomeCategory.Draw,
+                reason
             );
             _recordPlayerMatchOutcome(
                 m.player2,
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.Draw,
-                PlayerMatchOutcomeCategory.Draw
+                PlayerMatchOutcomeCategory.Draw,
+                reason
             );
             return;
         }
@@ -558,14 +562,16 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.TimeoutVictory,
-                PlayerMatchOutcomeCategory.Victory
+                PlayerMatchOutcomeCategory.Victory,
+                reason
             );
             _recordPlayerMatchOutcome(
                 winner == m.player1 ? m.player2 : m.player1,
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.TimeoutDefeat,
-                PlayerMatchOutcomeCategory.Defeat
+                PlayerMatchOutcomeCategory.Defeat,
+                reason
             );
             return;
         }
@@ -575,14 +581,16 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
             roundNumber,
             matchNumber,
             PlayerMatchOutcome.NormalVictory,
-            PlayerMatchOutcomeCategory.Victory
+            PlayerMatchOutcomeCategory.Victory,
+            reason
         );
         _recordPlayerMatchOutcome(
             winner == m.player1 ? m.player2 : m.player1,
             roundNumber,
             matchNumber,
             PlayerMatchOutcome.NormalDefeat,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
     }
 
@@ -605,21 +613,24 @@ abstract contract ETourTournamentBase is ReentrancyGuard {
             roundNumber,
             matchNumber,
             defeatOutcome,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
         _recordPlayerMatchOutcome(
             m.player2,
             roundNumber,
             matchNumber,
             defeatOutcome,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
         _recordPlayerMatchOutcome(
             actor,
             roundNumber,
             matchNumber,
             victoryOutcome,
-            PlayerMatchOutcomeCategory.Victory
+            PlayerMatchOutcomeCategory.Victory,
+            reason
         );
     }
 

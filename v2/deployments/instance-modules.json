@@ -1,26 +1,26 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-04-07T03:41:19.461Z",
+  "timestamp": "2026-04-07T07:32:25.169Z",
   "modules": {
-    "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "matches": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "matchesResolution": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "prizes": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "core": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+    "matches": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "matchesResolution": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+    "prizes": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+    "escalation": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB"
   },
   "artifactHashes": {
-    "core": "0xed6034fbeff6a6831563f7826623d1217da9786dbf3842acde7029120324cca8",
-    "matches": "0xb8edb79351213705cdcf4448a21c61e132c37ea0efd3c23c2377a258a7abc661",
-    "matchesResolution": "0x906e90171be871659da1e095210f0aa46bb0b2114a4b45d585c601d7b85ecf10",
-    "prizes": "0xe71374d3a65fb0412af629e4e19b0fb792469f3b6252d48d792c33c3f6936621",
-    "escalation": "0x430243423a8b3eba91af9aa78637acdef52c1853f8dd53bdd67c9b4d4dac0563"
+    "core": "0x12d318c41b8a2a7f95ec4e5c3ef2003aa26d2a29b2f01eaf657ac381c716516d",
+    "matches": "0x021d163d45a2d642d0255ad276e19abdbdaae363614979fc2ff2fd4ea9cd1c05",
+    "matchesResolution": "0xcb2d4ce274539d434889c91723be801736c211abe9278430f0e87721e17197aa",
+    "prizes": "0x9ea0cd4be4eb8786e9441bc9cda1647bf6ae1f518f5510b0082ee6c109342e55",
+    "escalation": "0x89b714f7046a5580d013730ece70da7dd7f364a284ad11317802f982b4ef2268"
   },
   "codeHashes": {
-    "core": "0xed6034fbeff6a6831563f7826623d1217da9786dbf3842acde7029120324cca8",
-    "matches": "0xb8edb79351213705cdcf4448a21c61e132c37ea0efd3c23c2377a258a7abc661",
-    "matchesResolution": "0x906e90171be871659da1e095210f0aa46bb0b2114a4b45d585c601d7b85ecf10",
-    "prizes": "0xe71374d3a65fb0412af629e4e19b0fb792469f3b6252d48d792c33c3f6936621",
-    "escalation": "0x430243423a8b3eba91af9aa78637acdef52c1853f8dd53bdd67c9b4d4dac0563"
+    "core": "0x12d318c41b8a2a7f95ec4e5c3ef2003aa26d2a29b2f01eaf657ac381c716516d",
+    "matches": "0x021d163d45a2d642d0255ad276e19abdbdaae363614979fc2ff2fd4ea9cd1c05",
+    "matchesResolution": "0xcb2d4ce274539d434889c91723be801736c211abe9278430f0e87721e17197aa",
+    "prizes": "0x9ea0cd4be4eb8786e9441bc9cda1647bf6ae1f518f5510b0082ee6c109342e55",
+    "escalation": "0x89b714f7046a5580d013730ece70da7dd7f364a284ad11317802f982b4ef2268"
   }
 }

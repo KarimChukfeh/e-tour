@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T03:32:28.378Z",
+  "generatedAt": "2026-04-07T07:30:53.963Z",
   "runMeta": {
     "mode": "run-and-report",
     "command": "./node_modules/.bin/hardhat test --config v2/hardhat.config.js --no-compile",
@@ -61,7 +61,7 @@
       "expectation": "creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "fullTitle": "Chess — V2 protocol parity > P0 Creation & Lifecycle > P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "status": "passed",
-      "durationMs": 440,
+      "durationMs": 449,
       "error": null
     },
     {
@@ -75,7 +75,7 @@
       "expectation": "concludes a 2-player direct final with R0",
       "fullTitle": "Chess — V2 protocol parity > P1 R0 Normal Resolution > P1.1 concludes a 2-player direct final with R0",
       "status": "passed",
-      "durationMs": 352,
+      "durationMs": 351,
       "error": null
     },
     {
@@ -89,7 +89,7 @@
       "expectation": "concludes a 4-player bracket with R0 and validates every touched match",
       "fullTitle": "Chess — V2 protocol parity > P1 R0 Normal Resolution > P1.2 concludes a 4-player bracket with R0 and validates every touched match",
       "status": "passed",
-      "durationMs": 716,
+      "durationMs": 920,
       "error": null
     },
     {
@@ -103,7 +103,7 @@
       "expectation": "concludes a 2-player tournament by direct timeout claim",
       "fullTitle": "Chess — V2 protocol parity > P2 ML1 Timeout > P2.1 concludes a 2-player tournament by direct timeout claim",
       "status": "passed",
-      "durationMs": 306,
+      "durationMs": 341,
       "error": null
     },
     {
@@ -117,7 +117,7 @@
       "expectation": "advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "fullTitle": "Chess — V2 protocol parity > P2 ML1 Timeout > P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "status": "passed",
-      "durationMs": 527,
+      "durationMs": 579,
       "error": null
     },
     {
@@ -131,7 +131,7 @@
       "expectation": "force-eliminates a stalled semifinal, then concludes the bracket normally",
       "fullTitle": "Chess — V2 protocol parity > P3 ML2 Force Elimination > P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally",
       "status": "passed",
-      "durationMs": 494,
+      "durationMs": 516,
       "error": null
     },
     {
@@ -159,7 +159,7 @@
       "expectation": "replaces both players in a semifinal, then continues the bracket",
       "fullTitle": "Chess — V2 protocol parity > P4 ML3 Replacement > P4.1 replaces both players in a semifinal, then continues the bracket",
       "status": "passed",
-      "durationMs": 406,
+      "durationMs": 448,
       "error": null
     },
     {
@@ -173,7 +173,7 @@
       "expectation": "replaces both finalists and ends the tournament by ML3",
       "fullTitle": "Chess — V2 protocol parity > P4 ML3 Replacement > P4.2 replaces both finalists and ends the tournament by ML3",
       "status": "passed",
-      "durationMs": 542,
+      "durationMs": 595,
       "error": null
     },
     {
@@ -187,7 +187,7 @@
       "expectation": "supports EL0 solo cancel with full refund and consistent terminal records",
       "fullTitle": "Chess — V2 protocol parity > P5 Enrollment Escalations > P5.1 supports EL0 solo cancel with full refund and consistent terminal records",
       "status": "passed",
-      "durationMs": 245,
+      "durationMs": 311,
       "error": null
     },
     {
@@ -201,7 +201,7 @@
       "expectation": "exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "fullTitle": "Chess — V2 protocol parity > P5 Enrollment Escalations > P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "status": "passed",
-      "durationMs": 286,
+      "durationMs": 368,
       "error": null
     },
     {
@@ -215,7 +215,7 @@
       "expectation": "supports EL2 abandoned-claim resolution by an outsider",
       "fullTitle": "Chess — V2 protocol parity > P5 Enrollment Escalations > P5.3 supports EL2 abandoned-claim resolution by an outsider",
       "status": "passed",
-      "durationMs": 284,
+      "durationMs": 339,
       "error": null
     },
     {
@@ -243,7 +243,7 @@
       "expectation": "redistributes a rejecting winner's payout to the remaining enrolled player",
       "fullTitle": "Chess — V2 protocol parity > P7 Prize Redistribution > P7.1 redistributes a rejecting winner's payout to the remaining enrolled player",
       "status": "passed",
-      "durationMs": 388,
+      "durationMs": 515,
       "error": null
     },
     {
@@ -257,7 +257,7 @@
       "expectation": "records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "fullTitle": "Chess — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "status": "passed",
-      "durationMs": 313,
+      "durationMs": 365,
       "error": null
     },
     {
@@ -271,7 +271,7 @@
       "expectation": "records EL2 terminal tournament results without creating any player match records",
       "fullTitle": "Chess — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.2 records EL2 terminal tournament results without creating any player match records",
       "status": "passed",
-      "durationMs": 304,
+      "durationMs": 336,
       "error": null
     },
     {
@@ -285,7 +285,7 @@
       "expectation": "preserves per-player records when ML2 awards the tournament without a played final",
       "fullTitle": "Chess — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.3 preserves per-player records when ML2 awards the tournament without a played final",
       "status": "passed",
-      "durationMs": 458,
+      "durationMs": 526,
       "error": null
     },
     {
@@ -312,7 +312,7 @@
       "expectation": "awards C the prize and records ML3 finals completion after replacing A and D",
       "fullTitle": "ConnectFour — finals ML3 replacement > awards C the prize and records ML3 finals completion after replacing A and D",
       "status": "passed",
-      "durationMs": 73,
+      "durationMs": 82,
       "error": null
     },
     {
@@ -326,7 +326,7 @@
       "expectation": "creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "fullTitle": "ConnectFour — V2 protocol parity > P0 Creation & Lifecycle > P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "status": "passed",
-      "durationMs": 296,
+      "durationMs": 338,
       "error": null
     },
     {
@@ -340,7 +340,7 @@
       "expectation": "concludes a 2-player direct final with R0",
       "fullTitle": "ConnectFour — V2 protocol parity > P1 R0 Normal Resolution > P1.1 concludes a 2-player direct final with R0",
       "status": "passed",
-      "durationMs": 268,
+      "durationMs": 284,
       "error": null
     },
     {
@@ -354,7 +354,7 @@
       "expectation": "concludes a 4-player bracket with R0 and validates every touched match",
       "fullTitle": "ConnectFour — V2 protocol parity > P1 R0 Normal Resolution > P1.2 concludes a 4-player bracket with R0 and validates every touched match",
       "status": "passed",
-      "durationMs": 340,
+      "durationMs": 373,
       "error": null
     },
     {
@@ -368,7 +368,7 @@
       "expectation": "concludes a 2-player tournament by direct timeout claim",
       "fullTitle": "ConnectFour — V2 protocol parity > P2 ML1 Timeout > P2.1 concludes a 2-player tournament by direct timeout claim",
       "status": "passed",
-      "durationMs": 261,
+      "durationMs": 276,
       "error": null
     },
     {
@@ -382,7 +382,7 @@
       "expectation": "advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "fullTitle": "ConnectFour — V2 protocol parity > P2 ML1 Timeout > P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "status": "passed",
-      "durationMs": 326,
+      "durationMs": 343,
       "error": null
     },
     {
@@ -396,7 +396,7 @@
       "expectation": "force-eliminates a stalled semifinal, then concludes the bracket normally",
       "fullTitle": "ConnectFour — V2 protocol parity > P3 ML2 Force Elimination > P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally",
       "status": "passed",
-      "durationMs": 388,
+      "durationMs": 410,
       "error": null
     },
     {
@@ -410,7 +410,7 @@
       "expectation": "lets the finalist force-eliminate the other semifinal and win the tournament by ML2",
       "fullTitle": "ConnectFour — V2 protocol parity > P3 ML2 Force Elimination > P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2",
       "status": "passed",
-      "durationMs": 342,
+      "durationMs": 336,
       "error": null
     },
     {
@@ -424,7 +424,7 @@
       "expectation": "replaces both players in a semifinal, then continues the bracket",
       "fullTitle": "ConnectFour — V2 protocol parity > P4 ML3 Replacement > P4.1 replaces both players in a semifinal, then continues the bracket",
       "status": "passed",
-      "durationMs": 393,
+      "durationMs": 446,
       "error": null
     },
     {
@@ -438,7 +438,7 @@
       "expectation": "replaces both finalists and ends the tournament by ML3",
       "fullTitle": "ConnectFour — V2 protocol parity > P4 ML3 Replacement > P4.2 replaces both finalists and ends the tournament by ML3",
       "status": "passed",
-      "durationMs": 347,
+      "durationMs": 378,
       "error": null
     },
     {
@@ -452,7 +452,7 @@
       "expectation": "supports EL0 solo cancel with full refund and consistent terminal records",
       "fullTitle": "ConnectFour — V2 protocol parity > P5 Enrollment Escalations > P5.1 supports EL0 solo cancel with full refund and consistent terminal records",
       "status": "passed",
-      "durationMs": 233,
+      "durationMs": 312,
       "error": null
     },
     {
@@ -466,7 +466,7 @@
       "expectation": "exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "fullTitle": "ConnectFour — V2 protocol parity > P5 Enrollment Escalations > P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "status": "passed",
-      "durationMs": 260,
+      "durationMs": 316,
       "error": null
     },
     {
@@ -480,7 +480,7 @@
       "expectation": "supports EL2 abandoned-claim resolution by an outsider",
       "fullTitle": "ConnectFour — V2 protocol parity > P5 Enrollment Escalations > P5.3 supports EL2 abandoned-claim resolution by an outsider",
       "status": "passed",
-      "durationMs": 269,
+      "durationMs": 310,
       "error": null
     },
     {
@@ -494,7 +494,7 @@
       "expectation": "resolves a 2-player finals draw with R1 and equal payout",
       "fullTitle": "ConnectFour — V2 protocol parity > P6 Draw Resolution > P6.1 resolves a 2-player finals draw with R1 and equal payout",
       "status": "passed",
-      "durationMs": 310,
+      "durationMs": 366,
       "error": null
     },
     {
@@ -508,7 +508,7 @@
       "expectation": "resolves an all-draw semifinal round with R1 and even split for every player",
       "fullTitle": "ConnectFour — V2 protocol parity > P6 Draw Resolution > P6.2 resolves an all-draw semifinal round with R1 and even split for every player",
       "status": "passed",
-      "durationMs": 388,
+      "durationMs": 456,
       "error": null
     },
     {
@@ -522,7 +522,7 @@
       "expectation": "awards the uncontested finalist with R2 when the other semifinal ends in a draw",
       "fullTitle": "ConnectFour — V2 protocol parity > P6 Draw Resolution > P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw",
       "status": "passed",
-      "durationMs": 365,
+      "durationMs": 382,
       "error": null
     },
     {
@@ -536,7 +536,7 @@
       "expectation": "redistributes a rejecting winner's payout to the remaining enrolled player",
       "fullTitle": "ConnectFour — V2 protocol parity > P7 Prize Redistribution > P7.1 redistributes a rejecting winner's payout to the remaining enrolled player",
       "status": "passed",
-      "durationMs": 300,
+      "durationMs": 310,
       "error": null
     },
     {
@@ -550,7 +550,7 @@
       "expectation": "records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "status": "passed",
-      "durationMs": 304,
+      "durationMs": 320,
       "error": null
     },
     {
@@ -564,7 +564,7 @@
       "expectation": "records EL2 terminal tournament results without creating any player match records",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.2 records EL2 terminal tournament results without creating any player match records",
       "status": "passed",
-      "durationMs": 297,
+      "durationMs": 312,
       "error": null
     },
     {
@@ -578,7 +578,7 @@
       "expectation": "preserves per-player records when ML2 awards the tournament without a played final",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.3 preserves per-player records when ML2 awards the tournament without a played final",
       "status": "passed",
-      "durationMs": 309,
+      "durationMs": 395,
       "error": null
     },
     {
@@ -592,7 +592,7 @@
       "expectation": "keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side",
       "status": "passed",
-      "durationMs": 354,
+      "durationMs": 452,
       "error": null
     },
     {
@@ -606,7 +606,7 @@
       "expectation": "records R2 correctly when a bye finalist wins without ever playing a match",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.5 records R2 correctly when a bye finalist wins without ever playing a match",
       "status": "passed",
-      "durationMs": 317,
+      "durationMs": 364,
       "error": null
     },
     {
@@ -620,7 +620,7 @@
       "expectation": "leaves every player without a finals match record when an entire semifinal round draws",
       "fullTitle": "ConnectFour — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.6 leaves every player without a finals match record when an entire semifinal round draws",
       "status": "passed",
-      "durationMs": 372,
+      "durationMs": 413,
       "error": null
     },
     {
@@ -646,7 +646,7 @@
       "expectation": "returns the same profile address for repeated enrollments",
       "fullTitle": "PlayerRegistry — authorization & clone idempotency > returns the same profile address for repeated enrollments",
       "status": "passed",
-      "durationMs": 41,
+      "durationMs": 42,
       "error": null
     },
     {
@@ -659,7 +659,7 @@
       "expectation": "creates distinct profiles for the same player in different games",
       "fullTitle": "PlayerRegistry — authorization & clone idempotency > creates distinct profiles for the same player in different games",
       "status": "passed",
-      "durationMs": 170,
+      "durationMs": 193,
       "error": null
     },
     {
@@ -737,7 +737,7 @@
       "expectation": "profile enrollment record has correct fields",
       "fullTitle": "PlayerProfile — enrollment & result recording > profile enrollment record has correct fields",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 38,
       "error": null
     },
     {
@@ -880,7 +880,7 @@
       "expectation": "non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result",
       "fullTitle": "EL2 — partial enroll → abandoned claim → standard fee splits > non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result",
       "status": "passed",
-      "durationMs": 49,
+      "durationMs": 39,
       "error": null
     },
     {
@@ -932,7 +932,7 @@
       "expectation": "finalizes both winner and loser profiles when the winning move uses estimated gas",
       "fullTitle": "Profile push — stats updated automatically at conclusion > finalizes both winner and loser profiles when the winning move uses estimated gas",
       "status": "passed",
-      "durationMs": 87,
+      "durationMs": 77,
       "error": null
     },
     {
@@ -945,7 +945,7 @@
       "expectation": "winner profile: totalWins=1, totalPlayed=1 after conclusion",
       "fullTitle": "Profile push — stats updated automatically at conclusion > winner profile: totalWins=1, totalPlayed=1 after conclusion",
       "status": "passed",
-      "durationMs": 98,
+      "durationMs": 44,
       "error": null
     },
     {
@@ -958,7 +958,7 @@
       "expectation": "loser profile: totalLosses=1, totalWins=0 after conclusion",
       "fullTitle": "Profile push — stats updated automatically at conclusion > loser profile: totalLosses=1, totalWins=0 after conclusion",
       "status": "passed",
-      "durationMs": 40,
+      "durationMs": 44,
       "error": null
     },
     {
@@ -971,7 +971,7 @@
       "expectation": "records EvenSplit payout metadata for every player when an entire round draws",
       "fullTitle": "Profile push — stats updated automatically at conclusion > records EvenSplit payout metadata for every player when an entire round draws",
       "status": "passed",
-      "durationMs": 120,
+      "durationMs": 110,
       "error": null
     },
     {
@@ -984,7 +984,7 @@
       "expectation": "winner profile: concluded=true, won=true on enrollment record",
       "fullTitle": "Profile push — stats updated automatically at conclusion > winner profile: concluded=true, won=true on enrollment record",
       "status": "passed",
-      "durationMs": 39,
+      "durationMs": 43,
       "error": null
     },
     {
@@ -997,7 +997,7 @@
       "expectation": "stores tournament resolution metadata and per-match outcomes separately",
       "fullTitle": "Profile push — stats updated automatically at conclusion > stores tournament resolution metadata and per-match outcomes separately",
       "status": "passed",
-      "durationMs": 54,
+      "durationMs": 60,
       "error": null
     },
     {
@@ -1010,7 +1010,7 @@
       "expectation": "loser profile: concluded=true, won=false on enrollment record",
       "fullTitle": "Profile push — stats updated automatically at conclusion > loser profile: concluded=true, won=false on enrollment record",
       "status": "passed",
-      "durationMs": 41,
+      "durationMs": 44,
       "error": null
     },
     {
@@ -1023,7 +1023,7 @@
       "expectation": "winner net earnings = prize - entryFee (positive)",
       "fullTitle": "Profile push — stats updated automatically at conclusion > winner net earnings = prize - entryFee (positive)",
       "status": "passed",
-      "durationMs": 39,
+      "durationMs": 42,
       "error": null
     },
     {
@@ -1036,7 +1036,7 @@
       "expectation": "loser net earnings = 0 - entryFee (negative)",
       "fullTitle": "Profile push — stats updated automatically at conclusion > loser net earnings = 0 - entryFee (negative)",
       "status": "passed",
-      "durationMs": 38,
+      "durationMs": 43,
       "error": null
     },
     {
@@ -1075,7 +1075,7 @@
       "expectation": "records Victory payout metadata for a paid winner",
       "fullTitle": "ETourInstance_Prizes redistribution on failed payouts > records Victory payout metadata for a paid winner",
       "status": "passed",
-      "durationMs": 258,
+      "durationMs": 247,
       "error": null
     },
     {
@@ -1088,7 +1088,7 @@
       "expectation": "redistributes a rejecting winner's full prize across the other enrolled player",
       "fullTitle": "ETourInstance_Prizes redistribution on failed payouts > redistributes a rejecting winner's full prize across the other enrolled player",
       "status": "passed",
-      "durationMs": 236,
+      "durationMs": 263,
       "error": null
     },
     {
@@ -1101,7 +1101,7 @@
       "expectation": "keeps redistributing failed shares until only accepting enrolled players remain",
       "fullTitle": "ETourInstance_Prizes redistribution on failed payouts > keeps redistributing failed shares until only accepting enrolled players remain",
       "status": "passed",
-      "durationMs": 275,
+      "durationMs": 284,
       "error": null
     },
     {
@@ -1591,7 +1591,7 @@
       "expectation": "creating two instances with same params reuses the same tierKey",
       "fullTitle": "TicTacToe — 4-player, 0.002 ETH, finalist wins prize > Tier Deduplication > creating two instances with same params reuses the same tierKey",
       "status": "passed",
-      "durationMs": 64,
+      "durationMs": 72,
       "error": null
     },
     {
@@ -1605,7 +1605,7 @@
       "expectation": "changing only timeout params creates a different tierKey",
       "fullTitle": "TicTacToe — 4-player, 0.002 ETH, finalist wins prize > Tier Deduplication > changing only timeout params creates a different tierKey",
       "status": "passed",
-      "durationMs": 41,
+      "durationMs": 46,
       "error": null
     },
     {
@@ -1749,7 +1749,7 @@
       "expectation": "all 4 quarter-final matches complete",
       "fullTitle": "TicTacToe — 8-player, 0.003 ETH, 3-round bracket > all 4 quarter-final matches complete",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 39,
       "error": null
     },
     {
@@ -2113,7 +2113,7 @@
       "expectation": "a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament",
       "fullTitle": "TicTacToe — ML2 escalation (forceEliminateStalledMatch) > a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament",
       "status": "passed",
-      "durationMs": 87,
+      "durationMs": 107,
       "error": null
     },
     {
@@ -2282,7 +2282,7 @@
       "expectation": "awards the auto-advanced player if the only played EL1 semifinal ends in a draw",
       "fullTitle": "TicTacToe — enrollment escalations (EL0 / EL1) > awards the auto-advanced player if the only played EL1 semifinal ends in a draw",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 42,
       "error": null
     },
     {
@@ -2321,7 +2321,7 @@
       "expectation": "pays the deferred 5% owner share to the owner wallet at conclusion",
       "fullTitle": "TicTacToe — conclusion settlement > pays the deferred 5% owner share to the owner wallet at conclusion",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 44,
       "error": null
     },
     {
@@ -2347,7 +2347,7 @@
       "expectation": "EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet",
       "fullTitle": "TicTacToe — conclusion settlement > EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet",
       "status": "passed",
-      "durationMs": 203,
+      "durationMs": 283,
       "error": null
     },
     {
@@ -2425,7 +2425,7 @@
       "expectation": "two instances with same params share a tierKey",
       "fullTitle": "TicTacToe — factory instance tracking and pagination > two instances with same params share a tierKey",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 46,
       "error": null
     },
     {
@@ -2438,7 +2438,7 @@
       "expectation": "instance with different params has a different tierKey",
       "fullTitle": "TicTacToe — factory instance tracking and pagination > instance with different params has a different tierKey",
       "status": "passed",
-      "durationMs": null,
+      "durationMs": 43,
       "error": null
     },
     {
@@ -2581,7 +2581,7 @@
       "expectation": "swap-and-pop: completing middle tournament leaves activeTournaments consistent",
       "fullTitle": "TicTacToe — players, activeTournaments, pastTournaments > swap-and-pop: completing middle tournament leaves activeTournaments consistent",
       "status": "passed",
-      "durationMs": 70,
+      "durationMs": 78,
       "error": null
     },
     {
@@ -3461,7 +3461,7 @@
       "expectation": "should track move history across multiple matches in tournament",
       "fullTitle": "TicTacToe — move history tracking > move history for completed match > should track move history across multiple matches in tournament",
       "status": "passed",
-      "durationMs": 49,
+      "durationMs": 43,
       "error": null
     },
     {
@@ -3489,7 +3489,7 @@
       "expectation": "creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "fullTitle": "TicTacToe — V2 protocol parity > P0 Creation & Lifecycle > P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past",
       "status": "passed",
-      "durationMs": 295,
+      "durationMs": 282,
       "error": null
     },
     {
@@ -3503,7 +3503,7 @@
       "expectation": "concludes a 2-player direct final with R0",
       "fullTitle": "TicTacToe — V2 protocol parity > P1 R0 Normal Resolution > P1.1 concludes a 2-player direct final with R0",
       "status": "passed",
-      "durationMs": 272,
+      "durationMs": 276,
       "error": null
     },
     {
@@ -3517,7 +3517,7 @@
       "expectation": "concludes a 4-player bracket with R0 and validates every touched match",
       "fullTitle": "TicTacToe — V2 protocol parity > P1 R0 Normal Resolution > P1.2 concludes a 4-player bracket with R0 and validates every touched match",
       "status": "passed",
-      "durationMs": 340,
+      "durationMs": 315,
       "error": null
     },
     {
@@ -3531,7 +3531,7 @@
       "expectation": "concludes a 2-player tournament by direct timeout claim",
       "fullTitle": "TicTacToe — V2 protocol parity > P2 ML1 Timeout > P2.1 concludes a 2-player tournament by direct timeout claim",
       "status": "passed",
-      "durationMs": 287,
+      "durationMs": 284,
       "error": null
     },
     {
@@ -3545,7 +3545,7 @@
       "expectation": "advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "fullTitle": "TicTacToe — V2 protocol parity > P2 ML1 Timeout > P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state",
       "status": "passed",
-      "durationMs": 322,
+      "durationMs": 362,
       "error": null
     },
     {
@@ -3559,7 +3559,7 @@
       "expectation": "force-eliminates a stalled semifinal, then concludes the bracket normally",
       "fullTitle": "TicTacToe — V2 protocol parity > P3 ML2 Force Elimination > P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally",
       "status": "passed",
-      "durationMs": 402,
+      "durationMs": 431,
       "error": null
     },
     {
@@ -3587,7 +3587,7 @@
       "expectation": "replaces both players in a semifinal, then continues the bracket",
       "fullTitle": "TicTacToe — V2 protocol parity > P4 ML3 Replacement > P4.1 replaces both players in a semifinal, then continues the bracket",
       "status": "passed",
-      "durationMs": 418,
+      "durationMs": 425,
       "error": null
     },
     {
@@ -3601,7 +3601,7 @@
       "expectation": "replaces both finalists and ends the tournament by ML3",
       "fullTitle": "TicTacToe — V2 protocol parity > P4 ML3 Replacement > P4.2 replaces both finalists and ends the tournament by ML3",
       "status": "passed",
-      "durationMs": 351,
+      "durationMs": 390,
       "error": null
     },
     {
@@ -3615,7 +3615,7 @@
       "expectation": "supports EL0 solo cancel with full refund and consistent terminal records",
       "fullTitle": "TicTacToe — V2 protocol parity > P5 Enrollment Escalations > P5.1 supports EL0 solo cancel with full refund and consistent terminal records",
       "status": "passed",
-      "durationMs": 236,
+      "durationMs": 250,
       "error": null
     },
     {
@@ -3629,7 +3629,7 @@
       "expectation": "exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "fullTitle": "TicTacToe — V2 protocol parity > P5 Enrollment Escalations > P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization",
       "status": "passed",
-      "durationMs": 258,
+      "durationMs": 271,
       "error": null
     },
     {
@@ -3643,7 +3643,7 @@
       "expectation": "supports EL2 abandoned-claim resolution by an outsider",
       "fullTitle": "TicTacToe — V2 protocol parity > P5 Enrollment Escalations > P5.3 supports EL2 abandoned-claim resolution by an outsider",
       "status": "passed",
-      "durationMs": 273,
+      "durationMs": 282,
       "error": null
     },
     {
@@ -3657,7 +3657,7 @@
       "expectation": "resolves a 2-player finals draw with R1 and equal payout",
       "fullTitle": "TicTacToe — V2 protocol parity > P6 Draw Resolution > P6.1 resolves a 2-player finals draw with R1 and equal payout",
       "status": "passed",
-      "durationMs": 274,
+      "durationMs": 313,
       "error": null
     },
     {
@@ -3671,7 +3671,7 @@
       "expectation": "resolves an all-draw semifinal round with R1 and even split for every player",
       "fullTitle": "TicTacToe — V2 protocol parity > P6 Draw Resolution > P6.2 resolves an all-draw semifinal round with R1 and even split for every player",
       "status": "passed",
-      "durationMs": 324,
+      "durationMs": 496,
       "error": null
     },
     {
@@ -3685,7 +3685,7 @@
       "expectation": "awards the uncontested finalist with R2 when the other semifinal ends in a draw",
       "fullTitle": "TicTacToe — V2 protocol parity > P6 Draw Resolution > P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw",
       "status": "passed",
-      "durationMs": 320,
+      "durationMs": 469,
       "error": null
     },
     {
@@ -3699,7 +3699,7 @@
       "expectation": "redistributes a rejecting winner's payout to the remaining enrolled player",
       "fullTitle": "TicTacToe — V2 protocol parity > P7 Prize Redistribution > P7.1 redistributes a rejecting winner's payout to the remaining enrolled player",
       "status": "passed",
-      "durationMs": 283,
+      "durationMs": 396,
       "error": null
     },
     {
@@ -3713,7 +3713,7 @@
       "expectation": "records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final",
       "status": "passed",
-      "durationMs": 285,
+      "durationMs": 410,
       "error": null
     },
     {
@@ -3727,7 +3727,7 @@
       "expectation": "records EL2 terminal tournament results without creating any player match records",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.2 records EL2 terminal tournament results without creating any player match records",
       "status": "passed",
-      "durationMs": 283,
+      "durationMs": 340,
       "error": null
     },
     {
@@ -3741,7 +3741,7 @@
       "expectation": "preserves per-player records when ML2 awards the tournament without a played final",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.3 preserves per-player records when ML2 awards the tournament without a played final",
       "status": "passed",
-      "durationMs": 325,
+      "durationMs": 343,
       "error": null
     },
     {
@@ -3755,7 +3755,7 @@
       "expectation": "keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side",
       "status": "passed",
-      "durationMs": 367,
+      "durationMs": 345,
       "error": null
     },
     {
@@ -3769,7 +3769,7 @@
       "expectation": "records R2 correctly when a bye finalist wins without ever playing a match",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.5 records R2 correctly when a bye finalist wins without ever playing a match",
       "status": "passed",
-      "durationMs": 303,
+      "durationMs": 286,
       "error": null
     },
     {
@@ -3783,7 +3783,7 @@
       "expectation": "leaves every player without a finals match record when an entire semifinal round draws",
       "fullTitle": "TicTacToe — V2 protocol parity > P8 Player Records & Resolution Edge Cases > P8.6 leaves every player without a finals match record when an entire semifinal round draws",
       "status": "passed",
-      "durationMs": 335,
+      "durationMs": 317,
       "error": null
     },
     {
@@ -3874,7 +3874,7 @@
       "expectation": "BOTH profiles show enrollment records for the SAME instance",
       "fullTitle": "Profile creation — both players (creator + joiner) > BOTH profiles show enrollment records for the SAME instance",
       "status": "passed",
-      "durationMs": 48,
+      "durationMs": 49,
       "error": null
     },
     {
@@ -3887,7 +3887,7 @@
       "expectation": "creator profile shows stats AFTER tournament completes",
       "fullTitle": "Profile creation — both players (creator + joiner) > creator profile shows stats AFTER tournament completes",
       "status": "passed",
-      "durationMs": 41,
+      "durationMs": 40,
       "error": null
     },
     {
@@ -3900,7 +3900,7 @@
       "expectation": "BUG CHECK: without factory authorization, NO profiles are created",
       "fullTitle": "Profile creation — both players (creator + joiner) > BUG CHECK: without factory authorization, NO profiles are created",
       "status": "passed",
-      "durationMs": 169,
+      "durationMs": 166,
       "error": null
     },
     {

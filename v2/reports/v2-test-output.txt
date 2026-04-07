@@ -1,4 +1,4 @@
-[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
 
 
   ChessFactory active tournament tracking
@@ -8,73 +8,73 @@
 
   Chess — V2 protocol parity
     P0 Creation & Lifecycle
-      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (440ms)
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (449ms)
     P1 R0 Normal Resolution
-      ✔ P1.1 concludes a 2-player direct final with R0 (352ms)
-      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (716ms)
+      ✔ P1.1 concludes a 2-player direct final with R0 (351ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (920ms)
     P2 ML1 Timeout
-      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (306ms)
-      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (527ms)
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (341ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (579ms)
     P3 ML2 Force Elimination
-      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (494ms)
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (516ms)
       ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (418ms)
     P4 ML3 Replacement
-      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (406ms)
-      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (542ms)
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (448ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (595ms)
     P5 Enrollment Escalations
-      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (245ms)
-      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (286ms)
-      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (284ms)
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (311ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (368ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (339ms)
     P6 Draw Resolution
       ✔ P6.NA marks finals draw, round draw, and R2 as not applicable for this game
     P7 Prize Redistribution
-      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (388ms)
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (515ms)
     P8 Player Records & Resolution Edge Cases
-      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (313ms)
-      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (304ms)
-      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (458ms)
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (365ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (336ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (526ms)
       ✔ P8.NA marks draw-driven record edge cases as not applicable for this game
 
   ConnectFour — finals ML3 replacement
-    ✔ awards C the prize and records ML3 finals completion after replacing A and D (73ms)
+    ✔ awards C the prize and records ML3 finals completion after replacing A and D (82ms)
 
   ConnectFour — V2 protocol parity
     P0 Creation & Lifecycle
-      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (296ms)
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (338ms)
     P1 R0 Normal Resolution
-      ✔ P1.1 concludes a 2-player direct final with R0 (268ms)
-      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (340ms)
+      ✔ P1.1 concludes a 2-player direct final with R0 (284ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (373ms)
     P2 ML1 Timeout
-      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (261ms)
-      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (326ms)
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (276ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (343ms)
     P3 ML2 Force Elimination
-      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (388ms)
-      ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (342ms)
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (410ms)
+      ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (336ms)
     P4 ML3 Replacement
-      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (393ms)
-      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (347ms)
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (446ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (378ms)
     P5 Enrollment Escalations
-      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (233ms)
-      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (260ms)
-      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (269ms)
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (312ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (316ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (310ms)
     P6 Draw Resolution
-      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (310ms)
-      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (388ms)
-      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (365ms)
+      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (366ms)
+      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (456ms)
+      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (382ms)
     P7 Prize Redistribution
-      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (300ms)
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (310ms)
     P8 Player Records & Resolution Edge Cases
-      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (304ms)
-      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (297ms)
-      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (309ms)
-      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (354ms)
-      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (317ms)
-      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (372ms)
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (320ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (312ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (395ms)
+      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (452ms)
+      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (364ms)
+      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (413ms)
 
   PlayerRegistry — authorization & clone idempotency
     ✔ creates a profile on first enrollment
-    ✔ returns the same profile address for repeated enrollments (41ms)
-    ✔ creates distinct profiles for the same player in different games (170ms)
+    ✔ returns the same profile address for repeated enrollments (42ms)
+    ✔ creates distinct profiles for the same player in different games (193ms)
     ✔ rejects recordEnrollment from unauthorized caller
     ✔ allows owner to authorize and deauthorize factories
     ✔ rejects authorizeFactory from non-owner
@@ -82,7 +82,7 @@
   PlayerProfile — enrollment & result recording
     ✔ recordEnrollment only callable by registry
     ✔ profile enrollment count increases after enrolling in instances
-    ✔ profile enrollment record has correct fields
+    ✔ profile enrollment record has correct fields (38ms)
 
   Deferred fees — invariant: prizePool + ownerAccrued == entryFee × enrolled
     ✔ holds for 1 enrolled player
@@ -99,7 +99,7 @@
   EL2 — partial enroll → abandoned claim → standard fee splits
     ✔ claimer receives 95% of all enrolled entry fees
     ✔ owner wallet receives the 5% share on EL2
-    ✔ non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result (49ms)
+    ✔ non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result (39ms)
 
   Normal 2-player conclusion — fee distribution
     ✔ owner wallet receives exactly 5% × 2 players at conclusion
@@ -107,24 +107,24 @@
     ✔ winner receives ~95% of total pot
 
   Profile push — stats updated automatically at conclusion
-    ✔ finalizes both winner and loser profiles when the winning move uses estimated gas (87ms)
-    ✔ winner profile: totalWins=1, totalPlayed=1 after conclusion (98ms)
-    ✔ loser profile: totalLosses=1, totalWins=0 after conclusion (40ms)
-    ✔ records EvenSplit payout metadata for every player when an entire round draws (120ms)
-    ✔ winner profile: concluded=true, won=true on enrollment record (39ms)
-    ✔ stores tournament resolution metadata and per-match outcomes separately (54ms)
-    ✔ loser profile: concluded=true, won=false on enrollment record (41ms)
-    ✔ winner net earnings = prize - entryFee (positive) (39ms)
-    ✔ loser net earnings = 0 - entryFee (negative) (38ms)
+    ✔ finalizes both winner and loser profiles when the winning move uses estimated gas (77ms)
+    ✔ winner profile: totalWins=1, totalPlayed=1 after conclusion (44ms)
+    ✔ loser profile: totalLosses=1, totalWins=0 after conclusion (44ms)
+    ✔ records EvenSplit payout metadata for every player when an entire round draws (110ms)
+    ✔ winner profile: concluded=true, won=true on enrollment record (43ms)
+    ✔ stores tournament resolution metadata and per-match outcomes separately (60ms)
+    ✔ loser profile: concluded=true, won=false on enrollment record (44ms)
+    ✔ winner net earnings = prize - entryFee (positive) (42ms)
+    ✔ loser net earnings = 0 - entryFee (negative) (43ms)
 
   Player count cap
     ✔ rejects playerCount of 64
     ✔ accepts playerCount of 32
 
   ETourInstance_Prizes redistribution on failed payouts
-    ✔ records Victory payout metadata for a paid winner (258ms)
-    ✔ redistributes a rejecting winner's full prize across the other enrolled player (236ms)
-    ✔ keeps redistributing failed shares until only accepting enrolled players remain (275ms)
+    ✔ records Victory payout metadata for a paid winner (247ms)
+    ✔ redistributes a rejecting winner's full prize across the other enrolled player (263ms)
+    ✔ keeps redistributing failed shares until only accepting enrolled players remain (284ms)
 
   TicTacToe — 4-player, 0.002 ETH, finalist wins prize
     Factory & Instance Deployment
@@ -167,8 +167,8 @@
       ✔ instance balance is 0 after prize and owner-share settlement
       ✔ falls back to ownerBalance when the owner address rejects ETH
     Tier Deduplication
-      ✔ creating two instances with same params reuses the same tierKey (64ms)
-      ✔ changing only timeout params creates a different tierKey (41ms)
+      ✔ creating two instances with same params reuses the same tierKey (72ms)
+      ✔ changing only timeout params creates a different tierKey (46ms)
       ✔ factory has exactly one tier entry for that config
 
   TicTacToe — 2-player, 0.001 ETH, single-round tournament
@@ -183,7 +183,7 @@
     ✔ tierConfig.totalRounds is 3 for an 8-player tournament
     ✔ tournament started with 8 enrolled players
     ✔ round 0 (quarter-finals) has 4 matches
-    ✔ all 4 quarter-final matches complete
+    ✔ all 4 quarter-final matches complete (39ms)
     ✔ tournament advances to round 1 (semi-finals)
     ✔ round 1 (semi-finals) has 2 matches
     ✔ both semi-final matches complete
@@ -223,7 +223,7 @@
     ✔ match 0 stalls — current turn player's time expires
     ✔ ML2 is available for match 0 after timeout + L2 delay
     ✔ winner of match 1 can force-eliminate stalled match 0
-    ✔ a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament (87ms)
+    ✔ a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament (107ms)
 
   TicTacToe — ML3 escalation (claimMatchSlotByReplacement)
     ✔ stalls match 0 by advancing time past matchTimePerPlayer + ML3 delay
@@ -240,14 +240,14 @@
     ✔ cancelTournament is not available once a second player enrolls
     ✔ resetEnrollmentWindow pushes EL1 and EL2 deadlines forward for the solo player
     ✔ forceStartTournament succeeds after enrollment window expires when 2 players are enrolled
-    ✔ awards the auto-advanced player if the only played EL1 semifinal ends in a draw
+    ✔ awards the auto-advanced player if the only played EL1 semifinal ends in a draw (42ms)
 
   TicTacToe — conclusion settlement
     ✔ factory has no legacy protocol raffle API
     ✔ owner share stays on instance until conclusion
-    ✔ pays the deferred 5% owner share to the owner wallet at conclusion
+    ✔ pays the deferred 5% owner share to the owner wallet at conclusion (44ms)
     ✔ extra forced ETH remains untouched after conclusion
-    ✔ EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet (203ms)
+    ✔ EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet (283ms)
     ✔ instance balance is 0 after conclusion
 
   TicTacToe — factory instance tracking and pagination
@@ -255,8 +255,8 @@
     ✔ getInstances(0, 3) returns all 3 instances
     ✔ getInstances(1, 2) returns 2 instances starting at offset 1
     ✔ getInstances(3, 10) returns empty array (offset past end)
-    ✔ two instances with same params share a tierKey
-    ✔ instance with different params has a different tierKey
+    ✔ two instances with same params share a tierKey (46ms)
+    ✔ instance with different params has a different tierKey (43ms)
     ✔ factory tracks 2 tier keys total
     ✔ player profile tracks all instances creator enrolled in
     ✔ getActiveTierConfigs returns both tier configs
@@ -269,7 +269,7 @@
     ✔ players[owner] matches registry getProfile(owner)
     ✔ players[p1] is zero before p1 enrolls
     ✔ players[p1] set after p1 enrolls; instance moves to pastTournaments on conclusion
-    ✔ swap-and-pop: completing middle tournament leaves activeTournaments consistent (70ms)
+    ✔ swap-and-pop: completing middle tournament leaves activeTournaments consistent (78ms)
     ✔ EL0 cancel also moves instance to pastTournaments (even with 0 owner share)
 
   TicTacToe — factory creation guardrails
@@ -356,134 +356,134 @@
       ✔ should preserve full move history after win
       ✔ should preserve full move history after draw
       ✔ should preserve move history after tournament conclusion
-      ✔ should track move history across multiple matches in tournament (49ms)
+      ✔ should track move history across multiple matches in tournament (43ms)
       ✔ should return empty string for match with no moves
 
   TicTacToe — V2 protocol parity
     P0 Creation & Lifecycle
-      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (295ms)
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (282ms)
     P1 R0 Normal Resolution
-      ✔ P1.1 concludes a 2-player direct final with R0 (272ms)
-      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (340ms)
+      ✔ P1.1 concludes a 2-player direct final with R0 (276ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (315ms)
     P2 ML1 Timeout
-      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (287ms)
-      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (322ms)
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (284ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (362ms)
     P3 ML2 Force Elimination
-      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (402ms)
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (431ms)
       ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (335ms)
     P4 ML3 Replacement
-      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (418ms)
-      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (351ms)
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (425ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (390ms)
     P5 Enrollment Escalations
-      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (236ms)
-      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (258ms)
-      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (273ms)
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (250ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (271ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (282ms)
     P6 Draw Resolution
-      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (274ms)
-      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (324ms)
-      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (320ms)
+      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (313ms)
+      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (496ms)
+      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (469ms)
     P7 Prize Redistribution
-      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (283ms)
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (396ms)
     P8 Player Records & Resolution Edge Cases
-      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (285ms)
-      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (283ms)
-      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (325ms)
-      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (367ms)
-      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (303ms)
-      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (335ms)
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (410ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (340ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (343ms)
+      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (345ms)
+      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (286ms)
+      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (317ms)
 
   Debug: factory.players() mapping population
 Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-factory.players(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
-factory.getPlayerProfile(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
-registry.getProfile(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
+factory.players(creator): 0xECbDc25Cdccfe5D26eC47B22e77133bb9332C730
+factory.getPlayerProfile(creator): 0xECbDc25Cdccfe5D26eC47B22e77133bb9332C730
+registry.getProfile(creator): 0xECbDc25Cdccfe5D26eC47B22e77133bb9332C730
     ✔ factory.players() is populated for creator after createInstance
 Joiner address: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-factory.players(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
-factory.getPlayerProfile(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
-registry.getProfile(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
+factory.players(joiner): 0x7B8680cB0B17fd181f75eDAaa728663C161AFf9e
+factory.getPlayerProfile(joiner): 0x7B8680cB0B17fd181f75eDAaa728663C161AFf9e
+registry.getProfile(joiner): 0x7B8680cB0B17fd181f75eDAaa728663C161AFf9e
     ✔ factory.players() is populated for joiner after enrollInTournament
 
 === After both players enrolled ===
 Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-factory.players(creator): 0xc58005b0dD042a225c3773a74b70a5F9614c90BD
+factory.players(creator): 0x50D740011A977A08Ea8B8472519DD8412e017B14
 
 Joiner address:  0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-factory.players(joiner):  0x7204454a0Baf60B5B7D57cA08aC687662Cf13904
+factory.players(joiner):  0x528595F49a772D07Ea7F69E8849cC0a73eC20D0C
     ✔ BOTH factory.players() entries exist after full 2-player enrollment
 
   Profile creation — both players (creator + joiner)
 Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-Creator profile: 0x2b68B6c2C7dAF1ee286B3b7642c2Fc738E32F199
+Creator profile: 0x120C2b8d6F323cef0d916a07fA9282B1A26F741E
 Joiner address:  0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-Joiner profile:  0x257d6E43Fe5b9Bc84b47c2db8a326A336Ed9241f
+Joiner profile:  0x40f9B3AdC0c98278961eE4D720d209f57884bd24
     ✔ BOTH players get profiles: creator via enrollOnBehalf, joiner via enrollInTournament
 Creator enrollment count: 1
     ✔ creator profile has enrollment record after createInstance
 Joiner enrollment count: 1
     ✔ joiner profile has enrollment record after enrollInTournament
-Both players enrolled in same instance: 0xFCbaE37d88344b36d7641aa6f495C350f415562c
-    ✔ BOTH profiles show enrollment records for the SAME instance (48ms)
+Both players enrolled in same instance: 0xd0C287643E6D2883eAe5c80C23b3d7935a882272
+    ✔ BOTH profiles show enrollment records for the SAME instance (49ms)
 Creator stats after tournament:
   totalPlayed: 1
   totalWins:   1
   totalLosses: 0
-    ✔ creator profile shows stats AFTER tournament completes (41ms)
+    ✔ creator profile shows stats AFTER tournament completes (40ms)
 Factory NOT authorized - testing failure scenario
 Creator profile (should be zero): 0x0000000000000000000000000000000000000000
 Joiner profile (should be zero):  0x0000000000000000000000000000000000000000
-    ✔ BUG CHECK: without factory authorization, NO profiles are created (169ms)
+    ✔ BUG CHECK: without factory authorization, NO profiles are created (166ms)
 
   COMPREHENSIVE: Both players get profiles with enrollment data
 
 ================================================================================
 SETUP COMPLETE
 ================================================================================
-Instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+Instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
 Creator:  0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 Joiner:   0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
 ================================================================================
 
     Step 1: PlayerRegistry has profiles for BOTH players
-registry.getProfile(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+registry.getProfile(creator): 0xB6C05b7511EF72d61F21234D821FF12fb0D93897
       ✔ registry.getProfile(creator) returns non-zero address
-registry.getProfile(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+registry.getProfile(joiner):  0xefaF71a578e9Ba23Ca1a765EeC4Df64e041eC01E
       ✔ registry.getProfile(joiner) returns non-zero address
     Step 2: Factory.players() mapping has BOTH players
-factory.players(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+factory.players(creator): 0xB6C05b7511EF72d61F21234D821FF12fb0D93897
       ✔ factory.players(creator) returns non-zero address
-factory.players(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+factory.players(joiner):  0xefaF71a578e9Ba23Ca1a765EeC4Df64e041eC01E
       ✔ factory.players(joiner) returns non-zero address
     Step 3: Factory.getPlayerProfile() works for BOTH players
-factory.getPlayerProfile(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+factory.getPlayerProfile(creator): 0xB6C05b7511EF72d61F21234D821FF12fb0D93897
       ✔ factory.getPlayerProfile(creator) returns non-zero address
-factory.getPlayerProfile(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+factory.getPlayerProfile(joiner):  0xefaF71a578e9Ba23Ca1a765EeC4Df64e041eC01E
       ✔ factory.getPlayerProfile(joiner) returns non-zero address
     Step 4: Creator's PlayerProfile contract has enrollment data
 creator.getEnrollmentCount(): 1
       ✔ creator profile: getEnrollmentCount() returns 1
 creator.getEnrollments() length: 1
       ✔ creator profile: getEnrollments() returns 1 record
-creator enrollment[0].instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+creator enrollment[0].instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ creator profile: enrollment record has correct instance address
 creator enrollment[0].entryFee: 0.001
       ✔ creator profile: enrollment record has correct entryFee
 creator enrollment[0].gameType: 0
       ✔ creator profile: enrollment record has correct gameType (TicTac = 0)
-creator.getEnrollmentByInstance() instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+creator.getEnrollmentByInstance() instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ creator profile: getEnrollmentByInstance() returns correct data
     Step 5: Joiner's PlayerProfile contract has enrollment data
 joiner.getEnrollmentCount(): 1
       ✔ joiner profile: getEnrollmentCount() returns 1
 joiner.getEnrollments() length: 1
       ✔ joiner profile: getEnrollments() returns 1 record
-joiner enrollment[0].instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+joiner enrollment[0].instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ joiner profile: enrollment record has correct instance address
 joiner enrollment[0].entryFee: 0.001
       ✔ joiner profile: enrollment record has correct entryFee
 joiner enrollment[0].gameType: 0
       ✔ joiner profile: enrollment record has correct gameType (TicTac = 0)
-joiner.getEnrollmentByInstance() instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+joiner.getEnrollmentByInstance() instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ joiner profile: getEnrollmentByInstance() returns correct data
     Step 6: Instance contract shows BOTH players enrolled
 instance.isEnrolled(creator): true
@@ -498,15 +498,15 @@ instance.getPlayers(): Result(2) [
     Step 7: SIMULATING UI QUERIES - Both players should be found
 
 --- SIMULATING UI QUERY FOR CREATOR ---
-1. factory.players(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+1. factory.players(creator): 0xB6C05b7511EF72d61F21234D821FF12fb0D93897
 2. profile.getEnrollments() count: 1
-3. First enrollment instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+3. First enrollment instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ UI query for CREATOR works
 
 --- SIMULATING UI QUERY FOR JOINER ---
-1. factory.players(joiner): 0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+1. factory.players(joiner): 0xefaF71a578e9Ba23Ca1a765EeC4Df64e041eC01E
 2. profile.getEnrollments() count: 1
-3. First enrollment instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+3. First enrollment instance: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
       ✔ UI query for JOINER works
     Step 8: FINAL SUMMARY
 
@@ -515,14 +515,14 @@ FINAL VERIFICATION SUMMARY
 ================================================================================
 
 CREATOR (0x70997970C51812dc3A010C7d01b50e0d17dc79C8):
-  Profile address:      0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+  Profile address:      0xB6C05b7511EF72d61F21234D821FF12fb0D93897
   Enrollment count:     1
-  Instance enrolled in: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+  Instance enrolled in: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
 
 JOINER (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC):
-  Profile address:      0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+  Profile address:      0xefaF71a578e9Ba23Ca1a765EeC4Df64e041eC01E
   Enrollment count:     1
-  Instance enrolled in: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+  Instance enrolled in: 0x69d47b25839f6ab63E1AdcA18B5C2423ddE3c6e0
 
 ================================================================================
 ✅ BOTH PLAYERS HAVE COMPLETE PROFILE DATA
@@ -531,5 +531,5 @@ JOINER (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC):
       ✔ prints complete summary for both players
 
 
-  315 passing (41s)
+  315 passing (45s)
 

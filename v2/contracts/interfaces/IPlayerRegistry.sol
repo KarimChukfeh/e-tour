@@ -45,7 +45,8 @@ interface IPlayerRegistry {
         uint8 roundNumber,
         uint8 matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     ) external;
 
     /**
