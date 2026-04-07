@@ -1,18 +1,9 @@
 {
-  "network": "localhost",
-  "chainId": "412346",
-  "deployedAt": "2026-04-07T07:32:33.800Z",
-  "modules": {
-    "ETourInstance_Core": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
-    "ETourInstance_Matches": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
-    "ETourInstance_MatchesResolution": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
-    "ETourInstance_Prizes": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
-    "ETourInstance_Escalation": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
-    "ChessRulesModule": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042"
-  },
+  "network": "arbitrum",
+  "chainId": "42161",
+  "generatedAt": "2026-04-07T07:53:18.991Z",
   "playerProfile": {
     "PlayerProfileImpl": {
-      "address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
       "abi": [
         {
           "inputs": [],
@@ -630,7 +621,6 @@
       ]
     },
     "PlayerRegistry": {
-      "address": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
       "abi": [
         {
           "inputs": [
@@ -1083,7 +1073,7 @@
   },
   "factories": {
     "TicTacToeFactory": {
-      "address": "0x851356ae760d987E095750cCeb3bC6014560891C",
+      "address": "0x9b370782C5BE175CA3DC57606E32c56b9653A62a",
       "abi": [
         {
           "inputs": [
@@ -1942,10 +1932,12 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "playerRegistry": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+      "playerProfileImpl": "0x9aE3b24F136c843bb24Ea0cEc0AdB43Ce7a73E13"
     },
     "ConnectFourFactory": {
-      "address": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
+      "address": "0x35e7b5eFadcc752a3b55c43BFe430c04Aec31b4d",
       "abi": [
         {
           "inputs": [
@@ -2804,10 +2796,12 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "playerRegistry": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+      "playerProfileImpl": "0x9aE3b24F136c843bb24Ea0cEc0AdB43Ce7a73E13"
     },
     "ChessFactory": {
-      "address": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+      "address": "0x0C48382605fd65f15518782F5b69E936c4461313",
       "abi": [
         {
           "inputs": [
@@ -3684,12 +3678,14 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "playerRegistry": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+      "playerProfileImpl": "0x9aE3b24F136c843bb24Ea0cEc0AdB43Ce7a73E13"
     }
   },
   "instances": {
-    "TicTacToe": {
-      "address": "0xB955b6c65Ff69bfe07A557aa385055282b8a5eA3",
+    "TicTacToeInstance": {
+      "address": "0x8C7272980dE407CA791b7C718394a6e215d44dd4",
       "abi": [
         {
           "inputs": [],
@@ -5397,8 +5393,8 @@
         }
       ]
     },
-    "ConnectFour": {
-      "address": "0x3fA4E6e03Fbd434A577387924aF39efd3b4b50F2",
+    "ConnectFourInstance": {
+      "address": "0x567A20A586073d9ADc1832074Ffc0c8b127b464c",
       "abi": [
         {
           "inputs": [],
@@ -7122,8 +7118,8 @@
         }
       ]
     },
-    "Chess": {
-      "address": "0x47b36E824631e97E94d462F822181Ed08A459384",
+    "ChessInstance": {
+      "address": "0xe7957e1663f4959689f495a73A45D4dC2cf0bD83",
       "abi": [
         {
           "inputs": [],

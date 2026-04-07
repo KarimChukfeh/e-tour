@@ -1,9 +1,7 @@
 {
-  "network": "localhost",
-  "chainId": "412346",
-  "deployedAt": "2026-04-07T07:32:33.800Z",
+  "network": "arbitrum",
+  "generatedAt": "2026-04-07T07:53:18.991Z",
   "contract": {
-    "address": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
     "abi": [
       {
         "inputs": [
@@ -452,5 +450,10 @@
         "type": "function"
       }
     ]
+  },
+  "addressesByGame": {
+    "TicTacToeFactory": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+    "ConnectFourFactory": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+    "ChessFactory": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5"
   }
 }

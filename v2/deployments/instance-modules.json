@@ -1,13 +1,13 @@
 {
-  "network": "localhost",
-  "chainId": "412346",
-  "timestamp": "2026-04-07T07:32:25.169Z",
+  "network": "arbitrum",
+  "chainId": "42161",
+  "timestamp": "2026-04-07T07:52:16.137Z",
   "modules": {
-    "core": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
-    "matches": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
-    "matchesResolution": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
-    "prizes": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
-    "escalation": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB"
+    "core": "0xD5BB4672434544B7753C35a1e5d20631ba79AEB7",
+    "matches": "0xcbAf12F6bB7490b0C7EEF1F4dA04c8009d169e8A",
+    "matchesResolution": "0x20CDf220e7e0276434C6057d926ecb0B76f8d485",
+    "prizes": "0x6aa9c88D4516838F624585ad76FEA33A29cb6473",
+    "escalation": "0x963991420Bffb10075cD0C47374EEA165DC0a762"
   },
   "artifactHashes": {
     "core": "0x12d318c41b8a2a7f95ec4e5c3ef2003aa26d2a29b2f01eaf657ac381c716516d",

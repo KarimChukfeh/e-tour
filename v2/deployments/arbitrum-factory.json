@@ -9,16 +9,21 @@
     "ETourInstance_Matches": "0xcbAf12F6bB7490b0C7EEF1F4dA04c8009d169e8A",
     "ETourInstance_MatchesResolution": "0x20CDf220e7e0276434C6057d926ecb0B76f8d485",
     "ETourInstance_Prizes": "0x6aa9c88D4516838F624585ad76FEA33A29cb6473",
-    "ETourInstance_Escalation": "0x963991420Bffb10075cD0C47374EEA165DC0a762"
+    "ETourInstance_Escalation": "0x963991420Bffb10075cD0C47374EEA165DC0a762",
+    "ChessRulesModule": "0x54990Fa24F5dB60De65532d55a95A8405aCedfF5"
   },
   "playerProfile": {
     "PlayerProfileImpl": "0x9aE3b24F136c843bb24Ea0cEc0AdB43Ce7a73E13",
     "PlayerRegistry": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5"
   },
-  "factory": {
-    "ConnectFourFactory": "0x35e7b5eFadcc752a3b55c43BFe430c04Aec31b4d"
+  "factories": {
+    "TicTacToeFactory": "0x9b370782C5BE175CA3DC57606E32c56b9653A62a",
+    "ConnectFourFactory": "0x35e7b5eFadcc752a3b55c43BFe430c04Aec31b4d",
+    "ChessFactory": "0x0C48382605fd65f15518782F5b69E936c4461313"
   },
-  "implementation": {
-    "ConnectFour": "0x567A20A586073d9ADc1832074Ffc0c8b127b464c"
+  "implementations": {
+    "TicTacToe": "0x8C7272980dE407CA791b7C718394a6e215d44dd4",
+    "ConnectFour": "0x567A20A586073d9ADc1832074Ffc0c8b127b464c",
+    "Chess": "0xe7957e1663f4959689f495a73A45D4dC2cf0bD83"
   }
 }

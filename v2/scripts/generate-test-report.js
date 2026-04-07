@@ -77,6 +77,172 @@ async function listTestFiles(rootDir) {
     return files.sort();
 }
 
+function stripScenarioPrefix(title) {
+    return title.replace(/^[A-Z]\d+(?:\.\d+)?\s+/, "").trim();
+}
+
+function sentenceCase(text) {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function lowerFirst(text) {
+    if (!text) return "";
+    return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function humanizeCodeTerms(text) {
+    const replacements = [
+        [/activeTournaments/g, "the active tournament list"],
+        [/pastTournaments/g, "the completed tournament list"],
+        [/factory\.players\(\)/g, "the factory's player-profile mapping"],
+        [/factory\.players/g, "the factory's player-profile mapping"],
+        [/factory\.getPlayerProfile\(\)/g, "the factory's player-profile lookup"],
+        [/registry\.getProfile\(\)/g, "the registry's profile lookup"],
+        [/getInstanceCount/g, "the instance-count view"],
+        [/getInstances/g, "the paginated instance-list view"],
+        [/getActiveTierConfigs/g, "the active tier-configuration view"],
+        [/getInstanceInfo/g, "the instance-info view"],
+        [/getPlayers/g, "the enrolled-player list"],
+        [/getBracket/g, "the bracket view"],
+        [/getMatchMoves/g, "the match move-history view"],
+        [/getMatch\b/g, "the match-detail view"],
+        [/getPrizeDistribution/g, "the prize-distribution view"],
+        [/getPlayerResult/g, "the player-result view"],
+        [/getEnrollmentByInstance\(\)/g, "the per-tournament enrollment lookup"],
+        [/getEnrollmentCount\(\)/g, "the enrollment-count view"],
+        [/getEnrollments\(\)/g, "the enrollment-history view"],
+        [/claimTimeoutWin/g, "the timeout-claim flow"],
+        [/forceEliminateStalledMatch/g, "the ML2 force-elimination flow"],
+        [/claimMatchSlotByReplacement/g, "the ML3 replacement flow"],
+        [/auto-starts/g, "automatically starts"],
+        [/auto-enrolls/g, "automatically enrolls the creator"],
+        [/auto-started/g, "automatically started"],
+        [/auto-advanced/g, "automatically advanced"],
+        [/auto wins/g, "wins automatically"],
+        [/active-to-past/g, "active-to-completed"],
+        [/\bR0\b/g, "R0 (normal resolution)"],
+        [/\bR1\b/g, "R1 (draw resolution)"],
+        [/\bR2\b/g, "R2 (uncontested finalist resolution)"],
+        [/\bEL0\b/g, "EL0 (solo cancellation)"],
+        [/\bEL1\b/g, "EL1 (enrollment-window extension)"],
+        [/\bEL2\b/g, "EL2 (abandoned tournament claim)"],
+        [/\bML1\b/g, "ML1 (timeout resolution)"],
+        [/\bML2\b/g, "ML2 (force-elimination resolution)"],
+        [/\bML3\b/g, "ML3 (replacement resolution)"],
+        [/EvenSplit/g, "even-split"],
+        [/\baddress\(0\)\b/g, "the zero address"],
+        [/\b2-player\b/g, "two-player"],
+        [/\b4-player\b/g, "four-player"],
+        [/\b8-player\b/g, "eight-player"],
+        [/\b1v1\b/g, "one-on-one"],
+        [/TicTacToe/g, "Tic-Tac-Toe"],
+    ];
+
+    let out = text;
+    for (const [pattern, replacement] of replacements) {
+        out = out.replace(pattern, replacement);
+    }
+
+    return out
+        .replace(/\s*→\s*/g, " to ")
+        .replace(/\s*&\s*/g, " and ")
+        .replace(/\s+/g, " ")
+        .replace(/\(\s+/g, "(")
+        .replace(/\s+\)/g, ")")
+        .trim();
+}
+
+function humanizeSuiteLabel(label) {
+    return humanizeCodeTerms(label.replace(/\(([^)]+)\)/g, (_, inner) => {
+        if (/^(claimTimeoutWin|forceEliminateStalledMatch|claimMatchSlotByReplacement)$/i.test(inner)) {
+            return "";
+        }
+        return `(${inner})`;
+    }).replace(/\s{2,}/g, " ").trim());
+}
+
+function describeSuiteContext(suitePath) {
+    if (!suitePath || suitePath.length === 0) return "this part of the V2 test suite";
+
+    const cleaned = suitePath
+        .map(part => humanizeSuiteLabel(part))
+        .filter(Boolean);
+
+    if (cleaned.length === 1) {
+        return lowerFirst(cleaned[0]);
+    }
+
+    const tail = cleaned.slice(-2);
+    return lowerFirst(`${tail[0]} / ${tail[1]}`);
+}
+
+function deriveWhatTested(title, suitePath) {
+    const base = humanizeCodeTerms(stripScenarioPrefix(title));
+    const context = describeSuiteContext(suitePath);
+
+    const patterns = [
+        [/^rejects (.+)$/i, match => `When ${context} is given an invalid or forbidden action, specifically ${lowerFirst(match[1])}.`],
+        [/^accepts (.+)$/i, match => `When ${context} is given a valid supported input, specifically ${lowerFirst(match[1])}.`],
+        [/^deploys (.+)$/i, match => `When ${context} is deployed or initialized, specifically ${lowerFirst(match[1])}.`],
+        [/^creates (.+)$/i, match => `When ${context} creates a new contract or tournament path, specifically ${lowerFirst(match[1])}.`],
+        [/^tracks (.+)$/i, match => `When ${context} relies on long-lived tracking data, specifically ${lowerFirst(match[1])}.`],
+        [/^moves (.+)$/i, match => `When ${context} transitions between lifecycle buckets, specifically ${lowerFirst(match[1])}.`],
+        [/^configures (.+)$/i, match => `When ${context} applies post-deployment configuration, specifically ${lowerFirst(match[1])}.`],
+        [/^supports (.+)$/i, match => `When ${context} is driven through a full supported flow, specifically ${lowerFirst(match[1])}.`],
+        [/^resolves (.+)$/i, match => `When ${context} reaches a resolution path, specifically ${lowerFirst(match[1])}.`],
+        [/^awards (.+)$/i, match => `When ${context} reaches an outcome where a player is advanced or rewarded, specifically ${lowerFirst(match[1])}.`],
+        [/^records (.+)$/i, match => `When ${context} writes permanent history data, specifically ${lowerFirst(match[1])}.`],
+        [/^stores (.+)$/i, match => `When ${context} stores post-match or post-tournament metadata, specifically ${lowerFirst(match[1])}.`],
+        [/^preserves (.+)$/i, match => `When ${context} goes through an edge case that could corrupt stored history, specifically ${lowerFirst(match[1])}.`],
+        [/^keeps (.+) distinct$/i, match => `When ${context} touches more than one resolution path at once, specifically ${lowerFirst(match[1])} distinct.`],
+        [/^leaves (.+)$/i, match => `When ${context} ends without some normally expected follow-up, specifically ${lowerFirst(match[1])}.`],
+        [/^should (.+)$/i, match => `When ${context} is exercised directly, specifically ${lowerFirst(match[1])}.`],
+    ];
+
+    for (const [pattern, formatter] of patterns) {
+        const match = base.match(pattern);
+        if (match) return sentenceCase(formatter(match));
+    }
+
+    return `When ${context} is exercised, ${lowerFirst(base)}.`;
+}
+
+function deriveWhatExpected(title, suitePath) {
+    const base = humanizeCodeTerms(stripScenarioPrefix(title));
+    const context = describeSuiteContext(suitePath);
+
+    const patterns = [
+        [/^rejects (.+)$/i, () => "The invalid action should be rejected and the contract should stay in a valid state."],
+        [/^accepts (.+)$/i, () => "The valid input should succeed and be stored or applied without error."],
+        [/^deploys (.+) with correct owner$/i, () => "The deployment should succeed and the owner or admin address should be set correctly."],
+        [/^deploys (.+)$/i, () => "The deployment should succeed and the contract should start in the expected configuration."],
+        [/^creates (.+)$/i, () => "The new object should exist with the expected initial links, configuration, and starting state."],
+        [/^tracks (.+)$/i, () => "The relevant factory, registry, or profile tracking view should reflect the new state accurately."],
+        [/^moves (.+)$/i, () => "The item should leave its old lifecycle bucket and appear in the correct completed-history bucket."],
+        [/^configures (.+)$/i, () => "The created instance should receive the intended configuration values before play begins."],
+        [/^supports (.+)$/i, () => "The full flow should complete successfully with correct payouts, records, and terminal state."],
+        [/^resolves (.+)$/i, () => "The resolution reason, payouts, bracket state, and stored player records should all match that outcome."],
+        [/^awards (.+)$/i, () => "The correct player should be advanced or declared winner, and the right payout and reason should be recorded."],
+        [/^records (.+)$/i, () => "The permanent player or tournament history should contain the correct outcome metadata and no missing records."],
+        [/^stores (.+)$/i, () => "The saved fields should match the resolved tournament state, including reasons and outcome categories."],
+        [/^preserves (.+)$/i, () => "Existing records should remain accurate, and the system should avoid inventing records for events that never happened."],
+        [/^keeps (.+) distinct$/i, () => "Different resolution reasons should stay separate in storage so the client can show accurate history."],
+        [/^leaves every player without a finals match record when an entire semifinal round draws$/i, () => "No final-match record should be fabricated because a final never actually took place."],
+        [/^leaves (.+)$/i, () => "Only the records that correspond to real events should exist after the scenario ends."],
+        [/^should record (.+) correctly$/i, () => "The recorded history should exactly match what happened, in the right order and format."],
+        [/^should preserve (.+)$/i, () => "Previously recorded data should remain intact after the later transition."],
+        [/^should return (.+)$/i, () => "The view function should return the expected data for the queried state."],
+        [/^should handle (.+)$/i, () => "The edge case should be processed correctly without corrupting state or recorded history."],
+    ];
+
+    for (const [pattern, formatter] of patterns) {
+        if (pattern.test(base)) return formatter(base.match(pattern), context);
+    }
+
+    return `The observed state should match the protocol rules being exercised in ${context}.`;
+}
+
 function installDiscoveryGlobals(scenarios, currentFileRef) {
     const suiteStack = [];
 
@@ -90,12 +256,15 @@ function installDiscoveryGlobals(scenarios, currentFileRef) {
     };
 
     const recordTest = (title) => {
+        const expectation = stripScenarioPrefix(title);
         scenarios.push({
             file: currentFileRef.path,
             fileLabel: path.relative(repoRoot, currentFileRef.path),
             suitePath: [...suiteStack],
             title,
-            expectation: title.replace(/^[A-Z]\d+(?:\.\d+)?\s+/, ""),
+            expectation,
+            whatTested: deriveWhatTested(title, suiteStack),
+            whatExpected: deriveWhatExpected(title, suiteStack),
             fullTitle: [...suiteStack, title].join(" > "),
             status: "not_run",
             durationMs: null,
@@ -307,8 +476,8 @@ function renderHtml({ scenarios, grouped, runMeta, summary, failures }) {
             const rows = suite.scenarios.map(test => `
                 <tr class="${scenarioStatusClass(test.status)}">
                     <td class="status-cell"><span class="status-pill ${scenarioStatusClass(test.status)}">${escapeHtml(test.status)}</span></td>
-                    <td><code>${escapeHtml(test.title)}</code></td>
-                    <td>${escapeHtml(test.expectation)}</td>
+                    <td>${escapeHtml(test.whatTested)}</td>
+                    <td>${escapeHtml(test.whatExpected)}</td>
                     <td>${test.durationMs == null ? "—" : `${test.durationMs} ms`}</td>
                     <td>${test.error ? `<details><summary>Failure</summary><pre>${escapeHtml(test.error)}</pre></details>` : "—"}</td>
                 </tr>
@@ -324,8 +493,8 @@ function renderHtml({ scenarios, grouped, runMeta, summary, failures }) {
                         <thead>
                             <tr>
                                 <th>Outcome</th>
-                                <th>Scenario</th>
-                                <th>Expectation</th>
+                                <th>What&apos;s Tested</th>
+                                <th>What&apos;s Expected</th>
                                 <th>Duration</th>
                                 <th>Notes</th>
                             </tr>
@@ -558,7 +727,7 @@ function renderHtml({ scenarios, grouped, runMeta, summary, failures }) {
     <main class="shell">
         <section class="hero">
             <h1>ETour V2 Test Report</h1>
-            <p>This report groups every discovered V2 test scenario by file and logical suite, mirrors each scenario’s stated expectation from the test title, and merges the latest Hardhat run outcome when available.</p>
+            <p>This report groups every discovered V2 test scenario by file and logical suite, then translates each spec into plain-language descriptions of what situation is being exercised and what result should be observed.</p>
         </section>
 
         <section class="summary-grid">
@@ -577,8 +746,8 @@ function renderHtml({ scenarios, grouped, runMeta, summary, failures }) {
                 <p><strong>Summary:</strong> ${summary.passing} passing, ${summary.failing} failing, ${summary.pending} pending</p>
             </article>
             <article class="meta-card">
-                <h3>Expectation Source</h3>
-                <p>The <em>Expectation</em> column comes from the <code>it(...)</code> title with the scenario ID stripped. That keeps the report aligned with the real test intent instead of introducing a second hand-maintained expectation layer.</p>
+                <h3>Narrative Source</h3>
+                <p>The <em>What&apos;s Tested</em> and <em>What&apos;s Expected</em> columns are generated from the real suite names and test titles, then expanded into plain language so a reader can understand the scenario without reading code-oriented phrasing.</p>
             </article>
         </section>
 
