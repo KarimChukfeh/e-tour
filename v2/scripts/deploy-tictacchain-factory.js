@@ -1,5 +1,5 @@
 // scripts/deploy-tictacchain-factory.js
-// Deploy TicTacChainFactory (+ PlayerRegistry + instance modules if not already deployed).
+// Deploy TicTacToeFactory (+ PlayerRegistry + instance modules if not already deployed).
 //
 // Usage:
 //   npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost
@@ -21,7 +21,7 @@ async function main() {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     console.log("=".repeat(60));
-    console.log("TicTacChainFactory Deployment");
+    console.log("TicTacToeFactory Deployment");
     console.log("=".repeat(60));
     console.log("Deployer:", deployer.address);
     console.log("Balance: ", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH");
@@ -54,18 +54,18 @@ async function main() {
     }
     console.log("");
 
-    // ── 3. TicTacChainFactory ────────────────────────────────────────────────
+    // ── 3. TicTacToeFactory ────────────────────────────────────────────────
     console.log("=".repeat(60));
-    console.log("Deploying TicTacChainFactory...");
-    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    console.log("Deploying TicTacToeFactory...");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const factory = await TicTacFactory.deploy(
         modules.core, modules.matches, modules.prizes, modules.escalation, registryAddr
     );
     await factory.waitForDeployment();
     const factoryAddr = await factory.getAddress();
     const implAddr    = await factory.implementation();
-    console.log("  TicTacChainFactory:", factoryAddr);
-    console.log("  TicTacInstance impl:", implAddr);
+    console.log("  TicTacToeFactory:", factoryAddr);
+    console.log("  TicTacToe impl:", implAddr);
 
     // Authorize factory on registry
     const registry = await hre.ethers.getContractAt("contracts/PlayerRegistry.sol:PlayerRegistry", registryAddr);
@@ -95,16 +95,16 @@ async function main() {
             PlayerProfileImpl: profileImplAddr,
             PlayerRegistry: registryAddr,
         },
-        factory: { TicTacChainFactory: factoryAddr },
-        implementation: { TicTacInstance: implAddr },
+        factory: { TicTacToeFactory: factoryAddr },
+        implementation: { TicTacToe: implAddr },
     };
 
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-tictac-factory.json`);
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
 
     const [factoryArt, instanceArt, profileArt, registryArt] = await Promise.all([
-        hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
-        hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
+        hre.artifacts.readArtifact("contracts/TicTacToeFactory.sol:TicTacToeFactory"),
+        hre.artifacts.readArtifact("contracts/TicTacToe.sol:TicTacToe"),
         hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
         hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
     ]);
@@ -114,7 +114,7 @@ async function main() {
         PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
     };
 
-    const abiFile = path.join(DEPLOYMENTS_DIR, "TicTacChainFactory-ABI.json");
+    const abiFile = path.join(DEPLOYMENTS_DIR, "TicTacToeFactory-ABI.json");
     fs.writeFileSync(abiFile, JSON.stringify({
         network, chainId: chainId.toString(), deployedAt: timestamp,
         modules: deployment.modules,

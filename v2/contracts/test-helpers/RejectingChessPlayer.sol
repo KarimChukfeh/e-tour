@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface ITicTacToeLike {
+interface IChessLike {
     function enrollInTournament() external payable;
-    function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 cellIndex) external;
+    function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 from, uint8 to, uint8 promotion) external;
 }
 
 /**
- * @dev Test helper that can participate in a v2 TicTacToe and optionally
- * reject ETH payouts.
+ * @dev Test helper that can participate in a v2 Chess tournament and
+ * optionally reject ETH payouts.
  */
-contract RejectingTicTacPlayer {
-    ITicTacToeLike public immutable instance;
+contract RejectingChessPlayer {
+    IChessLike public immutable instance;
     bool public rejectPayments;
     uint256 public receivedAmount;
     uint256 public rejectionCount;
@@ -20,7 +20,7 @@ contract RejectingTicTacPlayer {
     event PaymentRejected(uint256 amount);
 
     constructor(address instanceAddress) {
-        instance = ITicTacToeLike(instanceAddress);
+        instance = IChessLike(instanceAddress);
     }
 
     function setRejectPayments(bool reject_) external {
@@ -31,15 +31,15 @@ contract RejectingTicTacPlayer {
         instance.enrollInTournament{value: msg.value}();
     }
 
-    function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 cellIndex) external {
-        instance.makeMove(roundNumber, matchNumber, cellIndex);
+    function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 from, uint8 to, uint8 promotion) external {
+        instance.makeMove(roundNumber, matchNumber, from, to, promotion);
     }
 
     receive() external payable {
         if (rejectPayments) {
             rejectionCount++;
             emit PaymentRejected(msg.value);
-            revert("RejectingTicTacPlayer: Payment rejected");
+            revert("RejectingChessPlayer: Payment rejected");
         }
 
         receivedAmount += msg.value;
@@ -50,7 +50,7 @@ contract RejectingTicTacPlayer {
         if (rejectPayments) {
             rejectionCount++;
             emit PaymentRejected(msg.value);
-            revert("RejectingTicTacPlayer: Payment rejected");
+            revert("RejectingChessPlayer: Payment rejected");
         }
 
         receivedAmount += msg.value;

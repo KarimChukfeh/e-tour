@@ -1,7 +1,9 @@
 {
   "network": "localhost",
-  "generatedAt": "2026-04-05T21:17:39.480Z",
+  "chainId": "412346",
+  "deployedAt": "2026-04-07T03:41:28.087Z",
   "contract": {
+    "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
     "abi": [
       {
         "inputs": [],

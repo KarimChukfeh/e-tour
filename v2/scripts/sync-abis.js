@@ -10,9 +10,9 @@ const DEPLOYMENTS_DIR = path.resolve(__dirname, "..", "deployments");
 const BUILD_INFO_DIR = path.resolve(__dirname, "..", "artifacts", "build-info");
 const FRONTEND_ABIS_DIR = path.resolve(__dirname, "..", "..", "..", "tic-tac-react", "src", "v2", "ABIs");
 const FILES_TO_SYNC = [
-    "TicTacChainFactory-ABI.json",
+    "TicTacToeFactory-ABI.json",
     "ConnectFourFactory-ABI.json",
-    "ChessOnChainFactory-ABI.json",
+    "ChessFactory-ABI.json",
     "ETour-Factory-ABIs.json",
     "PlayerProfile-ABI.json",
     "PlayerRegistry-ABI.json",
@@ -60,28 +60,28 @@ const MODULE_SPECS = [
 ];
 const INSTANCE_SPECS = [
     {
-        label: "TicTacInstance",
+        label: "TicTacToe",
         deploymentFile: "localhost-tictac-factory.json",
-        implementationKey: "TicTacInstance",
-        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "TicTacInstance.sol", "TicTacInstance.json"),
-        sourceName: "contracts/TicTacInstance.sol",
-        contractName: "TicTacInstance",
+        implementationKey: "TicTacToe",
+        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "TicTacToe.sol", "TicTacToe.json"),
+        sourceName: "contracts/TicTacToe.sol",
+        contractName: "TicTacToe",
     },
     {
-        label: "ConnectFourInstance",
+        label: "ConnectFour",
         deploymentFile: "localhost-connectfour-factory.json",
-        implementationKey: "ConnectFourInstance",
-        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "ConnectFourInstance.sol", "ConnectFourInstance.json"),
-        sourceName: "contracts/ConnectFourInstance.sol",
-        contractName: "ConnectFourInstance",
+        implementationKey: "ConnectFour",
+        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "ConnectFour.sol", "ConnectFour.json"),
+        sourceName: "contracts/ConnectFour.sol",
+        contractName: "ConnectFour",
     },
     {
-        label: "ChessInstance",
+        label: "Chess",
         deploymentFile: "localhost-chess-factory.json",
-        implementationKey: "ChessInstance",
-        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "ChessInstance.sol", "ChessInstance.json"),
-        sourceName: "contracts/ChessInstance.sol",
-        contractName: "ChessInstance",
+        implementationKey: "Chess",
+        artifactPath: path.resolve(__dirname, "..", "artifacts", "contracts", "Chess.sol", "Chess.json"),
+        sourceName: "contracts/Chess.sol",
+        contractName: "Chess",
     },
 ];
 let immutableReferenceCache = null;

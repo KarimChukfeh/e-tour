@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Prizes
@@ -17,7 +17,7 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Prizes is ETourInstance_Base {
+contract ETourInstance_Prizes is ETourTournamentBase {
 
     constructor() {}
 
@@ -32,7 +32,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
 
     /**
      * @dev Distribute prize to tournament winner (winner-takes-all).
-     * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * Called via delegatecall from ETourTournamentBase._handleTournamentConclusion().
      */
     function distributePrizes(uint256 winnersPot) payable
         external
@@ -50,7 +50,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
 
     /**
      * @dev Distribute equal prizes to all remaining players (all-draw scenario).
-     * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * Called via delegatecall from ETourTournamentBase._handleTournamentConclusion().
      */
     function distributeEqualPrizes(address[] memory remainingPlayers, uint256 winnersPot) payable
         external

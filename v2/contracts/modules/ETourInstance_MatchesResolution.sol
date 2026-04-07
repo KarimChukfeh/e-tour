@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_MatchesResolution
@@ -10,7 +10,7 @@ import "../ETourInstance_Base.sol";
  *
  * Called only via delegatecall from ETourInstance_Matches.
  */
-contract ETourInstance_MatchesResolution is ETourInstance_Base {
+contract ETourInstance_MatchesResolution is ETourTournamentBase {
 
     error DuplicatePlayers();
     error MatchesEntryDelegatecallFailed();

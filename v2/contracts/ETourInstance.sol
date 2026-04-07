@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETourInstance_Base.sol";
+import "./ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance
@@ -16,10 +16,10 @@ import "./ETourInstance_Base.sol";
  * used by game authors.
  *
  * PERMANENT RECORD: Once status == Concluded, all write functions revert
- * (enforced by the `notConcluded` modifier on ETourInstance_Base).
+ * (enforced by the `notConcluded` modifier on ETourTournamentBase).
  * The contract's data is readable forever via the view functions.
  */
-abstract contract ETourInstance is ETourInstance_Base {
+abstract contract ETourInstance is ETourTournamentBase {
 
     // ============ Round Initialization (delegates to Matches module) ============
 

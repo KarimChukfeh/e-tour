@@ -14,19 +14,19 @@ const LIMIT_KB = SPURIOUS_DRAGON_LIMIT / 1024;
 
 // Factory contracts
 const FACTORIES = [
-    'TicTacChainFactory',
-    'ChessOnChainFactory',
+    'TicTacToeFactory',
+    'ChessFactory',
     'ConnectFourFactory',
     'ETourFactory'
 ];
 
 // Instance implementation contracts (deployed once, cloned via EIP-1167)
 const INSTANCES = [
-    'TicTacInstance',
-    'ChessInstance',
-    'ConnectFourInstance',
+    'TicTacToe',
+    'Chess',
+    'ConnectFour',
     'ETourInstance',
-    'ETourInstance_Base'
+    'ETourTournamentBase'
 ];
 
 // Abstract/shared template contracts (not directly deployed, but still useful

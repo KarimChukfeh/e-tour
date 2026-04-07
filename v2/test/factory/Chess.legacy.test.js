@@ -44,7 +44,7 @@ async function deployFactory() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/ChessFactory.sol:ChessFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -75,12 +75,12 @@ async function createInstance(factory, signer) {
         .find(parsed => parsed && parsed.name === "InstanceDeployed");
 
     return hre.ethers.getContractAt(
-        "contracts/ChessInstance.sol:ChessInstance",
+        "contracts/Chess.sol:Chess",
         event.args.instance
     );
 }
 
-describe("ChessOnChainFactory active tournament tracking", function () {
+describe("ChessFactory active tournament tracking", function () {
     this.timeout(60_000);
 
     let factory;

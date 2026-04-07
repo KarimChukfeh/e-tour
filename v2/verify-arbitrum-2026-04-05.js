@@ -20,7 +20,7 @@ const SHARED_MODULES = {
 
 const DEPLOYMENTS = {
   ticTac: {
-    source: "v2/deployments/TicTacChainFactory-ABI.json",
+    source: "v2/deployments/TicTacToeFactory-ABI.json",
     deployedAt: "2026-04-05T09:19:30.568Z",
     playerProfileImpl: "0xA527D18D65e9857ac9A92F80534ed85752BA2931",
     playerRegistry: "0x0DfACcA93A63d6C2392c325b5323B01FAc600796",
@@ -36,7 +36,7 @@ const DEPLOYMENTS = {
     factory: "0x44De941fBe070F922259c7D08B082259377539bB",
   },
   chess: {
-    source: "v2/deployments/ChessOnChainFactory-ABI.json",
+    source: "v2/deployments/ChessFactory-ABI.json",
     deployedAt: "2026-04-05T09:19:51.694Z",
     chessRules: "0x0abdEb248F4786E47dd0ba6fDc9B05E52d900C45",
     playerProfileImpl: "0x51136B31BB2379b26Fb3Fe50299F801cdF72D6D1",
@@ -157,7 +157,7 @@ function main() {
   runVerify(DEPLOYMENTS.ticTac.playerRegistry, [DEPLOYMENTS.ticTac.playerProfileImpl]);
   runVerify(DEPLOYMENTS.ticTac.instance);
   runVerify(DEPLOYMENTS.ticTac.factory, {
-    contract: "contracts/TicTacChainFactory.sol:TicTacChainFactory",
+    contract: "contracts/TicTacToeFactory.sol:TicTacToeFactory",
     args: [
       SHARED_MODULES.core,
       SHARED_MODULES.matches,
@@ -190,7 +190,7 @@ function main() {
   runVerify(DEPLOYMENTS.chess.playerRegistry, [DEPLOYMENTS.chess.playerProfileImpl]);
   runVerify(DEPLOYMENTS.chess.instance);
   runVerify(DEPLOYMENTS.chess.factory, {
-    contract: "contracts/ChessOnChainFactory.sol:ChessOnChainFactory",
+    contract: "contracts/ChessFactory.sol:ChessFactory",
     args: [
       SHARED_MODULES.core,
       SHARED_MODULES.matches,

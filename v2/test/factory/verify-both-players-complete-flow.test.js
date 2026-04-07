@@ -32,7 +32,7 @@ async function deployAll() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -76,7 +76,7 @@ describe("COMPREHENSIVE: Both players get profiles with enrollment data", functi
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         instanceAddr = event.args.instance;
-        instance = await hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", instanceAddr);
+        instance = await hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", instanceAddr);
 
         // Joiner enrolls
         await instance.connect(joiner).enrollInTournament({ value: entryFee });

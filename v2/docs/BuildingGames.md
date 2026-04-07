@@ -1,5 +1,9 @@
 # Building Games on ETour V2
 
+This is the short builder guide.
+
+For the full V2 architecture, module, storage, lifecycle, and extension-surface documentation, start with [`TechnicalDocumentation.md`](./TechnicalDocumentation.md).
+
 ## Purpose
 
 ETour V2 is designed so a new game contract can inherit the shared tournament, factory, prize, and escalation infrastructure without reimplementing bracket or payout plumbing.
@@ -104,7 +108,7 @@ If those fields are not enough, store extra state in your own mappings keyed by 
 
 Current example:
 
-- [`ChessInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessInstance.sol) uses `_positionCounts` and `_gameNonce` alongside the base `Match` fields.
+- [`Chess.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/Chess.sol) uses `_positionCounts` and `_gameNonce` alongside the base `Match` fields.
 
 ## Module bridge functions
 
@@ -127,12 +131,12 @@ If a game needs one-time instance setup after `initialize(...)`, customize the f
 
 Current example:
 
-- [`ChessOnChainFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessOnChainFactory.sol) calls `setChessRules(...)` from `_postInitializeInstance(...)` instead of duplicating the full `createInstance()` flow.
+- [`ChessFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessFactory.sol) calls `setChessRules(...)` from `_postInitializeInstance(...)` instead of duplicating the full `createInstance()` flow.
 
 ## Current reference games
 
 Use these as working examples:
 
-- [`TicTacInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacInstance.sol)
-- [`ConnectFourInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFourInstance.sol)
-- [`ChessInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessInstance.sol)
+- [`TicTacToe.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacToe.sol)
+- [`ConnectFour.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFour.sol)
+- [`Chess.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/Chess.sol)

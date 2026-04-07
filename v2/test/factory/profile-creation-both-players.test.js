@@ -33,7 +33,7 @@ async function deployAll() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -79,7 +79,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         // Joiner enrolls normally
@@ -144,7 +144,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
@@ -180,7 +180,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .find(e => e && e.name === "InstanceDeployed");
         const instanceAddr = event.args.instance;
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", instanceAddr
+            "contracts/TicTacToe.sol:TicTacToe", instanceAddr
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
@@ -217,7 +217,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
@@ -279,7 +279,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const unauthorizedRegistry = await Registry.deploy(await profileImpl.getAddress());
         await unauthorizedRegistry.waitForDeployment();
 
-        const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+        const Factory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
         const unauthorizedFactory = await Factory.deploy(
             await moduleCore.getAddress(),
             await moduleMatches.getAddress(),
@@ -302,7 +302,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             .map(log => { try { return unauthorizedFactory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });

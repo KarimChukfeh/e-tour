@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
- * @title ETourInstance_Base
+ * @title ETourTournamentBase
  * @dev Abstract base contract for a single ETour tournament instance.
  *
  * Replaces ETour_Base for the new factory/instance architecture.
@@ -25,7 +25,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * The storage layout here must match what the adapted modules expect.
  * NEVER reorder or insert variables between existing ones.
  */
-abstract contract ETourInstance_Base is ReentrancyGuard {
+abstract contract ETourTournamentBase is ReentrancyGuard {
 
     // ============ Constants ============
 
@@ -510,7 +510,9 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         address reg = _getPlayerRegistry();
         if (reg == address(0)) return;
 
-        (bool recorded, ) = reg.call{gas: 150_000}(
+        // Replacement winners may need first-time profile creation plus a
+        // match write; give the registry enough headroom to complete that.
+        (bool recorded, ) = reg.call{gas: 400_000}(
             abi.encodeWithSignature(
                 "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8)",
                 player,

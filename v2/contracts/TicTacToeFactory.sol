@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "./ETourFactory.sol";
-import "./TicTacInstance.sol";
+import "./TicTacToe.sol";
 
 /**
- * @title TicTacChainFactory
+ * @title TicTacToeFactory
  * @dev Factory contract for Tic-Tac-Toe tournament instances.
  */
-contract TicTacChainFactory is ETourFactory {
+contract TicTacToeFactory is ETourFactory {
 
     constructor(
         address moduleCore,
@@ -17,7 +17,7 @@ contract TicTacChainFactory is ETourFactory {
         address moduleEscalation,
         address playerRegistry
     ) ETourFactory(
-        address(new TicTacInstance()),
+        address(new TicTacToe()),
         moduleCore,
         moduleMatches,
         modulePrizes,

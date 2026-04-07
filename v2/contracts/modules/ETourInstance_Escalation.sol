@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Escalation
@@ -15,7 +15,7 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Escalation is ETourInstance_Base {
+contract ETourInstance_Escalation is ETourTournamentBase {
 
     constructor() {}
 
@@ -30,7 +30,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
 
     /**
      * @dev Mark a match as stalled when timeout is claimable.
-     * Called via delegatecall from ETourInstance_Base.claimTimeoutWin().
+     * Called via delegatecall from ETourTournamentBase.claimTimeoutWin().
      */
     function markMatchStalled(bytes32 matchId, uint256 timeoutOccurredAt) external payable onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];

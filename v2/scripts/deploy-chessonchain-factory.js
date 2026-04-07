@@ -1,5 +1,5 @@
 // scripts/deploy-chessonchain-factory.js
-// Deploy ChessOnChainFactory (+ ChessRulesModule + PlayerRegistry + instance modules if not already deployed).
+// Deploy ChessFactory (+ ChessRulesModule + PlayerRegistry + instance modules if not already deployed).
 //
 // Usage:
 //   npx hardhat run scripts/deploy-chessonchain-factory.js --network localhost
@@ -20,7 +20,7 @@ async function main() {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     console.log("=".repeat(60));
-    console.log("ChessOnChainFactory Deployment");
+    console.log("ChessFactory Deployment");
     console.log("=".repeat(60));
     console.log("Deployer:", deployer.address);
     console.log("Network: ", network, `(chainId: ${chainId})`);
@@ -59,9 +59,9 @@ async function main() {
     }
     console.log("");
 
-    // ── 4. ChessOnChainFactory ───────────────────────────────────────────────
-    console.log("Deploying ChessOnChainFactory...");
-    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
+    // ── 4. ChessFactory ───────────────────────────────────────────────
+    console.log("Deploying ChessFactory...");
+    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessFactory.sol:ChessFactory");
     const factory = await ChessFactory.deploy(
         modules.core, modules.matches, modules.prizes, modules.escalation, chessRulesAddr, registryAddr
     );
@@ -74,8 +74,8 @@ async function main() {
         profileImplAddr = await registry.profileImplementation();
     }
     await (await registry.authorizeFactory(factoryAddr)).wait();
-    console.log("  ChessOnChainFactory:", factoryAddr, "[authorized]");
-    console.log("  ChessInstance impl: ", implAddr);
+    console.log("  ChessFactory:", factoryAddr, "[authorized]");
+    console.log("  Chess impl: ", implAddr);
     console.log("");
 
     // ── 5. Save artifacts ────────────────────────────────────────────────────
@@ -98,16 +98,16 @@ async function main() {
             PlayerProfileImpl: profileImplAddr,
             PlayerRegistry: registryAddr,
         },
-        factory: { ChessOnChainFactory: factoryAddr },
-        implementation: { ChessInstance: implAddr },
+        factory: { ChessFactory: factoryAddr },
+        implementation: { Chess: implAddr },
     };
 
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-chess-factory.json`);
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
 
     const [factoryArt, instanceArt, profileArt, registryArt] = await Promise.all([
-        hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
-        hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
+        hre.artifacts.readArtifact("contracts/ChessFactory.sol:ChessFactory"),
+        hre.artifacts.readArtifact("contracts/Chess.sol:Chess"),
         hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
         hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
     ]);
@@ -117,7 +117,7 @@ async function main() {
         PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
     };
 
-    const abiFile = path.join(DEPLOYMENTS_DIR, "ChessOnChainFactory-ABI.json");
+    const abiFile = path.join(DEPLOYMENTS_DIR, "ChessFactory-ABI.json");
     fs.writeFileSync(abiFile, JSON.stringify({
         network, chainId: chainId.toString(), deployedAt: timestamp,
         modules: deployment.modules,

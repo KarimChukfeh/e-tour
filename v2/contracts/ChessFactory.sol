@@ -2,16 +2,16 @@
 pragma solidity ^0.8.20;
 
 import "./ETourFactory.sol";
-import "./ChessInstance.sol";
+import "./Chess.sol";
 
 /**
- * @title ChessOnChainFactory
+ * @title ChessFactory
  * @dev Factory contract for Chess tournament instances.
  *
  * Uses the ETourFactory post-initialization hook to configure CHESS_RULES on
- * each newly deployed ChessInstance clone.
+ * each newly deployed Chess clone.
  */
-contract ChessOnChainFactory is ETourFactory {
+contract ChessFactory is ETourFactory {
 
     address public immutable CHESS_RULES;
 
@@ -23,7 +23,7 @@ contract ChessOnChainFactory is ETourFactory {
         address chessRules,
         address playerRegistry
     ) ETourFactory(
-        address(new ChessInstance()),
+        address(new Chess()),
         moduleCore,
         moduleMatches,
         modulePrizes,
@@ -40,9 +40,9 @@ contract ChessOnChainFactory is ETourFactory {
 
     function _postInitializeInstance(
         address instance,
-        ETourInstance_Base.TierConfig memory,
+        ETourTournamentBase.TierConfig memory,
         address
     ) internal override {
-        ChessInstance(instance).setChessRules(CHESS_RULES);
+        Chess(instance).setChessRules(CHESS_RULES);
     }
 }

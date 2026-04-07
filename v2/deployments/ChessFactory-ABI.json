@@ -7,7 +7,8 @@
     "ETourInstance_Matches": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
     "ETourInstance_MatchesResolution": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "ETourInstance_Prizes": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "ETourInstance_Escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "ETourInstance_Escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ChessRulesModule": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "playerProfile": {
     "PlayerProfileImpl": {
@@ -1049,7 +1050,7 @@
     }
   },
   "factory": {
-    "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
     "abi": [
       {
         "inputs": [
@@ -1071,6 +1072,11 @@
           {
             "internalType": "address",
             "name": "moduleEscalation",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "chessRules",
             "type": "address"
           },
           {
@@ -1239,6 +1245,19 @@
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "CHESS_RULES",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -1911,18 +1930,8 @@
     ]
   },
   "instance": {
-    "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
+    "address": "0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D",
     "abi": [
-      {
-        "inputs": [],
-        "name": "ColumnFull",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "InvalidColumn",
-        "type": "error"
-      },
       {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
@@ -1995,13 +2004,13 @@
           {
             "indexed": false,
             "internalType": "uint8",
-            "name": "column",
+            "name": "from",
             "type": "uint8"
           },
           {
             "indexed": false,
             "internalType": "uint8",
-            "name": "row",
+            "name": "to",
             "type": "uint8"
           }
         ],
@@ -2110,6 +2119,19 @@
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "CHESS_RULES",
+        "outputs": [
+          {
+            "internalType": "contract IChessRules",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -2430,9 +2452,14 @@
         "name": "getBoard",
         "outputs": [
           {
-            "internalType": "uint8[42]",
+            "internalType": "uint256",
             "name": "board",
-            "type": "uint8[42]"
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "state",
+            "type": "uint256"
           }
         ],
         "stateMutability": "view",
@@ -2922,7 +2949,17 @@
           },
           {
             "internalType": "uint8",
-            "name": "column",
+            "name": "from",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "to",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "promotion",
             "type": "uint8"
           }
         ],
@@ -3431,6 +3468,19 @@
           }
         ],
         "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "chessRules_",
+            "type": "address"
+          }
+        ],
+        "name": "setChessRules",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
       },
       {

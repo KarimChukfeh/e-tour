@@ -70,7 +70,7 @@ async function deployAll() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -109,7 +109,7 @@ async function deployTwoFactories() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const ticTacFactory = await TicTacFactory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -174,7 +174,7 @@ async function createInstance(factory, playerCount, entryFee, signer) {
     const event = receipt.logs
         .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
         .find(e => e && e.name === "InstanceDeployed");
-    return hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", event.args.instance);
+    return hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", event.args.instance);
 }
 
 async function advanceTime(seconds) {
@@ -435,7 +435,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         const balanceBefore = await hre.ethers.provider.getBalance(solo.address);
@@ -464,7 +464,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(solo).cancelTournament();
@@ -486,7 +486,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(solo).cancelTournament();
@@ -508,7 +508,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(solo).cancelTournament();
@@ -555,7 +555,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
         await instance.connect(p2).enrollInTournament({ value: entryFee });
 
@@ -589,7 +589,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         // Wait for enrollment window + EL2 delay (2 min + 2 min = 4 min + buffer)
@@ -615,7 +615,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
         await instance.connect(p2).enrollInTournament({ value: entryFee });
 

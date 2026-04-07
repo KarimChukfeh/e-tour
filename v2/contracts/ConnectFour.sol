@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import "./ETourGame.sol";
 
 /**
- * @title ConnectFourInstance
+ * @title ConnectFour
  * @dev Connect Four game instance for the ETour factory/instance architecture.
  *
  * Board: 6 rows × 7 columns = 42 cells, 2 bits per cell (0=empty,1=Red,2=Yellow)
  * Win condition: 4 in a row (horizontal, vertical, diagonal, anti-diagonal)
  * Gravity: pieces drop to the lowest empty row in a column.
  */
-contract ConnectFourInstance is ETourGame {
+contract ConnectFour is ETourGame {
 
     error InvalidColumn();
     error ColumnFull();

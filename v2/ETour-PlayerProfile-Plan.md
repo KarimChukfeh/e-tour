@@ -36,7 +36,7 @@ PlayerRegistry (singleton)
 
 PlayerProfile_Alice
 ├── owner: 0xAlice
-├── enrollments[]: [TicTacInstance_1, ChessInstance_5, ...]
+├── enrollments[]: [TicTacToe_1, Chess_5, ...]
 └── stats: { wins, losses, draws, totalEarnings, tournamentsPlayed, perGameType }
 ```
 
@@ -173,7 +173,7 @@ function getPlayerProfile(address player) external view returns (address) {
 - `_isCallerEnrolledInAnyActive` — raffle skip for now
 - `_getActivePlayersWithWeights` — raffle skip for now
 
-### 4.4 `ETourInstance_Base.sol` — conclusion callback
+### 4.4 `ETourTournamentBase.sol` — conclusion callback
 
 In `_handleTournamentConclusion()`, after prizes are distributed, add a best-effort callback loop:
 
@@ -203,7 +203,7 @@ Gas budget: 50k gas per player × 32 max players = 1.6M gas max for callbacks. A
 ### On Enrollment
 ```
 enrollInTournament() / enrollOnBehalf()
-  └─► ETourInstance_Base.enrollInTournament()
+  └─► ETourTournamentBase.enrollInTournament()
         └─► MODULE_CORE.delegatecall(coreEnroll)
         └─► factory.registerPlayer(player)              ← existing call
               └─► registry.recordEnrollment(player, instance, gameType)
@@ -239,10 +239,10 @@ _handleTournamentConclusion()
 | File | Changes |
 |------|---------|
 | `ETourFactory.sol` | Add `PLAYER_REGISTRY` immutable; replace `playerInstances` + `registerPlayer`; add `getPlayerProfile`; remove raffle player-iteration helpers (stub/skip) |
-| `TicTacChainFactory.sol` | Add `GAME_TYPE = 0`; pass registry to super constructor |
+| `TicTacToeFactory.sol` | Add `GAME_TYPE = 0`; pass registry to super constructor |
 | `ConnectFourFactory.sol` | Add `GAME_TYPE = 1`; pass registry |
-| `ChessOnChainFactory.sol` | Add `GAME_TYPE = 2`; pass registry |
-| `ETourInstance_Base.sol` | Add profile callback loop in `_handleTournamentConclusion()`; cap playerCount validation at 32 |
+| `ChessFactory.sol` | Add `GAME_TYPE = 2`; pass registry |
+| `ETourTournamentBase.sol` | Add profile callback loop in `_handleTournamentConclusion()`; cap playerCount validation at 32 |
 | `ETourFactory.sol` | Cap `_validatePlayerCount` at 32 |
 | Deploy scripts | Deploy `PlayerProfile` impl → `PlayerRegistry` → factories (pass registry); call `authorizeFactory` for each |
 
@@ -260,7 +260,7 @@ _handleTournamentConclusion()
 ### Phase B — Factory + Instance integration
 - [ ] `ETourFactory.sol`: add registry, replace `playerInstances`, remove entire raffle system (`accumulatedProtocolShare`, `raffleResults`, `receiveProtocolShare`, all helpers)
 - [ ] `ETourInstance_Core.sol`: deferred fees — remove immediate owner + protocol transfers; accumulate all three buckets in storage; update `forfeitPool` to full entry fee; update EL1 solo refund to 100%
-- [ ] `ETourInstance_Base.sol`: add `ownerAccrued` + `protocolAccrued` to `TournamentState`; add deferred owner send + profile callbacks + raffle in `_handleTournamentConclusion()`; add `rescueStuckFunds()`; add `TournamentRaffleAwarded` event; cap playerCount at 32
+- [ ] `ETourTournamentBase.sol`: add `ownerAccrued` + `protocolAccrued` to `TournamentState`; add deferred owner send + profile callbacks + raffle in `_handleTournamentConclusion()`; add `rescueStuckFunds()`; add `TournamentRaffleAwarded` event; cap playerCount at 32
 - [ ] Child factories: add `GAME_TYPE`, pass registry
 - [ ] Compile, 0 errors
 
@@ -347,7 +347,7 @@ Step 4: remaining balance (2.5% protocol) → instant raffle among enrolledPlaye
 
 ### 10.4 Implementation Location
 
-The raffle runs directly in `ETourInstance_Base._handleTournamentConclusion()`. No new module — it's tightly coupled to conclusion and has direct access to `enrolledPlayers[]` and the instance's ETH balance.
+The raffle runs directly in `ETourTournamentBase._handleTournamentConclusion()`. No new module — it's tightly coupled to conclusion and has direct access to `enrolledPlayers[]` and the instance's ETH balance.
 
 ```solidity
 // In _handleTournamentConclusion(), after prize distribution + profile callbacks:
@@ -380,7 +380,7 @@ event TournamentRaffleAwarded(
 Since a failed raffle transfer leaves ETH on a concluded instance, add a rescue path:
 
 ```solidity
-// On ETourInstance_Base (callable only by factory owner)
+// On ETourTournamentBase (callable only by factory owner)
 function rescueStuckFunds(address to) external {
     require(msg.sender == ETourFactory(factory).owner(), "Not owner");
     require(tournament.status == TournamentStatus.Concluded, "Not concluded");
@@ -526,10 +526,10 @@ After step 5, instance ETH balance = 0 (barring a failed transfer, rescuable via
 |------|---------|
 | `ETourFactory.sol` | Remove raffle entirely (accumulatedProtocolShare, raffleResults, thresholds, executeProtocolRaffle, receiveProtocolShare, all helpers); add `PLAYER_REGISTRY` immutable; replace `playerInstances` |
 | `ETourInstance_Core.sol` | **Deferred fees**: remove immediate owner + protocol transfers on enroll; accumulate all three buckets in storage (`prizePool`, `ownerAccrued`, `protocolAccrued`); update `forfeitPool` to full entry fee; update EL1 solo refund to 100%; update EL2 claim to use full `forfeitPool` |
-| `ETourInstance_Base.sol` | Add `ownerAccrued` + `protocolAccrued` to `TournamentState`; add deferred owner send + raffle in `_handleTournamentConclusion()`; add profile callback loop; add `rescueStuckFunds()`; add `TournamentRaffleAwarded` event; cap playerCount at 32 |
-| `TicTacChainFactory.sol` | Add `GAME_TYPE = 0`; pass registry |
+| `ETourTournamentBase.sol` | Add `ownerAccrued` + `protocolAccrued` to `TournamentState`; add deferred owner send + raffle in `_handleTournamentConclusion()`; add profile callback loop; add `rescueStuckFunds()`; add `TournamentRaffleAwarded` event; cap playerCount at 32 |
+| `TicTacToeFactory.sol` | Add `GAME_TYPE = 0`; pass registry |
 | `ConnectFourFactory.sol` | Add `GAME_TYPE = 1`; pass registry |
-| `ChessOnChainFactory.sol` | Add `GAME_TYPE = 2`; pass registry |
+| `ChessFactory.sol` | Add `GAME_TYPE = 2`; pass registry |
 | Deploy scripts | Deploy registry first; `authorizeFactory` after each factory |
 
 ---

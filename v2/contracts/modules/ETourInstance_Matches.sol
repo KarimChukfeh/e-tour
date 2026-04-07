@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Matches
@@ -10,7 +10,7 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Matches is ETourInstance_Base {
+contract ETourInstance_Matches is ETourTournamentBase {
 
     error InvalidMatchCount();
     error NotEnoughPlayers();

@@ -103,7 +103,7 @@ async function createInstance(factory, signer) {
         .find(parsed => parsed && parsed.name === "InstanceDeployed");
 
     return hre.ethers.getContractAt(
-        "contracts/ConnectFourInstance.sol:ConnectFourInstance",
+        "contracts/ConnectFour.sol:ConnectFour",
         event.args.instance
     );
 }
@@ -150,7 +150,7 @@ async function playMatchWithWinner(instance, roundNumber, matchNumber, desiredWi
     }
 }
 
-describe("ConnectFourInstance — finals ML3 replacement", function () {
+describe("ConnectFour — finals ML3 replacement", function () {
     this.timeout(60_000);
 
     let factory;

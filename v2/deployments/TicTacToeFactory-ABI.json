@@ -1049,7 +1049,7 @@
     }
   },
   "factory": {
-    "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
     "abi": [
       {
         "inputs": [
@@ -1911,18 +1911,8 @@
     ]
   },
   "instance": {
-    "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
+    "address": "0x94099942864EA81cCF197E9D71ac53310b1468D8",
     "abi": [
-      {
-        "inputs": [],
-        "name": "ColumnFull",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "InvalidColumn",
-        "type": "error"
-      },
       {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
@@ -1995,13 +1985,7 @@
           {
             "indexed": false,
             "internalType": "uint8",
-            "name": "column",
-            "type": "uint8"
-          },
-          {
-            "indexed": false,
-            "internalType": "uint8",
-            "name": "row",
+            "name": "cellIndex",
             "type": "uint8"
           }
         ],
@@ -2430,9 +2414,9 @@
         "name": "getBoard",
         "outputs": [
           {
-            "internalType": "uint8[42]",
+            "internalType": "uint8[9]",
             "name": "board",
-            "type": "uint8[42]"
+            "type": "uint8[9]"
           }
         ],
         "stateMutability": "view",
@@ -2922,7 +2906,7 @@
           },
           {
             "internalType": "uint8",
-            "name": "column",
+            "name": "cellIndex",
             "type": "uint8"
           }
         ],

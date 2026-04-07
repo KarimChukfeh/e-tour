@@ -15,7 +15,7 @@ interface IChessRules {
 }
 
 /**
- * @title ChessInstance
+ * @title Chess
  * @dev Chess game instance for the ETour factory/instance architecture.
  *
  * Board: 4-bit piece encoding per square (64 squares × 4 bits = 256 bits in uint256)
@@ -24,7 +24,7 @@ interface IChessRules {
  * Rules validation: delegated to IChessRules (CHESS_RULES) via staticcall
  * Threefold repetition tracked per-match via _positionCounts
  */
-contract ChessInstance is ETourGame {
+contract Chess is ETourGame {
 
     IChessRules public CHESS_RULES;
 

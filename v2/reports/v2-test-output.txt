@@ -1,0 +1,535 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+
+  ChessFactory active tournament tracking
+    ✔ tracks newly created chess instances in activeTournaments
+    ✔ configures CHESS_RULES through the factory post-initialize hook
+    ✔ moves concluded chess instances from activeTournaments to pastTournaments
+
+  Chess — V2 protocol parity
+    P0 Creation & Lifecycle
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (440ms)
+    P1 R0 Normal Resolution
+      ✔ P1.1 concludes a 2-player direct final with R0 (352ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (716ms)
+    P2 ML1 Timeout
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (306ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (527ms)
+    P3 ML2 Force Elimination
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (494ms)
+      ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (418ms)
+    P4 ML3 Replacement
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (406ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (542ms)
+    P5 Enrollment Escalations
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (245ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (286ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (284ms)
+    P6 Draw Resolution
+      ✔ P6.NA marks finals draw, round draw, and R2 as not applicable for this game
+    P7 Prize Redistribution
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (388ms)
+    P8 Player Records & Resolution Edge Cases
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (313ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (304ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (458ms)
+      ✔ P8.NA marks draw-driven record edge cases as not applicable for this game
+
+  ConnectFour — finals ML3 replacement
+    ✔ awards C the prize and records ML3 finals completion after replacing A and D (73ms)
+
+  ConnectFour — V2 protocol parity
+    P0 Creation & Lifecycle
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (296ms)
+    P1 R0 Normal Resolution
+      ✔ P1.1 concludes a 2-player direct final with R0 (268ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (340ms)
+    P2 ML1 Timeout
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (261ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (326ms)
+    P3 ML2 Force Elimination
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (388ms)
+      ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (342ms)
+    P4 ML3 Replacement
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (393ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (347ms)
+    P5 Enrollment Escalations
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (233ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (260ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (269ms)
+    P6 Draw Resolution
+      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (310ms)
+      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (388ms)
+      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (365ms)
+    P7 Prize Redistribution
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (300ms)
+    P8 Player Records & Resolution Edge Cases
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (304ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (297ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (309ms)
+      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (354ms)
+      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (317ms)
+      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (372ms)
+
+  PlayerRegistry — authorization & clone idempotency
+    ✔ creates a profile on first enrollment
+    ✔ returns the same profile address for repeated enrollments (41ms)
+    ✔ creates distinct profiles for the same player in different games (170ms)
+    ✔ rejects recordEnrollment from unauthorized caller
+    ✔ allows owner to authorize and deauthorize factories
+    ✔ rejects authorizeFactory from non-owner
+
+  PlayerProfile — enrollment & result recording
+    ✔ recordEnrollment only callable by registry
+    ✔ profile enrollment count increases after enrolling in instances
+    ✔ profile enrollment record has correct fields
+
+  Deferred fees — invariant: prizePool + ownerAccrued == entryFee × enrolled
+    ✔ holds for 1 enrolled player
+    ✔ holds for 2 enrolled players
+    ✔ instance ETH balance equals total deferred fees
+    ✔ fee buckets match expected BPS splits
+
+  EL0 — solo enroll → cancel → 100% refund
+    ✔ solo player receives 100% of entry fee back
+    ✔ owner receives nothing on EL0
+    ✔ instance balance is 0 after EL0
+    ✔ profile result stores refund separately from prize on EL0 cancel
+
+  EL2 — partial enroll → abandoned claim → standard fee splits
+    ✔ claimer receives 95% of all enrolled entry fees
+    ✔ owner wallet receives the 5% share on EL2
+    ✔ non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result (49ms)
+
+  Normal 2-player conclusion — fee distribution
+    ✔ owner wallet receives exactly 5% × 2 players at conclusion
+    ✔ instance balance is 0 after conclusion
+    ✔ winner receives ~95% of total pot
+
+  Profile push — stats updated automatically at conclusion
+    ✔ finalizes both winner and loser profiles when the winning move uses estimated gas (87ms)
+    ✔ winner profile: totalWins=1, totalPlayed=1 after conclusion (98ms)
+    ✔ loser profile: totalLosses=1, totalWins=0 after conclusion (40ms)
+    ✔ records EvenSplit payout metadata for every player when an entire round draws (120ms)
+    ✔ winner profile: concluded=true, won=true on enrollment record (39ms)
+    ✔ stores tournament resolution metadata and per-match outcomes separately (54ms)
+    ✔ loser profile: concluded=true, won=false on enrollment record (41ms)
+    ✔ winner net earnings = prize - entryFee (positive) (39ms)
+    ✔ loser net earnings = 0 - entryFee (negative) (38ms)
+
+  Player count cap
+    ✔ rejects playerCount of 64
+    ✔ accepts playerCount of 32
+
+  ETourInstance_Prizes redistribution on failed payouts
+    ✔ records Victory payout metadata for a paid winner (258ms)
+    ✔ redistributes a rejecting winner's full prize across the other enrolled player (236ms)
+    ✔ keeps redistributing failed shares until only accepting enrolled players remain (275ms)
+
+  TicTacToe — 4-player, 0.002 ETH, finalist wins prize
+    Factory & Instance Deployment
+      ✔ deploys TicTacToeFactory with correct owner
+      ✔ creates a 4-player 0.002 ETH instance
+      ✔ instance references back to the factory
+      ✔ instance tier config matches creation params
+      ✔ instance starts in Enrolling status
+      ✔ factory tracks the new instance
+      ✔ rejects direct external calls to lifecycle bridge functions
+    Enrollment
+      ✔ rejects incorrect entry fee
+      ✔ creator is auto-enrolled on instance creation
+      ✔ accepts the second player at the correct fee
+      ✔ rejects duplicate enrollment
+      ✔ routes fees correctly on each enrollment (deferred — held on instance)
+      ✔ registers the player on the factory (profile created in registry)
+      ✔ enrolls players 3 and 4 (still Enrolling after 3)
+      ✔ final player enrollment auto-starts the tournament
+      ✔ prize pool equals 95% of total fees collected
+    Semi-finals (Round 0): 2 matches, 4 → 2 players
+      ✔ round 0 is initialized with 2 matches
+      ✔ match 0 of round 0 has two enrolled players assigned
+      ✔ semifinal match 0 completes with a winner
+      ✔ semifinal match 1 completes with a winner
+      ✔ round 0 is fully completed
+      ✔ tournament advances to round 1 (finals)
+    Finals (Round 1): champion wins the prize pool
+      ✔ final match is initialized with the two semi-final winners
+      ✔ final match is InProgress
+      ✔ champion wins the final and tournament concludes
+      ✔ prize pool was sent to the champion
+      ✔ champion received correct ETH (prize pool value)
+      ✔ tournament winner is recorded on-chain
+      ✔ instance is permanently locked — no further enrollment
+      ✔ instance is permanently locked — no further moves
+    Fee Accounting on Factory
+      ✔ owner wallet received the correct 5% share at conclusion
+      ✔ factory ownerBalance stays at 0 after successful owner payout
+      ✔ instance balance is 0 after prize and owner-share settlement
+      ✔ falls back to ownerBalance when the owner address rejects ETH
+    Tier Deduplication
+      ✔ creating two instances with same params reuses the same tierKey (64ms)
+      ✔ changing only timeout params creates a different tierKey (41ms)
+      ✔ factory has exactly one tier entry for that config
+
+  TicTacToe — 2-player, 0.001 ETH, single-round tournament
+    ✔ tierConfig.totalRounds is 1 for a 2-player tournament
+    ✔ p1 enrolling fills the tournament and auto-starts it
+    ✔ round 0 is initialized with exactly 1 match
+    ✔ tournament concludes after playing round 0 (no further rounds)
+    ✔ champion received the prize pool (instance balance = 0)
+    ✔ prize pool was 95% of 2 × entry fee
+
+  TicTacToe — 8-player, 0.003 ETH, 3-round bracket
+    ✔ tierConfig.totalRounds is 3 for an 8-player tournament
+    ✔ tournament started with 8 enrolled players
+    ✔ round 0 (quarter-finals) has 4 matches
+    ✔ all 4 quarter-final matches complete
+    ✔ tournament advances to round 1 (semi-finals)
+    ✔ round 1 (semi-finals) has 2 matches
+    ✔ both semi-final matches complete
+    ✔ tournament advances to round 2 (finals)
+    ✔ round 2 (finals) has 1 match
+    ✔ final match completes and tournament concludes
+    ✔ champion received the full prize pool
+
+  TicTacToe — 2-player draw in finals, equal prize split
+    ✔ playing a draw completes the match as draw
+    ✔ tournament concludes after the draw
+    ✔ tournament winner is address(0) for a draw conclusion
+    ✔ prize pool is split equally between both players
+    ✔ instance balance is zero after distribution
+
+  TicTacToe — 4-player all-draw round pays every player equally
+    ✔ sets the same payout and EvenSplit payoutReason for every player
+
+  TicTacToe — move validation edge cases
+    ✔ rejects a move from a non-participant
+    ✔ rejects moving out of turn
+    ✔ rejects an out-of-bounds cell (index >= 9)
+    ✔ rejects playing on an occupied cell
+    ✔ rejects moves after the match has completed
+
+  TicTacToe — time bank (Fischer clock)
+    ✔ both players start with matchTimePerPlayer time bank
+    ✔ after a move, the moving player's time bank decreases (and gains increment)
+    ✔ lastMoveTime is updated after each move
+
+  TicTacToe — timeout claim (claimTimeoutWin)
+    ✔ claimTimeoutWin reverts if opponent has not yet timed out
+    ✔ claimTimeoutWin succeeds after opponent's time expires
+
+  TicTacToe — ML2 escalation (forceEliminateStalledMatch)
+    ✔ match 1 completes normally (player for ML2 needs to have won a match)
+    ✔ match 0 stalls — current turn player's time expires
+    ✔ ML2 is available for match 0 after timeout + L2 delay
+    ✔ winner of match 1 can force-eliminate stalled match 0
+    ✔ a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament (87ms)
+
+  TicTacToe — ML3 escalation (claimMatchSlotByReplacement)
+    ✔ stalls match 0 by advancing time past matchTimePerPlayer + ML3 delay
+    ✔ ML3 is available for match 0
+    ✔ outsider can claim a slot via ML3 replacement
+
+  TicTacToe — enrollment escalations (EL0 / EL1)
+    ✔ tournament is Enrolling with only 1 player
+    ✔ solo enrolled player can cancel and reset immediately, but cannot force start
+    ✔ forceStartTournament reverts before the enrollment window expires
+    ✔ forceStartTournament still reverts after the enrollment window expires if only 1 player is enrolled
+    ✔ cancelTournament succeeds immediately for a solo enrolled player
+    ✔ solo player received 100% of entry fee back on EL0 cancel
+    ✔ cancelTournament is not available once a second player enrolls
+    ✔ resetEnrollmentWindow pushes EL1 and EL2 deadlines forward for the solo player
+    ✔ forceStartTournament succeeds after enrollment window expires when 2 players are enrolled
+    ✔ awards the auto-advanced player if the only played EL1 semifinal ends in a draw
+
+  TicTacToe — conclusion settlement
+    ✔ factory has no legacy protocol raffle API
+    ✔ owner share stays on instance until conclusion
+    ✔ pays the deferred 5% owner share to the owner wallet at conclusion
+    ✔ extra forced ETH remains untouched after conclusion
+    ✔ EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet (203ms)
+    ✔ instance balance is 0 after conclusion
+
+  TicTacToe — factory instance tracking and pagination
+    ✔ getInstanceCount returns 3
+    ✔ getInstances(0, 3) returns all 3 instances
+    ✔ getInstances(1, 2) returns 2 instances starting at offset 1
+    ✔ getInstances(3, 10) returns empty array (offset past end)
+    ✔ two instances with same params share a tierKey
+    ✔ instance with different params has a different tierKey
+    ✔ factory tracks 2 tier keys total
+    ✔ player profile tracks all instances creator enrolled in
+    ✔ getActiveTierConfigs returns both tier configs
+
+  TicTacToe — players, activeTournaments, pastTournaments
+    ✔ players[owner] is zero before any enrollment
+    ✔ activeTournaments is empty before any instance is created
+    ✔ instance appears in activeTournaments immediately after creation
+    ✔ players[owner] is set after creator's first enrollment
+    ✔ players[owner] matches registry getProfile(owner)
+    ✔ players[p1] is zero before p1 enrolls
+    ✔ players[p1] set after p1 enrolls; instance moves to pastTournaments on conclusion
+    ✔ swap-and-pop: completing middle tournament leaves activeTournaments consistent (70ms)
+    ✔ EL0 cancel also moves instance to pastTournaments (even with 0 owner share)
+
+  TicTacToe — factory creation guardrails
+    ✔ rejects non-power-of-2 player count (e.g. 3)
+    ✔ rejects player count 0
+    ✔ rejects player count above 64 (e.g. 128)
+    ✔ accepts the new minimum entry fee of 0.0001 ETH
+    ✔ rejects entry fee that is not a multiple of 0.0001 ETH
+    ✔ rejects zero entry fee
+    ✔ rejects entry fee above the 1 ETH max
+    ✔ rejects createInstance with mismatched msg.value (less than entryFee)
+    ✔ rejects enrollment window below 2 minutes
+    ✔ rejects enrollment window above 30 minutes
+    ✔ rejects enrollment window that is not a whole minute
+    ✔ accepts enrollment window at the minimum boundary
+    ✔ accepts enrollment window for an in-range custom minute value
+    ✔ accepts enrollment window at the maximum boundary
+    ✔ rejects time per player below 1 minute
+    ✔ rejects time per player above 20 minutes
+    ✔ rejects time per player that is not a whole minute
+    ✔ accepts time per player at the minimum boundary
+    ✔ accepts time per player for an in-range custom minute value
+    ✔ accepts time per player at the maximum boundary
+    ✔ rejects increment time above 60 seconds
+    ✔ accepts increment time at the minimum boundary
+    ✔ accepts increment time for an in-range custom second value
+    ✔ accepts increment time at the maximum boundary
+
+  TicTacToe — permanent record view functions
+    ✔ getInstanceInfo returns correct tier and status
+    ✔ getPlayers returns all enrolled players
+    ✔ getBracket returns correct round/match counts
+    ✔ getMatch returns full match detail
+    ✔ getMatchMoves returns non-empty moves string
+    ✔ getPrizeDistribution shows winner received the prize
+    ✔ getPlayerResult shows correct result for each player
+
+  TicTacToe — player activity: normal win
+    ✔ winner: participated=true, isWinner=true, prizeWon>0
+    ✔ loser: participated=true, isWinner=false, prizeWon=0
+    ✔ match record: winner set, isDraw=false, status=Completed
+    ✔ getMatchMoves returns non-empty moves string
+    ✔ getPrizeDistribution: winner received 95% of pool
+    ✔ completionReason is R0 / NormalWin (0)
+
+  TicTacToe — player activity: timeout win (ML1)
+    ✔ winner: isWinner=true, prizeWon>0
+    ✔ loser: isWinner=false, prizeWon=0
+    ✔ match record: winner set, isDraw=false, status=Completed
+    ✔ completionReason is ML1 / Timeout (1)
+
+  TicTacToe — player activity: draw
+    ✔ both players: participated=true, isWinner=false
+    ✔ prize split equally between both players
+    ✔ match record: matchWinner=address(0), isDraw=true
+    ✔ getPrizeDistribution: total equals 95% of pool
+    ✔ completionReason is R1 / Draw (2) for a 2-player finals draw
+
+  TicTacToe — player activity: ML2 force elimination
+    ✔ both stalled players: participated=true, isWinner=false, prizeWon=0
+    ✔ match 0 record: matchWinner=address(0), isDraw=false, status=Completed
+
+  TicTacToe — player activity: ML3 replacement
+    ✔ both original players: participated=true, isWinner=false, prizeWon=0
+    ✔ match 0 record: matchWinner=outsider, status=Completed
+    ✔ outsider: enrolled in tournament and isWinner=true
+
+  TicTacToe — player activity: multi-round match tracking
+    ✔ tournament concludes with a champion
+    ✔ champion: isWinner=true, prizeWon = 95% of pool
+    ✔ all 3 rounds have completed matches for the champion's path
+    ✔ getMatchMoves non-empty for all 3 rounds of champion's path
+    ✔ first-round loser: participated=true, isWinner=false, prizeWon=0
+    ✔ non-enrolled address: participated=false, isWinner=false, prizeWon=0
+
+  TicTacToe — move history tracking
+    move history for ongoing match
+      ✔ should record single move correctly
+      ✔ should record multiple moves with comma separation
+      ✔ should track full game sequence in ongoing match
+      ✔ should preserve move order in ongoing match
+      ✔ should handle edge cell indices correctly
+    move history for completed match
+      ✔ should preserve full move history after win
+      ✔ should preserve full move history after draw
+      ✔ should preserve move history after tournament conclusion
+      ✔ should track move history across multiple matches in tournament (49ms)
+      ✔ should return empty string for match with no moves
+
+  TicTacToe — V2 protocol parity
+    P0 Creation & Lifecycle
+      ✔ P0.1 creates, auto-enrolls, auto-starts, and moves the instance from active to past (295ms)
+    P1 R0 Normal Resolution
+      ✔ P1.1 concludes a 2-player direct final with R0 (272ms)
+      ✔ P1.2 concludes a 4-player bracket with R0 and validates every touched match (340ms)
+    P2 ML1 Timeout
+      ✔ P2.1 concludes a 2-player tournament by direct timeout claim (287ms)
+      ✔ P2.2 advances a 4-player bracket through a semifinal timeout and still validates the final state (322ms)
+    P3 ML2 Force Elimination
+      ✔ P3.1 force-eliminates a stalled semifinal, then concludes the bracket normally (402ms)
+      ✔ P3.2 lets the finalist force-eliminate the other semifinal and win the tournament by ML2 (335ms)
+    P4 ML3 Replacement
+      ✔ P4.1 replaces both players in a semifinal, then continues the bracket (418ms)
+      ✔ P4.2 replaces both finalists and ends the tournament by ML3 (351ms)
+    P5 Enrollment Escalations
+      ✔ P5.1 supports EL0 solo cancel with full refund and consistent terminal records (236ms)
+      ✔ P5.2 exercises EL1 mechanics: reset window, force-start gating, and bye materialization (258ms)
+      ✔ P5.3 supports EL2 abandoned-claim resolution by an outsider (273ms)
+    P6 Draw Resolution
+      ✔ P6.1 resolves a 2-player finals draw with R1 and equal payout (274ms)
+      ✔ P6.2 resolves an all-draw semifinal round with R1 and even split for every player (324ms)
+      ✔ P6.3 awards the uncontested finalist with R2 when the other semifinal ends in a draw (320ms)
+    P7 Prize Redistribution
+      ✔ P7.1 redistributes a rejecting winner's payout to the remaining enrolled player (283ms)
+    P8 Player Records & Resolution Edge Cases
+      ✔ P8.1 records original finalists' tournament outcome and the outsider's replacement match win in a direct ML3 final (285ms)
+      ✔ P8.2 records EL2 terminal tournament results without creating any player match records (283ms)
+      ✔ P8.3 preserves per-player records when ML2 awards the tournament without a played final (325ms)
+      ✔ P8.4 keeps draw and ML3 record semantics distinct when an outsider wins from the non-drawn side (367ms)
+      ✔ P8.5 records R2 correctly when a bye finalist wins without ever playing a match (303ms)
+      ✔ P8.6 leaves every player without a finals match record when an entire semifinal round draws (335ms)
+
+  Debug: factory.players() mapping population
+Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+factory.players(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
+factory.getPlayerProfile(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
+registry.getProfile(creator): 0xF94B38781935acD00f55dd818aC682934E14b7CE
+    ✔ factory.players() is populated for creator after createInstance
+Joiner address: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+factory.players(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
+factory.getPlayerProfile(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
+registry.getProfile(joiner): 0xC5d46Ba6B3E499fa7af25AE6EF175Fc2951a8Da0
+    ✔ factory.players() is populated for joiner after enrollInTournament
+
+=== After both players enrolled ===
+Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+factory.players(creator): 0xc58005b0dD042a225c3773a74b70a5F9614c90BD
+
+Joiner address:  0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+factory.players(joiner):  0x7204454a0Baf60B5B7D57cA08aC687662Cf13904
+    ✔ BOTH factory.players() entries exist after full 2-player enrollment
+
+  Profile creation — both players (creator + joiner)
+Creator address: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Creator profile: 0x2b68B6c2C7dAF1ee286B3b7642c2Fc738E32F199
+Joiner address:  0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+Joiner profile:  0x257d6E43Fe5b9Bc84b47c2db8a326A336Ed9241f
+    ✔ BOTH players get profiles: creator via enrollOnBehalf, joiner via enrollInTournament
+Creator enrollment count: 1
+    ✔ creator profile has enrollment record after createInstance
+Joiner enrollment count: 1
+    ✔ joiner profile has enrollment record after enrollInTournament
+Both players enrolled in same instance: 0xFCbaE37d88344b36d7641aa6f495C350f415562c
+    ✔ BOTH profiles show enrollment records for the SAME instance (48ms)
+Creator stats after tournament:
+  totalPlayed: 1
+  totalWins:   1
+  totalLosses: 0
+    ✔ creator profile shows stats AFTER tournament completes (41ms)
+Factory NOT authorized - testing failure scenario
+Creator profile (should be zero): 0x0000000000000000000000000000000000000000
+Joiner profile (should be zero):  0x0000000000000000000000000000000000000000
+    ✔ BUG CHECK: without factory authorization, NO profiles are created (169ms)
+
+  COMPREHENSIVE: Both players get profiles with enrollment data
+
+================================================================================
+SETUP COMPLETE
+================================================================================
+Instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+Creator:  0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+Joiner:   0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+================================================================================
+
+    Step 1: PlayerRegistry has profiles for BOTH players
+registry.getProfile(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+      ✔ registry.getProfile(creator) returns non-zero address
+registry.getProfile(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+      ✔ registry.getProfile(joiner) returns non-zero address
+    Step 2: Factory.players() mapping has BOTH players
+factory.players(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+      ✔ factory.players(creator) returns non-zero address
+factory.players(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+      ✔ factory.players(joiner) returns non-zero address
+    Step 3: Factory.getPlayerProfile() works for BOTH players
+factory.getPlayerProfile(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+      ✔ factory.getPlayerProfile(creator) returns non-zero address
+factory.getPlayerProfile(joiner):  0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+      ✔ factory.getPlayerProfile(joiner) returns non-zero address
+    Step 4: Creator's PlayerProfile contract has enrollment data
+creator.getEnrollmentCount(): 1
+      ✔ creator profile: getEnrollmentCount() returns 1
+creator.getEnrollments() length: 1
+      ✔ creator profile: getEnrollments() returns 1 record
+creator enrollment[0].instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ creator profile: enrollment record has correct instance address
+creator enrollment[0].entryFee: 0.001
+      ✔ creator profile: enrollment record has correct entryFee
+creator enrollment[0].gameType: 0
+      ✔ creator profile: enrollment record has correct gameType (TicTac = 0)
+creator.getEnrollmentByInstance() instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ creator profile: getEnrollmentByInstance() returns correct data
+    Step 5: Joiner's PlayerProfile contract has enrollment data
+joiner.getEnrollmentCount(): 1
+      ✔ joiner profile: getEnrollmentCount() returns 1
+joiner.getEnrollments() length: 1
+      ✔ joiner profile: getEnrollments() returns 1 record
+joiner enrollment[0].instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ joiner profile: enrollment record has correct instance address
+joiner enrollment[0].entryFee: 0.001
+      ✔ joiner profile: enrollment record has correct entryFee
+joiner enrollment[0].gameType: 0
+      ✔ joiner profile: enrollment record has correct gameType (TicTac = 0)
+joiner.getEnrollmentByInstance() instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ joiner profile: getEnrollmentByInstance() returns correct data
+    Step 6: Instance contract shows BOTH players enrolled
+instance.isEnrolled(creator): true
+      ✔ instance.isEnrolled(creator) returns true
+instance.isEnrolled(joiner):  true
+      ✔ instance.isEnrolled(joiner) returns true
+instance.getPlayers(): Result(2) [
+  '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+  '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'
+]
+      ✔ instance.getPlayers() returns both creator and joiner
+    Step 7: SIMULATING UI QUERIES - Both players should be found
+
+--- SIMULATING UI QUERY FOR CREATOR ---
+1. factory.players(creator): 0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+2. profile.getEnrollments() count: 1
+3. First enrollment instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ UI query for CREATOR works
+
+--- SIMULATING UI QUERY FOR JOINER ---
+1. factory.players(joiner): 0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+2. profile.getEnrollments() count: 1
+3. First enrollment instance: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+      ✔ UI query for JOINER works
+    Step 8: FINAL SUMMARY
+
+================================================================================
+FINAL VERIFICATION SUMMARY
+================================================================================
+
+CREATOR (0x70997970C51812dc3A010C7d01b50e0d17dc79C8):
+  Profile address:      0x2028b38dB22e4004f91bd3fCF10b7e62a7a263B1
+  Enrollment count:     1
+  Instance enrolled in: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+
+JOINER (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC):
+  Profile address:      0x0BaC69356F7ba7589917a3351C9c630F92D1ed3A
+  Enrollment count:     1
+  Instance enrolled in: 0x6A5c519f16a3A13790aDeb474F0bc272552c9375
+
+================================================================================
+✅ BOTH PLAYERS HAVE COMPLETE PROFILE DATA
+================================================================================
+
+      ✔ prints complete summary for both players
+
+
+  315 passing (41s)
+

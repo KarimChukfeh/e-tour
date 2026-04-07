@@ -46,7 +46,7 @@ async function deployFactory() {
     await registry.waitForDeployment();
 
     const Factory = await hre.ethers.getContractFactory(
-        "contracts/TicTacChainFactory.sol:TicTacChainFactory"
+        "contracts/TicTacToeFactory.sol:TicTacToeFactory"
     );
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
@@ -86,7 +86,7 @@ async function createInstance(factory, playerCount, entryFee, creator) {
         .find(parsed => parsed && parsed.name === "InstanceDeployed");
 
     return hre.ethers.getContractAt(
-        "contracts/TicTacInstance.sol:TicTacInstance",
+        "contracts/TicTacToe.sol:TicTacToe",
         event.args.instance
     );
 }

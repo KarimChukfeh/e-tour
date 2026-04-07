@@ -4,21 +4,21 @@ pragma solidity ^0.8.20;
 import "./ETourGame.sol";
 
 /**
- * @title TicTacInstance
+ * @title TicTacToe
  * @dev Tic-Tac-Toe game instance for the ETour factory/instance architecture.
  *
- * Inherits ETourGame (→ ETourInstance → ETourInstance_Base) and adds:
+ * Inherits ETourGame (→ ETourInstance → ETourTournamentBase) and adds:
  * - 2-bit packed board representation (9 cells × 2 bits = 18 bits in uint256)
  * - 3x3 win detection (8 lines)
  * - Fischer increment time control
  * - makeMove() with board update and completion detection
  *
  * Deployed once as the implementation contract; clones are deployed by
- * TicTacChainFactory.createInstance() for each tournament.
+ * TicTacToeFactory.createInstance() for each tournament.
  *
  * Part of the RW3 (Reclaim Web3) movement.
  */
-contract TicTacInstance is ETourGame {
+contract TicTacToe is ETourGame {
 
     // ============ Events ============
 
