@@ -1,18 +1,18 @@
 {
-  "network": "arbitrum",
-  "chainId": "42161",
-  "deployedAt": "2026-04-07T07:52:35.736Z",
+  "network": "localhost",
+  "chainId": "412346",
+  "deployedAt": "2026-04-07T19:45:55.302Z",
   "modules": {
-    "ETourInstance_Core": "0xD5BB4672434544B7753C35a1e5d20631ba79AEB7",
-    "ETourInstance_Matches": "0xcbAf12F6bB7490b0C7EEF1F4dA04c8009d169e8A",
-    "ETourInstance_MatchesResolution": "0x20CDf220e7e0276434C6057d926ecb0B76f8d485",
-    "ETourInstance_Prizes": "0x6aa9c88D4516838F624585ad76FEA33A29cb6473",
-    "ETourInstance_Escalation": "0x963991420Bffb10075cD0C47374EEA165DC0a762",
-    "ChessRulesModule": "0x54990Fa24F5dB60De65532d55a95A8405aCedfF5"
+    "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "ETourInstance_Matches": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "ETourInstance_MatchesResolution": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "ETourInstance_Prizes": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ETourInstance_Escalation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ChessRulesModule": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
   },
   "playerProfile": {
     "PlayerProfileImpl": {
-      "address": "0x9aE3b24F136c843bb24Ea0cEc0AdB43Ce7a73E13",
+      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
       "abi": [
         {
           "inputs": [],
@@ -630,7 +630,7 @@
       ]
     },
     "PlayerRegistry": {
-      "address": "0xcC84d99f938A434a74Bb74642E34B78a87b975C5",
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
       "abi": [
         {
           "inputs": [
@@ -1082,7 +1082,7 @@
     }
   },
   "factory": {
-    "address": "0x0C48382605fd65f15518782F5b69E936c4461313",
+    "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
     "abi": [
       {
         "inputs": [
@@ -1962,7 +1962,7 @@
     ]
   },
   "instance": {
-    "address": "0xe7957e1663f4959689f495a73A45D4dC2cf0bD83",
+    "address": "0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D",
     "abi": [
       {
         "inputs": [],
