@@ -60,6 +60,17 @@ The resulting system is a hybrid of:
 
 ## Contracts
 
+At a high level, the ETour contract stack looks like this:
+
+```text
+ETourFactory
+   ├─ deploys once → Game Implementation (ETourGame + your code)
+   └─ clones many  → Tournament Clone / Instance
+                       ├─ stores tournament, round, and match state
+                       ├─ executes implementation code
+                       └─ delegatecalls → ETour Modules (shared logic)
+```
+
 ### Game Contracts
 
 Game contracts are the developer-facing entrypoint into ETour.
@@ -375,6 +386,23 @@ ETour explicitly treats those game-owned fields as opaque. Infra should rely on 
 
 There are three important execution styles in ETour.
 
+At a glance, the execution boundary looks like this:
+
+```text
+EOA / frontend
+       ↓ direct call
+┌──────────────────────────────────┐
+│ Tournament Clone / Instance      │  ← indexers read state here
+│ - tournament / round / match data│
+├──────────────────────────────────┤
+│ ETour Modules                    │  ← shared logic via delegatecall
+├──────────────────────────────────┤
+│ Game Implementation              │  ← your rules + makeMove(...)
+└──────────────────────────────────┘
+```
+
+The important correction is that ETour does **not** deploy one contract per match. Match data lives inside the tournament clone's storage.
+
 ### 1. Direct Calls Into the Clone
 
 Example:
@@ -420,6 +448,14 @@ Why this shape exists:
 This is why the real game extension surface is not those public `module*` functions. It is the internal hook surface in [`ETourGame.sol`](../contracts/ETourGame.sol).
 
 ## Tournament Lifecycle
+
+The full lifecycle is easiest to reason about as a single flow:
+
+```text
+Clone created → Players enroll → Tournament starts → Matches initialized
+→ Moves submitted → Timeout / escalation if needed → Winners advance
+→ Tournament concludes → Payouts + profile updates
+```
 
 ### 1. Initialization
 
@@ -867,9 +903,9 @@ That is why chess can maintain `_positionCounts` and `_gameNonce` without forcin
 
 ## Building Games on ETour
 
-This section supersedes and expands the shorter builder guide in [`BuildingGames.md`](./BuildingGames.md).
+This guide walks you through the A-Z of deploying a game with ETour integration
 
-### What You Need
+## What You Need
 
 At the authoring level, building on ETour is intentionally narrow. You mainly write two contracts:
 
@@ -970,11 +1006,9 @@ That is all you are supposed to own. ETour continues to own:
 - payouts
 - permanent tournament record storage
 
-### Dependencies
+## Dependencies
 
-There are two kinds of dependencies here: protocol contract dependencies and developer-tooling dependencies.
-
-#### Contract Dependencies
+### Requirements
 
 These are the **must-have** Solidity dependencies.
 
@@ -1003,7 +1037,7 @@ And because the ETour instance/factory architecture delegates lifecycle logic in
 
 Those contracts are not optional. They are the actual protocol inheritance and execution surface.
 
-#### Deployment Dependencies
+### Helpers
 
 These are **not** part of the ETour protocol itself. They are just a practical way to compile, deploy, test, and integrate.
 
@@ -1024,30 +1058,9 @@ The distinction is important:
 - the protocol contracts are mandatory
 - the surrounding JS/config/devops layer is replaceable
 
-### Live Examples
+## Project Structure
 
-The live V2 examples on Arbitrum One are:
-
-- [TicTacToeFactory](https://arbiscan.io/address/0x9b370782C5BE175CA3DC57606E32c56b9653A62a)
-- [ConnectFourFactory](https://arbiscan.io/address/0x35e7b5eFadcc752a3b55c43BFe430c04Aec31b4d)
-- [ChessFactory](https://arbiscan.io/address/0x0C48382605fd65f15518782F5b69E936c4461313)
-
-And the corresponding implementation contracts are:
-
-- [TicTacToe](https://arbiscan.io/address/0x8C7272980dE407CA791b7C718394a6e215d44dd4)
-- [ConnectFour](https://arbiscan.io/address/0x567A20A586073d9ADc1832074Ffc0c8b127b464c)
-- [Chess](https://arbiscan.io/address/0xe7957e1663f4959689f495a73A45D4dC2cf0bD83)
-
-Architecturally, those are nothing more exotic than:
-
-- `GameA is ETourGame`
-- `GameAFactory is ETourFactory`
-
-That is the point. The live deployments prove the pattern is the real pattern, not a documentation abstraction.
-
-### Project Structure
-
-#### Minimal
+### Minimal
 
 Conceptually, the smallest contract-only project is:
 
@@ -1072,7 +1085,7 @@ In practice, if you are copying files manually, the ETour inheritance/import cha
 
 So the minimal compileable tree is larger than the six filenames above. The six-contract view is useful for understanding responsibility, not for pretending the transitive imports do not exist.
 
-#### Practical
+### Practical
 
 A realistic project usually looks more like this:
 
@@ -1081,23 +1094,22 @@ my-etour-game/
 ├── .env
 ├── package.json
 ├── package-lock.json
-└── v2/
-    ├── hardhat.config.js
-    ├── contracts/
-    │   ├── ETourFactory.sol
-    │   ├── ETourGame.sol
-    │   ├── ETourInstance.sol
-    │   ├── ETourTournamentBase.sol
-    │   ├── PlayerRegistry.sol
-    │   ├── PlayerProfile.sol
-    │   ├── MyGame.sol
-    │   ├── MyGameFactory.sol
-    │   ├── interfaces/
-    │   ├── modules/
-    │   └── test-helpers/
-    ├── deployments/
-    ├── scripts/
-    └── test/
+├── hardhat.config.js
+├── contracts/
+│   ├── ETourFactory.sol
+│   ├── ETourGame.sol
+│   ├── ETourInstance.sol
+│   ├── ETourTournamentBase.sol
+│   ├── PlayerRegistry.sol
+│   ├── PlayerProfile.sol
+│   ├── MyGame.sol
+│   ├── MyGameFactory.sol
+│   ├── interfaces/
+│   ├── modules/
+│   └── test-helpers/
+├── deployments/
+├── scripts/
+└── test/
 ```
 
 That practical tree is what most teams will actually want:
@@ -1109,11 +1121,11 @@ That practical tree is what most teams will actually want:
 - tests
 - helper contracts
 
-## A-Z Example: Checkers
+## Example: Checkers
 
 The checkers reference below is the concrete end-to-end example of the ETour pattern.
 
-#### Dependencies
+### Dependencies
 
 If you want a practical local setup from a fresh machine, the easiest path is to start from this repo or a future starter kit.
 
@@ -1140,10 +1152,10 @@ Minimal example:
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "compile": "hardhat compile --config v2/hardhat.config.js",
-    "test": "hardhat test --config v2/hardhat.config.js",
-    "deploy:modules": "hardhat run v2/scripts/deploy-instance-modules.js --config v2/hardhat.config.js --network localhost",
-    "deploy:checkers": "hardhat run v2/scripts/deploy-checkers-factory.js --config v2/hardhat.config.js --network localhost"
+    "compile": "hardhat compile --config hardhat.config.js",
+    "test": "hardhat test --config hardhat.config.js",
+    "deploy:modules": "hardhat run scripts/deploy-instance-modules.js --config hardhat.config.js --network localhost",
+    "deploy:checkers": "hardhat run scripts/deploy-checkers-factory.js --config hardhat.config.js --network localhost"
   }
 }
 ```
@@ -1168,7 +1180,7 @@ npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
 npm install @openzeppelin/contracts dotenv
 ```
 
-4. Create your V2 Hardhat config at `v2/hardhat.config.js`.
+4. Create your Hardhat config at `hardhat.config.js`.
 
 Minimal example:
 
@@ -1233,8 +1245,7 @@ This file should live here:
 
 ```text
 my-etour-checkers/
-└── v2/
-    └── hardhat.config.js
+└── hardhat.config.js
 ```
 
 5. Create a root `.env` file:
@@ -1250,11 +1261,10 @@ This file belongs at project root:
 ```text
 my-etour-checkers/
 ├── .env
-└── v2/
-    └── hardhat.config.js
+└── hardhat.config.js
 ```
 
-6. Add the required ETour contract dependencies into `v2/contracts/`.
+6. Add the required ETour contract dependencies into `contracts/`.
 
 At minimum, copy in:
 
@@ -1269,7 +1279,7 @@ At minimum, copy in:
 
 Those are the required contract dependencies. The rest of the checkers example will sit on top of them.
 
-#### Checkers.sol
+### Checkers.sol
 
 The checked-in source file remains the source of truth:
 
@@ -1755,7 +1765,7 @@ contract Checkers is ETourGame {
 }
 ```
 
-#### CheckersFactory.sol
+### CheckersFactory.sol
 
 The checked-in source file remains the source of truth:
 
@@ -1797,7 +1807,7 @@ contract CheckersFactory is ETourFactory {
 }
 ```
 
-#### Project Structure
+### Project Structure
 
 After adding the game-specific contracts, a practical checkers project should look roughly like this:
 
@@ -1805,30 +1815,29 @@ After adding the game-specific contracts, a practical checkers project should lo
 my-etour-checkers/
 ├── .env
 ├── package.json
-└── v2/
-    ├── hardhat.config.js
-    ├── contracts/
-    │   ├── ETourFactory.sol
-    │   ├── ETourGame.sol
-    │   ├── ETourInstance.sol
-    │   ├── ETourTournamentBase.sol
-    │   ├── PlayerRegistry.sol
-    │   ├── PlayerProfile.sol
-    │   ├── Checkers.sol
-    │   ├── CheckersFactory.sol
-    │   ├── interfaces/
-    │   ├── modules/
-    │   └── test-helpers/
-    ├── deployments/
-    ├── scripts/
-    │   ├── deploy-instance-modules.js
-    │   └── deploy-checkers-factory.js
-    └── test/
-        └── factory/
-            └── Checkers.reference.test.js
+├── hardhat.config.js
+├── contracts/
+│   ├── ETourFactory.sol
+│   ├── ETourGame.sol
+│   ├── ETourInstance.sol
+│   ├── ETourTournamentBase.sol
+│   ├── PlayerRegistry.sol
+│   ├── PlayerProfile.sol
+│   ├── Checkers.sol
+│   ├── CheckersFactory.sol
+│   ├── interfaces/
+│   ├── modules/
+│   └── test-helpers/
+├── deployments/
+├── scripts/
+│   ├── deploy-instance-modules.js
+│   └── deploy-checkers-factory.js
+└── test/
+    └── factory/
+        └── Checkers.reference.test.js
 ```
 
-#### Deployment
+### Deployment
 
 At this point deployment is straightforward:
 
@@ -1846,39 +1855,39 @@ The reference utility script is:
 That script now does two things in one run:
 
 1. deploys the checkers reference stack
-2. generates a combined ABI bundle in `v2/deployments/CheckersFactory-ABI.json`
+2. generates a combined ABI bundle in `deployments/CheckersFactory-ABI.json`
 
-##### Local
+#### Local
 
 1. Start a local chain:
 
 ```bash
-npx hardhat node --config v2/hardhat.config.js
+npx hardhat node --config hardhat.config.js
 ```
 
 2. In a second terminal, deploy the shared ETour modules:
 
 ```bash
-npx hardhat run v2/scripts/deploy-instance-modules.js --config v2/hardhat.config.js --network localhost
+npx hardhat run scripts/deploy-instance-modules.js --config hardhat.config.js --network localhost
 ```
 
 3. Deploy the checkers stack:
 
 ```bash
-npx hardhat run v2/scripts/deploy-checkers-factory.js --config v2/hardhat.config.js --network localhost
+npx hardhat run scripts/deploy-checkers-factory.js --config hardhat.config.js --network localhost
 ```
 
 Outputs you should expect:
 
-- `v2/deployments/localhost-checkers-factory.json`
-- `v2/deployments/CheckersFactory-ABI.json`
+- `deployments/localhost-checkers-factory.json`
+- `deployments/CheckersFactory-ABI.json`
 
-##### Arbitrum
+#### Arbitrum
 
 For Arbitrum, fund the wallet in `.env` with ETH on Arbitrum One and then run:
 
 ```bash
-npx hardhat run v2/scripts/deploy-checkers-factory.js --config v2/hardhat.config.js --network arbitrum
+npx hardhat run scripts/deploy-checkers-factory.js --config hardhat.config.js --network arbitrum
 ```
 
 By default, that script reuses the live ETour module addresses from [`arbitrum-factory.json`](../deployments/arbitrum-factory.json). If you want to override them manually, set:
@@ -1892,8 +1901,8 @@ MODULE_ESCALATION=0x...
 
 The script writes:
 
-- `v2/deployments/arbitrum-checkers-factory.json`
-- `v2/deployments/CheckersFactory-ABI.json`
+- `deployments/arbitrum-checkers-factory.json`
+- `deployments/CheckersFactory-ABI.json`
 
 The ABI bundle contains:
 
@@ -1905,7 +1914,7 @@ The ABI bundle contains:
 
 That is usually enough for the frontend to treat the ABI bundle as the source of truth.
 
-#### Integration
+### Integration
 
 Once deployment is done and you have the ABI bundle, you are mostly finished with the protocol side.
 
@@ -1919,7 +1928,7 @@ What comes next is building a UI that:
 
 At that point, the ABI bundle and deployment manifest should be treated as your source of truth. A UI integration guide is coming separately.
 
-#### Testing
+### Testing
 
 The reference test file is:
 
@@ -1928,7 +1937,7 @@ The reference test file is:
 Run it locally with:
 
 ```bash
-npx hardhat test --config v2/hardhat.config.js v2/test/factory/Checkers.reference.test.js
+npx hardhat test --config hardhat.config.js test/factory/Checkers.reference.test.js
 ```
 
 That test currently proves:
@@ -1940,6 +1949,27 @@ That test currently proves:
 - promotion behavior
 
 A broader testing guide is still to come, but the current reference test is already the right starting point for local validation.
+
+## Live Examples
+
+The live V2 examples on Arbitrum One are:
+
+- [TicTacToeFactory](https://arbiscan.io/address/0x9b370782C5BE175CA3DC57606E32c56b9653A62a)
+- [ConnectFourFactory](https://arbiscan.io/address/0x35e7b5eFadcc752a3b55c43BFe430c04Aec31b4d)
+- [ChessFactory](https://arbiscan.io/address/0x0C48382605fd65f15518782F5b69E936c4461313)
+
+And the corresponding implementation contracts are:
+
+- [TicTacToe](https://arbiscan.io/address/0x8C7272980dE407CA791b7C718394a6e215d44dd4)
+- [ConnectFour](https://arbiscan.io/address/0x567A20A586073d9ADc1832074Ffc0c8b127b464c)
+- [Chess](https://arbiscan.io/address/0xe7957e1663f4959689f495a73A45D4dC2cf0bD83)
+
+Architecturally, those are nothing more exotic than:
+
+- `GameA is ETourGame`
+- `GameAFactory is ETourFactory`
+
+That is the point. The live deployments prove the pattern is the real pattern, not a documentation abstraction.
 
 ## Practical Reading Order
 
