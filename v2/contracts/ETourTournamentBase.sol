@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
- * @title ETourInstance_Base
+ * @title ETourTournamentBase
  * @dev Abstract base contract for a single ETour tournament instance.
  *
  * Replaces ETour_Base for the new factory/instance architecture.
@@ -25,7 +25,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * The storage layout here must match what the adapted modules expect.
  * NEVER reorder or insert variables between existing ones.
  */
-abstract contract ETourInstance_Base is ReentrancyGuard {
+abstract contract ETourTournamentBase is ReentrancyGuard {
 
     // ============ Constants ============
 
@@ -206,12 +206,15 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         address firstPlayer;
         MatchStatus status;
         bool isDraw;
+        // Game-owned state slots. Infra should treat these as opaque and use
+        // _getGameStateHash(matchId) when it needs a generic fingerprint.
         uint256 packedBoard;
         uint256 packedState;
         uint256 startTime;
         uint256 lastMoveTime;
         uint256 player1TimeRemaining;
         uint256 player2TimeRemaining;
+        // Game-owned move/event transcript. Games may encode however they want.
         string moves;
         MatchCompletionReason completionReason;
         MatchCompletionCategory completionCategory;
@@ -356,6 +359,11 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         _;
     }
 
+    modifier onlySelfCall() {
+        require(msg.sender == address(this), "Only self");
+        _;
+    }
+
     /**
      * @dev Reverts if instance has concluded — no writes allowed after conclusion.
      */
@@ -495,22 +503,26 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint8 roundNumber,
         uint8 matchNumber,
         PlayerMatchOutcome outcome,
-        PlayerMatchOutcomeCategory category
+        PlayerMatchOutcomeCategory category,
+        MatchCompletionReason resolutionReason
     ) internal {
         if (player == address(0) || outcome == PlayerMatchOutcome.None) return;
 
         address reg = _getPlayerRegistry();
         if (reg == address(0)) return;
 
-        (bool recorded, ) = reg.call{gas: 150_000}(
+        // Replacement winners may need first-time profile creation plus a
+        // match write; give the registry enough headroom to complete that.
+        (bool recorded, ) = reg.call{gas: 400_000}(
             abi.encodeWithSignature(
-                "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8)",
+                "recordMatchOutcome(address,address,uint8,uint8,uint8,uint8,uint8)",
                 player,
                 address(this),
                 roundNumber,
                 matchNumber,
                 uint8(outcome),
-                uint8(category)
+                uint8(category),
+                uint8(resolutionReason)
             )
         );
         recorded;
@@ -530,14 +542,16 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.Draw,
-                PlayerMatchOutcomeCategory.Draw
+                PlayerMatchOutcomeCategory.Draw,
+                reason
             );
             _recordPlayerMatchOutcome(
                 m.player2,
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.Draw,
-                PlayerMatchOutcomeCategory.Draw
+                PlayerMatchOutcomeCategory.Draw,
+                reason
             );
             return;
         }
@@ -548,14 +562,16 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.TimeoutVictory,
-                PlayerMatchOutcomeCategory.Victory
+                PlayerMatchOutcomeCategory.Victory,
+                reason
             );
             _recordPlayerMatchOutcome(
                 winner == m.player1 ? m.player2 : m.player1,
                 roundNumber,
                 matchNumber,
                 PlayerMatchOutcome.TimeoutDefeat,
-                PlayerMatchOutcomeCategory.Defeat
+                PlayerMatchOutcomeCategory.Defeat,
+                reason
             );
             return;
         }
@@ -565,14 +581,16 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             roundNumber,
             matchNumber,
             PlayerMatchOutcome.NormalVictory,
-            PlayerMatchOutcomeCategory.Victory
+            PlayerMatchOutcomeCategory.Victory,
+            reason
         );
         _recordPlayerMatchOutcome(
             winner == m.player1 ? m.player2 : m.player1,
             roundNumber,
             matchNumber,
             PlayerMatchOutcome.NormalDefeat,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
     }
 
@@ -595,21 +613,24 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             roundNumber,
             matchNumber,
             defeatOutcome,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
         _recordPlayerMatchOutcome(
             m.player2,
             roundNumber,
             matchNumber,
             defeatOutcome,
-            PlayerMatchOutcomeCategory.Defeat
+            PlayerMatchOutcomeCategory.Defeat,
+            reason
         );
         _recordPlayerMatchOutcome(
             actor,
             roundNumber,
             matchNumber,
             victoryOutcome,
-            PlayerMatchOutcomeCategory.Victory
+            PlayerMatchOutcomeCategory.Victory,
+            reason
         );
     }
 
@@ -631,8 +652,6 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         m.completionReason = reason;
         m.completionCategory = _matchCompletionCategoryFor(reason);
 
-        _completeMatchGameSpecific(roundNumber, matchNumber, winner, isDraw);
-
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         timeout.isStalled = false;
         timeout.escalation1Start = 0;
@@ -649,8 +668,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
                 winner,
                 isDraw,
                 uint8(reason),
-                m.packedBoard,
-                m.packedState,
+                _getGameStateHash(matchId),
                 m.startTime,
                 m.lastMoveTime
             ))
@@ -778,28 +796,32 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
     // ============ Abstract Functions (implemented by game contracts) ============
 
-    function _createMatchGame(
+    function moduleCreateMatch(
         uint8 roundNumber,
         uint8 matchNumber,
         address player1,
         address player2
     ) public virtual;
 
-    function _resetMatchGame(bytes32 matchId) public virtual;
+    function moduleResetMatch(bytes32 matchId) public virtual;
 
-    function _getMatchResult(bytes32 matchId)
-        public view virtual
-        returns (address winner, bool isDraw, MatchStatus status);
+    function moduleGetMatchResult(bytes32 matchId)
+        public view virtual onlySelfCall
+        returns (address winner, bool isDraw, MatchStatus status)
+    {
+        Match storage m = matches[matchId];
+        return (m.winner, m.isDraw, m.status);
+    }
 
-    function _getMatchPlayers(bytes32 matchId)
-        public view virtual
+    function moduleGetMatchPlayers(bytes32 matchId)
+        public view virtual onlySelfCall
         returns (address player1, address player2)
     {
         Match storage matchData = matches[matchId];
         return (matchData.player1, matchData.player2);
     }
 
-    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual {
+    function moduleSetMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual onlySelfCall {
         Match storage matchData = matches[matchId];
         if (slot == 0) {
             matchData.player1 = player;
@@ -808,25 +830,35 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         }
     }
 
-    function _initializeMatchForPlay(bytes32 matchId) public virtual;
+    function moduleInitializeMatchForPlay(bytes32 matchId) public virtual;
 
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public virtual;
-
-    function _getTimeIncrement() public view virtual returns (uint256);
-
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view virtual returns (bool);
-
-    function _isMatchActive(bytes32 matchId) public view virtual returns (bool) {
-        (address player1, ) = _getMatchPlayers(matchId);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        return player1 != address(0) && status != MatchStatus.Completed;
+    function moduleCompleteMatchWithResult(bytes32 matchId, address winner, bool isDraw) public virtual onlySelfCall {
+        Match storage m = matches[matchId];
+        m.status = MatchStatus.Completed;
+        m.winner = isDraw ? address(0) : winner;
+        m.isDraw = isDraw;
     }
 
-    function _getActiveMatchData(
+    function moduleHasCurrentPlayerTimedOut(bytes32 matchId) public view virtual onlySelfCall returns (bool) {
+        Match storage m = matches[matchId];
+        if (m.status != MatchStatus.InProgress) return false;
+        uint256 elapsed = block.timestamp - m.lastMoveTime;
+        uint256 currentPlayerTime = (m.currentTurn == m.player1)
+            ? m.player1TimeRemaining
+            : m.player2TimeRemaining;
+        return elapsed >= currentPlayerTime;
+    }
+
+    function moduleIsMatchActive(bytes32 matchId) public view virtual onlySelfCall returns (bool) {
+        Match storage matchData = matches[matchId];
+        return matchData.player1 != address(0) && matchData.status != MatchStatus.Completed;
+    }
+
+    function moduleGetActiveMatchData(
         bytes32 matchId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view virtual returns (CommonMatchData memory) {
+    ) public view virtual onlySelfCall returns (CommonMatchData memory) {
         Match storage matchData = matches[matchId];
         address loser = address(0);
         if (!matchData.isDraw && matchData.winner != address(0)) {
@@ -884,13 +916,13 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         recorded;
     }
 
-    function _completeMatchGameSpecific(
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw
-    ) internal virtual {
-        revert("ETourInstance_Base: must be implemented by game contract");
+    /**
+     * @dev Generic fingerprint for game-owned state. Infrastructure should use
+     * this hook instead of directly depending on packedBoard/packedState/moves.
+     */
+    function _getGameStateHash(bytes32 matchId) internal view virtual returns (bytes32) {
+        Match storage m = matches[matchId];
+        return keccak256(abi.encodePacked(m.packedBoard, m.packedState, m.moves));
     }
 
     function initializeRound(uint8 roundNumber) public payable virtual;
@@ -1136,8 +1168,14 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             Round storage round = rounds[r];
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(r, m);
-                (address winner, bool isDraw, MatchStatus status) = _getMatchResult(matchId);
-                if (status == MatchStatus.Completed && winner == player && !isDraw) return true;
+                Match storage matchData = matches[matchId];
+                if (
+                    matchData.status == MatchStatus.Completed &&
+                    matchData.winner == player &&
+                    !matchData.isDraw
+                ) {
+                    return true;
+                }
             }
         }
 
@@ -1146,8 +1184,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
             if (!round.initialized) continue;
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(r, m);
-                (address p1, address p2) = _getMatchPlayers(matchId);
-                if (p1 == player || p2 == player) return true;
+                Match storage matchData = matches[matchId];
+                if (matchData.player1 == player || matchData.player2 == player) return true;
             }
         }
         return false;

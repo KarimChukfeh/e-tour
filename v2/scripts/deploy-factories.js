@@ -1,6 +1,6 @@
 // scripts/deploy-factories.js
 // Deploy all three ETour factory contracts:
-//   TicTacChainFactory, ConnectFourFactory, ChessOnChainFactory
+//   TicTacToeFactory, ConnectFourFactory, ChessFactory
 //
 // Requires instance modules already deployed (reads from v2/deployments/instance-modules.json).
 // Run deploy-instance-modules.js first, or use deploy-all-factory.js to do both.
@@ -61,11 +61,11 @@ async function main() {
     console.log("✅ ChessRulesModule deployed to:", chessRulesAddr);
     console.log("");
 
-    // ── 3. TicTacChainFactory ───────────────────────────────────────────────
+    // ── 3. TicTacToeFactory ───────────────────────────────────────────────
     console.log("=".repeat(60));
-    console.log("Deploying TicTacChainFactory...");
+    console.log("Deploying TicTacToeFactory...");
     console.log("=".repeat(60));
-    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const ticTacFactory = await TicTacFactory.deploy(
         modules.core,
         modules.matches,
@@ -75,8 +75,8 @@ async function main() {
     await ticTacFactory.waitForDeployment();
     const ticTacFactoryAddr = await ticTacFactory.getAddress();
     const ticTacImplAddr = await ticTacFactory.implementation();
-    console.log("✅ TicTacChainFactory deployed to:", ticTacFactoryAddr);
-    console.log("   TicTacInstance implementation:", ticTacImplAddr);
+    console.log("✅ TicTacToeFactory deployed to:", ticTacFactoryAddr);
+    console.log("   TicTacToe implementation:", ticTacImplAddr);
     console.log("");
 
     // ── 4. ConnectFourFactory ───────────────────────────────────────────────
@@ -94,14 +94,14 @@ async function main() {
     const c4FactoryAddr = await c4Factory.getAddress();
     const c4ImplAddr = await c4Factory.implementation();
     console.log("✅ ConnectFourFactory deployed to:", c4FactoryAddr);
-    console.log("   ConnectFourInstance implementation:", c4ImplAddr);
+    console.log("   ConnectFour implementation:", c4ImplAddr);
     console.log("");
 
-    // ── 5. ChessOnChainFactory ──────────────────────────────────────────────
+    // ── 5. ChessFactory ──────────────────────────────────────────────
     console.log("=".repeat(60));
-    console.log("Deploying ChessOnChainFactory...");
+    console.log("Deploying ChessFactory...");
     console.log("=".repeat(60));
-    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
+    const ChessFactory = await hre.ethers.getContractFactory("contracts/ChessFactory.sol:ChessFactory");
     const chessFactory = await ChessFactory.deploy(
         modules.core,
         modules.matches,
@@ -112,8 +112,8 @@ async function main() {
     await chessFactory.waitForDeployment();
     const chessFactoryAddr = await chessFactory.getAddress();
     const chessImplAddr = await chessFactory.implementation();
-    console.log("✅ ChessOnChainFactory deployed to:", chessFactoryAddr);
-    console.log("   ChessInstance implementation:", chessImplAddr);
+    console.log("✅ ChessFactory deployed to:", chessFactoryAddr);
+    console.log("   Chess implementation:", chessImplAddr);
     console.log("");
 
     // ── 6. Save artifacts ───────────────────────────────────────────────────
@@ -134,14 +134,14 @@ async function main() {
             ChessRulesModule:         chessRulesAddr,
         },
         factories: {
-            TicTacChainFactory:  ticTacFactoryAddr,
+            TicTacToeFactory:  ticTacFactoryAddr,
             ConnectFourFactory:  c4FactoryAddr,
-            ChessOnChainFactory: chessFactoryAddr,
+            ChessFactory: chessFactoryAddr,
         },
         implementations: {
-            TicTacInstance:      ticTacImplAddr,
-            ConnectFourInstance: c4ImplAddr,
-            ChessInstance:       chessImplAddr,
+            TicTacToe:      ticTacImplAddr,
+            ConnectFour: c4ImplAddr,
+            Chess:       chessImplAddr,
         },
     };
 
@@ -150,14 +150,14 @@ async function main() {
     // Save combined ABI file for frontend
     const abiDir = "./v2/deployments";
     const [ticTacArt, c4Art, chessArt] = await Promise.all([
-        hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
+        hre.artifacts.readArtifact("contracts/TicTacToeFactory.sol:TicTacToeFactory"),
         hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
-        hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
+        hre.artifacts.readArtifact("contracts/ChessFactory.sol:ChessFactory"),
     ]);
     const [ticTacInstArt, c4InstArt, chessInstArt] = await Promise.all([
-        hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
-        hre.artifacts.readArtifact("contracts/ConnectFourInstance.sol:ConnectFourInstance"),
-        hre.artifacts.readArtifact("contracts/ChessInstance.sol:ChessInstance"),
+        hre.artifacts.readArtifact("contracts/TicTacToe.sol:TicTacToe"),
+        hre.artifacts.readArtifact("contracts/ConnectFour.sol:ConnectFour"),
+        hre.artifacts.readArtifact("contracts/Chess.sol:Chess"),
     ]);
 
     const abiFile = path.join(abiDir, "ETour-Factory-ABIs.json");
@@ -167,14 +167,14 @@ async function main() {
         deployedAt: timestamp,
         modules: deployment.modules,
         factories: {
-            TicTacChainFactory:  { address: ticTacFactoryAddr,  abi: ticTacArt.abi },
+            TicTacToeFactory:  { address: ticTacFactoryAddr,  abi: ticTacArt.abi },
             ConnectFourFactory:  { address: c4FactoryAddr,       abi: c4Art.abi },
-            ChessOnChainFactory: { address: chessFactoryAddr,    abi: chessArt.abi },
+            ChessFactory: { address: chessFactoryAddr,    abi: chessArt.abi },
         },
         instances: {
-            TicTacInstance:      { address: ticTacImplAddr,  abi: ticTacInstArt.abi },
-            ConnectFourInstance: { address: c4ImplAddr,       abi: c4InstArt.abi },
-            ChessInstance:       { address: chessImplAddr,    abi: chessInstArt.abi },
+            TicTacToe:      { address: ticTacImplAddr,  abi: ticTacInstArt.abi },
+            ConnectFour: { address: c4ImplAddr,       abi: c4InstArt.abi },
+            Chess:       { address: chessImplAddr,    abi: chessInstArt.abi },
         },
     }, null, 2));
     console.log("✅ ABI file saved to:", abiFile);
@@ -193,14 +193,14 @@ async function main() {
     console.log("  ChessRulesModule:        ", chessRulesAddr);
     console.log("");
     console.log("📍 Factory Addresses:");
-    console.log("  TicTacChainFactory: ", ticTacFactoryAddr);
+    console.log("  TicTacToeFactory: ", ticTacFactoryAddr);
     console.log("  ConnectFourFactory: ", c4FactoryAddr);
-    console.log("  ChessOnChainFactory:", chessFactoryAddr);
+    console.log("  ChessFactory:", chessFactoryAddr);
     console.log("");
     console.log("📍 Implementation Contracts (clone targets):");
-    console.log("  TicTacInstance:     ", ticTacImplAddr);
-    console.log("  ConnectFourInstance:", c4ImplAddr);
-    console.log("  ChessInstance:      ", chessImplAddr);
+    console.log("  TicTacToe:     ", ticTacImplAddr);
+    console.log("  ConnectFour:", c4ImplAddr);
+    console.log("  Chess:      ", chessImplAddr);
     console.log("");
     console.log("📁 Artifacts:");
     console.log("  -", DEPLOYMENT_FILE);

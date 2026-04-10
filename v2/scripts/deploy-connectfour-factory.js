@@ -66,7 +66,7 @@ async function main() {
     }
     await (await registry.authorizeFactory(factoryAddr)).wait();
     console.log("  ConnectFourFactory:", factoryAddr, "[authorized]");
-    console.log("  ConnectFourInstance impl:", implAddr);
+    console.log("  ConnectFour impl:", implAddr);
     console.log("");
 
     // ── 4. Save artifacts ────────────────────────────────────────────────────
@@ -80,6 +80,7 @@ async function main() {
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
+            ETourInstance_MatchesResolution: modules.matchesResolution,
             ETourInstance_Prizes:     modules.prizes,
             ETourInstance_Escalation: modules.escalation,
         },
@@ -88,7 +89,7 @@ async function main() {
             PlayerRegistry: registryAddr,
         },
         factory: { ConnectFourFactory: factoryAddr },
-        implementation: { ConnectFourInstance: implAddr },
+        implementation: { ConnectFour: implAddr },
     };
 
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-connectfour-factory.json`);
@@ -96,7 +97,7 @@ async function main() {
 
     const [factoryArt, instanceArt, profileArt, registryArt] = await Promise.all([
         hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
-        hre.artifacts.readArtifact("contracts/ConnectFourInstance.sol:ConnectFourInstance"),
+        hre.artifacts.readArtifact("contracts/ConnectFour.sol:ConnectFour"),
         hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
         hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
     ]);
@@ -138,6 +139,8 @@ async function main() {
     console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
     console.log("  Artifacts:", deployFile);
     const n = network;
+    console.log(`npx hardhat verify --network ${n} ${modules.matchesResolution}`);
+    console.log(`npx hardhat verify --network ${n} ${modules.matches} "${modules.matchesResolution}"`);
     console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}"`);
 }
 

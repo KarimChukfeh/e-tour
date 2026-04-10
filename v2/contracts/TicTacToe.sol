@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./ETourInstance.sol";
+import "./ETourGame.sol";
 
 /**
- * @title TicTacInstance
+ * @title TicTacToe
  * @dev Tic-Tac-Toe game instance for the ETour factory/instance architecture.
  *
- * Inherits ETourInstance (→ ETourInstance_Base) and adds:
+ * Inherits ETourGame (→ ETourInstance → ETourTournamentBase) and adds:
  * - 2-bit packed board representation (9 cells × 2 bits = 18 bits in uint256)
  * - 3x3 win detection (8 lines)
  * - Fischer increment time control
  * - makeMove() with board update and completion detection
  *
  * Deployed once as the implementation contract; clones are deployed by
- * TicTacChainFactory.createInstance() for each tournament.
+ * TicTacToeFactory.createInstance() for each tournament.
  *
  * Part of the RW3 (Reclaim Web3) movement.
  */
-contract TicTacInstance is ETourInstance {
+contract TicTacToe is ETourGame {
 
     // ============ Events ============
 
@@ -57,122 +57,13 @@ contract TicTacInstance is ETourInstance {
         return true;
     }
 
-    // ============ ETourInstance_Base Abstract Implementations ============
+    function _playerAssignmentMode() internal pure override returns (PlayerAssignmentMode) {
+        return PlayerAssignmentMode.RandomizeStarterOnly;
+    }
 
-    function _createMatchGame(
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address player1,
-        address player2
-    ) public override {
-        require(player1 != player2, "P1");
-        require(player1 != address(0) && player2 != address(0), "P2");
-
-        bytes32 matchId = _getMatchId(roundNumber, matchNumber);
+    function _initializeGameState(bytes32 matchId, bool) internal override {
         Match storage m = matches[matchId];
-
-        m.player1 = player1;
-        m.player2 = player2;
-        m.status = MatchStatus.InProgress;
-        m.startTime = block.timestamp;
-        m.lastMoveTime = block.timestamp;
-        m.isDraw = false;
         m.packedBoard = 0;
-        m.moves = "";
-
-        m.currentTurn = _drawRandomStarter(
-            ENTROPY_MATCH_CREATE,
-            keccak256(abi.encodePacked(roundNumber, matchNumber, player1, player2)),
-            player1,
-            player2
-        );
-        m.firstPlayer = m.currentTurn;
-
-        m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-        m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-    }
-
-    function _resetMatchGame(bytes32 matchId) public override {
-        Match storage m = matches[matchId];
-        m.player1 = address(0);
-        m.player2 = address(0);
-        m.winner = address(0);
-        m.currentTurn = address(0);
-        m.firstPlayer = address(0);
-        m.status = MatchStatus.NotStarted;
-        m.isDraw = false;
-        m.packedBoard = 0;
-        m.packedState = 0;
-        m.startTime = 0;
-        m.lastMoveTime = 0;
-        m.player1TimeRemaining = 0;
-        m.player2TimeRemaining = 0;
-        m.moves = "";
-        m.completionReason = MatchCompletionReason.NormalWin;
-        m.completionCategory = MatchCompletionCategory.None;
-    }
-
-    function _getMatchResult(bytes32 matchId)
-        public view override
-        returns (address winner, bool isDraw, MatchStatus status)
-    {
-        Match storage m = matches[matchId];
-        return (m.winner, m.isDraw, m.status);
-    }
-
-    function _initializeMatchForPlay(bytes32 matchId) public override {
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.InProgress;
-        m.startTime = block.timestamp;
-        m.lastMoveTime = block.timestamp;
-        m.packedBoard = 0;
-        m.isDraw = false;
-        m.winner = address(0);
-        m.moves = "";
-
-        m.currentTurn = _drawRandomStarter(
-            ENTROPY_MATCH_RESTART,
-            keccak256(abi.encodePacked(matchId, m.player1, m.player2)),
-            m.player1,
-            m.player2
-        );
-        m.firstPlayer = m.currentTurn;
-        m.player1TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-        m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
-    }
-
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.Completed;
-        m.winner = isDraw ? address(0) : winner;
-        m.isDraw = isDraw;
-    }
-
-    function _completeMatchGameSpecific(
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw
-    ) internal override {
-        bytes32 matchId = _getMatchId(roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-        m.status = MatchStatus.Completed;
-        m.winner = isDraw ? address(0) : winner;
-        m.isDraw = isDraw;
-    }
-
-    function _getTimeIncrement() public view override returns (uint256) {
-        return tierConfig.timeouts.timeIncrementPerMove;
-    }
-
-    function _hasCurrentPlayerTimedOut(bytes32 matchId) public view override returns (bool) {
-        Match storage m = matches[matchId];
-        if (m.status != MatchStatus.InProgress) return false;
-        uint256 elapsed = block.timestamp - m.lastMoveTime;
-        uint256 currentPlayerTime = (m.currentTurn == m.player1)
-            ? m.player1TimeRemaining
-            : m.player2TimeRemaining;
-        return elapsed >= currentPlayerTime;
     }
 
     // ============ Game Logic ============
@@ -198,18 +89,7 @@ contract TicTacInstance is ETourInstance {
         require(msg.sender == m.currentTurn, "NT");
         require(_getCell(m.packedBoard, cellIndex) == 0, "CO");
 
-        // Update time bank for current player
-        uint256 elapsed = block.timestamp - m.lastMoveTime;
-        if (m.currentTurn == m.player1) {
-            m.player1TimeRemaining = (m.player1TimeRemaining > elapsed)
-                ? m.player1TimeRemaining - elapsed + _getTimeIncrement()
-                : _getTimeIncrement();
-        } else {
-            m.player2TimeRemaining = (m.player2TimeRemaining > elapsed)
-                ? m.player2TimeRemaining - elapsed + _getTimeIncrement()
-                : _getTimeIncrement();
-        }
-        m.lastMoveTime = block.timestamp;
+        _consumeTurnClock(m);
 
         // Place the piece
         uint8 playerValue = (msg.sender == m.player1) ? 1 : 2;
@@ -237,7 +117,7 @@ contract TicTacInstance is ETourInstance {
         }
 
         // Switch turn
-        m.currentTurn = (msg.sender == m.player1) ? m.player2 : m.player1;
+        _switchTurn(m);
     }
 
     // ============ View ============

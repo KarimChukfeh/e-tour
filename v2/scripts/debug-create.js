@@ -5,8 +5,8 @@ async function main() {
   const [deployer, user1] = await hre.ethers.getSigners();
   const config = JSON.parse(fs.readFileSync('/Users/karim/Documents/workspace/zero-trust/tic-tac-react/src/v2/ABIs/localhost-tictac-factory.json', 'utf8'));
   
-  const factoryAddr = config.factory.TicTacChainFactory;
-  const factory = await hre.ethers.getContractAt("TicTacChainFactory", factoryAddr);
+  const factoryAddr = config.factory.TicTacToeFactory;
+  const factory = await hre.ethers.getContractAt("TicTacToeFactory", factoryAddr);
   
   const entryFee = hre.ethers.parseEther("0.001");
   
@@ -29,7 +29,7 @@ async function main() {
     const instanceAddr = parsed.args.instance;
     console.log("Instance created:", instanceAddr);
     
-    const instance = await hre.ethers.getContractAt("TicTacInstance", instanceAddr);
+    const instance = await hre.ethers.getContractAt("TicTacToe", instanceAddr);
     
     console.log("\n=== Checking Instance State ===");
     const moduleCore = await instance.MODULE_CORE();

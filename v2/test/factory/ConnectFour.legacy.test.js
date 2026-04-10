@@ -38,11 +38,11 @@ const TOURNAMENT_REASON = {
 };
 
 async function deployFactory() {
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+    const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
-        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
@@ -52,6 +52,11 @@ async function deployFactory() {
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
     ]);
+
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
     const profileImpl = await ProfileImpl.deploy();
@@ -98,7 +103,7 @@ async function createInstance(factory, signer) {
         .find(parsed => parsed && parsed.name === "InstanceDeployed");
 
     return hre.ethers.getContractAt(
-        "contracts/ConnectFourInstance.sol:ConnectFourInstance",
+        "contracts/ConnectFour.sol:ConnectFour",
         event.args.instance
     );
 }
@@ -145,7 +150,7 @@ async function playMatchWithWinner(instance, roundNumber, matchNumber, desiredWi
     }
 }
 
-describe("ConnectFourInstance — finals ML3 replacement", function () {
+describe("ConnectFour — finals ML3 replacement", function () {
     this.timeout(60_000);
 
     let factory;
@@ -256,9 +261,12 @@ describe("ConnectFourInstance — finals ML3 replacement", function () {
 
         expect(matchRecordA.outcome).to.equal(9n); // ReplacementDefeat
         expect(matchRecordA.category).to.equal(2n); // Defeat
+        expect(matchRecordA.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
         expect(matchRecordD.outcome).to.equal(9n);
         expect(matchRecordD.category).to.equal(2n);
+        expect(matchRecordD.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
         expect(matchRecordC.outcome).to.equal(8n); // ReplacementVictory
         expect(matchRecordC.category).to.equal(1n); // Victory
+        expect(matchRecordC.resolutionReason).to.equal(BigInt(MATCH_REASON.ML3));
     });
 });

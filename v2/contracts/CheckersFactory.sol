@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "./ETourFactory.sol";
-import "./TicTacInstance.sol";
+import "./Checkers.sol";
 
 /**
- * @title TicTacChainFactory
- * @dev Factory contract for Tic-Tac-Toe tournament instances.
+ * @title CheckersFactory
+ * @dev Reference ETour factory for the Checkers game implementation.
  */
-contract TicTacChainFactory is ETourFactory {
+contract CheckersFactory is ETourFactory {
 
     constructor(
         address moduleCore,
@@ -17,7 +17,7 @@ contract TicTacChainFactory is ETourFactory {
         address moduleEscalation,
         address playerRegistry
     ) ETourFactory(
-        address(new TicTacInstance()),
+        address(new Checkers()),
         moduleCore,
         moduleMatches,
         modulePrizes,
@@ -26,6 +26,6 @@ contract TicTacChainFactory is ETourFactory {
     ) { }
 
     function _gameType() internal pure override returns (uint8) {
-        return 0;
+        return 3;
     }
 }

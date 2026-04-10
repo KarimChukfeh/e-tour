@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./ETourFactory.sol";
-import "./ConnectFourInstance.sol";
+import "./ConnectFour.sol";
 
 /**
  * @title ConnectFourFactory
@@ -17,7 +17,7 @@ contract ConnectFourFactory is ETourFactory {
         address moduleEscalation,
         address playerRegistry
     ) ETourFactory(
-        address(new ConnectFourInstance()),
+        address(new ConnectFour()),
         moduleCore,
         moduleMatches,
         modulePrizes,

@@ -9,8 +9,8 @@ async function main() {
   const configPath = '/Users/karim/Documents/workspace/zero-trust/tic-tac-react/src/v2/ABIs/localhost-tictac-factory.json';
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-  const factoryAddress = config.factory.TicTacChainFactory;
-  const factory = await ethers.getContractAt("TicTacChainFactory", factoryAddress);
+  const factoryAddress = config.factory.TicTacToeFactory;
+  const factory = await ethers.getContractAt("TicTacToeFactory", factoryAddress);
 
   console.log("Factory address:", factoryAddress);
   console.log("User1 address:", user1.address);
@@ -57,7 +57,7 @@ async function main() {
       console.log("Instance address:", instanceAddress);
 
       // Check if user1 is enrolled
-      const instance = await ethers.getContractAt("ETourInstance_Base", instanceAddress);
+      const instance = await ethers.getContractAt("ETourTournamentBase", instanceAddress);
       const isEnrolled = await instance.isEnrolled(user1.address);
       const enrolledCount = (await instance.tournament()).enrolledCount;
       const players = await instance.getPlayers();

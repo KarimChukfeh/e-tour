@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface ITicTacInstanceLike {
+interface ITicTacToeLike {
     function enrollInTournament() external payable;
     function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 cellIndex) external;
 }
 
 /**
- * @dev Test helper that can participate in a v2 TicTacInstance and optionally
+ * @dev Test helper that can participate in a v2 TicTacToe and optionally
  * reject ETH payouts.
  */
 contract RejectingTicTacPlayer {
-    ITicTacInstanceLike public immutable instance;
+    ITicTacToeLike public immutable instance;
     bool public rejectPayments;
     uint256 public receivedAmount;
     uint256 public rejectionCount;
@@ -20,7 +20,7 @@ contract RejectingTicTacPlayer {
     event PaymentRejected(uint256 amount);
 
     constructor(address instanceAddress) {
-        instance = ITicTacInstanceLike(instanceAddress);
+        instance = ITicTacToeLike(instanceAddress);
     }
 
     function setRejectPayments(bool reject_) external {

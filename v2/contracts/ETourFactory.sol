@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./ETourInstance_Base.sol";
+import "./ETourTournamentBase.sol";
 import "./interfaces/IPlayerRegistry.sol";
 
 /**
@@ -49,7 +49,7 @@ contract ETourFactory is ReentrancyGuard {
     struct TierConfig {
         uint8 playerCount;
         uint256 entryFee;
-        ETourInstance_Base.TimeoutConfig timeouts;
+        ETourTournamentBase.TimeoutConfig timeouts;
         uint8 totalRounds;      // log2(playerCount)
         bytes32 tierKey;
     }
@@ -167,7 +167,7 @@ contract ETourFactory is ReentrancyGuard {
         _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
 
         // Construct full TimeoutConfig with hardcoded escalation delays
-        ETourInstance_Base.TimeoutConfig memory timeouts = ETourInstance_Base.TimeoutConfig({
+        ETourTournamentBase.TimeoutConfig memory timeouts = ETourTournamentBase.TimeoutConfig({
             matchTimePerPlayer: matchTimePerPlayer,
             timeIncrementPerMove: timeIncrementPerMove,
             matchLevel2Delay: MATCH_LEVEL_2_DELAY,
@@ -183,7 +183,7 @@ contract ETourFactory is ReentrancyGuard {
 
         TierConfig storage config = tierRegistry[tierKey];
 
-        ETourInstance_Base.TierConfig memory instanceTierConfig = ETourInstance_Base.TierConfig({
+        ETourTournamentBase.TierConfig memory instanceTierConfig = ETourTournamentBase.TierConfig({
             playerCount: playerCount,
             entryFee: entryFee,
             timeouts: config.timeouts,
@@ -194,23 +194,41 @@ contract ETourFactory is ReentrancyGuard {
         // Deploy EIP-1167 clone
         instance = _clone(implementation);
 
-        // Initialize the clone
-        ETourInstance_Base(instance).initialize(
-            instanceTierConfig,
-            address(this),
-            msg.sender,
-            MODULE_CORE,
-            MODULE_MATCHES,
-            MODULE_PRIZES,
-            MODULE_ESCALATION
-        );
+        _initializeInstance(instance, instanceTierConfig, msg.sender);
+        _postInitializeInstance(instance, instanceTierConfig, msg.sender);
 
         _trackNewInstance(instance, tierKey);
 
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
 
         // Auto-enroll the creator on their behalf
-        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
+        ETourTournamentBase(instance).enrollOnBehalf{value: entryFee}(msg.sender);
+    }
+
+    function _initializeInstance(
+        address instance,
+        ETourTournamentBase.TierConfig memory config,
+        address creator_
+    ) internal virtual {
+        ETourTournamentBase(instance).initialize(
+            config,
+            address(this),
+            creator_,
+            MODULE_CORE,
+            MODULE_MATCHES,
+            MODULE_PRIZES,
+            MODULE_ESCALATION
+        );
+    }
+
+    function _postInitializeInstance(
+        address instance,
+        ETourTournamentBase.TierConfig memory config,
+        address creator_
+    ) internal virtual {
+        instance;
+        config;
+        creator_;
     }
 
     // ============ Player Registration (called by instances on enrollment) ============
@@ -374,7 +392,7 @@ contract ETourFactory is ReentrancyGuard {
     function _computeTierKey(
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig memory timeouts
+        ETourTournamentBase.TimeoutConfig memory timeouts
     ) internal pure returns (bytes32) {
         return keccak256(
             abi.encodePacked(
@@ -398,7 +416,7 @@ contract ETourFactory is ReentrancyGuard {
         bytes32 tierKey,
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig memory timeouts
+        ETourTournamentBase.TimeoutConfig memory timeouts
     ) internal {
         tierRegistry[tierKey] = TierConfig({
             playerCount: playerCount,

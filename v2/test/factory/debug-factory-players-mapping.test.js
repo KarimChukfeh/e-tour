@@ -7,16 +7,21 @@ import hre from "hardhat";
 const TICTAC_GAME_TYPE = 0;
 
 async function deployAll() {
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] = await Promise.all([
+    const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
-        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
             .then(f => f.deploy()).then(c => c.waitForDeployment().then(() => c)),
     ]);
+
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
     const profileImpl = await ProfileImpl.deploy();
@@ -26,7 +31,7 @@ async function deployAll() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/TicTacToeFactory.sol:TicTacToeFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -102,7 +107,7 @@ describe("Debug: factory.players() mapping population", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });
@@ -142,7 +147,7 @@ describe("Debug: factory.players() mapping population", function () {
             .map(log => { try { return factory.interface.parseLog(log); } catch { return null; } })
             .find(e => e && e.name === "InstanceDeployed");
         const instance = await hre.ethers.getContractAt(
-            "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
+            "contracts/TicTacToe.sol:TicTacToe", event.args.instance
         );
 
         await instance.connect(joiner).enrollInTournament({ value: entryFee });

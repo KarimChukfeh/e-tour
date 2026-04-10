@@ -10,31 +10,31 @@ const ARTIFACTS_DIR = path.resolve(__dirname, "..", "artifacts", "contracts");
 
 const GAME_SPECS = [
     {
-        label: "TicTacChainFactory",
+        label: "TicTacToeFactory",
         deploymentFile: (network) => `${network}-tictac-factory.json`,
-        abiFile: "TicTacChainFactory-ABI.json",
-        factoryArtifact: path.join(ARTIFACTS_DIR, "TicTacChainFactory.sol", "TicTacChainFactory.json"),
-        instanceArtifact: path.join(ARTIFACTS_DIR, "TicTacInstance.sol", "TicTacInstance.json"),
-        factoryDeploymentKey: "TicTacChainFactory",
-        instanceDeploymentKey: "TicTacInstance",
+        abiFile: "TicTacToeFactory-ABI.json",
+        factoryArtifact: path.join(ARTIFACTS_DIR, "TicTacToeFactory.sol", "TicTacToeFactory.json"),
+        instanceArtifact: path.join(ARTIFACTS_DIR, "TicTacToe.sol", "TicTacToe.json"),
+        factoryDeploymentKey: "TicTacToeFactory",
+        instanceDeploymentKey: "TicTacToe",
     },
     {
         label: "ConnectFourFactory",
         deploymentFile: (network) => `${network}-connectfour-factory.json`,
         abiFile: "ConnectFourFactory-ABI.json",
         factoryArtifact: path.join(ARTIFACTS_DIR, "ConnectFourFactory.sol", "ConnectFourFactory.json"),
-        instanceArtifact: path.join(ARTIFACTS_DIR, "ConnectFourInstance.sol", "ConnectFourInstance.json"),
+        instanceArtifact: path.join(ARTIFACTS_DIR, "ConnectFour.sol", "ConnectFour.json"),
         factoryDeploymentKey: "ConnectFourFactory",
-        instanceDeploymentKey: "ConnectFourInstance",
+        instanceDeploymentKey: "ConnectFour",
     },
     {
-        label: "ChessOnChainFactory",
+        label: "ChessFactory",
         deploymentFile: (network) => `${network}-chess-factory.json`,
-        abiFile: "ChessOnChainFactory-ABI.json",
-        factoryArtifact: path.join(ARTIFACTS_DIR, "ChessOnChainFactory.sol", "ChessOnChainFactory.json"),
-        instanceArtifact: path.join(ARTIFACTS_DIR, "ChessInstance.sol", "ChessInstance.json"),
-        factoryDeploymentKey: "ChessOnChainFactory",
-        instanceDeploymentKey: "ChessInstance",
+        abiFile: "ChessFactory-ABI.json",
+        factoryArtifact: path.join(ARTIFACTS_DIR, "ChessFactory.sol", "ChessFactory.json"),
+        instanceArtifact: path.join(ARTIFACTS_DIR, "Chess.sol", "Chess.json"),
+        factoryDeploymentKey: "ChessFactory",
+        instanceDeploymentKey: "Chess",
     },
 ];
 
@@ -66,7 +66,7 @@ function ensureFile(filePath, label) {
 function resolveNetwork(explicitNetwork) {
     if (explicitNetwork) return explicitNetwork;
 
-    const candidate = path.join(DEPLOYMENTS_DIR, "TicTacChainFactory-ABI.json");
+    const candidate = path.join(DEPLOYMENTS_DIR, "TicTacToeFactory-ABI.json");
     if (fs.existsSync(candidate)) {
         return readJson(candidate).network;
     }

@@ -7,6 +7,7 @@
     "test:report": "SCIENTIFIC_REPORT=true hardhat test",
     "compile": "hardhat compile",
     "v2:regen:abis": "node v2/scripts/regenerate-abis.js",
+    "v2:test:report:html": "node v2/scripts/generate-test-report.js",
     "deploy:all": "hardhat run scripts/deploy-all.js --network localhost",
     "deploy:tictacchain": "hardhat run scripts/deploy-tictacchain.js --network localhost",
     "deploy:chess": "hardhat run scripts/deploy-chessonchain.js --network localhost",

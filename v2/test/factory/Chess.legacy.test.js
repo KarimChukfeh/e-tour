@@ -13,11 +13,11 @@ function defaultTimeouts() {
 }
 
 async function deployFactory() {
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation, chessRules] = await Promise.all([
+    const [moduleCore, moduleMatchesResolution, modulePrizes, moduleEscalation, chessRules] = await Promise.all([
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
-        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
             .then(factory => factory.deploy())
             .then(contract => contract.waitForDeployment().then(() => contract)),
         hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
@@ -31,6 +31,11 @@ async function deployFactory() {
             .then(contract => contract.waitForDeployment().then(() => contract)),
     ]);
 
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
+
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
     const profileImpl = await ProfileImpl.deploy();
     await profileImpl.waitForDeployment();
@@ -39,7 +44,7 @@ async function deployFactory() {
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
 
-    const Factory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
+    const Factory = await hre.ethers.getContractFactory("contracts/ChessFactory.sol:ChessFactory");
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
         await moduleMatches.getAddress(),
@@ -51,7 +56,7 @@ async function deployFactory() {
     await factory.waitForDeployment();
     await registry.authorizeFactory(await factory.getAddress());
 
-    return { factory };
+    return { factory, chessRules };
 }
 
 async function createInstance(factory, signer) {
@@ -70,20 +75,21 @@ async function createInstance(factory, signer) {
         .find(parsed => parsed && parsed.name === "InstanceDeployed");
 
     return hre.ethers.getContractAt(
-        "contracts/ChessInstance.sol:ChessInstance",
+        "contracts/Chess.sol:Chess",
         event.args.instance
     );
 }
 
-describe("ChessOnChainFactory active tournament tracking", function () {
+describe("ChessFactory active tournament tracking", function () {
     this.timeout(60_000);
 
     let factory;
+    let chessRules;
     let creator;
 
     beforeEach(async function () {
         [creator] = await hre.ethers.getSigners();
-        ({ factory } = await deployFactory());
+        ({ factory, chessRules } = await deployFactory());
     });
 
     it("tracks newly created chess instances in activeTournaments", async function () {
@@ -92,6 +98,11 @@ describe("ChessOnChainFactory active tournament tracking", function () {
 
         expect(await factory.getActiveTournamentCount()).to.equal(1n);
         expect(await factory.activeTournaments(0)).to.equal(instanceAddress);
+    });
+
+    it("configures CHESS_RULES through the factory post-initialize hook", async function () {
+        const instance = await createInstance(factory, creator);
+        expect(await instance.CHESS_RULES()).to.equal(await chessRules.getAddress());
     });
 
     it("moves concluded chess instances from activeTournaments to pastTournaments", async function () {

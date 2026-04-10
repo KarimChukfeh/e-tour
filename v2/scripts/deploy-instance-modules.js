@@ -10,6 +10,7 @@ const DEPLOYMENT_FILE = "./v2/deployments/instance-modules.json";
 const MODULE_ARTIFACTS = {
     core: "contracts/modules/ETourInstance_Core.sol:ETourInstance_Core",
     matches: "contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches",
+    matchesResolution: "contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution",
     prizes: "contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes",
     escalation: "contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation",
 };
@@ -161,6 +162,7 @@ export async function getOrDeployInstanceModules(forceDeploy = false) {
                 console.log("📦 Reusing existing instance module deployment for:", hre.network.name);
                 console.log("  ETourInstance_Core:      ", existing.core);
                 console.log("  ETourInstance_Matches:   ", existing.matches);
+                console.log("  ETourInstance_MatchesResolution:", existing.matchesResolution);
                 console.log("  ETourInstance_Prizes:    ", existing.prizes);
                 console.log("  ETourInstance_Escalation:", existing.escalation);
                 console.log("");
@@ -198,11 +200,20 @@ export async function deployInstanceModules() {
     const coreAddr = await core.getAddress();
     console.log("✅ ETourInstance_Core deployed to:", coreAddr);
 
+    console.log("Deploying ETourInstance_MatchesResolution...");
+    const MatchesResolution = await hre.ethers.getContractFactory(
+        "contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution"
+    );
+    const matchesResolution = await MatchesResolution.deploy();
+    await matchesResolution.waitForDeployment();
+    const matchesResolutionAddr = await matchesResolution.getAddress();
+    console.log("✅ ETourInstance_MatchesResolution deployed to:", matchesResolutionAddr);
+
     console.log("Deploying ETourInstance_Matches...");
     const Matches = await hre.ethers.getContractFactory(
         "contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches"
     );
-    const matches = await Matches.deploy();
+    const matches = await Matches.deploy(matchesResolutionAddr);
     await matches.waitForDeployment();
     const matchesAddr = await matches.getAddress();
     console.log("✅ ETourInstance_Matches deployed to:", matchesAddr);
@@ -226,12 +237,13 @@ export async function deployInstanceModules() {
     console.log("✅ ETourInstance_Escalation deployed to:", escalationAddr);
 
     console.log("");
-    console.log("✅ All 4 instance modules deployed.");
+    console.log("✅ All 5 instance modules deployed.");
     console.log("");
 
     return {
         core: coreAddr,
         matches: matchesAddr,
+        matchesResolution: matchesResolutionAddr,
         prizes: prizesAddr,
         escalation: escalationAddr,
     };
@@ -249,6 +261,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             console.log("=".repeat(60));
             console.log("ETourInstance_Core:      ", addrs.core);
             console.log("ETourInstance_Matches:   ", addrs.matches);
+            console.log("ETourInstance_MatchesResolution:", addrs.matchesResolution);
             console.log("ETourInstance_Prizes:    ", addrs.prizes);
             console.log("ETourInstance_Escalation:", addrs.escalation);
             if (force) console.log("\n⚠️  Forced new deployment (--force flag used)");

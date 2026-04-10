@@ -14,25 +14,32 @@ const LIMIT_KB = SPURIOUS_DRAGON_LIMIT / 1024;
 
 // Factory contracts
 const FACTORIES = [
-    'TicTacChainFactory',
-    'ChessOnChainFactory',
+    'TicTacToeFactory',
+    'ChessFactory',
     'ConnectFourFactory',
     'ETourFactory'
 ];
 
 // Instance implementation contracts (deployed once, cloned via EIP-1167)
 const INSTANCES = [
-    'TicTacInstance',
-    'ChessInstance',
-    'ConnectFourInstance',
+    'TicTacToe',
+    'Chess',
+    'ConnectFour',
     'ETourInstance',
-    'ETourInstance_Base'
+    'ETourTournamentBase'
+];
+
+// Abstract/shared template contracts (not directly deployed, but still useful
+// to track as part of the developer-facing contract surface)
+const TEMPLATES = [
+    'ETourGame'
 ];
 
 // Shared module contracts (deployed once, delegatecall from instances)
 const MODULES = [
     'contracts/modules/ETourInstance_Core.sol:ETourInstance_Core',
     'contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches',
+    'contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution',
     'contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes',
     'contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation',
     'contracts/modules/ChessRulesModule.sol:ChessRulesModule'
@@ -157,6 +164,13 @@ const { contractData: instanceData, totalSize: totalInstanceSize } = printSectio
     getContractSize
 );
 
+// Check abstract/shared template contracts
+const { contractData: templateData, totalSize: totalTemplateSize } = printSection(
+    '🧩  Shared Template Contracts:',
+    TEMPLATES,
+    getContractSize
+);
+
 // Check module contracts
 const { contractData: moduleData, totalSize: totalModuleSize } = printSection(
     '📚  Shared Module Contracts (delegatecall):',
@@ -185,6 +199,8 @@ console.log(`Average Factory Contract Size:    ${Math.round(avgFactorySize).toLo
 console.log('');
 console.log(`Total Instance Contracts Size:    ${totalInstanceSize.toLocaleString()} bytes`);
 console.log(`Average Instance Contract Size:   ${Math.round(avgInstanceSize).toLocaleString()} bytes`);
+console.log('');
+console.log(`Total Template Contracts Size:    ${totalTemplateSize.toLocaleString()} bytes`);
 console.log('');
 console.log(`Total Module Contracts Size:      ${totalModuleSize.toLocaleString()} bytes`);
 console.log(`Average Module Contract Size:     ${Math.round(avgModuleSize).toLocaleString()} bytes`);
@@ -227,7 +243,7 @@ if (gameCount > 0) {
 }
 
 // Check for contracts over limit
-const allContracts = [...factoryData, ...instanceData, ...moduleData, ...supportData];
+const allContracts = [...factoryData, ...instanceData, ...templateData, ...moduleData, ...supportData];
 const overLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT);
 const nearLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT * 0.9 && d.bytes <= SPURIOUS_DRAGON_LIMIT);
 

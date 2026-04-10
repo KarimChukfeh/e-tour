@@ -11,6 +11,7 @@
     "deploy:tictac": "hardhat run v2/scripts/deploy-tictacchain-factory.js --config v2/hardhat.config.js --network localhost",
     "deploy:connectfour": "hardhat run v2/scripts/deploy-connectfour-factory.js --config v2/hardhat.config.js --network localhost",
     "deploy:chess": "hardhat run v2/scripts/deploy-chessonchain-factory.js --config v2/hardhat.config.js --network localhost",
+    "deploy:checkers": "hardhat run v2/scripts/deploy-checkers-factory.js --config v2/hardhat.config.js --network localhost",
     "deploy:factories": "hardhat run v2/scripts/deploy-factories.js --config v2/hardhat.config.js --network localhost",
     "deploy:all": "hardhat run v2/scripts/deploy-all-factory.js --config v2/hardhat.config.js --network localhost"
   },

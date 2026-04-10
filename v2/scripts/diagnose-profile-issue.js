@@ -30,7 +30,7 @@ async function main() {
     console.log("Player 2: ", player2Addr);
     console.log("=".repeat(80) + "\n");
 
-    const factory = await hre.ethers.getContractAt("contracts/TicTacChainFactory.sol:TicTacChainFactory", factoryAddr);
+    const factory = await hre.ethers.getContractAt("contracts/TicTacToeFactory.sol:TicTacToeFactory", factoryAddr);
 
     // Get registry address
     const registryAddr = await factory.PLAYER_REGISTRY();

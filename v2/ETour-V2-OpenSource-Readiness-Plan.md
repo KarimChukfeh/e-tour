@@ -15,7 +15,7 @@ The consultant feedback is directionally correct. The V2 system design is alread
 - Factory-driven deployment and enrollment flow is coherent.
 - Escalation and tournament resolution flows are already formalized.
 
-The main gap is **developer-facing shape**, not core game logic. Right now, a developer who wants to add a new game has to infer too much from the concrete implementations and from [`ETourInstance_Base.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourInstance_Base.sol). The codebase exposes too many lifecycle functions, duplicates too much game lifecycle logic across the three shipped games, and mixes developer extension points with module-only bridge functions.
+The main gap is **developer-facing shape**, not core game logic. Right now, a developer who wants to add a new game has to infer too much from the concrete implementations and from [`ETourTournamentBase.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourTournamentBase.sol). The codebase exposes too many lifecycle functions, duplicates too much game lifecycle logic across the three shipped games, and mixes developer extension points with module-only bridge functions.
 
 The recommended V2 direction is:
 
@@ -45,7 +45,7 @@ That is too much protocol knowledge for a new integrator. Most of those function
 
 ### 2. Match lifecycle duplication is real and high-impact
 
-Across [`TicTacInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacInstance.sol), [`ConnectFourInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFourInstance.sol), and [`ChessInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessInstance.sol):
+Across [`TicTacToe.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacToe.sol), [`ConnectFour.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFour.sol), and [`Chess.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/Chess.sol):
 
 - `_resetMatchGame()` is structurally identical, except for chess nonce handling.
 - `_getMatchResult()` is identical.
@@ -81,13 +81,13 @@ So the correct fix is not "change everything from public to internal." The corre
 
 ### 4. Chess factory setup duplicates the full base factory flow
 
-[`ChessOnChainFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessOnChainFactory.sol) duplicates almost the full `createInstance()` implementation from [`ETourFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourFactory.sol) only to call `initializeChess(...)` instead of `initialize(...)`.
+[`ChessFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessFactory.sol) duplicates almost the full `createInstance()` implementation from [`ETourFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourFactory.sol) only to call `initializeChess(...)` instead of `initialize(...)`.
 
 This is a clean sign that the base factory is missing a post-init hook.
 
 ### 5. `Match` is partly infra state and partly game state
 
-The V2 `Match` struct in [`ETourInstance_Base.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourInstance_Base.sol) currently includes:
+The V2 `Match` struct in [`ETourTournamentBase.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourTournamentBase.sol) currently includes:
 
 - infra-owned fields:
   - `player1`
@@ -128,7 +128,7 @@ The V2 refactor should optimize for five things:
 
 Keep the current broad architecture, but tighten the extension surface:
 
-- `ETourInstance_Base`
+- `ETourTournamentBase`
   - Owns storage, tournament lifecycle, shared events, shared read API, enrollment/prize/escalation integration, entropy, and core completion flow.
 - `ETourInstance`
   - Keeps module entrypoints such as `initializeRound`, `forceEliminateStalledMatch`, and `claimMatchSlotByReplacement`.
@@ -138,9 +138,9 @@ Keep the current broad architecture, but tighten the extension surface:
   - Exposes protected module bridge functions.
   - Defines the small set of internal hooks game authors actually override.
 - Concrete game contracts
-  - `TicTacInstance`
-  - `ConnectFourInstance`
-  - `ChessInstance`
+  - `TicTacToe`
+  - `ConnectFour`
+  - `Chess`
   - Future third-party games
 
 The new template contract is the core of this plan. Without it, documentation alone will not materially improve the developer experience.
@@ -418,7 +418,7 @@ Child factories should never need to re-copy `createInstance()` just to do one e
 
 ### Current problem
 
-`ChessOnChainFactory` duplicates nearly the whole `createInstance()` pipeline from `ETourFactory` to pass `CHESS_RULES` during initialization.
+`ChessFactory` duplicates nearly the whole `createInstance()` pipeline from `ETourFactory` to pass `CHESS_RULES` during initialization.
 
 ### Recommended base-factory hook design
 
@@ -427,10 +427,10 @@ Keep one canonical `createInstance()` in [`ETourFactory.sol`](/Users/karim/Docum
 ```solidity
 function _initializeInstance(
     address instance,
-    ETourInstance_Base.TierConfig memory config,
+    ETourTournamentBase.TierConfig memory config,
     address creator
 ) internal virtual {
-    ETourInstance_Base(instance).initialize(
+    ETourTournamentBase(instance).initialize(
         config,
         address(this),
         creator,
@@ -443,7 +443,7 @@ function _initializeInstance(
 
 function _postInitializeInstance(
     address instance,
-    ETourInstance_Base.TierConfig memory config,
+    ETourTournamentBase.TierConfig memory config,
     address creator
 ) internal virtual {}
 ```
@@ -460,15 +460,15 @@ Recommended `createInstance()` flow:
 
 ### Chess-specific refactor
 
-Refactor [`ChessInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessInstance.sol) so it no longer needs a separate `initializeChess(...)` entrypoint.
+Refactor [`Chess.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/Chess.sol) so it no longer needs a separate `initializeChess(...)` entrypoint.
 
 Recommended approach:
 
 - keep the standard base `initialize(...)`,
 - add a one-time post-init setter such as `setChessRules(address)` or `_configureChess(address)` exposed through a protected external initializer,
-- call that setter from `ChessOnChainFactory._postInitializeInstance(...)`.
+- call that setter from `ChessFactory._postInitializeInstance(...)`.
 
-That lets `ChessOnChainFactory` override one small hook instead of duplicating the factory pipeline.
+That lets `ChessFactory` override one small hook instead of duplicating the factory pipeline.
 
 ### Guardrails for post-init setters
 
@@ -650,7 +650,7 @@ Deliverables:
 - `_initializeInstance(...)`,
 - `_postInitializeInstance(...)`,
 - chess post-init configuration,
-- `ChessOnChainFactory` reduced to a small specialization.
+- `ChessFactory` reduced to a small specialization.
 
 This phase makes factory inheritance usable for third-party games.
 
@@ -685,13 +685,13 @@ The following file map is the most likely shape of the refactor.
 
 ### Heavily changed files
 
-- [`ETourInstance_Base.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourInstance_Base.sol)
+- [`ETourTournamentBase.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourTournamentBase.sol)
 - [`ETourInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourInstance.sol)
 - [`ETourFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ETourFactory.sol)
-- [`TicTacInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacInstance.sol)
-- [`ConnectFourInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFourInstance.sol)
-- [`ChessInstance.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessInstance.sol)
-- [`ChessOnChainFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessOnChainFactory.sol)
+- [`TicTacToe.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/TicTacToe.sol)
+- [`ConnectFour.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ConnectFour.sol)
+- [`Chess.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/Chess.sol)
+- [`ChessFactory.sol`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/contracts/ChessFactory.sol)
 
 ### Module changes required
 
@@ -708,9 +708,9 @@ This plan is refactor-heavy, so correctness must be preserved with the existing 
 
 ### Existing tests that should remain core regression coverage
 
-- [`TicTacInstance.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/TicTacInstance.test.js)
-- [`ConnectFourInstance.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/ConnectFourInstance.test.js)
-- [`ChessInstance.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/ChessInstance.test.js)
+- [`TicTacToe.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/TicTacToe.test.js)
+- [`ConnectFour.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/ConnectFour.test.js)
+- [`Chess.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/Chess.test.js)
 - [`PrizeRedistribution.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/PrizeRedistribution.test.js)
 - [`verify-both-players-complete-flow.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/verify-both-players-complete-flow.test.js)
 - [`profile-creation-both-players.test.js`](/Users/karim/Documents/workspace/zero-trust/e-tour/v2/test/factory/profile-creation-both-players.test.js)

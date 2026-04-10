@@ -1,5 +1,5 @@
-// test/factory/TicTacInstance.test.js
-// Phase 3.3 — Game-specific tests for TicTacInstance (factory/instance arch)
+// test/factory/TicTacToe.test.js
+// Phase 3.3 — Game-specific tests for TicTacToe (factory/instance arch)
 
 import { expect } from "chai";
 import hre from "hardhat";
@@ -41,30 +41,34 @@ const TOURNAMENT_REASON = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Deploy all shared instance modules + TicTacChainFactory.
+ * Deploy all shared instance modules + TicTacToeFactory.
  * Returns { factory }.
  */
 async function deployFactory() {
-    const Core = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Core.sol:ETourInstance_Core"
-    );
-    const Matches = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches"
-    );
-    const Prizes = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes"
-    );
-    const Escalation = await hre.ethers.getContractFactory(
-        "contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation"
-    );
+    const [
+        moduleCore,
+        moduleMatchesResolution,
+        modulePrizes,
+        moduleEscalation,
+    ] = await Promise.all([
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_MatchesResolution.sol:ETourInstance_MatchesResolution")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+        hre.ethers.getContractFactory("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation")
+            .then(factory => factory.deploy())
+            .then(contract => contract.waitForDeployment().then(() => contract)),
+    ]);
 
-    const [moduleCore, moduleMatches, modulePrizes, moduleEscalation] =
-        await Promise.all([
-            Core.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Matches.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Prizes.deploy().then(c => c.waitForDeployment().then(() => c)),
-            Escalation.deploy().then(c => c.waitForDeployment().then(() => c)),
-        ]);
+    const moduleMatches = await hre.ethers
+        .getContractFactory("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches")
+        .then(async factory => factory.deploy(await moduleMatchesResolution.getAddress()));
+    await moduleMatches.waitForDeployment();
 
     // Deploy PlayerProfile implementation + PlayerRegistry
     const ProfileImpl = await hre.ethers.getContractFactory("contracts/PlayerProfile.sol:PlayerProfile");
@@ -76,7 +80,7 @@ async function deployFactory() {
     await registry.waitForDeployment();
 
     const Factory = await hre.ethers.getContractFactory(
-        "contracts/TicTacChainFactory.sol:TicTacChainFactory"
+        "contracts/TicTacToeFactory.sol:TicTacToeFactory"
     );
     const factory = await Factory.deploy(
         await moduleCore.getAddress(),
@@ -121,7 +125,7 @@ function shortTimeouts(overrides = {}) {
 }
 
 /**
- * Create an instance, attach it as TicTacInstance, and return it.
+ * Create an instance, attach it as TicTacToe, and return it.
  * The caller is auto-enrolled (msg.value = entryFee required).
  */
 async function createInstance(factory, playerCount, entryFee, signer, timeouts) {
@@ -139,7 +143,7 @@ async function createInstance(factory, playerCount, entryFee, signer, timeouts) 
     const instanceAddress = event.args.instance;
 
     const instance = await hre.ethers.getContractAt(
-        "contracts/TicTacInstance.sol:TicTacInstance",
+        "contracts/TicTacToe.sol:TicTacToe",
         instanceAddress
     );
     return instance;
@@ -244,7 +248,7 @@ function findParsedLog(receipt, contract, eventName) {
 //          (original suite, kept intact)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function () {
+describe("TicTacToe — 4-player, 0.002 ETH, finalist wins prize", function () {
 
     // Generous timeout: delegatecall-heavy deployments can be slow on CI
     this.timeout(60_000);
@@ -264,7 +268,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             ({ factory } = await deployFactory());
         });
 
-        it("deploys TicTacChainFactory with correct owner", async function () {
+        it("deploys TicTacToeFactory with correct owner", async function () {
             expect(await factory.owner()).to.equal(owner.address);
         });
 
@@ -291,6 +295,12 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("factory tracks the new instance", async function () {
             expect(await factory.instances(0)).to.equal(await instance.getAddress());
+        });
+
+        it("rejects direct external calls to lifecycle bridge functions", async function () {
+            await expect(
+                instance.moduleCreateMatch(0, 0, owner.address, p1.address)
+            ).to.be.revertedWith("Only self");
         });
     });
 
@@ -654,7 +664,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 // Suite B: 2-player tournament — simplest lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — 2-player, 0.001 ETH, single-round tournament", function () {
+describe("TicTacToe — 2-player, 0.001 ETH, single-round tournament", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -722,7 +732,7 @@ describe("TicTacInstance — 2-player, 0.001 ETH, single-round tournament", func
 // Suite C: 8-player tournament — 3-round bracket
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — 8-player, 0.003 ETH, 3-round bracket", function () {
+describe("TicTacToe — 8-player, 0.003 ETH, 3-round bracket", function () {
     this.timeout(120_000);
 
     let factory, instance;
@@ -834,7 +844,7 @@ describe("TicTacInstance — 8-player, 0.003 ETH, 3-round bracket", function () 
 // Suite D: Draw scenarios — finals draw splits prize
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — 2-player draw in finals, equal prize split", function () {
+describe("TicTacToe — 2-player draw in finals, equal prize split", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -892,7 +902,7 @@ describe("TicTacInstance — 2-player draw in finals, equal prize split", functi
     });
 });
 
-describe("TicTacInstance — 4-player all-draw round pays every player equally", function () {
+describe("TicTacToe — 4-player all-draw round pays every player equally", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -932,7 +942,7 @@ describe("TicTacInstance — 4-player all-draw round pays every player equally",
 // Suite E: Move validation edge cases
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — move validation edge cases", function () {
+describe("TicTacToe — move validation edge cases", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1018,7 +1028,7 @@ describe("TicTacInstance — move validation edge cases", function () {
 // Suite F: Time bank — Fischer clock initialization and tracking
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — time bank (Fischer clock)", function () {
+describe("TicTacToe — time bank (Fischer clock)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1092,7 +1102,7 @@ describe("TicTacInstance — time bank (Fischer clock)", function () {
 // Suite G: Timeout claim (claimTimeoutWin)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — timeout claim (claimTimeoutWin)", function () {
+describe("TicTacToe — timeout claim (claimTimeoutWin)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1149,7 +1159,7 @@ describe("TicTacInstance — timeout claim (claimTimeoutWin)", function () {
 // Suite H: ML2 escalation — forceEliminateStalledMatch
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", function () {
+describe("TicTacToe — ML2 escalation (forceEliminateStalledMatch)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1303,10 +1313,13 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
 
         expect(finalistMatchRecord.outcome).to.equal(6n); // ForceEliminationVictory
         expect(finalistMatchRecord.category).to.equal(1n); // Victory
+        expect(finalistMatchRecord.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
         expect(stalledRecordA.outcome).to.equal(7n); // ForceEliminationDefeat
         expect(stalledRecordA.category).to.equal(2n); // Defeat
+        expect(stalledRecordA.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
         expect(stalledRecordB.outcome).to.equal(7n);
         expect(stalledRecordB.category).to.equal(2n);
+        expect(stalledRecordB.resolutionReason).to.equal(BigInt(MATCH_REASON.ML2));
 
         const prizeDistribution = await freshInstance.getPrizeDistribution();
         const totalDistributed = prizeDistribution.amounts.reduce((sum, amount) => sum + amount, 0n);
@@ -1318,7 +1331,7 @@ describe("TicTacInstance — ML2 escalation (forceEliminateStalledMatch)", funct
 // Suite I: ML3 escalation — claimMatchSlotByReplacement
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", function () {
+describe("TicTacToe — ML3 escalation (claimMatchSlotByReplacement)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1371,7 +1384,7 @@ describe("TicTacInstance — ML3 escalation (claimMatchSlotByReplacement)", func
 // Suite J: Enrollment window escalations (EL0 solo cancel, EL1 force start)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
+describe("TicTacToe — enrollment escalations (EL0 / EL1)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -1551,7 +1564,7 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
 // Suite K: Conclusion settlement
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — conclusion settlement", function () {
+describe("TicTacToe — conclusion settlement", function () {
     this.timeout(120_000);
 
     let factory, signers;
@@ -1688,7 +1701,7 @@ describe("TicTacInstance — conclusion settlement", function () {
 // Suite L: Multiple instances — factory bookkeeping
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — factory instance tracking and pagination", function () {
+describe("TicTacToe — factory instance tracking and pagination", function () {
     this.timeout(120_000);
 
     let factory;
@@ -1731,16 +1744,16 @@ describe("TicTacInstance — factory instance tracking and pagination", function
     it("two instances with same params share a tierKey", async function () {
         const inst0addr = await factory.instances(0);
         const inst1addr = await factory.instances(1);
-        const inst0 = await hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", inst0addr);
-        const inst1 = await hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", inst1addr);
+        const inst0 = await hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", inst0addr);
+        const inst1 = await hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", inst1addr);
         expect((await inst0.tierConfig()).tierKey).to.equal((await inst1.tierConfig()).tierKey);
     });
 
     it("instance with different params has a different tierKey", async function () {
         const inst0addr = await factory.instances(0);
         const inst2addr = await factory.instances(2);
-        const inst0 = await hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", inst0addr);
-        const inst2 = await hre.ethers.getContractAt("contracts/TicTacInstance.sol:TicTacInstance", inst2addr);
+        const inst0 = await hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", inst0addr);
+        const inst2 = await hre.ethers.getContractAt("contracts/TicTacToe.sol:TicTacToe", inst2addr);
         expect((await inst0.tierConfig()).tierKey).to.not.equal((await inst2.tierConfig()).tierKey);
     });
 
@@ -1771,7 +1784,7 @@ describe("TicTacInstance — factory instance tracking and pagination", function
 // Suite L2: players / activeTournaments / pastTournaments
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — players, activeTournaments, pastTournaments", function () {
+describe("TicTacToe — players, activeTournaments, pastTournaments", function () {
     this.timeout(120_000);
 
     let factory, registry;
@@ -1893,7 +1906,7 @@ describe("TicTacInstance — players, activeTournaments, pastTournaments", funct
 // Suite M: Factory guardrail validation
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — factory creation guardrails", function () {
+describe("TicTacToe — factory creation guardrails", function () {
     this.timeout(60_000);
 
     let factory, owner;
@@ -2145,7 +2158,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
 // Suite N: Permanent record — view functions on concluded instance
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — permanent record view functions", function () {
+describe("TicTacToe — permanent record view functions", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2241,7 +2254,7 @@ describe("TicTacInstance — permanent record view functions", function () {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── O-1: Normal Win ─────────────────────────────────────────────────────────
-describe("TicTacInstance — player activity: normal win", function () {
+describe("TicTacToe — player activity: normal win", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2308,7 +2321,7 @@ describe("TicTacInstance — player activity: normal win", function () {
 });
 
 // ── O-2: Timeout Win (ML1) ──────────────────────────────────────────────────
-describe("TicTacInstance — player activity: timeout win (ML1)", function () {
+describe("TicTacToe — player activity: timeout win (ML1)", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2372,7 +2385,7 @@ describe("TicTacInstance — player activity: timeout win (ML1)", function () {
 });
 
 // ── O-3: Draw ────────────────────────────────────────────────────────────────
-describe("TicTacInstance — player activity: draw", function () {
+describe("TicTacToe — player activity: draw", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2430,7 +2443,7 @@ describe("TicTacInstance — player activity: draw", function () {
 });
 
 // ── O-4: Force Elimination (ML2) ─────────────────────────────────────────────
-describe("TicTacInstance — player activity: ML2 force elimination", function () {
+describe("TicTacToe — player activity: ML2 force elimination", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2498,7 +2511,7 @@ describe("TicTacInstance — player activity: ML2 force elimination", function (
 });
 
 // ── O-5: Replacement (ML3) ───────────────────────────────────────────────────
-describe("TicTacInstance — player activity: ML3 replacement", function () {
+describe("TicTacToe — player activity: ML3 replacement", function () {
     this.timeout(60_000);
 
     let factory, instance;
@@ -2567,7 +2580,7 @@ describe("TicTacInstance — player activity: ML3 replacement", function () {
 });
 
 // ── O-6: Multi-round tracking (8-player, 3 rounds) ──────────────────────────
-describe("TicTacInstance — player activity: multi-round match tracking", function () {
+describe("TicTacToe — player activity: multi-round match tracking", function () {
     this.timeout(120_000);
 
     let factory, instance;
@@ -2686,7 +2699,7 @@ describe("TicTacInstance — player activity: multi-round match tracking", funct
 // Move History Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("TicTacInstance — move history tracking", function () {
+describe("TicTacToe — move history tracking", function () {
     this.timeout(60_000);
     let factory, instance, owner, p1;
     const ENTRY_FEE = hre.ethers.parseEther("0.001");

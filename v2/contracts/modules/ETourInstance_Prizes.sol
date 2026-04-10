@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Prizes
@@ -17,26 +17,22 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Prizes is ETourInstance_Base {
+contract ETourInstance_Prizes is ETourTournamentBase {
 
     constructor() {}
 
     // ============ Abstract Stubs ============
 
-    function _createMatchGame(uint8, uint8, address, address) public override { revert("Module stub"); }
-    function _resetMatchGame(bytes32) public override { revert("Module stub"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module stub"); }
-    function _initializeMatchForPlay(bytes32) public override { revert("Module stub"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
+    function moduleCreateMatch(uint8, uint8, address, address) public override { revert("Module stub"); }
+    function moduleResetMatch(bytes32) public override { revert("Module stub"); }
+    function moduleInitializeMatchForPlay(bytes32) public override { revert("Module stub"); }
     function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Prize Distribution ============
 
     /**
      * @dev Distribute prize to tournament winner (winner-takes-all).
-     * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * Called via delegatecall from ETourTournamentBase._handleTournamentConclusion().
      */
     function distributePrizes(uint256 winnersPot) payable
         external
@@ -54,7 +50,7 @@ contract ETourInstance_Prizes is ETourInstance_Base {
 
     /**
      * @dev Distribute equal prizes to all remaining players (all-draw scenario).
-     * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * Called via delegatecall from ETourTournamentBase._handleTournamentConclusion().
      */
     function distributeEqualPrizes(address[] memory remainingPlayers, uint256 winnersPot) payable
         external

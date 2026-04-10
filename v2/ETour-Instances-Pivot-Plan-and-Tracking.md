@@ -92,7 +92,7 @@ A minimal child contract that holds the state for a single tournament instance. 
 - Instance is immutable after conclusion — no `selfdestruct`, address stays on-chain as permanent history
 
 **Checklist:**
-- [x] Define `ETourInstance` storage layout (subset of current `ETour_Base`) → `ETourInstance_Base.sol`
+- [x] Define `ETourInstance` storage layout (subset of current `ETour_Base`) → `ETourTournamentBase.sol`
 - [x] Implement `initialize(tierConfig, parentAddress, moduleAddresses)`
 - [x] Port enrollment logic (currently in `ETour_Core.enrollInTournament`) → `ETourInstance_Core.coreEnroll()`
 - [x] On enrollment, call `factory.registerPlayer(player)` to record participation
@@ -185,8 +185,8 @@ mapping(bytes32 => address[]) public tierInstances;   // tierKey → instance ad
 ### 1.3 — Create Game-Specific Factory Subcontracts
 
 **Files:**
-- `contracts/TicTacChainFactory.sol`
-- `contracts/ChessOnChainFactory.sol`
+- `contracts/TicTacToeFactory.sol`
+- `contracts/ChessFactory.sol`
 - `contracts/ConnectFourOnChainFactory.sol`
 
 Each inherits from `ETourFactory` and adds:
@@ -196,9 +196,9 @@ Each inherits from `ETourFactory` and adds:
 - Any game-specific views (e.g., Chess elite match history)
 
 **Checklist:**
-- [x] `TicTacChainFactory` — inherits ETourFactory, deploys TicTacInstance implementation, raffle thresholds
-- [x] `ChessOnChainFactory` — overrides createInstance(), passes CHESS_RULES to each clone via initializeChess()
-- [x] `ConnectFourFactory` — inherits ETourFactory, deploys ConnectFourInstance implementation, raffle thresholds
+- [x] `TicTacToeFactory` — inherits ETourFactory, deploys TicTacToe implementation, raffle thresholds
+- [x] `ChessFactory` — overrides createInstance(), passes CHESS_RULES to each clone via initializeChess()
+- [x] `ConnectFourFactory` — inherits ETourFactory, deploys ConnectFour implementation, raffle thresholds
 - [x] Each deploys its own `ETourInstance` implementation in constructor
 
 ---
@@ -206,9 +206,9 @@ Each inherits from `ETourFactory` and adds:
 ### 1.4 — Create Game-Specific Instance Implementations
 
 **Files:**
-- `contracts/TicTacInstance.sol`
-- `contracts/ChessInstance.sol`
-- `contracts/ConnectFourInstance.sol`
+- `contracts/TicTacToe.sol`
+- `contracts/Chess.sol`
+- `contracts/ConnectFour.sol`
 
 Each inherits from `ETourInstance` and adds:
 - Game-specific board state and move validation
@@ -218,10 +218,10 @@ Each inherits from `ETourInstance` and adds:
 This keeps the instance contract small (game logic + tournament state only).
 
 **Checklist:**
-- [x] `TicTacInstance` — 2-bit packed board, 3x3 win detection (14.6KB, 61% of limit)
-- [x] `ChessInstance` — 4-bit piece encoding, IChessRules delegatecall, threefold repetition (15.3KB, 62%)
-- [x] `ConnectFourInstance` — 6×7 board, gravity moves, 4-in-a-row detection (14.3KB, 58%)
-- [x] Each must fit well under 24KB (target: <8KB with proxy pattern) — TicTacInstance fine; Chess/C4 pending
+- [x] `TicTacToe` — 2-bit packed board, 3x3 win detection (14.6KB, 61% of limit)
+- [x] `Chess` — 4-bit piece encoding, IChessRules delegatecall, threefold repetition (15.3KB, 62%)
+- [x] `ConnectFour` — 6×7 board, gravity moves, 4-in-a-row detection (14.3KB, 58%)
+- [x] Each must fit well under 24KB (target: <8KB with proxy pattern) — TicTacToe fine; Chess/C4 pending
 
 ---
 
@@ -259,14 +259,14 @@ The five existing modules (Core, Matches, Prizes, Escalation, Raffle) currently 
 **Deployment order:**
 1. Deploy shared modules (Core, Matches, Prizes, Escalation) — may need updates
 2. Deploy game-specific modules (ChessRulesModule) — unchanged
-3. Deploy instance implementation contracts (TicTacInstance, ChessInstance, ConnectFourInstance)
+3. Deploy instance implementation contracts (TicTacToe, Chess, ConnectFour)
 4. Deploy factory contracts with implementation + module addresses
 
 **Checklist:**
 - [x] `deploy-instance-modules.js` — deploys/reuses Core, Matches, Prizes, Escalation
-- [x] `deploy-tictacchain-factory.js` — TicTacChainFactory + ABI (reuses modules)
+- [x] `deploy-tictacchain-factory.js` — TicTacToeFactory + ABI (reuses modules)
 - [x] `deploy-connectfour-factory.js` — ConnectFourFactory + ABI (reuses modules)
-- [x] `deploy-chessonchain-factory.js` — ChessOnChainFactory + ChessRulesModule + ABI (reuses modules)
+- [x] `deploy-chessonchain-factory.js` — ChessFactory + ChessRulesModule + ABI (reuses modules)
 - [x] `deploy-factories.js` — deploys all three factories at once
 - [x] `deploy-all-factory.js` — one-shot: modules + all factories
 - [x] `deployments/` artifacts updated per run
@@ -316,11 +316,11 @@ Move the old monolithic game contracts to `contracts/archived/`:
 ### 3.3 — Game-Specific Tests
 
 **Files:**
-- `test/factory/TicTacInstance.test.js` ✅ DONE (107 tests passing)
-- `test/factory/ChessInstance.test.js`
-- `test/factory/ConnectFourInstance.test.js`
+- `test/factory/TicTacToe.test.js` ✅ DONE (107 tests passing)
+- `test/factory/Chess.test.js`
+- `test/factory/ConnectFour.test.js`
 
-**TicTacInstance.test.js covers (107 tests, 0 failures):**
+**TicTacToe.test.js covers (107 tests, 0 failures):**
 - [x] Game moves validate correctly within instance context (move validation suite)
 - [x] Win detection works (playAndWin helper, draw detection suite)
 - [x] Full game lifecycle: 2-player, 4-player, 8-player (create → enroll → play → win → prizes)
@@ -340,19 +340,19 @@ Move the old monolithic game contracts to `contracts/archived/`:
 
 **File:** `test/factory/InstanceEscalation.test.js`
 
-- [x] EL1: Solo enrollment force-start works in instance (covered in TicTacInstance.test.js Suite J)
+- [x] EL1: Solo enrollment force-start works in instance (covered in TicTacToe.test.js Suite J)
 - [ ] EL2: Abandoned pool claim works in instance
-- [x] ML2: forceEliminateStalledMatch (covered in TicTacInstance.test.js Suite H)
-- [x] ML3: claimMatchSlotByReplacement (covered in TicTacInstance.test.js Suite I)
-- [x] Timeout claim / claimTimeoutWin (covered in TicTacInstance.test.js Suite G)
+- [x] ML2: forceEliminateStalledMatch (covered in TicTacToe.test.js Suite H)
+- [x] ML3: claimMatchSlotByReplacement (covered in TicTacToe.test.js Suite I)
+- [x] Timeout claim / claimTimeoutWin (covered in TicTacToe.test.js Suite G)
 
 ### 3.5 — Raffle Tests
 
 **File:** `test/factory/FactoryRaffle.test.js`
 
-- [x] Protocol share accumulates on factory from instance fee routing (covered in TicTacInstance.test.js Suite K)
-- [x] Raffle executes from factory context (covered in TicTacInstance.test.js Suite K)
-- [x] Raffle eligibility checks work across instances (covered in TicTacInstance.test.js Suite K)
+- [x] Protocol share accumulates on factory from instance fee routing (covered in TicTacToe.test.js Suite K)
+- [x] Raffle executes from factory context (covered in TicTacToe.test.js Suite K)
+- [x] Raffle eligibility checks work across instances (covered in TicTacToe.test.js Suite K)
 
 ### 3.6 — Gas Benchmarks
 
@@ -496,16 +496,16 @@ Phase 5.x (Docs)                   ← last, reflects final state
 | Date | Phase | Description | Status |
 |------|-------|-------------|--------|
 | 2026-03-22 | — | Plan created | Done |
-| 2026-03-22 | 1.5 | Audit & adapt modules — new files: `ETourInstance_Base.sol`, `modules/ETourInstance_Core.sol`, `modules/ETourInstance_Matches.sol`, `modules/ETourInstance_Prizes.sol`, `modules/ETourInstance_Escalation.sol` | Done |
-| 2026-03-22 | 1.1 | Created `ETourInstance.sol` + `ETourInstance_Base.sol` — permanent single-instance child contract with initialize(), view functions, permanent lock | Done |
-| 2026-03-22 | 1.4 | Created `TicTacInstance.sol` — TicTac game logic ported to single-instance pattern (14.6KB, 61% of 24KB limit) | Done |
+| 2026-03-22 | 1.5 | Audit & adapt modules — new files: `ETourTournamentBase.sol`, `modules/ETourInstance_Core.sol`, `modules/ETourInstance_Matches.sol`, `modules/ETourInstance_Prizes.sol`, `modules/ETourInstance_Escalation.sol` | Done |
+| 2026-03-22 | 1.1 | Created `ETourInstance.sol` + `ETourTournamentBase.sol` — permanent single-instance child contract with initialize(), view functions, permanent lock | Done |
+| 2026-03-22 | 1.4 | Created `TicTacToe.sol` — TicTac game logic ported to single-instance pattern (14.6KB, 61% of 24KB limit) | Done |
 | 2026-03-22 | 1.2 | Created `ETourFactory.sol` — EIP-1167 clone factory, demand-driven tiers, player history, raffle (10.7KB) | Done |
-| 2026-03-22 | 1.3 | Created `TicTacChainFactory.sol` — inherits ETourFactory, deploys TicTacInstance implementation, raffle thresholds | Done |
-| 2026-03-22 | 1.4 | Created `ConnectFourInstance.sol` — 6×7 gravity board, 4-in-a-row detection, time bank, escalation clearing (14.3KB, 58%) | Done |
-| 2026-03-22 | 1.4 | Created `ChessInstance.sol` — 4-bit piece encoding, IChessRules delegatecall, threefold repetition tracking, `initializeChess()` (15.3KB, 62%) | Done |
-| 2026-03-22 | 1.3 | Created `ConnectFourFactory.sol` — inherits ETourFactory, deploys ConnectFourInstance implementation (10.7KB) | Done |
-| 2026-03-22 | 1.3 | Created `ChessOnChainFactory.sol` — inherits ETourFactory, overrides createInstance() to pass CHESS_RULES to each clone (11.1KB) | Done |
+| 2026-03-22 | 1.3 | Created `TicTacToeFactory.sol` — inherits ETourFactory, deploys TicTacToe implementation, raffle thresholds | Done |
+| 2026-03-22 | 1.4 | Created `ConnectFour.sol` — 6×7 gravity board, 4-in-a-row detection, time bank, escalation clearing (14.3KB, 58%) | Done |
+| 2026-03-22 | 1.4 | Created `Chess.sol` — 4-bit piece encoding, IChessRules delegatecall, threefold repetition tracking, `initializeChess()` (15.3KB, 62%) | Done |
+| 2026-03-22 | 1.3 | Created `ConnectFourFactory.sol` — inherits ETourFactory, deploys ConnectFour implementation (10.7KB) | Done |
+| 2026-03-22 | 1.3 | Created `ChessFactory.sol` — inherits ETourFactory, overrides createInstance() to pass CHESS_RULES to each clone (11.1KB) | Done |
 | 2026-03-22 | — | All 26 contracts compile successfully (0 errors, evm: paris) | Done |
 | 2026-03-22 | 2.1 | Deploy scripts complete: `deploy-instance-modules.js`, `deploy-tictacchain-factory.js`, `deploy-connectfour-factory.js`, `deploy-chessonchain-factory.js`, `deploy-factories.js`, `deploy-all-factory.js` | Done |
-| 2026-03-24 | 3.3 | TicTacInstance.test.js: 107 tests, 0 failures. Covers 14 suites: 2/4/8-player lifecycle, draw, move validation, time bank, timeout claim, ML2/ML3 escalation, EL1 force-start, protocol raffle, factory bookkeeping, guardrails, permanent record views | Done |
+| 2026-03-24 | 3.3 | TicTacToe.test.js: 107 tests, 0 failures. Covers 14 suites: 2/4/8-player lifecycle, draw, move validation, time bank, timeout claim, ML2/ML3 escalation, EL1 force-start, protocol raffle, factory bookkeeping, guardrails, permanent record views | Done |
 | | | | |

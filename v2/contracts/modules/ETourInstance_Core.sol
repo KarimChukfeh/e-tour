@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Core
@@ -19,26 +19,22 @@ import "../ETourInstance_Base.sol";
  * storage (not this module's). address(this) = instance address when called via
  * delegatecall.
  */
-contract ETourInstance_Core is ETourInstance_Base {
+contract ETourInstance_Core is ETourTournamentBase {
 
     constructor() {}
 
     // ============ Abstract Stubs (required for deployment, never called directly) ============
 
-    function _createMatchGame(uint8, uint8, address, address) public override { revert("Module stub"); }
-    function _resetMatchGame(bytes32) public override { revert("Module stub"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module stub"); }
-    function _initializeMatchForPlay(bytes32) public override { revert("Module stub"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
+    function moduleCreateMatch(uint8, uint8, address, address) public override { revert("Module stub"); }
+    function moduleResetMatch(bytes32) public override { revert("Module stub"); }
+    function moduleInitializeMatchForPlay(bytes32) public override { revert("Module stub"); }
     function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Enrollment ============
 
     /**
      * @dev Enroll caller in this instance.
-     * Called via delegatecall from ETourInstance_Base.enrollInTournament().
+     * Called via delegatecall from ETourTournamentBase.enrollInTournament().
      * msg.sender = original caller, msg.value = entry fee.
      */
     function coreEnroll() external payable onlyDelegateCall {
@@ -78,7 +74,7 @@ contract ETourInstance_Core is ETourInstance_Base {
 
     /**
      * @dev Enroll a specific player on their behalf.
-     * Called via delegatecall from ETourInstance_Base.enrollOnBehalf().
+     * Called via delegatecall from ETourTournamentBase.enrollOnBehalf().
      * Identical to coreEnroll() but uses the provided player address instead of msg.sender.
      */
     function coreEnrollOnBehalf(address player) external payable onlyDelegateCall {
@@ -118,7 +114,7 @@ contract ETourInstance_Core is ETourInstance_Base {
 
     /**
      * @dev Cancel a solo-enrolled tournament at any time while enrollment is open.
-     * Called via delegatecall from ETourInstance_Base.cancelTournament().
+     * Called via delegatecall from ETourTournamentBase.cancelTournament().
      */
     function coreCancelTournament() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
@@ -135,7 +131,7 @@ contract ETourInstance_Core is ETourInstance_Base {
 
     /**
      * @dev Reset enrollment deadlines for a solo-enrolled tournament at any time.
-     * Called via delegatecall from ETourInstance_Base.resetEnrollmentWindow().
+     * Called via delegatecall from ETourTournamentBase.resetEnrollmentWindow().
      */
     function coreResetEnrollmentWindow() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
@@ -153,7 +149,7 @@ contract ETourInstance_Core is ETourInstance_Base {
     /**
      * @dev Force start if enrollment window expired and caller is enrolled.
      * Requires at least 2 enrolled players.
-     * Called via delegatecall from ETourInstance_Base.forceStartTournament().
+     * Called via delegatecall from ETourTournamentBase.forceStartTournament().
      */
     function coreForceStart() external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");

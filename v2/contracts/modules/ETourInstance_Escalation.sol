@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import "../ETourTournamentBase.sol";
 
 /**
  * @title ETourInstance_Escalation
@@ -15,26 +15,22 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Escalation is ETourInstance_Base {
+contract ETourInstance_Escalation is ETourTournamentBase {
 
     constructor() {}
 
     // ============ Abstract Stubs ============
 
-    function _createMatchGame(uint8, uint8, address, address) public override { revert("Module stub"); }
-    function _resetMatchGame(bytes32) public override { revert("Module stub"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module stub"); }
-    function _initializeMatchForPlay(bytes32) public override { revert("Module stub"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
+    function moduleCreateMatch(uint8, uint8, address, address) public override { revert("Module stub"); }
+    function moduleResetMatch(bytes32) public override { revert("Module stub"); }
+    function moduleInitializeMatchForPlay(bytes32) public override { revert("Module stub"); }
     function initializeRound(uint8) public payable override { revert("Module stub"); }
 
     // ============ Match Stalling ============
 
     /**
      * @dev Mark a match as stalled when timeout is claimable.
-     * Called via delegatecall from ETourInstance_Base.claimTimeoutWin().
+     * Called via delegatecall from ETourTournamentBase.claimTimeoutWin().
      */
     function markMatchStalled(bytes32 matchId, uint256 timeoutOccurredAt) external payable onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
@@ -77,12 +73,12 @@ contract ETourInstance_Escalation is ETourInstance_Base {
     ) internal returns (bool) {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
         if (timeout.isStalled) return true;
-        if (!this._isMatchActive(matchId)) return false;
+        if (!this.moduleIsMatchActive(matchId)) return false;
 
-        CommonMatchData memory matchData = this._getActiveMatchData(matchId, roundNumber, matchNumber);
+        CommonMatchData memory matchData = this.moduleGetActiveMatchData(matchId, roundNumber, matchNumber);
         if (matchData.status != MatchStatus.InProgress) return false;
 
-        if (this._hasCurrentPlayerTimedOut(matchId)) {
+        if (this.moduleHasCurrentPlayerTimedOut(matchId)) {
             uint256 timeoutOccurredAt = matchData.lastMoveTime + tierConfig.timeouts.matchTimePerPlayer;
             _markMatchStalled(matchId, timeoutOccurredAt);
             return true;
@@ -137,7 +133,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        this._completeMatchWithResult(matchId, address(0), false);
+        this.moduleCompleteMatchWithResult(matchId, address(0), false);
         matchData.completionReason = MatchCompletionReason.ForceElimination;
         matchData.completionCategory = _matchCompletionCategoryFor(MatchCompletionReason.ForceElimination);
 
@@ -177,7 +173,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
 
-        this._completeMatchWithResult(matchId, replacementPlayer, false);
+        this.moduleCompleteMatchWithResult(matchId, replacementPlayer, false);
         matchData.completionReason = MatchCompletionReason.Replacement;
         matchData.completionCategory = _matchCompletionCategoryFor(MatchCompletionReason.Replacement);
 
@@ -186,6 +182,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             enrolledPlayers.push(replacementPlayer);
             isEnrolled[replacementPlayer] = true;
             tournament.enrolledCount++;
+            _registerPlayerProfileEnrollment(replacementPlayer, 0);
         }
 
         if (roundNumber < tournament.actualTotalRounds - 1) {
@@ -234,11 +231,11 @@ contract ETourInstance_Escalation is ETourInstance_Base {
 
         bytes32 nextMatchId = _getMatchId(nextRound, nextMatchNum);
         uint8 slot = currentMatchNum % 2;
-        this._setMatchPlayer(nextMatchId, slot, winner);
+        this.moduleSetMatchPlayer(nextMatchId, slot, winner);
 
-        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+        (address p1, address p2) = this.moduleGetMatchPlayers(nextMatchId);
         if (p1 != address(0) && p2 != address(0)) {
-            this._initializeMatchForPlay(nextMatchId);
+            this.moduleInitializeMatchForPlay(nextMatchId);
         }
     }
 
@@ -301,7 +298,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
 
         if (roundNumber == t.actualTotalRounds - 1) {
             bytes32 finalsMatchId = _getMatchId(roundNumber, 0);
-            (address winner, bool isDraw, ) = this._getMatchResult(finalsMatchId);
+            (address winner, bool isDraw, ) = this.moduleGetMatchResult(finalsMatchId);
             if (!isDraw && winner != address(0)) {
                 t.winner = winner;
                 t.status = TournamentStatus.Concluded;
@@ -322,7 +319,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             address lastWinner = address(0);
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(roundNumber, m);
-                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = this.moduleGetMatchResult(matchId);
                 if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
                     winnersCount++;
                     lastWinner = winner;
@@ -336,13 +333,13 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             if (nextRoundStruct.initialized) {
                 for (uint8 m = 0; m < nextRoundStruct.totalMatches; m++) {
                     bytes32 nextMatchId = _getMatchId(nextRound, m);
-                    (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+                    (address p1, address p2) = this.moduleGetMatchPlayers(nextMatchId);
                     if (p1 != address(0)) { playersInNextRound++; solePlayerInNextRound = p1; }
                     if (p2 != address(0)) { playersInNextRound++; solePlayerInNextRound = p2; }
                 }
                 if (nextRoundStruct.playerCount % 2 == 1) {
                     bytes32 byeMatchId = _getMatchId(nextRound, nextRoundStruct.totalMatches);
-                    (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+                    (address byeP1, address byeP2) = this.moduleGetMatchPlayers(byeMatchId);
                     if (byeP1 != address(0)) { playersInNextRound++; solePlayerInNextRound = byeP1; }
                     if (byeP2 != address(0)) { playersInNextRound++; solePlayerInNextRound = byeP2; }
                 }
@@ -374,7 +371,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             Round storage round = rounds[r];
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(r, m);
-                (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+                (address winner, bool isDraw, MatchStatus status) = this.moduleGetMatchResult(matchId);
                 if (status == MatchStatus.Completed && winner == player && !isDraw) return true;
             }
         }
@@ -384,7 +381,7 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             if (!round.initialized) continue;
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(r, m);
-                (address p1, address p2) = this._getMatchPlayers(matchId);
+                (address p1, address p2) = this.moduleGetMatchPlayers(matchId);
                 if (p1 == player || p2 == player) return true;
             }
         }
@@ -397,9 +394,9 @@ contract ETourInstance_Escalation is ETourInstance_Base {
             if (!round.initialized) continue;
             for (uint8 m = 0; m < round.totalMatches; m++) {
                 bytes32 matchId = _getMatchId(r, m);
-                (address p1, address p2) = this._getMatchPlayers(matchId);
+                (address p1, address p2) = this.moduleGetMatchPlayers(matchId);
                 if (p1 == player || p2 == player) {
-                    (, , MatchStatus status) = this._getMatchResult(matchId);
+                    (, , MatchStatus status) = this.moduleGetMatchResult(matchId);
                     if (status == MatchStatus.InProgress) return true;
                 }
             }

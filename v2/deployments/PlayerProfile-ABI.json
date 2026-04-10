@@ -1,6 +1,6 @@
 {
-  "network": "arbitrum",
-  "generatedAt": "2026-04-05T15:30:41.205Z",
+  "network": "localhost",
+  "generatedAt": "2026-04-07T19:46:23.086Z",
   "contract": {
     "abi": [
       {
@@ -74,6 +74,12 @@
             "indexed": false,
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],
@@ -333,6 +339,11 @@
                 "internalType": "uint8",
                 "name": "category",
                 "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "resolutionReason",
+                "type": "uint8"
               }
             ],
             "internalType": "struct IPlayerProfile.PlayerMatchRecord",
@@ -406,6 +417,11 @@
               {
                 "internalType": "uint8",
                 "name": "category",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "resolutionReason",
                 "type": "uint8"
               }
             ],
@@ -536,6 +552,11 @@
           {
             "internalType": "uint8",
             "name": "category",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "resolutionReason",
             "type": "uint8"
           }
         ],

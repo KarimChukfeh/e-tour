@@ -41,7 +41,8 @@ contract PlayerProfile is IPlayerProfile {
         uint8 indexed roundNumber,
         uint8 indexed matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     );
 
     // ============ State ============
@@ -155,7 +156,8 @@ contract PlayerProfile is IPlayerProfile {
         uint8 roundNumber,
         uint8 matchNumber,
         uint8 outcome,
-        uint8 category
+        uint8 category,
+        uint8 resolutionReason
     ) external override {
         if (msg.sender != registry) revert Unauthorized();
 
@@ -170,7 +172,8 @@ contract PlayerProfile is IPlayerProfile {
                 matchNumber: matchNumber,
                 recordedAt: uint64(block.timestamp),
                 outcome: outcome,
-                category: category
+                category: category,
+                resolutionReason: resolutionReason
             }));
             _matchRecordIndex[key] = _matchRecords.length;
         } else {
@@ -179,9 +182,10 @@ contract PlayerProfile is IPlayerProfile {
             record.recordedAt = uint64(block.timestamp);
             record.outcome = outcome;
             record.category = category;
+            record.resolutionReason = resolutionReason;
         }
 
-        emit MatchOutcomeRecorded(instance, roundNumber, matchNumber, outcome, category);
+        emit MatchOutcomeRecorded(instance, roundNumber, matchNumber, outcome, category, resolutionReason);
     }
 
     // ============ View Functions ============
@@ -259,7 +263,7 @@ contract PlayerProfile is IPlayerProfile {
         bytes32 key = keccak256(abi.encodePacked(instance, roundNumber, matchNumber));
         uint256 idx1 = _matchRecordIndex[key];
         if (idx1 == 0) {
-            return PlayerMatchRecord(address(0), 0, 0, 0, 0, 0, 0);
+            return PlayerMatchRecord(address(0), 0, 0, 0, 0, 0, 0, 0);
         }
         return _matchRecords[idx1 - 1];
     }
