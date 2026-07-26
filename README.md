@@ -1,6 +1,8 @@
 # ETOUR
 ### Tournament Infrastructure for Skill-Based Competition
 
+[Visit etour.games](https://etour.games)
+
 ---
 
 ## Abstract
