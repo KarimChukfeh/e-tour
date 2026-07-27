@@ -1,0 +1,42 @@
+{
+  "name": "e-tour-v3",
+  "version": "3.0.0",
+  "description": "ETour V3 factory/instance architecture with instance-scoped session authorization",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0 <23.0.0"
+  },
+  "packageManager": "npm@10.9.4",
+  "scripts": {
+    "clean": "hardhat clean",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:focused": "hardhat test",
+    "abi:generate": "node scripts/regenerate-abis.js",
+    "abi:sync": "node scripts/sync-abis.js",
+    "size": "node scripts/check-contract-sizes.js",
+    "size:capture": "node scripts/check-contract-sizes.js --write",
+    "storage:check": "node scripts/check-storage-layout.js",
+    "storage:capture": "node scripts/check-storage-layout.js --write",
+    "gas": "REPORT_GAS=1 hardhat test",
+    "gas:capture": "REPORT_GAS=1 REPORT_GAS_FILE=baselines/gas-report.txt hardhat test",
+    "gas:baseline": "hardhat run scripts/capture-gas-baseline.js",
+    "deploy:modules": "hardhat run scripts/deploy-instance-modules.js --network localhost",
+    "deploy:tictac": "hardhat run scripts/deploy-tictacchain-factory.js --network localhost",
+    "deploy:connectfour": "hardhat run scripts/deploy-connectfour-factory.js --network localhost",
+    "deploy:chess": "hardhat run scripts/deploy-chessonchain-factory.js --network localhost",
+    "deploy:factories": "hardhat run scripts/deploy-factories.js --network localhost",
+    "deploy:all": "hardhat run scripts/deploy-all-factory.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/edr": "0.12.0-next.16",
+    "@nomicfoundation/hardhat-ethers": "3.1.2",
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "hardhat": "2.27.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "dotenv": "17.2.3"
+  }
+}

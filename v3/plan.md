@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Planning  
+> Status: Implementation — copied baseline complete through tracking item 18
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -160,10 +160,13 @@ Key V2 sources:
 
 Baseline verified on 2026-07-27:
 
+- V2 source baseline commit: `3bf167f2600141826d16a6ceaf4a17b357cff205`.
+- The complete copy inventory and V3 disposition for all 120 V2 files plus the copied dependency symlink is recorded in [`BASELINE_INVENTORY.md`](./BASELINE_INVENTORY.md).
 - 251 V2 tests passing.
 - The current compiled `ETourInstance_Matches` module is approximately 97% of the EIP-170 deployed-bytecode limit.
 - The three game implementations are approximately 83%–86% of the same limit.
 - The compiler currently emits unreachable-code warnings that must be understood and eliminated or explicitly justified in V3.
+- Reproducible compile, test, warning, bytecode-size, gas, and storage-layout evidence is stored in [`baselines/README.md`](./baselines/README.md).
 
 ### 4.1 Existing issue that must be fixed first
 

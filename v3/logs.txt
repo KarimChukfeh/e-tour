@@ -1,1 +1,63 @@
-Hello World
+2026-07-27 — V3 implementation baseline, tracking items 1–18 complete
+
+Read plan.md and tracking.md before implementation. Copied the complete V2 tree
+into V3 while preserving plan.md, tracking.md, and logs.txt. The source baseline
+is commit 3bf167f2600141826d16a6ceaf4a17b357cff205.
+
+Completed:
+- Inventoried and classified all 120 copied regular files plus the copied
+  node_modules symlink in BASELINE_INVENTORY.md.
+- Kept all 20 contracts and all copied tests as the unmodified behavior baseline.
+- Archived historical V2 documents, diagnostics, and dated verification scripts
+  under archive/v2-reference/.
+- Deleted copied artifacts, cache, deployment manifests, operating-system
+  metadata, the accidental nested v2/ directory, and the root-dependency symlink.
+- Started deployments/ empty except for .gitkeep so no V2 address is represented
+  as a V3 deployment.
+- Renamed and namespaced the package as e-tour-v3@3.0.0 and made operational
+  scripts use V3-local paths.
+- Pinned Node 22.21.0, npm 10.9.4, Hardhat 2.27.0, hardhat-ethers 3.1.2,
+  EDR 0.12.0-next.16, Solidity 0.8.20, and OpenZeppelin Contracts 5.4.0.
+- Generated an isolated package-lock.json and verified npm ci --ignore-scripts.
+- Added compile, full/focused test, ABI generation/sync, size, storage, aggregate
+  gas, and deterministic lifecycle-gas commands.
+- Added machine-readable storage, size, and gas baseline tooling.
+
+Validation:
+- Clean compile: 21 Solidity files compiled successfully.
+- Full copied test suite: 251 passing after the isolated clean install.
+- Focused command: 2 passing active-tournament tests.
+- Compiler baseline: 42 warnings captured in baselines/compiler-warnings.md.
+- Storage baseline: 10 targets passed; canonical base has 20 entries.
+- Size baseline: every contract is below EIP-170; ETourInstance_Matches is
+  23,841 bytes (97.0%, 735 bytes remaining).
+- Lifecycle gas baseline:
+  - ordinary enrollment: 381,559
+  - enrollment that starts tournament: 840,297
+  - normal move: 122,919
+  - terminal non-settling move: 443,887
+  - terminal move plus tournament settlement: 1,106,249
+- Aggregate gas-instrumented suite: 251 passing.
+
+Important findings:
+- Hardhat 2.27's EDR semver range currently resolves incompatible EDR 0.12.1 on
+  a fresh install. EDR 0.12.0-next.16 is directly pinned because it is the
+  known-good provider from the V2 lock.
+- npm reports 54 dependency vulnerabilities (18 low, 9 moderate, 27 high) and
+  several deprecated transitive packages. No automatic audit fix was applied.
+  This belongs to the dependency/static-analysis work in tracking item 20.
+- V2 has no standalone normal-settlement transaction; settlement is atomic in
+  the terminal move. The deterministic gas baseline records both a non-settling
+  terminal match move and a final terminal move that includes settlement.
+
+Evidence:
+- baselines/README.md
+- baselines/compiler-warnings.md
+- baselines/contract-sizes.json
+- baselines/gas-lifecycle.json
+- baselines/gas-report.txt
+- baselines/storage-layout.json
+
+Next recommended action:
+Begin tracking item 19 by adding V3 compile and full-suite CI jobs, then item 20
+for warning, size, storage, ABI, static-analysis, and dependency-audit gates.

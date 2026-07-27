@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T06:52:22.762Z",
+  "deployedBytecodeLimit": 24576,
+  "contracts": [
+    {
+      "name": "ChessOnChainFactory",
+      "bytes": 7633,
+      "kb": "7.45",
+      "percentage": "31.1"
+    },
+    {
+      "name": "TicTacChainFactory",
+      "bytes": 7503,
+      "kb": "7.33",
+      "percentage": "30.5"
+    },
+    {
+      "name": "ConnectFourFactory",
+      "bytes": 7503,
+      "kb": "7.33",
+      "percentage": "30.5"
+    },
+    {
+      "name": "ETourFactory",
+      "bytes": 7503,
+      "kb": "7.33",
+      "percentage": "30.5"
+    },
+    {
+      "name": "ConnectFourInstance",
+      "bytes": 21023,
+      "kb": "20.53",
+      "percentage": "85.5"
+    },
+    {
+      "name": "ChessInstance",
+      "bytes": 20654,
+      "kb": "20.17",
+      "percentage": "84.0"
+    },
+    {
+      "name": "TicTacInstance",
+      "bytes": 20333,
+      "kb": "19.86",
+      "percentage": "82.7"
+    },
+    {
+      "name": "ETourInstance",
+      "bytes": 0,
+      "kb": "0.00",
+      "percentage": "0.0"
+    },
+    {
+      "name": "ETourInstance_Base",
+      "bytes": 0,
+      "kb": "0.00",
+      "percentage": "0.0"
+    },
+    {
+      "name": "ETourInstance_Matches",
+      "bytes": 23841,
+      "kb": "23.28",
+      "percentage": "97.0"
+    },
+    {
+      "name": "ETourInstance_Escalation",
+      "bytes": 20889,
+      "kb": "20.40",
+      "percentage": "85.0"
+    },
+    {
+      "name": "ETourInstance_Core",
+      "bytes": 15320,
+      "kb": "14.96",
+      "percentage": "62.3"
+    },
+    {
+      "name": "ETourInstance_Prizes",
+      "bytes": 14782,
+      "kb": "14.44",
+      "percentage": "60.1"
+    },
+    {
+      "name": "ChessRulesModule",
+      "bytes": 8993,
+      "kb": "8.78",
+      "percentage": "36.6"
+    },
+    {
+      "name": "PlayerProfile",
+      "bytes": 4794,
+      "kb": "4.68",
+      "percentage": "19.5"
+    },
+    {
+      "name": "PlayerRegistry",
+      "bytes": 2988,
+      "kb": "2.92",
+      "percentage": "12.2"
+    }
+  ]
+}

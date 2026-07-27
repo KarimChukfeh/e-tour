@@ -1,21 +1,21 @@
-- [ ] copy the `v2/` code to `v3/` such that `v3/` is an identical copy of `v2/`
-- [ ] Preserve `v3/plan.md` and `v3/tracking.md` while completing the V2-to-V3 copy.
-- [ ] Record the exact V2 git commit used as the V3 baseline in `v3/plan.md`.
-- [ ] Inventory every copied V2 contract, module, interface, test, script, deployment file, package file, and document.
-- [ ] Classify every V2 file as port, regenerate, archive, or deliberately omit.
-- [ ] Remove copied generated `artifacts/` and `cache/` directories from the authoritative V3 source set.
-- [ ] Ensure V2 deployment addresses are not represented as V3 deployment addresses.
-- [ ] Update the V3 package name, version, scripts, paths, and configuration namespaces.
-- [ ] Pin the V3 Node.js, Hardhat, Solidity, OpenZeppelin, and package-manager versions.
-- [ ] Install the pinned V3 dependencies from the lockfile.
-- [ ] Compile the unmodified V3 baseline.
-- [ ] Run all copied V2 tests from the V3 test configuration.
-- [ ] Confirm the V3 baseline reproduces all 251 passing V2 tests.
-- [ ] Capture baseline compiler warnings.
-- [ ] Capture baseline deployed-bytecode sizes for every contract and module.
-- [ ] Capture baseline gas measurements for enrollment, normal moves, terminal moves, and settlement.
-- [ ] Capture the compiler storage layout for every V3 instance implementation and delegatecall module.
-- [ ] Add V3 commands for compile, full test, focused test, ABI generation, size checks, storage checks, and gas reporting.
+- [x] copy the `v2/` code to `v3/` such that `v3/` is an identical copy of `v2/`
+- [x] Preserve `v3/plan.md` and `v3/tracking.md` while completing the V2-to-V3 copy.
+- [x] Record the exact V2 git commit used as the V3 baseline in `v3/plan.md`.
+- [x] Inventory every copied V2 contract, module, interface, test, script, deployment file, package file, and document.
+- [x] Classify every V2 file as port, regenerate, archive, or deliberately omit.
+- [x] Remove copied generated `artifacts/` and `cache/` directories from the authoritative V3 source set.
+- [x] Ensure V2 deployment addresses are not represented as V3 deployment addresses.
+- [x] Update the V3 package name, version, scripts, paths, and configuration namespaces.
+- [x] Pin the V3 Node.js, Hardhat, Solidity, OpenZeppelin, and package-manager versions.
+- [x] Install the pinned V3 dependencies from the lockfile.
+- [x] Compile the unmodified V3 baseline.
+- [x] Run all copied V2 tests from the V3 test configuration.
+- [x] Confirm the V3 baseline reproduces all 251 passing V2 tests.
+- [x] Capture baseline compiler warnings.
+- [x] Capture baseline deployed-bytecode sizes for every contract and module.
+- [x] Capture baseline gas measurements for enrollment, normal moves, terminal moves, and settlement.
+- [x] Capture the compiler storage layout for every V3 instance implementation and delegatecall module.
+- [x] Add V3 commands for compile, full test, focused test, ABI generation, size checks, storage checks, and gas reporting.
 - [ ] Add CI jobs for V3 compilation and the complete V3 test suite.
 - [ ] Add CI checks for compiler warnings, contract size, storage layout, ABI changes, static analysis, and dependency vulnerabilities.
 - [ ] Decide and record whether V3 deploys a fresh PlayerRegistry or reuses the deployed registry.

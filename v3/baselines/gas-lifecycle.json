@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T06:55:16.479Z",
+  "compiler": {
+    "version": "0.8.20",
+    "optimizerEnabled": true,
+    "optimizerRuns": 1,
+    "viaIR": true
+  },
+  "scenario": {
+    "game": "TicTac",
+    "playerCount": 4,
+    "entryFeeWei": "1000000000000000",
+    "note": "The terminal settlement is atomic inside the final makeMove transaction; V2 has no separately callable normal-settlement transaction."
+  },
+  "gasUsed": {
+    "createInstanceAndCreatorEnrollment": "1413302",
+    "enrollmentWithoutTournamentStart": "381559",
+    "enrollmentWithTournamentStart": "840297",
+    "normalMove": "122919",
+    "terminalMatchMoveWithoutTournamentSettlement": "443887",
+    "terminalMoveWithTournamentSettlement": "1106249",
+    "standaloneSettlement": null
+  }
+}
