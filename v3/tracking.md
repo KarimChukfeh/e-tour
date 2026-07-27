@@ -1,0 +1,331 @@
+- [ ] copy the `v2/` code to `v3/` such that `v3/` is an identical copy of `v2/`
+- [ ] Preserve `v3/plan.md` and `v3/tracking.md` while completing the V2-to-V3 copy.
+- [ ] Record the exact V2 git commit used as the V3 baseline in `v3/plan.md`.
+- [ ] Inventory every copied V2 contract, module, interface, test, script, deployment file, package file, and document.
+- [ ] Classify every V2 file as port, regenerate, archive, or deliberately omit.
+- [ ] Remove copied generated `artifacts/` and `cache/` directories from the authoritative V3 source set.
+- [ ] Ensure V2 deployment addresses are not represented as V3 deployment addresses.
+- [ ] Update the V3 package name, version, scripts, paths, and configuration namespaces.
+- [ ] Pin the V3 Node.js, Hardhat, Solidity, OpenZeppelin, and package-manager versions.
+- [ ] Install the pinned V3 dependencies from the lockfile.
+- [ ] Compile the unmodified V3 baseline.
+- [ ] Run all copied V2 tests from the V3 test configuration.
+- [ ] Confirm the V3 baseline reproduces all 251 passing V2 tests.
+- [ ] Capture baseline compiler warnings.
+- [ ] Capture baseline deployed-bytecode sizes for every contract and module.
+- [ ] Capture baseline gas measurements for enrollment, normal moves, terminal moves, and settlement.
+- [ ] Capture the compiler storage layout for every V3 instance implementation and delegatecall module.
+- [ ] Add V3 commands for compile, full test, focused test, ABI generation, size checks, storage checks, and gas reporting.
+- [ ] Add CI jobs for V3 compilation and the complete V3 test suite.
+- [ ] Add CI checks for compiler warnings, contract size, storage layout, ABI changes, static analysis, and dependency vulnerabilities.
+- [ ] Decide and record whether V3 deploys a fresh PlayerRegistry or reuses the deployed registry.
+- [ ] Decide and record the final session TTL after comparing it with maximum tournament duration.
+- [ ] Select and pin the ERC-4337 EntryPoint version and canonical addresses for local, Arbitrum Sepolia, and Arbitrum One.
+- [ ] Select and pin the audited deterministic session-account implementation and factory.
+- [ ] Confirm that the selected session account supports counterfactual address derivation and first-UserOperation deployment.
+- [ ] Select at least two bundler providers compatible with the pinned EntryPoint and Arbitrum.
+- [ ] Decide and record whether the production paymaster uses on-chain policy, verifying signatures, or both.
+- [ ] Decide and record whether EIP-7702 is deferred until after the ERC-4337 V3 MVP.
+- [ ] Freeze the V3 non-negotiable identity, escrow, session-scope, and recovery invariants.
+- [ ] Design the canonical V3 shared storage layout.
+- [ ] Create the storage-only `ETourStorage` base.
+- [ ] Move all shared V2 enums, structs, and state variables into the canonical storage layout without accidental reordering.
+- [ ] Add the session-registry reference to the canonical V3 instance storage.
+- [ ] Ensure ReentrancyGuard storage is inherited in the same order by instances and delegatecall modules.
+- [ ] Refactor the core module to inherit only the canonical shared storage and required interfaces.
+- [ ] Refactor the matches module to inherit only the canonical shared storage and required interfaces.
+- [ ] Refactor the prizes module to inherit only the canonical shared storage and required interfaces.
+- [ ] Refactor the escalation module to inherit only the canonical shared storage and required interfaces.
+- [ ] Remove full-instance API inheritance and reverting abstract stubs from delegatecall modules.
+- [ ] Create the explicit module-to-instance self-call interface.
+- [ ] Add the `onlySelfCall` authorization modifier and custom error.
+- [ ] Enumerate every state-changing bridge called through `this.<function>()`.
+- [ ] Apply `onlySelfCall` to every state-changing module bridge.
+- [ ] Review every remaining public or external state-changing instance function for intentional caller access.
+- [ ] Add a machine-readable allowlist of intentional external state-changing selectors.
+- [ ] Add a CI check that fails when an unreviewed state-changing selector enters the ABI.
+- [ ] Add tests proving direct EOAs cannot call any state-changing bridge.
+- [ ] Add tests proving unrelated contracts cannot call any state-changing bridge.
+- [ ] Add tests proving rejected bridge calls leave state unchanged.
+- [ ] Add tests proving legitimate module-driven self-calls still succeed.
+- [ ] Add automated storage-layout comparison between every instance implementation and every delegatecall module.
+- [ ] Make storage-layout mismatch fail CI.
+- [ ] Eliminate or explicitly resolve every baseline unreachable-code warning.
+- [ ] Re-run the complete behavioral regression suite after storage and module hardening.
+- [ ] Reduce module deployed bytecode to the agreed headroom target.
+- [ ] Confirm every deployable contract remains below the EIP-170 limit.
+- [ ] Create the canonical `ETourGame` abstraction.
+- [ ] Move common match reset behavior into `ETourGame`.
+- [ ] Move common match-result access and completion behavior into `ETourGame`.
+- [ ] Move common Fischer clock accounting into `ETourGame`.
+- [ ] Move common escalation-state clearing into `ETourGame`.
+- [ ] Move common protected module bridges into `ETourGame`.
+- [ ] Define the minimal internal hook surface required from concrete games.
+- [ ] Add a game-state hashing hook for entropy without exposing game internals to infrastructure modules.
+- [ ] Refactor Tic-Tac-Toe to the `ETourGame` hook surface.
+- [ ] Refactor Connect Four to the `ETourGame` hook surface.
+- [ ] Refactor Chess to the `ETourGame` hook surface.
+- [ ] Preserve chess repetition nonce and reset behavior through the abstraction.
+- [ ] Add canonical factory instance-initialization and post-initialization hooks.
+- [ ] Move all common instance creation logic into one ETourFactory flow.
+- [ ] Replace the duplicated Chess factory creation flow with a one-time factory-only post-initialization hook.
+- [ ] Add `isInstance(address)` tracking to every V3 factory.
+- [ ] Add tests for canonical factory creation across all three games.
+- [ ] Add tests for one-time Chess rules initialization.
+- [ ] Re-run all behavioral, size, storage, and gas checks after the game and factory refactor.
+- [ ] Document the V3 developer-facing game extension surface.
+- [ ] Define the final `SessionKeyRegistry` structs, mappings, custom errors, events, and interfaces.
+- [ ] Implement the immutable or code-constant session TTL.
+- [ ] Implement instance-scoped session records keyed by instance and primary player.
+- [ ] Implement the reverse executor binding.
+- [ ] Enforce one globally unique live executor binding per registry.
+- [ ] Implement `registerSession` for instance-authorized initial registration.
+- [ ] Require the registered primary player to be enrolled in the calling instance.
+- [ ] Reject zero primary addresses.
+- [ ] Reject zero executor addresses.
+- [ ] Reject executors equal to their primary players.
+- [ ] Reject duplicate active sessions for the same instance and player.
+- [ ] Reject executors already bound to another live instance/player pair.
+- [ ] Store issued time, expiry time, and non-zero generation on registration.
+- [ ] Implement `refreshSession` callable only by the enrolled primary player.
+- [ ] Remove the old reverse binding atomically during refresh.
+- [ ] Increment generation and reset TTL atomically during refresh.
+- [ ] Reject refresh to the current executor.
+- [ ] Reject refresh to an executor with another live binding.
+- [ ] Implement `revokeSession` callable only by the enrolled primary player.
+- [ ] Clear the reverse binding and active executor during revocation.
+- [ ] Increment generation during revocation.
+- [ ] Implement session record, resolution, and active-status views.
+- [ ] Finalize whether refresh and revoke remain available after instance conclusion.
+- [ ] Ensure no privileged registry owner can assign, extend, rotate, or revoke player sessions.
+- [ ] Add SessionRegistered, SessionRefreshed, and SessionRevoked events with finalized indexed fields.
+- [ ] Add unit tests for every session registration validation rule.
+- [ ] Add unit tests for expiry immediately before and exactly at `validUntil`.
+- [ ] Add unit tests for successful and unauthorized refresh.
+- [ ] Add unit tests proving the old executor fails immediately after refresh.
+- [ ] Add unit tests for successful and unauthorized revocation.
+- [ ] Add unit tests for generation increments and reverse-binding cleanup.
+- [ ] Add tests for one player using distinct executors in distinct instances.
+- [ ] Add tests preventing live executor reuse across instances or players.
+- [ ] Add fuzz tests for registry state transitions.
+- [ ] Add invariants proving at most one active session per instance/player.
+- [ ] Add invariants proving at most one live binding per executor.
+- [ ] Add the SessionKeyRegistry address to V3 factory constructors and deployment configuration.
+- [ ] Pass the SessionKeyRegistry address into every newly initialized V3 instance.
+- [ ] Reject a zero registry during factory and instance initialization.
+- [ ] Expose the configured registry address through instance and factory views.
+- [ ] Change the join API to `enrollInTournament(address sessionExecutor)`.
+- [ ] Change the factory-only creator path to `enrollOnBehalf(address player, address sessionExecutor)`.
+- [ ] Change the canonical factory API to accept `sessionExecutor`.
+- [ ] Treat `address(0)` as an explicit opt-out from session registration.
+- [ ] Register a non-zero creator session atomically during factory creation and auto-enrollment.
+- [ ] Register a non-zero joiner session atomically during direct enrollment.
+- [ ] Make a session-registration failure revert the complete stake and enrollment transaction.
+- [ ] Preserve primary-player factory and profile registration during session-enabled enrollment.
+- [ ] Preserve all V2 fee accounting during session-enabled enrollment.
+- [ ] Update every V3 deployment helper and test helper for the new enrollment and creation signatures.
+- [ ] Add creator tests for enrollment with and without a session executor.
+- [ ] Add joiner tests for enrollment with and without a session executor.
+- [ ] Add tests proving failed session registration rolls back enrollment, profile effects, tournament count, and ETH accounting.
+- [ ] Add tests proving session registration does not enroll the executor.
+- [ ] Add the shared effective-gameplay-actor resolver to `ETourGame`.
+- [ ] Resolve an enrolled direct caller to itself as both primary player and executor.
+- [ ] Resolve an active registered executor to its enrolled primary player.
+- [ ] Reject missing, expired, revoked, rotated, mismatched, or un-enrolled session resolutions.
+- [ ] Ensure gameplay resolution checks `block.timestamp < validUntil`.
+- [ ] Preserve the actual executor address for events and diagnostics.
+- [ ] Update Tic-Tac-Toe `makeMove` to use the resolved primary player for all authorization and state changes.
+- [ ] Update Connect Four `makeMove` to use the resolved primary player for all authorization and state changes.
+- [ ] Update Chess `makeMove` to use the resolved primary player for all authorization and state changes.
+- [ ] Replace every gameplay use of `msg.sender` with the resolved primary where player identity is intended.
+- [ ] Retain `msg.sender` only as the observed gameplay executor.
+- [ ] Ensure turn selection and next-turn calculation store primary addresses.
+- [ ] Ensure piece, color, and board ownership calculations use the primary address.
+- [ ] Ensure normal wins and draws attribute results to primary addresses.
+- [ ] Ensure match completion, tournament advancement, and profiles use primary addresses.
+- [ ] Ensure prizes and refunds can never be redirected to a session executor by delegated gameplay.
+- [ ] Update all three MoveMade events to include both primary player and executor.
+- [ ] Keep tournament and match-completion events attributed to the primary player.
+- [ ] Add convenient instance/session views without duplicating registry state.
+- [ ] Confirm session resolution is not used by enrollment, cancellation, force-start, timeout, escalation, replacement, rescue, ownership, withdrawal, profile administration, refresh, or revocation paths.
+- [ ] Add direct-primary move tests for all three games.
+- [ ] Add active-session move tests for all three games.
+- [ ] Add unregistered, expired, revoked, and rotated-executor rejection tests for all three games.
+- [ ] Add wrong-turn and illegal-move session tests for all three games.
+- [ ] Add mid-match session refresh and resume tests for all three games.
+- [ ] Add direct-versus-session board-state equivalence tests for all three games.
+- [ ] Add direct-versus-session clock-state equivalence tests for all three games.
+- [ ] Add direct-versus-session tournament-state equivalence tests for all three games.
+- [ ] Add primary profile attribution tests for session wins, losses, and draws.
+- [ ] Add primary prize attribution tests for session-completed tournaments.
+- [ ] Add tests proving `playerPrizes[sessionExecutor]` never increases because of a delegated move.
+- [ ] Attempt every non-move state-changing function from a registered executor.
+- [ ] Prove registered executors receive no delegated primary authority on non-move functions.
+- [ ] Document separately any function that remains intentionally permissionless to all ordinary addresses.
+- [ ] Prove intentionally permissionless functions never resolve the executor as the primary player.
+- [ ] Add session authorization fuzz tests across random moves, rotations, expiries, and revocations.
+- [ ] Add invariants proving expired or revoked executors never change game state.
+- [ ] Add invariants proving delegated moves mutate only the current primary player’s active match.
+- [ ] Re-run every migrated V2 regression test with the V3 session changes.
+- [ ] Update ABI snapshots for all intentional V3 API and event changes.
+- [ ] Add the pinned ERC-4337 account-abstraction contracts or dependencies.
+- [ ] Build a local test environment using the pinned EntryPoint.
+- [ ] Implement deterministic session-account address derivation from the browser public key and salt.
+- [ ] Verify that the deterministic executor address can be registered before account deployment.
+- [ ] Implement local first-UserOperation counterfactual account deployment.
+- [ ] Implement account `execute` calldata generation for a game move.
+- [ ] Implement UserOperation nonce retrieval.
+- [ ] Implement UserOperation gas estimation.
+- [ ] Implement browser-key UserOperation signing.
+- [ ] Bind UserOperation signatures to the correct chain ID and EntryPoint.
+- [ ] Implement ERC-7769 UserOperation submission.
+- [ ] Implement UserOperation receipt and transaction-receipt tracking.
+- [ ] Distinguish bundler simulation failures from on-chain game execution reverts.
+- [ ] Add tests for valid browser-key UserOperations.
+- [ ] Add tests for invalid signatures and wrong owner keys.
+- [ ] Add tests for wrong EntryPoint and replayed nonces.
+- [ ] Add tests for first-use account deployment and later moves without deployment.
+- [ ] Add tests for account execution reverts and game execution reverts.
+- [ ] Add tests for sponsored terminal moves that execute settlement.
+- [ ] Prove that game contracts never decode or depend on raw UserOperation structs.
+- [ ] Define the final paymaster validation policy for the pinned account execution wrapper.
+- [ ] Implement or configure V3 factory allowlisting in the paymaster.
+- [ ] Parse and validate the account target, value, and inner game calldata.
+- [ ] Accept only targets attested by approved V3 factories.
+- [ ] Accept only the three approved `makeMove` selectors.
+- [ ] Require zero ETH value for sponsored moves.
+- [ ] Require the UserOperation sender to be the active session executor for the target instance.
+- [ ] Reject expired, revoked, rotated, missing, or mismatched sessions.
+- [ ] Enforce bounded verification, execution, and post-operation gas limits.
+- [ ] Reject unknown account implementations and malformed execution wrappers.
+- [ ] Add paymaster tests for every accepted and rejected policy branch.
+- [ ] Add tests for deliberately reverting sponsored moves.
+- [ ] Add tests for paymaster deposit depletion and sponsorship unavailability.
+- [ ] Prove paymaster failure does not prevent direct primary-wallet gameplay.
+- [ ] Define a paymaster funding wallet, initial budget, refill threshold, and emergency stop policy.
+- [ ] Ensure paymaster funding is separate from tournament entry fees, prize pools, refunds, and owner accounting.
+- [ ] Add scripts to inspect EntryPoint deposits, paymaster stake, balance, and spending.
+- [ ] Add alerts for low paymaster balance and abnormal sponsorship spend.
+- [ ] Implement at least two bundler configurations for each supported public network.
+- [ ] Implement bundler health checks and bounded failover.
+- [ ] Implement inclusion timeouts without unsafe nonce reuse.
+- [ ] Add metrics for UserOperation submission, rejection, inclusion, latency, revert reason, and bundler.
+- [ ] Generate browser session keys exclusively from the browser cryptographic RNG.
+- [ ] Ensure session private keys are never derived solely from a primary-wallet signature.
+- [ ] Implement secure local session-key persistence.
+- [ ] Prevent private-key logging, analytics capture, or server upload.
+- [ ] Implement cross-tab coordination for session nonce and key state.
+- [ ] Document private browsing, storage clearing, mobile, and cache-reset behavior.
+- [ ] Generate a fresh session executor per tournament instance by default.
+- [ ] Implement client detection of expiry, revocation, and rotation.
+- [ ] Implement the primary-wallet refresh flow for a new browser or device.
+- [ ] Implement the primary-wallet revocation flow.
+- [ ] Implement direct-primary-wallet move fallback.
+- [ ] Create the V3 TypeScript session and UserOperation SDK.
+- [ ] Add SDK helpers for session generation, executor derivation, enrollment arguments, move encoding, submission, receipts, refresh, revoke, and fallback.
+- [ ] Map V3 custom errors to specific client-facing messages.
+- [ ] Add strict CSP and frontend dependency-hardening requirements to the integration documentation.
+- [ ] Add scripts for deterministic executor computation and development-only session generation.
+- [ ] Add scripts for local UserOperation construction, signing, submission, and receipt inspection.
+- [ ] Add scripts for session inspection, refresh, and revocation.
+- [ ] Add scripts for bundler and EntryPoint compatibility checks.
+- [ ] Port every useful V2 module deployment script to V3.
+- [ ] Port every useful V2 factory deployment script to V3.
+- [ ] Port every useful V2 ABI synchronization and regeneration script to V3.
+- [ ] Port every useful V2 Arbitrum verification script to V3.
+- [ ] Port every useful V2 instance and enrollment diagnostic script to V3.
+- [ ] Archive or deliberately omit each obsolete one-off V2 debug script with a recorded reason.
+- [ ] Rewrite the contract-size check for the final V3 paths and headroom policy.
+- [ ] Add a storage-layout comparison script.
+- [ ] Add a V2-versus-V3 ABI surface comparison script.
+- [ ] Add deployment smoke-test scripts.
+- [ ] Add atomic network-specific deployment manifest generation.
+- [ ] Include chain ID, git commit, compiler settings, EntryPoint, account, registry, modules, factories, implementations, paymaster, and ABIs in V3 manifests.
+- [ ] Prevent localhost or testnet deployment output from overwriting production manifests.
+- [ ] Ensure deployment and diagnostic scripts never print private keys.
+- [ ] Run the complete V3 test suite.
+- [ ] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
+- [ ] Run static analysis and resolve every critical or high-confidence result.
+- [ ] Run dependency and lockfile vulnerability checks.
+- [ ] Run the ABI allowlist check.
+- [ ] Run storage-layout compatibility checks.
+- [ ] Run deployed-bytecode size checks and confirm agreed headroom.
+- [ ] Run gas snapshots for direct moves, session moves, terminal moves, registration, refresh, revoke, first UserOperation, and later UserOperations.
+- [ ] Investigate and approve every material gas regression.
+- [ ] Write `v3/README.md`.
+- [ ] Write the V3 architecture and delegatecall storage documentation.
+- [ ] Write the session authorization, TTL, scope, events, recovery, and threat-model documentation.
+- [ ] Write the ERC-4337 account, EntryPoint, bundler, paymaster, and UserOperation documentation.
+- [ ] Write the V3 game-development guide.
+- [ ] Write the V3 deployment and verification guide.
+- [ ] Write the bundler failover, paymaster refill, monitoring, and incident operations runbook.
+- [ ] Write the V2-to-V3 source and production migration guide.
+- [ ] Complete NatSpec for every public and external V3 API.
+- [ ] Update user-facing documentation for one-confirmation enrollment, session moves, expiry, browser loss, recovery, and direct fallback.
+- [ ] Deploy the pinned local EntryPoint and complete local end-to-end create, join, move, rotate, revoke, and conclude flows.
+- [ ] Complete local end-to-end tournaments for all three games using session UserOperations.
+- [ ] Complete local paymaster-abuse and infrastructure-outage tests.
+- [ ] Finalize the V3 deployment order and constructor arguments.
+- [ ] Deploy or select the V3 PlayerProfile implementation and PlayerRegistry.
+- [ ] Deploy the SessionKeyRegistry.
+- [ ] Deploy the four shared instance modules.
+- [ ] Deploy the ChessRulesModule.
+- [ ] Deploy the three V3 factories and their pinned game implementations.
+- [ ] Authorize the three V3 factories in the selected PlayerRegistry.
+- [ ] Deploy or configure the V3 move paymaster.
+- [ ] Fund and stake or deposit the paymaster as required by the pinned EntryPoint.
+- [ ] Deploy the complete V3 set to Arbitrum Sepolia.
+- [ ] Verify every V3 testnet contract source and constructor configuration.
+- [ ] Publish the Arbitrum Sepolia deployment manifest and ABIs.
+- [ ] Validate the full V3 flow through the first Arbitrum Sepolia bundler.
+- [ ] Validate the full V3 flow through the second Arbitrum Sepolia bundler.
+- [ ] Complete testnet creator and joiner session registration flows.
+- [ ] Complete testnet direct and sponsored moves for all three games.
+- [ ] Complete testnet session expiry, refresh, revocation, and lost-browser recovery flows.
+- [ ] Complete testnet tournaments and settlement for all three games.
+- [ ] Complete a long-duration testnet flow that crosses the session TTL.
+- [ ] Measure actual Arbitrum testnet gas, calldata, account-deployment, and sponsorship costs.
+- [ ] Exercise testnet bundler failover.
+- [ ] Exercise testnet paymaster unavailability and direct-primary fallback.
+- [ ] Review testnet events, indexability, profiles, payouts, and deployment manifests.
+- [ ] Decide whether to implement EIP-7702 support before or after V3 mainnet based on the recorded MVP decision.
+- [ ] If included, pin and audit the EIP-7702 delegation implementation.
+- [ ] If included, implement authorization tuple and delegated-account client support.
+- [ ] If included, prove V3 registry TTL and rotation remain authoritative after delegation.
+- [ ] If included, test EIP-7702 session moves through ERC-4337 on Arbitrum Sepolia.
+- [ ] Freeze the V3 public APIs, events, storage layout, EntryPoint, account implementation, and deployment configuration for audit.
+- [ ] Complete an internal privilege, call-graph, storage, identity, escrow, and payout review.
+- [ ] Complete extended fuzz and invariant campaigns.
+- [ ] Commission an external audit covering delegatecall storage, bridge authorization, sessions, identity resolution, payouts, ERC-4337, paymaster policy, and deployment.
+- [ ] Record every audit finding in the V3 issue tracker and risk register.
+- [ ] Resolve every critical and high audit finding.
+- [ ] Add a regression test for every corrected audit finding.
+- [ ] Explicitly document any accepted medium or low audit finding.
+- [ ] Re-run the complete test, static-analysis, storage, ABI, size, gas, and deployment suites after remediation.
+- [ ] Confirm there are no unresolved critical or high findings.
+- [ ] Prepare the Arbitrum One deployment manifest template and verification inputs.
+- [ ] Deploy the complete audited V3 set to Arbitrum One.
+- [ ] Verify every V3 Arbitrum One contract.
+- [ ] Publish production addresses, ABIs, compiler metadata, source commit, and checksums.
+- [ ] Fund the production paymaster with a capped canary budget.
+- [ ] Enable production monitoring and alerting before accepting canary users.
+- [ ] Run limited Arbitrum One canary tournaments for Tic-Tac-Toe.
+- [ ] Run limited Arbitrum One canary tournaments for Connect Four.
+- [ ] Run limited Arbitrum One canary tournaments for Chess.
+- [ ] Exercise production session rotation and revocation during canary tournaments.
+- [ ] Exercise production bundler failover during the canary.
+- [ ] Exercise production direct-primary fallback during the canary.
+- [ ] Confirm canary profiles, prizes, owner accounting, and permanent records.
+- [ ] Publish a canary review covering security, reliability, gas, sponsorship cost, and UX.
+- [ ] Obtain explicit approval to make V3 the default for new tournaments.
+- [ ] Route all new tournament creation and enrollment to V3.
+- [ ] Keep V2 active tournaments usable until they conclude.
+- [ ] Keep completed V2 instances and profiles readable.
+- [ ] Update UI and indexer queries to distinguish and aggregate V2 and V3 deployments.
+- [ ] Remove or hide V2 tournament creation from the application after cutover.
+- [ ] Publish the final V2-to-V3 user and developer migration notice.
+- [ ] Confirm rollback can route new creation away from V3 without mutating existing V3 instances.
+- [ ] Continue monitoring sessions, bundlers, paymaster spend, tournament completion, profiles, and payouts.
+- [ ] Mark every V3 definition-of-done item complete in `v3/plan.md`.
+- [ ] Record the final production cutover date, source commit, deployment manifest, audit references, and operational owners.
+- [ ] Declare V3 the complete replacement for V2 for all new ETour activity.
