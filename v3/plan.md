@@ -32,6 +32,17 @@ These roles must remain distinct:
 
 The three files must be kept synchronized. A developer should be able to resume implementation safely by reading them together without relying on undocumented context from another person or task.
 
+Neither `plan.md` nor `tracking.md` is gospel. Both are living documents that developers should revise when implementation work, testing, security review, tooling constraints, or new evidence shows that a different approach, task order, API, or scope detail is necessary. Developers may add, remove, reorder, split, combine, or rewrite plan sections and tracking items as needed, provided that they:
+
+- preserve the core V3 goal of fully replacing V2 behavior while adding secure, instance-scoped session authorization;
+- preserve the primary-player identity, escrow, recovery, and session-scope security invariants unless an explicit, reviewed decision changes them;
+- document the reason for every material change;
+- keep `plan.md` and `tracking.md` consistent with each other;
+- record the change and its implementation consequences in `logs.txt`;
+- update affected tests, acceptance criteria, risks, and decision records.
+
+The documents exist to support correct implementation, not to force developers to follow assumptions that have become inaccurate. When the code or evidence conflicts with the documents, investigate the conflict, choose the safest technically justified path, and update all three documents so the next developer inherits the current truth.
+
 ---
 
 ## 1. Purpose of this document
