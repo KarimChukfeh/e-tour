@@ -86,6 +86,7 @@ npm test
 npm run test:focused -- --grep "<pattern>"
 npm run abi:generate -- --network <network>
 npm run abi:sync
+npm run frontend:abis
 npm run size
 npm run size:capture
 npm run storage:check
@@ -95,6 +96,8 @@ npm run gas:capture
 npm run gas:baseline
 ```
 
-ABI generation requires fresh V3 deployment manifests. ABI sync additionally
-requires the separate frontend repository to have a `src/v3/ABIs/` directory.
-
+ABI generation requires fresh V3 deployment manifests. Both `abi:sync` and
+`frontend:abis` run the complete localhost workflow: compile V3, regenerate ABI
+bundles, verify the live Anvil bytecode, convert V3 contract names to the legacy
+frontend aliases, discover every JSON imported by `tic-tac-react/src/v2`, and
+atomically replace all ten required files under `src/v2/ABIs/`.

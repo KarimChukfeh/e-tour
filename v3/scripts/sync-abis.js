@@ -124,7 +124,7 @@ function getImmutableReferences(sourceName, contractName) {
     return getImmutableReferenceMap().get(`${sourceName}:${contractName}`) ?? {};
 }
 
-async function verifyLocalhostBytecode() {
+export async function verifyLocalhostBytecode() {
     const provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
 
     try {
@@ -197,7 +197,7 @@ async function verifyLocalhostBytecode() {
     }
 }
 
-async function main() {
+export async function main() {
     ensureDirExists(DEPLOYMENTS_DIR, "Deployments directory");
     ensureDirExists(FRONTEND_ABIS_DIR, "Frontend ABI directory");
     await verifyLocalhostBytecode();
@@ -224,7 +224,9 @@ async function main() {
     console.log(`V3 ABI sync complete: ${copied} copied, ${skipped} skipped.`);
 }
 
-main().catch((error) => {
-    console.error(error.message || error);
-    process.exit(1);
-});
+if (path.resolve(process.argv[1] || "") === __filename) {
+    main().catch((error) => {
+        console.error(error.message || error);
+        process.exit(1);
+    });
+}

@@ -61,3 +61,62 @@ Evidence:
 Next recommended action:
 Begin tracking item 19 by adding V3 compile and full-suite CI jobs, then item 20
 for warning, size, storage, ABI, static-analysis, and dependency-audit gates.
+
+2026-07-27 — Fresh local V3 deployment completed
+
+Reset Anvil and started a fresh local chain at http://127.0.0.1:8545 with chain
+ID 412346. Ran the pinned V3 clean/compile flow and deployed the complete stack
+with npm run deploy:all.
+
+Deployment results:
+- ETourInstance_Core: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+- ETourInstance_Matches: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+- ETourInstance_Prizes: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+- ETourInstance_Escalation: 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+- ChessRulesModule: 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+- PlayerProfile implementation: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+- PlayerRegistry: 0x0165878A594ca255338adfa4d48449f69242Eb8F
+- TicTacChainFactory: 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
+- TicTacInstance implementation: 0x9bd03768a7DCc129555dE410FF8E85528A4F88b5
+- ConnectFourFactory: 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318
+- ConnectFourInstance implementation: 0x8aCd85898458400f7Db866d53FCFF6f0D49741FF
+- ChessOnChainFactory: 0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
+- ChessInstance implementation: 0x8dAF17A20c9DBA35f005b6324F493785D239719d
+
+Regenerated all six V3 ABI JSON files with npm run abi:generate -- --network
+localhost. Validated all 11 deployment JSON files, confirmed all 13 recorded
+addresses contain bytecode, and confirmed all three factories are authorized on
+the shared PlayerRegistry. Anvil was intentionally left running for local use.
+
+2026-07-27 — Single-command frontend V2 ABI generation and sync added
+
+Traced all ABI JSON imports under tic-tac-react/src/v2 and confirmed the frontend
+uses ten files:
+- TicTacToeFactory-ABI.json
+- ConnectFourFactory-ABI.json
+- ChessFactory-ABI.json
+- ETour-Factory-ABIs.json
+- PlayerProfile-ABI.json
+- PlayerRegistry-ABI.json
+- hardhat-factory.json
+- localhost-tictac-factory.json
+- localhost-connectfour-factory.json
+- localhost-chess-factory.json
+
+Added scripts/generate-and-sync-frontend-v2-abis.js and the equivalent package
+commands npm run frontend:abis and npm run abi:sync. A single run now:
+- compiles V3;
+- regenerates ABI bundles from current artifacts and deployment manifests;
+- discovers the frontend's imported ABI JSON filenames;
+- refuses to continue if an imported file lacks a generator or an output is not
+  imported;
+- validates non-empty ABIs, addresses, shared registry consistency, chain ID,
+  live local bytecode, and artifact/runtime bytecode compatibility;
+- converts V3 names to frontend compatibility aliases such as
+  TicTacToeFactory and ChessFactory;
+- atomically copies all ten JSON payloads to tic-tac-react/src/v2/ABIs.
+
+Ran the command successfully against the active local V3 deployment. Verified all
+ten destination files parse, contain the expected localhost chain ID 412346 and
+compatibility keys, and contain non-empty factory/instance ABIs. The
+tic-tac-react production build then passed with 1,874 modules transformed.
