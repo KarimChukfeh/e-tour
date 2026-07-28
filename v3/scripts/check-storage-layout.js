@@ -12,6 +12,7 @@ const TARGETS = [
     ["contracts/storage/ETourStorage.sol", "ETourStorage", "canonical-storage"],
     ["contracts/ETourInstance_Base.sol", "ETourInstance_Base", "base"],
     ["contracts/ETourInstance.sol", "ETourInstance", "instance"],
+    ["contracts/ETourGame.sol", "ETourGame", "game-abstraction"],
     ["contracts/TicTacInstance.sol", "TicTacInstance", "instance"],
     ["contracts/ConnectFourInstance.sol", "ConnectFourInstance", "instance"],
     ["contracts/ChessInstance.sol", "ChessInstance", "instance"],

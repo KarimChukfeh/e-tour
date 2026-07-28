@@ -11,37 +11,15 @@ import "./ETourInstance_Base.sol";
  * implementation. Cheap clones point to this; each clone holds state for one
  * tournament instance.
  *
- * Game-specific contracts (TicTacInstance, ChessInstance, ConnectFourInstance)
- * inherit this and implement:
- * - _createMatchGame()
- * - _resetMatchGame()
- * - _getMatchResult()
- * - _initializeMatchForPlay()
- * - _completeMatchWithResult()
- * - _completeMatchGameSpecific()
- * - _getTimeIncrement()
- * - _hasCurrentPlayerTimedOut()
- * - makeMove() (game-specific)
- * - initializeRound() (delegates to MODULE_MATCHES)
+ * ETourGame inherits this contract to provide the canonical shared game
+ * lifecycle. Concrete games only implement the narrow game hook surface and
+ * their game-specific move/view functions.
  *
  * PERMANENT RECORD: Once status == Concluded, all write functions revert
  * (enforced by the `notConcluded` modifier on ETourInstance_Base).
  * The contract's data is readable forever via the view functions.
  */
 abstract contract ETourInstance is ETourInstance_Base {
-
-    // ============ Round Initialization (delegates to Matches module) ============
-
-    /**
-     * @dev Initialize a round by delegating to the Matches module.
-     * Called internally after tournament starts or a round completes.
-     */
-    function initializeRound(uint8 roundNumber) public payable override onlySelfCall {
-        (bool success, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature("initializeRound(uint8)", roundNumber)
-        );
-        require(success, "IR");
-    }
 
     // ============ Escalation Entry Points ============
 

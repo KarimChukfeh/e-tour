@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./ETourInstance_Base.sol";
 import "./interfaces/IPlayerRegistry.sol";
+import {ISessionKeyRegistry} from "./interfaces/ISessionKeyRegistry.sol";
 import {ETourStorage} from "./storage/ETourStorage.sol";
 
 /**
@@ -44,6 +45,7 @@ contract ETourFactory is ReentrancyGuard {
     error InvalidTimeoutConfig();
     error Unauthorized();
     error TransferFailed();
+    error InvalidSessionRegistry();
 
     // ============ Structs ============
 
@@ -53,6 +55,11 @@ contract ETourFactory is ReentrancyGuard {
         ETourStorage.TimeoutConfig timeouts;
         uint8 totalRounds;      // log2(playerCount)
         bytes32 tierKey;
+    }
+
+    struct InstanceInit {
+        ETourStorage.TierConfig tierConfig;
+        address creator;
     }
 
     // ============ Constants ============
@@ -71,6 +78,8 @@ contract ETourFactory is ReentrancyGuard {
     address public owner;
     address public immutable implementation;  // EIP-1167 clone target
     address public immutable PLAYER_REGISTRY;
+    /// @notice Shared registry used by instances for session authorization.
+    address public immutable SESSION_REGISTRY;
 
     // Module addresses passed to each created instance
     address public immutable MODULE_CORE;
@@ -87,6 +96,8 @@ contract ETourFactory is ReentrancyGuard {
 
     // Instance tracking (global list for this factory)
     address[] public instances;
+    /// @notice Whether an address is a clone created by this factory.
+    mapping(address => bool) public isInstance;
 
     // Player profile tracking for this factory's game only: player wallet → profile contract address.
     // Populated on first enrollment; mirrors PlayerRegistry.getProfile(player, gameType()) for quick lookup.
@@ -124,8 +135,21 @@ contract ETourFactory is ReentrancyGuard {
         address _moduleMatches,
         address _modulePrizes,
         address _moduleEscalation,
-        address _playerRegistry
+        address _playerRegistry,
+        address _sessionRegistry
     ) {
+        if (_sessionRegistry == address(0)) revert InvalidSessionRegistry();
+        address registryPlayerRegistry;
+        try
+            ISessionKeyRegistry(_sessionRegistry).PLAYER_REGISTRY()
+        returns (address value) {
+            registryPlayerRegistry = value;
+        } catch {
+            revert InvalidSessionRegistry();
+        }
+        if (registryPlayerRegistry != _playerRegistry) {
+            revert InvalidSessionRegistry();
+        }
         owner = msg.sender;
         implementation = _implementation;
         MODULE_CORE = _moduleCore;
@@ -133,6 +157,7 @@ contract ETourFactory is ReentrancyGuard {
         MODULE_PRIZES = _modulePrizes;
         MODULE_ESCALATION = _moduleEscalation;
         PLAYER_REGISTRY = _playerRegistry;
+        SESSION_REGISTRY = _sessionRegistry;
     }
 
     // ============ Modifiers ============
@@ -153,6 +178,7 @@ contract ETourFactory is ReentrancyGuard {
      * @param enrollmentWindow Whole minutes in [2, 30]
      * @param matchTimePerPlayer Whole minutes in [1, 20]
      * @param timeIncrementPerMove Whole seconds in [0, 60]
+     * @param sessionExecutor Optional temporary executor; zero explicitly opts out
      * @return instance Address of the newly deployed instance clone
      */
     function createInstance(
@@ -160,22 +186,19 @@ contract ETourFactory is ReentrancyGuard {
         uint256 entryFee,
         uint256 enrollmentWindow,
         uint256 matchTimePerPlayer,
-        uint256 timeIncrementPerMove
+        uint256 timeIncrementPerMove,
+        address sessionExecutor
     ) external payable virtual returns (address instance) {
         require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
         _validatePlayerCount(playerCount);
         _validateEntryFee(entryFee);
         _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
 
-        // Construct full TimeoutConfig with hardcoded escalation delays
-        ETourStorage.TimeoutConfig memory timeouts = ETourStorage.TimeoutConfig({
-            matchTimePerPlayer: matchTimePerPlayer,
-            timeIncrementPerMove: timeIncrementPerMove,
-            matchLevel2Delay: MATCH_LEVEL_2_DELAY,
-            matchLevel3Delay: MATCH_LEVEL_3_DELAY,
-            enrollmentWindow: enrollmentWindow,
-            enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
-        });
+        ETourStorage.TimeoutConfig memory timeouts = _buildTimeouts(
+            enrollmentWindow,
+            matchTimePerPlayer,
+            timeIncrementPerMove
+        );
 
         bytes32 tierKey = _computeTierKey(playerCount, entryFee, timeouts);
         if (!_tierExists(tierKey)) {
@@ -192,18 +215,9 @@ contract ETourFactory is ReentrancyGuard {
             tierKey: tierKey
         });
 
-        // Deploy EIP-1167 clone
-        instance = _clone(implementation);
-
-        // Initialize the clone
-        ETourInstance_Base(instance).initialize(
+        instance = _deployAndInitializeInstance(
             instanceTierConfig,
-            address(this),
-            msg.sender,
-            MODULE_CORE,
-            MODULE_MATCHES,
-            MODULE_PRIZES,
-            MODULE_ESCALATION
+            msg.sender
         );
 
         _trackNewInstance(instance, tierKey);
@@ -211,7 +225,10 @@ contract ETourFactory is ReentrancyGuard {
         emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
 
         // Auto-enroll the creator on their behalf
-        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
+        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(
+            msg.sender,
+            sessionExecutor
+        );
     }
 
     // ============ Player Registration (called by instances on enrollment) ============
@@ -354,10 +371,49 @@ contract ETourFactory is ReentrancyGuard {
     }
 
     function _trackNewInstance(address instance, bytes32 tierKey) internal {
+        isInstance[instance] = true;
         instances.push(instance);
         tierInstances[tierKey].push(instance);
         activeTournaments.push(instance);
         _activeTournamentIndex[instance] = activeTournaments.length; // store index+1
+    }
+
+    // ============ Internal: Instance initialization hooks ============
+
+    function _deployAndInitializeInstance(
+        ETourStorage.TierConfig memory instanceTierConfig,
+        address instanceCreator
+    ) internal returns (address instance) {
+        instance = _clone(implementation);
+        InstanceInit memory init = InstanceInit({
+            tierConfig: instanceTierConfig,
+            creator: instanceCreator
+        });
+
+        // Every game uses this one creation pipeline. Game-specific setup is
+        // restricted to the two internal hooks.
+        _initializeInstance(instance, init);
+        _postInitializeInstance(instance);
+    }
+
+    function _initializeInstance(
+        address instance,
+        InstanceInit memory init
+    ) internal virtual {
+        ETourInstance_Base(instance).initialize(
+            init.tierConfig,
+            address(this),
+            init.creator,
+            MODULE_CORE,
+            MODULE_MATCHES,
+            MODULE_PRIZES,
+            MODULE_ESCALATION,
+            SESSION_REGISTRY
+        );
+    }
+
+    function _postInitializeInstance(address instance) internal virtual {
+        instance;
     }
 
     // ============ Internal: Game Type ============
@@ -413,6 +469,21 @@ contract ETourFactory is ReentrancyGuard {
     }
 
     // ============ Internal: Validation ============
+
+    function _buildTimeouts(
+        uint256 enrollmentWindow,
+        uint256 matchTimePerPlayer,
+        uint256 timeIncrementPerMove
+    ) internal pure returns (ETourStorage.TimeoutConfig memory) {
+        return ETourStorage.TimeoutConfig({
+            matchTimePerPlayer: matchTimePerPlayer,
+            timeIncrementPerMove: timeIncrementPerMove,
+            matchLevel2Delay: MATCH_LEVEL_2_DELAY,
+            matchLevel3Delay: MATCH_LEVEL_3_DELAY,
+            enrollmentWindow: enrollmentWindow,
+            enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
+        });
+    }
 
     function _validatePlayerCount(uint8 playerCount) internal pure {
         // Must be power of 2 in [2, 32]

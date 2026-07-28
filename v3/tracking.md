@@ -54,80 +54,80 @@
 - [x] Re-run the complete behavioral regression suite after storage and module hardening.
 - [x] Reduce module deployed bytecode to the agreed headroom target.
 - [x] Confirm every deployable contract remains below the EIP-170 limit.
-- [ ] Create the canonical `ETourGame` abstraction.
-- [ ] Move common match reset behavior into `ETourGame`.
-- [ ] Move common match-result access and completion behavior into `ETourGame`.
-- [ ] Move common Fischer clock accounting into `ETourGame`.
-- [ ] Move common escalation-state clearing into `ETourGame`.
-- [ ] Move common protected module bridges into `ETourGame`.
-- [ ] Define the minimal internal hook surface required from concrete games.
-- [ ] Add a game-state hashing hook for entropy without exposing game internals to infrastructure modules.
-- [ ] Refactor Tic-Tac-Toe to the `ETourGame` hook surface.
-- [ ] Refactor Connect Four to the `ETourGame` hook surface.
-- [ ] Refactor Chess to the `ETourGame` hook surface.
-- [ ] Preserve chess repetition nonce and reset behavior through the abstraction.
-- [ ] Add canonical factory instance-initialization and post-initialization hooks.
-- [ ] Move all common instance creation logic into one ETourFactory flow.
-- [ ] Replace the duplicated Chess factory creation flow with a one-time factory-only post-initialization hook.
-- [ ] Add `isInstance(address)` tracking to every V3 factory.
-- [ ] Add tests for canonical factory creation across all three games.
-- [ ] Add tests for one-time Chess rules initialization.
-- [ ] Re-run all behavioral, size, storage, and gas checks after the game and factory refactor.
-- [ ] Document the V3 developer-facing game extension surface.
-- [ ] Define the final `SessionKeyRegistry` structs, mappings, custom errors, events, and interfaces.
-- [ ] Implement the immutable or code-constant session TTL.
-- [ ] Implement instance-scoped session records keyed by instance and primary player.
-- [ ] Implement the reverse executor binding.
-- [ ] Enforce one globally unique live executor binding per registry.
-- [ ] Implement `registerSession` for instance-authorized initial registration.
-- [ ] Require the registered primary player to be enrolled in the calling instance.
-- [ ] Reject zero primary addresses.
-- [ ] Reject zero executor addresses.
-- [ ] Reject executors equal to their primary players.
-- [ ] Reject duplicate active sessions for the same instance and player.
-- [ ] Reject executors already bound to another live instance/player pair.
-- [ ] Store issued time, expiry time, and non-zero generation on registration.
-- [ ] Implement `refreshSession` callable only by the enrolled primary player.
-- [ ] Remove the old reverse binding atomically during refresh.
-- [ ] Increment generation and reset TTL atomically during refresh.
-- [ ] Reject refresh to the current executor.
-- [ ] Reject refresh to an executor with another live binding.
-- [ ] Implement `revokeSession` callable only by the enrolled primary player.
-- [ ] Clear the reverse binding and active executor during revocation.
-- [ ] Increment generation during revocation.
-- [ ] Implement session record, resolution, and active-status views.
-- [ ] Finalize whether refresh and revoke remain available after instance conclusion.
-- [ ] Ensure no privileged registry owner can assign, extend, rotate, or revoke player sessions.
-- [ ] Add SessionRegistered, SessionRefreshed, and SessionRevoked events with finalized indexed fields.
-- [ ] Add unit tests for every session registration validation rule.
-- [ ] Add unit tests for expiry immediately before and exactly at `validUntil`.
-- [ ] Add unit tests for successful and unauthorized refresh.
-- [ ] Add unit tests proving the old executor fails immediately after refresh.
-- [ ] Add unit tests for successful and unauthorized revocation.
-- [ ] Add unit tests for generation increments and reverse-binding cleanup.
-- [ ] Add tests for one player using distinct executors in distinct instances.
-- [ ] Add tests preventing live executor reuse across instances or players.
-- [ ] Add fuzz tests for registry state transitions.
-- [ ] Add invariants proving at most one active session per instance/player.
-- [ ] Add invariants proving at most one live binding per executor.
-- [ ] Add the SessionKeyRegistry address to V3 factory constructors and deployment configuration.
-- [ ] Pass the SessionKeyRegistry address into every newly initialized V3 instance.
-- [ ] Reject a zero registry during factory and instance initialization.
-- [ ] Expose the configured registry address through instance and factory views.
-- [ ] Change the join API to `enrollInTournament(address sessionExecutor)`.
-- [ ] Change the factory-only creator path to `enrollOnBehalf(address player, address sessionExecutor)`.
-- [ ] Change the canonical factory API to accept `sessionExecutor`.
-- [ ] Treat `address(0)` as an explicit opt-out from session registration.
-- [ ] Register a non-zero creator session atomically during factory creation and auto-enrollment.
-- [ ] Register a non-zero joiner session atomically during direct enrollment.
-- [ ] Make a session-registration failure revert the complete stake and enrollment transaction.
-- [ ] Preserve primary-player factory and profile registration during session-enabled enrollment.
-- [ ] Preserve all V2 fee accounting during session-enabled enrollment.
-- [ ] Update every V3 deployment helper and test helper for the new enrollment and creation signatures.
-- [ ] Add creator tests for enrollment with and without a session executor.
-- [ ] Add joiner tests for enrollment with and without a session executor.
-- [ ] Add tests proving failed session registration rolls back enrollment, profile effects, tournament count, and ETH accounting.
-- [ ] Add tests proving session registration does not enroll the executor.
+- [x] Create the canonical `ETourGame` abstraction.
+- [x] Move common match reset behavior into `ETourGame`.
+- [x] Move common match-result access and completion behavior into `ETourGame`.
+- [x] Move common Fischer clock accounting into `ETourGame`.
+- [x] Move common escalation-state clearing into `ETourGame`.
+- [x] Move common protected module bridges into `ETourGame`.
+- [x] Define the minimal internal hook surface required from concrete games.
+- [x] Add a game-state hashing hook for entropy without exposing game internals to infrastructure modules.
+- [x] Refactor Tic-Tac-Toe to the `ETourGame` hook surface.
+- [x] Refactor Connect Four to the `ETourGame` hook surface.
+- [x] Refactor Chess to the `ETourGame` hook surface.
+- [x] Preserve chess repetition nonce and reset behavior through the abstraction.
+- [x] Add canonical factory instance-initialization and post-initialization hooks.
+- [x] Move all common instance creation logic into one ETourFactory flow.
+- [x] Replace the duplicated Chess factory creation flow with a one-time factory-only post-initialization hook.
+- [x] Add `isInstance(address)` tracking to every V3 factory.
+- [x] Add tests for canonical factory creation across all three games.
+- [x] Add tests for one-time Chess rules initialization.
+- [x] Re-run all behavioral, size, storage, and gas checks after the game and factory refactor.
+- [x] Document the V3 developer-facing game extension surface.
+- [x] Define the final `SessionKeyRegistry` structs, mappings, custom errors, events, and interfaces.
+- [x] Implement the immutable or code-constant session TTL.
+- [x] Implement instance-scoped session records keyed by instance and primary player.
+- [x] Implement the reverse executor binding.
+- [x] Enforce one globally unique live executor binding per registry.
+- [x] Implement `registerSession` for instance-authorized initial registration.
+- [x] Require the registered primary player to be enrolled in the calling instance.
+- [x] Reject zero primary addresses.
+- [x] Reject zero executor addresses.
+- [x] Reject executors equal to their primary players.
+- [x] Reject duplicate active sessions for the same instance and player.
+- [x] Reject executors already bound to another live instance/player pair.
+- [x] Store issued time, expiry time, and non-zero generation on registration.
+- [x] Implement `refreshSession` callable only by the enrolled primary player.
+- [x] Remove the old reverse binding atomically during refresh.
+- [x] Increment generation and reset TTL atomically during refresh.
+- [x] Reject refresh to the current executor.
+- [x] Reject refresh to an executor with another live binding.
+- [x] Implement `revokeSession` callable only by the enrolled primary player.
+- [x] Clear the reverse binding and active executor during revocation.
+- [x] Increment generation during revocation.
+- [x] Implement session record, resolution, and active-status views.
+- [x] Finalize whether refresh and revoke remain available after instance conclusion.
+- [x] Ensure no privileged registry owner can assign, extend, rotate, or revoke player sessions.
+- [x] Add SessionRegistered, SessionRefreshed, and SessionRevoked events with finalized indexed fields.
+- [x] Add unit tests for every session registration validation rule.
+- [x] Add unit tests for expiry immediately before and exactly at `validUntil`.
+- [x] Add unit tests for successful and unauthorized refresh.
+- [x] Add unit tests proving the old executor fails immediately after refresh.
+- [x] Add unit tests for successful and unauthorized revocation.
+- [x] Add unit tests for generation increments and reverse-binding cleanup.
+- [x] Add tests for one player using distinct executors in distinct instances.
+- [x] Add tests preventing live executor reuse across instances or players.
+- [x] Add fuzz tests for registry state transitions.
+- [x] Add invariants proving at most one active session per instance/player.
+- [x] Add invariants proving at most one live binding per executor.
+- [x] Add the SessionKeyRegistry address to V3 factory constructors and deployment configuration.
+- [x] Pass the SessionKeyRegistry address into every newly initialized V3 instance.
+- [x] Reject a zero registry during factory and instance initialization.
+- [x] Expose the configured registry address through instance and factory views.
+- [x] Change the join API to `enrollInTournament(address sessionExecutor)`.
+- [x] Change the factory-only creator path to `enrollOnBehalf(address player, address sessionExecutor)`.
+- [x] Change the canonical factory API to accept `sessionExecutor`.
+- [x] Treat `address(0)` as an explicit opt-out from session registration.
+- [x] Register a non-zero creator session atomically during factory creation and auto-enrollment.
+- [x] Register a non-zero joiner session atomically during direct enrollment.
+- [x] Make a session-registration failure revert the complete stake and enrollment transaction.
+- [x] Preserve primary-player factory and profile registration during session-enabled enrollment.
+- [x] Preserve all V2 fee accounting during session-enabled enrollment.
+- [x] Update every V3 deployment helper and test helper for the new enrollment and creation signatures.
+- [x] Add creator tests for enrollment with and without a session executor.
+- [x] Add joiner tests for enrollment with and without a session executor.
+- [x] Add tests proving failed session registration rolls back enrollment, profile effects, tournament count, and ETH accounting.
+- [x] Add tests proving session registration does not enroll the executor.
 - [ ] Add the shared effective-gameplay-actor resolver to `ETourGame`.
 - [ ] Resolve an enrolled direct caller to itself as both primary player and executor.
 - [ ] Resolve an active registered executor to its enrolled primary player.

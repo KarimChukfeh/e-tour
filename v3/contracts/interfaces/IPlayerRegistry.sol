@@ -7,6 +7,14 @@ pragma solidity ^0.8.20;
  */
 interface IPlayerRegistry {
     /**
+     * @dev Whether a factory is authorized to participate in this protocol
+     * generation.
+     */
+    /// @notice Reports whether a factory may write player/profile state.
+    /// @param factory Factory address to inspect.
+    function authorizedFactories(address factory) external view returns (bool);
+
+    /**
      * @dev Called by a factory's registerPlayer() on enrollment.
      * Deploys a PlayerProfile clone for the player if they don't have one yet,
      * then records the enrollment on their profile.

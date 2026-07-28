@@ -15,14 +15,6 @@
       "rationale": "The non-current match participant may claim after the current player's clock expires."
     },
     {
-      "signature": "enrollOnBehalf(address)",
-      "selector": "0x206e5718",
-      "stateMutability": "payable",
-      "access": "factory-only",
-      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
-      "rationale": "The creating factory atomically auto-enrolls the creator."
-    },
-    {
       "signature": "makeMove(uint8,uint8,uint8,uint8,uint8)",
       "selector": "0x23e737aa",
       "stateMutability": "nonpayable",
@@ -31,12 +23,12 @@
       "rationale": "Chess gameplay entry point; V3 session resolution will be limited to this selector."
     },
     {
-      "signature": "initializeChess((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
-      "selector": "0x2d019c39",
+      "signature": "initializeChessRules(address)",
+      "selector": "0x018094b9",
       "stateMutability": "nonpayable",
-      "access": "atomic-clone-initializer",
+      "access": "factory-only-one-time-post-initializer",
       "contracts": ["ChessInstance"],
-      "rationale": "The Chess factory initializes a fresh clone and its rules module atomically."
+      "rationale": "The creating factory configures the Chess rules module exactly once after the canonical base initializer and before enrollment."
     },
     {
       "signature": "rescueStuckFunds(address)",
@@ -55,20 +47,28 @@
       "rationale": "An enrolled player may force-start a sufficiently populated tournament after enrollment expiry."
     },
     {
+      "signature": "enrollInTournament(address)",
+      "selector": "0x4454f888",
+      "stateMutability": "payable",
+      "access": "public-exact-stake",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "A primary wallet enrolls with the exact configured entry fee and may atomically register an optional session executor."
+    },
+    {
+      "signature": "enrollOnBehalf(address,address)",
+      "selector": "0x5095d4a7",
+      "stateMutability": "payable",
+      "access": "factory-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "The creating factory atomically auto-enrolls the creator and may register the creator's optional session executor."
+    },
+    {
       "signature": "cancelTournament()",
       "selector": "0x646156aa",
       "stateMutability": "nonpayable",
       "access": "solo-enrolled-player",
       "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
       "rationale": "The sole enrolled player may cancel and receive the defined refund."
-    },
-    {
-      "signature": "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address)",
-      "selector": "0x6a9d6eda",
-      "stateMutability": "nonpayable",
-      "access": "atomic-clone-initializer",
-      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
-      "rationale": "A factory initializes a fresh clone in the same transaction that creates it; the one-time guard prevents reuse."
     },
     {
       "signature": "initializeRound(uint8)",
@@ -151,20 +151,20 @@
       "rationale": "Intentionally permissionless after the abandoned-enrollment deadline and subject to pool-state checks."
     },
     {
-      "signature": "enrollInTournament()",
-      "selector": "0xef55ac9f",
-      "stateMutability": "payable",
-      "access": "public-exact-stake",
-      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
-      "rationale": "Primary-wallet enrollment with the exact configured entry fee."
-    },
-    {
       "signature": "_completeMatchWithResult(bytes32,address,bool)",
       "selector": "0xf4df7cf0",
       "stateMutability": "nonpayable",
       "access": "instance-self-only",
       "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
       "rationale": "Protected module-to-instance escalation completion bridge."
+    },
+    {
+      "signature": "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
+      "selector": "0xfe4bfd2f",
+      "stateMutability": "nonpayable",
+      "access": "atomic-clone-initializer",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "A factory initializes a fresh clone with its fixed session registry in the creation transaction; the one-time guard prevents reuse."
     }
   ]
 }

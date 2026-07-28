@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-07-28T03:02:33.488Z",
+  "timestamp": "2026-07-28T05:05:17.985Z",
   "modules": {
     "core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -9,15 +9,15 @@
     "escalation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
   },
   "artifactHashes": {
-    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
-    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
-    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
-    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
+    "core": "0xbc2aa2f1bafd6782a233e09b15f9db457cb4381f5d0e7945b432974d0bad038c",
+    "matches": "0x165e2cb24ac93432bceada113494f26acee281d2ad91ee1dcd90f779ec4d63be",
+    "prizes": "0x9f82141bb87faf4ab94d5e0d312646d627c562a9ab1c5cb5d219911a9cbdc421",
+    "escalation": "0x990768d69a283b871df3d7316ade4cb43d6e0423f2e50c34bfc0e9771b3fa35f"
   },
   "codeHashes": {
-    "core": "0xea287629063d8f9bfb654949ff7a04d10c01a49b62eedbb2ea25aaa1edac4172",
-    "matches": "0x66f790753988d64bd685d64ae8d20e473fbb066e2038a70011c9a06cc72c1663",
-    "prizes": "0x7ff0e1565ade1829b263d795851d7e226bf3bf5754dd81b9ae1451c1dc2b335b",
-    "escalation": "0x1b8bafa397d6a2fe033f5d8005146c7910da63b27ce9f549f289d46d4ee607d1"
+    "core": "0xbc2aa2f1bafd6782a233e09b15f9db457cb4381f5d0e7945b432974d0bad038c",
+    "matches": "0x165e2cb24ac93432bceada113494f26acee281d2ad91ee1dcd90f779ec4d63be",
+    "prizes": "0x9f82141bb87faf4ab94d5e0d312646d627c562a9ab1c5cb5d219911a9cbdc421",
+    "escalation": "0x990768d69a283b871df3d7316ade4cb43d6e0423f2e50c34bfc0e9771b3fa35f"
   }
 }

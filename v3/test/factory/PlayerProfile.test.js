@@ -10,6 +10,7 @@
 
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants mirroring the contracts
@@ -64,6 +65,7 @@ async function deployAll() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const factory = await Factory.deploy(
@@ -71,7 +73,8 @@ async function deployAll() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
     await registry.authorizeFactory(await factory.getAddress());
@@ -98,6 +101,7 @@ async function deployTwoFactories() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const ticTacFactory = await TicTacFactory.deploy(
@@ -105,7 +109,8 @@ async function deployTwoFactories() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await ticTacFactory.waitForDeployment();
 
@@ -115,7 +120,8 @@ async function deployTwoFactories() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await connectFourFactory.waitForDeployment();
 
@@ -158,7 +164,7 @@ async function createInstance(factory, playerCount, entryFee, signer) {
         timeouts.enrollmentWindow,
         timeouts.matchTimePerPlayer,
         timeouts.timeIncrementPerMove,
-        { value: entryFee }
+        hre.ethers.ZeroAddress, { value: entryFee }
     );
     const receipt = await tx.wait();
     const event = receipt.logs
@@ -217,7 +223,7 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
     it("creates a profile on first enrollment", async function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const profileAddr = await getProfileForGame(registry, signers[0].address);
         expect(profileAddr).to.not.equal(hre.ethers.ZeroAddress);
@@ -226,12 +232,12 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
     it("returns the same profile address for repeated enrollments", async function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const instance1 = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance1.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance1.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
         const profile1 = await getProfileForGame(registry, signers[0].address);
 
         // Enroll same player in a second tournament
         const instance2 = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance2.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance2.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
         const profile2 = await getProfileForGame(registry, signers[0].address);
 
         expect(profile1).to.equal(profile2);
@@ -248,7 +254,7 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
             to.enrollmentWindow,
             to.matchTimePerPlayer,
             to.timeIncrementPerMove,
-            { value: entryFee }
+            hre.ethers.ZeroAddress, { value: entryFee }
         );
 
         await connectFourFactory.connect(signers[0]).createInstance(
@@ -257,7 +263,7 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
             to.enrollmentWindow,
             to.matchTimePerPlayer,
             to.timeIncrementPerMove,
-            { value: entryFee }
+            hre.ethers.ZeroAddress, { value: entryFee }
         );
 
         const ticTacProfile = await getProfileForGame(sharedRegistry, signers[0].address, TICTAC_GAME_TYPE);
@@ -327,7 +333,7 @@ describe("PlayerProfile — enrollment & result recording", function () {
     it("profile enrollment count increases after enrolling in instances", async function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const profileAddr = await getProfileForGame(registry, signers[0].address);
         const profile = await hre.ethers.getContractAt("contracts/PlayerProfile.sol:PlayerProfile", profileAddr);
@@ -374,7 +380,7 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued == entryFee × e
     it("holds for 2 enrolled players", async function () {
         const entryFee = hre.ethers.parseEther("0.004");
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const t = await instance.tournament();
         expect(t.prizePool + t.ownerAccrued).to.equal(entryFee * 2n);
@@ -383,7 +389,7 @@ describe("Deferred fees — invariant: prizePool + ownerAccrued == entryFee × e
     it("instance ETH balance equals total deferred fees", async function () {
         const entryFee = hre.ethers.parseEther("0.004");
         const instance = await createInstance(factory, 2, entryFee, signers[0]);
-        await instance.connect(signers[1]).enrollInTournament({ value: entryFee });
+        await instance.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const balance = await hre.ethers.provider.getBalance(await instance.getAddress());
         expect(balance).to.equal(entryFee * 2n);
@@ -418,7 +424,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
         // Use short enrollment window so we can cancel quickly.
         const timeouts = shortTimeouts();
         const tx = await factory.connect(solo).createInstance(
-            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -447,7 +453,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
 
         const timeouts = shortTimeouts();
         const tx = await factory.connect(solo).createInstance(
-            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -469,7 +475,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
 
         const timeouts = shortTimeouts();
         const tx = await factory.connect(solo).createInstance(
-            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -491,7 +497,7 @@ describe("EL0 — solo enroll → cancel → 100% refund", function () {
 
         const timeouts = shortTimeouts();
         const tx = await factory.connect(solo).createInstance(
-            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, timeouts.enrollmentWindow, timeouts.matchTimePerPlayer, timeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -538,7 +544,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         // Create a 4-player instance; only 2 enroll (p1 auto-enrolled, then p2)
         const to = shortTimeouts();
         const tx = await factory.connect(p1).createInstance(
-            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -547,7 +553,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         const instance = await hre.ethers.getContractAt(
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Advance past EL2 threshold (enrollmentWindow + ENROLLMENT_LEVEL_2_DELAY)
         // enrollmentWindow = 2 minutes, EL2 delay = 2 minutes hardcoded
@@ -572,7 +578,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
 
         const to = shortTimeouts();
         const tx = await factory.connect(p1).createInstance(
-            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -598,7 +604,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
 
         const to = shortTimeouts();
         const tx = await factory.connect(p1).createInstance(
-            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            4, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -607,7 +613,7 @@ describe("EL2 — partial enroll → abandoned claim → standard fee splits", f
         const instance = await hre.ethers.getContractAt(
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         await advanceTime(121 + 121);
         await instance.connect(claimer).claimAbandonedPool();
@@ -654,7 +660,7 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Play and win
         await playAndWin(instance, 0, 0, p1, p2);
@@ -670,7 +676,7 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         const entryFee = hre.ethers.parseEther("0.004");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         await playAndWin(instance, 0, 0, p1, p2);
 
@@ -685,7 +691,7 @@ describe("Normal 2-player conclusion — fee distribution", function () {
         const expectedPrize = totalPot * PARTICIPANTS_SHARE_BPS / BASIS_POINTS;
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Capture balances before conclusion move
         const p1Before = await hre.ethers.provider.getBalance(p1.address);
@@ -723,7 +729,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const matchData = await instance.matches(matchId);
@@ -761,7 +767,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
@@ -780,7 +786,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
@@ -800,9 +806,9 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const expectedPayout = (entryFee * 4n * PARTICIPANTS_SHARE_BPS / BASIS_POINTS) / 4n;
 
         const instance = await createInstance(factory, 4, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
-        await instance.connect(p3).enrollInTournament({ value: entryFee });
-        await instance.connect(p4).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
+        await instance.connect(p3).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
+        await instance.connect(p4).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         for (const matchNumber of [0, 1]) {
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, matchNumber]);
@@ -832,7 +838,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
@@ -850,7 +856,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loser = winner === p1.address ? p2.address : p1.address;
@@ -883,7 +889,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
@@ -903,7 +909,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const prizePool = totalPot * PARTICIPANTS_SHARE_BPS / BASIS_POINTS;
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const winnerSigner = winner === p1.address ? p1 : p2;
@@ -922,7 +928,7 @@ describe("Profile push — stats updated automatically at conclusion", function 
         const entryFee = hre.ethers.parseEther("0.002");
 
         const instance = await createInstance(factory, 2, entryFee, p1);
-        await instance.connect(p2).enrollInTournament({ value: entryFee });
+        await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const winner = await playAndWin(instance, 0, 0, p1, p2);
         const loserSigner = winner === p1.address ? p2 : p1;
@@ -951,7 +957,7 @@ describe("Player count cap", function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const to = defaultTimeouts();
         await expect(
-            factory.createInstance(64, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee })
+            factory.createInstance(64, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee })
         ).to.be.revertedWithCustomError(factory, "InvalidPlayerCount");
     });
 
@@ -959,7 +965,7 @@ describe("Player count cap", function () {
         const entryFee = hre.ethers.parseEther("0.001");
         const to = defaultTimeouts();
         await expect(
-            factory.createInstance(32, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee })
+            factory.createInstance(32, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee })
         ).to.not.be.reverted;
     });
 });

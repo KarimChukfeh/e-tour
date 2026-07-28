@@ -2,6 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {ETourStorage} from "./storage/ETourStorage.sol";
+import {
+    ISessionKeyRegistry
+} from "./interfaces/ISessionKeyRegistry.sol";
 
 /**
  * @title ETourInstance_Base
@@ -67,6 +70,7 @@ abstract contract ETourInstance_Base is ETourStorage {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     error OnlySelfCall();
+    error InvalidSessionRegistry();
 
     // ============ Constructor ============
 
@@ -79,6 +83,14 @@ abstract contract ETourInstance_Base is ETourStorage {
     /**
      * @dev Initialize this instance clone. Called once by the factory after clone deployment.
      * Replaces constructor (EIP-1167 proxies cannot use constructors).
+     * @param _tierConfig Immutable tournament configuration copied from the factory
+     * @param _factory Factory that created and controls this clone
+     * @param _creator Primary wallet that created the tournament
+     * @param _moduleCore Shared enrollment and tournament-start module
+     * @param _moduleMatches Shared bracket and match-lifecycle module
+     * @param _modulePrizes Shared payout module
+     * @param _moduleEscalation Shared escalation module
+     * @param _sessionRegistry Shared fixed-TTL session authorization registry
      */
     function initialize(
         TierConfig memory _tierConfig,
@@ -87,9 +99,11 @@ abstract contract ETourInstance_Base is ETourStorage {
         address _moduleCore,
         address _moduleMatches,
         address _modulePrizes,
-        address _moduleEscalation
+        address _moduleEscalation,
+        address _sessionRegistry
     ) external {
         require(!_initialized, "Already initialized");
+        if (_sessionRegistry == address(0)) revert InvalidSessionRegistry();
         _initialized = true;
 
         tierConfig = _tierConfig;
@@ -99,6 +113,7 @@ abstract contract ETourInstance_Base is ETourStorage {
         MODULE_MATCHES = _moduleMatches;
         MODULE_PRIZES = _modulePrizes;
         MODULE_ESCALATION = _moduleEscalation;
+        SESSION_REGISTRY = _sessionRegistry;
 
         tournament.status = TournamentStatus.Enrolling;
         tournament.createdAt = block.timestamp;
@@ -384,72 +399,6 @@ abstract contract ETourInstance_Base is ETourStorage {
         );
     }
 
-    // ============ Match Completion (shared internal logic) ============
-
-    function _completeMatchInternal(
-        uint8 roundNumber,
-        uint8 matchNumber,
-        address winner,
-        bool isDraw,
-        MatchCompletionReason reason
-    ) internal {
-        bytes32 matchId = _getMatchId(roundNumber, matchNumber);
-        Match storage m = matches[matchId];
-
-        m.winner = isDraw ? address(0) : winner;
-        m.isDraw = isDraw;
-        m.status = MatchStatus.Completed;
-        m.completionReason = reason;
-        m.completionCategory = _matchCompletionCategoryFor(reason);
-
-        _completeMatchGameSpecific(roundNumber, matchNumber, winner, isDraw);
-
-        MatchTimeoutState storage timeout = matchTimeouts[matchId];
-        timeout.isStalled = false;
-        timeout.escalation1Start = 0;
-        timeout.escalation2Start = 0;
-        timeout.activeEscalation = EscalationLevel.None;
-
-        _mixEntropy(
-            ENTROPY_MATCH_RESULT,
-            keccak256(abi.encodePacked(
-                roundNumber,
-                matchNumber,
-                m.player1,
-                m.player2,
-                winner,
-                isDraw,
-                uint8(reason),
-                m.packedBoard,
-                m.packedState,
-                m.startTime,
-                m.lastMoveTime
-            ))
-        );
-
-        (bool completeSuccess, ) = MODULE_MATCHES.delegatecall(
-            abi.encodeWithSignature(
-                "completeMatch(uint8,uint8,address,bool,uint8)",
-                roundNumber, matchNumber, winner, isDraw, uint8(reason)
-            )
-        );
-        require(completeSuccess, "CM");
-
-        _recordStandardMatchOutcomes(m, roundNumber, matchNumber, winner, isDraw, reason);
-
-        emit MatchCompleted(
-            address(this),
-            roundNumber,
-            matchNumber,
-            winner,
-            isDraw,
-            m.completionReason,
-            m.completionCategory
-        );
-
-        _handleTournamentConclusion();
-    }
-
     function _handleTournamentConclusion() internal {
         if (tournament.status != TournamentStatus.Concluded) {
             return;
@@ -564,24 +513,11 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     function _getMatchPlayers(bytes32 matchId)
         public view virtual
-        returns (address player1, address player2)
-    {
-        Match storage matchData = matches[matchId];
-        return (matchData.player1, matchData.player2);
-    }
+        returns (address player1, address player2);
 
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player)
         public
-        virtual
-        onlySelfCall
-    {
-        Match storage matchData = matches[matchId];
-        if (slot == 0) {
-            matchData.player1 = player;
-        } else {
-            matchData.player2 = player;
-        }
-    }
+        virtual;
 
     function _initializeMatchForPlay(bytes32 matchId) public virtual;
 
@@ -591,38 +527,17 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view virtual returns (bool);
 
-    function _isMatchActive(bytes32 matchId) public view virtual returns (bool) {
-        (address player1, ) = _getMatchPlayers(matchId);
-        (, , MatchStatus status) = _getMatchResult(matchId);
-        return player1 != address(0) && status != MatchStatus.Completed;
-    }
+    function _isMatchActive(bytes32 matchId)
+        public
+        view
+        virtual
+        returns (bool);
 
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 roundNumber,
         uint8 matchNumber
-    ) public view virtual returns (CommonMatchData memory) {
-        Match storage matchData = matches[matchId];
-        address loser = address(0);
-        if (!matchData.isDraw && matchData.winner != address(0)) {
-            loser = (matchData.winner == matchData.player1)
-                ? matchData.player2
-                : matchData.player1;
-        }
-        return CommonMatchData({
-            player1: matchData.player1,
-            player2: matchData.player2,
-            winner: matchData.winner,
-            loser: loser,
-            status: matchData.status,
-            isDraw: matchData.isDraw,
-            startTime: matchData.startTime,
-            lastMoveTime: matchData.lastMoveTime,
-            roundNumber: roundNumber,
-            matchNumber: matchNumber,
-            isCached: false
-        });
-    }
+    ) public view virtual returns (CommonMatchData memory);
 
     function _registerPlayerProfileEnrollment(address player, uint256 entryFee) internal {
         (bool regOk, ) = factory.call(
@@ -659,18 +574,30 @@ abstract contract ETourInstance_Base is ETourStorage {
         recorded;
     }
 
-    function _completeMatchGameSpecific(
+    function _completeMatchInternal(
         uint8 roundNumber,
         uint8 matchNumber,
         address winner,
-        bool isDraw
+        bool isDraw,
+        MatchCompletionReason reason
     ) internal virtual;
 
     function initializeRound(uint8 roundNumber) public payable virtual;
 
+    /// @notice Whether this permanent tournament instance has concluded.
+    function isConcluded() external view returns (bool) {
+        return tournament.status == TournamentStatus.Concluded;
+    }
+
     // ============ Public Enrollment ============
 
-    function enrollInTournament() external payable virtual notConcluded {
+    /**
+     * @notice Enrolls the caller and optionally registers its session executor.
+     * @param sessionExecutor Temporary executor, or zero to opt out.
+     */
+    function enrollInTournament(
+        address sessionExecutor
+    ) external payable virtual notConcluded {
         TournamentStatus oldStatus = tournament.status;
 
         // Register player on factory — routes to PlayerRegistry (best effort)
@@ -685,6 +612,7 @@ abstract contract ETourInstance_Base is ETourStorage {
             abi.encodeWithSignature("coreEnroll()")
         );
         require(success, "Enrollment failed");
+        _registerSessionIfRequested(msg.sender, sessionExecutor);
 
         _mixEntropy(
             ENTROPY_ENROLL,
@@ -707,8 +635,13 @@ abstract contract ETourInstance_Base is ETourStorage {
     /**
      * @dev Enroll a specific player on their behalf. Only callable by the factory.
      * Used by createInstance() to auto-enroll the creator without changing msg.sender context.
+     * @param player Primary wallet to enroll.
+     * @param sessionExecutor Temporary executor, or zero to opt out.
      */
-    function enrollOnBehalf(address player) external payable notConcluded {
+    function enrollOnBehalf(
+        address player,
+        address sessionExecutor
+    ) external payable notConcluded {
         require(msg.sender == factory, "Only factory");
         TournamentStatus oldStatus = tournament.status;
 
@@ -724,6 +657,7 @@ abstract contract ETourInstance_Base is ETourStorage {
             abi.encodeWithSignature("coreEnrollOnBehalf(address)", player)
         );
         require(success, "Enrollment failed");
+        _registerSessionIfRequested(player, sessionExecutor);
 
         _mixEntropy(
             ENTROPY_ENROLL,
@@ -741,6 +675,17 @@ abstract contract ETourInstance_Base is ETourStorage {
         }
 
         emit PlayerEnrolled(player, address(this));
+    }
+
+    function _registerSessionIfRequested(
+        address player,
+        address sessionExecutor
+    ) internal {
+        if (sessionExecutor == address(0)) return;
+        ISessionKeyRegistry(SESSION_REGISTRY).registerSession(
+            player,
+            sessionExecutor
+        );
     }
 
     function forceStartTournament() external virtual notConcluded {

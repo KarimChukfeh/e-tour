@@ -26,6 +26,7 @@ const INSTANCES = [
     'TicTacInstance',
     'ChessInstance',
     'ConnectFourInstance',
+    'ETourGame',
     'ETourInstance',
     'ETourInstance_Base'
 ];
@@ -42,7 +43,8 @@ const MODULES = [
 // Supporting contracts
 const SUPPORT = [
     'PlayerProfile',
-    'PlayerRegistry'
+    'PlayerRegistry',
+    'SessionKeyRegistry'
 ];
 
 function getContractSize(contractName) {

@@ -1,0 +1,412 @@
+{
+  "network": "localhost",
+  "generatedAt": "2026-07-28T05:12:48.195Z",
+  "contract": {
+    "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "abi": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "playerRegistry",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          }
+        ],
+        "name": "ExecutorAlreadyBound",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ExecutorIsPrimary",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InstanceConcluded",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidSessionHost",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "NoSession",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "PlayerNotEnrolled",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "SameExecutor",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "SessionAlreadyActive",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ZeroAddress",
+        "type": "error"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "oldExecutor",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "newExecutor",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "generation",
+            "type": "uint64"
+          }
+        ],
+        "name": "SessionRefreshed",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "generation",
+            "type": "uint64"
+          }
+        ],
+        "name": "SessionRegistered",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "generation",
+            "type": "uint64"
+          }
+        ],
+        "name": "SessionRevoked",
+        "type": "event"
+      },
+      {
+        "inputs": [],
+        "name": "PLAYER_REGISTRY",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "SESSION_TTL",
+        "outputs": [
+          {
+            "internalType": "uint48",
+            "name": "",
+            "type": "uint48"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          }
+        ],
+        "name": "getExecutorBinding",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "instance",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "player",
+                "type": "address"
+              },
+              {
+                "internalType": "uint64",
+                "name": "generation",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct ISessionKeyRegistry.ExecutorBinding",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          }
+        ],
+        "name": "getSession",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "executor",
+                "type": "address"
+              },
+              {
+                "internalType": "uint48",
+                "name": "issuedAt",
+                "type": "uint48"
+              },
+              {
+                "internalType": "uint48",
+                "name": "validUntil",
+                "type": "uint48"
+              },
+              {
+                "internalType": "uint64",
+                "name": "generation",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct ISessionKeyRegistry.Session",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          }
+        ],
+        "name": "isSessionActive",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "newExecutor",
+            "type": "address"
+          }
+        ],
+        "name": "refreshSession",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          }
+        ],
+        "name": "registerSession",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          }
+        ],
+        "name": "resolveSession",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "uint48",
+            "name": "validUntil",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint64",
+            "name": "generation",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "instance",
+            "type": "address"
+          }
+        ],
+        "name": "revokeSession",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ]
+  },
+  "addressesByGame": {
+    "TicTacChainFactory": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "ConnectFourFactory": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "ChessOnChainFactory": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+  }
+}

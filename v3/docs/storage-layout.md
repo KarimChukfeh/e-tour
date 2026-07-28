@@ -1,7 +1,8 @@
 # Canonical V3 storage layout
 
-`ETourStorage` is the sole owner of game-independent instance storage. Every
-instance implementation and every delegatecall module inherits it. The
+`ETourStorage` is the sole owner of game-independent instance storage.
+`ETourGame`, every instance implementation, and every delegatecall module
+inherit it. The
 storage-free `ETourModuleGuard` may be inherited by modules after
 `ETourStorage`; its immutable delegatecall sentinel consumes no storage slot.
 
@@ -20,7 +21,9 @@ storage-free `ETourModuleGuard` may be inherited by modules after
 
 The compiler comparison performed during this refactor found no semantic
 label, slot, offset, or type-shape changes across the 20 V2 entries.
-`SESSION_REGISTRY` is the only appended entry.
+`SESSION_REGISTRY` is the only appended entry. Phase 5 now initializes it from
+the creating factory and rejects zero, while the storage position remains
+unchanged.
 
 ## Rules
 

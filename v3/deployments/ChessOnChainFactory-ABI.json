@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-07-28T03:02:42.122Z",
+  "deployedAt": "2026-07-28T05:05:18.584Z",
   "modules": {
     "ETourInstance_Core": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "ETourInstance_Matches": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -1048,8 +1048,413 @@
       ]
     }
   },
+  "sessionAuthorization": {
+    "SessionKeyRegistry": {
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "playerRegistry",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            }
+          ],
+          "name": "ExecutorAlreadyBound",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "ExecutorIsPrimary",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "InstanceConcluded",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "InvalidSessionHost",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "NoSession",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "PlayerNotEnrolled",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "SameExecutor",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "SessionAlreadyActive",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "ZeroAddress",
+          "type": "error"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "oldExecutor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "newExecutor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint48",
+              "name": "validUntil",
+              "type": "uint48"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "generation",
+              "type": "uint64"
+            }
+          ],
+          "name": "SessionRefreshed",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint48",
+              "name": "validUntil",
+              "type": "uint48"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "generation",
+              "type": "uint64"
+            }
+          ],
+          "name": "SessionRegistered",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint64",
+              "name": "generation",
+              "type": "uint64"
+            }
+          ],
+          "name": "SessionRevoked",
+          "type": "event"
+        },
+        {
+          "inputs": [],
+          "name": "PLAYER_REGISTRY",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "SESSION_TTL",
+          "outputs": [
+            {
+              "internalType": "uint48",
+              "name": "",
+              "type": "uint48"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "getExecutorBinding",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "instance",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "player",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "generation",
+                  "type": "uint64"
+                }
+              ],
+              "internalType": "struct ISessionKeyRegistry.ExecutorBinding",
+              "name": "",
+              "type": "tuple"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            }
+          ],
+          "name": "getSession",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "executor",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint48",
+                  "name": "issuedAt",
+                  "type": "uint48"
+                },
+                {
+                  "internalType": "uint48",
+                  "name": "validUntil",
+                  "type": "uint48"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "generation",
+                  "type": "uint64"
+                }
+              ],
+              "internalType": "struct ISessionKeyRegistry.Session",
+              "name": "",
+              "type": "tuple"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "isSessionActive",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "newExecutor",
+              "type": "address"
+            }
+          ],
+          "name": "refreshSession",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "registerSession",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "resolveSession",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            },
+            {
+              "internalType": "uint48",
+              "name": "validUntil",
+              "type": "uint48"
+            },
+            {
+              "internalType": "uint64",
+              "name": "generation",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "instance",
+              "type": "address"
+            }
+          ],
+          "name": "revokeSession",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ]
+    }
+  },
   "factory": {
-    "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
     "abi": [
       {
         "inputs": [
@@ -1082,6 +1487,11 @@
             "internalType": "address",
             "name": "playerRegistry",
             "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "sessionRegistry",
+            "type": "address"
           }
         ],
         "stateMutability": "nonpayable",
@@ -1095,6 +1505,11 @@
       {
         "inputs": [],
         "name": "InvalidPlayerCount",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidSessionRegistry",
         "type": "error"
       },
       {
@@ -1393,6 +1808,19 @@
         "type": "function"
       },
       {
+        "inputs": [],
+        "name": "SESSION_REGISTRY",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [
           {
             "internalType": "uint256",
@@ -1437,6 +1865,11 @@
             "internalType": "uint256",
             "name": "timeIncrementPerMove",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "sessionExecutor",
+            "type": "address"
           }
         ],
         "name": "createInstance",
@@ -1517,7 +1950,7 @@
                     "type": "uint256"
                   }
                 ],
-                "internalType": "struct ETourInstance_Base.TimeoutConfig",
+                "internalType": "struct ETourStorage.TimeoutConfig",
                 "name": "timeouts",
                 "type": "tuple"
               },
@@ -1668,6 +2101,25 @@
             "internalType": "address",
             "name": "",
             "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "isInstance",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
           }
         ],
         "stateMutability": "view",
@@ -1884,7 +2336,7 @@
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ETourInstance_Base.TimeoutConfig",
+            "internalType": "struct ETourStorage.TimeoutConfig",
             "name": "timeouts",
             "type": "tuple"
           },
@@ -1929,8 +2381,18 @@
     ]
   },
   "instance": {
-    "address": "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
+    "address": "0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D",
     "abi": [
+      {
+        "inputs": [],
+        "name": "InvalidSessionRegistry",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "OnlySelfCall",
+        "type": "error"
+      },
       {
         "inputs": [],
         "name": "ReentrancyGuardReentrantCall",
@@ -1971,13 +2433,13 @@
           },
           {
             "indexed": false,
-            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
+            "internalType": "enum ETourStorage.MatchCompletionReason",
             "name": "reason",
             "type": "uint8"
           },
           {
             "indexed": false,
-            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "internalType": "enum ETourStorage.MatchCompletionCategory",
             "name": "category",
             "type": "uint8"
           }
@@ -2052,13 +2514,13 @@
           },
           {
             "indexed": false,
-            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
+            "internalType": "enum ETourStorage.TournamentResolutionReason",
             "name": "reason",
             "type": "uint8"
           },
           {
             "indexed": false,
-            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "internalType": "enum ETourStorage.TournamentResolutionCategory",
             "name": "category",
             "type": "uint8"
           }
@@ -2228,6 +2690,19 @@
         "type": "function"
       },
       {
+        "inputs": [],
+        "name": "SESSION_REGISTRY",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [
           {
             "internalType": "bytes32",
@@ -2321,7 +2796,7 @@
                 "type": "address"
               },
               {
-                "internalType": "enum ETourInstance_Base.MatchStatus",
+                "internalType": "enum ETourStorage.MatchStatus",
                 "name": "status",
                 "type": "uint8"
               },
@@ -2356,7 +2831,7 @@
                 "type": "bool"
               }
             ],
-            "internalType": "struct ETourInstance_Base.CommonMatchData",
+            "internalType": "struct ETourStorage.CommonMatchData",
             "name": "",
             "type": "tuple"
           }
@@ -2409,7 +2884,7 @@
             "type": "bool"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchStatus",
+            "internalType": "enum ETourStorage.MatchStatus",
             "name": "status",
             "type": "uint8"
           }
@@ -2649,7 +3124,13 @@
         "type": "function"
       },
       {
-        "inputs": [],
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "sessionExecutor",
+            "type": "address"
+          }
+        ],
         "name": "enrollInTournament",
         "outputs": [],
         "stateMutability": "payable",
@@ -2660,6 +3141,11 @@
           {
             "internalType": "address",
             "name": "player",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "sessionExecutor",
             "type": "address"
           }
         ],
@@ -2812,7 +3298,7 @@
             "type": "uint256"
           },
           {
-            "internalType": "enum ETourInstance_Base.TournamentStatus",
+            "internalType": "enum ETourStorage.TournamentStatus",
             "name": "status",
             "type": "uint8"
           },
@@ -2832,12 +3318,12 @@
             "type": "address"
           },
           {
-            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
+            "internalType": "enum ETourStorage.TournamentResolutionReason",
             "name": "completionReason",
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "internalType": "enum ETourStorage.TournamentResolutionCategory",
             "name": "completionCategory",
             "type": "uint8"
           },
@@ -2891,7 +3377,7 @@
             "type": "bool"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchStatus",
+            "internalType": "enum ETourStorage.MatchStatus",
             "name": "status",
             "type": "uint8"
           },
@@ -2911,12 +3397,12 @@
             "type": "string"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
+            "internalType": "enum ETourStorage.MatchCompletionReason",
             "name": "completionReason",
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "internalType": "enum ETourStorage.MatchCompletionCategory",
             "name": "completionCategory",
             "type": "uint8"
           }
@@ -2979,7 +3465,7 @@
             "type": "uint256"
           },
           {
-            "internalType": "enum ETourInstance_Base.PayoutReason",
+            "internalType": "enum ETourStorage.PayoutReason",
             "name": "payoutReason",
             "type": "uint8"
           }
@@ -3065,7 +3551,7 @@
                     "type": "uint256"
                   }
                 ],
-                "internalType": "struct ETourInstance_Base.TimeoutConfig",
+                "internalType": "struct ETourStorage.TimeoutConfig",
                 "name": "timeouts",
                 "type": "tuple"
               },
@@ -3080,7 +3566,7 @@
                 "type": "bytes32"
               }
             ],
-            "internalType": "struct ETourInstance_Base.TierConfig",
+            "internalType": "struct ETourStorage.TierConfig",
             "name": "_tierConfig",
             "type": "tuple"
           },
@@ -3113,6 +3599,11 @@
             "internalType": "address",
             "name": "_moduleEscalation",
             "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_sessionRegistry",
+            "type": "address"
           }
         ],
         "name": "initialize",
@@ -3123,106 +3614,12 @@
       {
         "inputs": [
           {
-            "components": [
-              {
-                "internalType": "uint8",
-                "name": "playerCount",
-                "type": "uint8"
-              },
-              {
-                "internalType": "uint256",
-                "name": "entryFee",
-                "type": "uint256"
-              },
-              {
-                "components": [
-                  {
-                    "internalType": "uint256",
-                    "name": "matchTimePerPlayer",
-                    "type": "uint256"
-                  },
-                  {
-                    "internalType": "uint256",
-                    "name": "timeIncrementPerMove",
-                    "type": "uint256"
-                  },
-                  {
-                    "internalType": "uint256",
-                    "name": "matchLevel2Delay",
-                    "type": "uint256"
-                  },
-                  {
-                    "internalType": "uint256",
-                    "name": "matchLevel3Delay",
-                    "type": "uint256"
-                  },
-                  {
-                    "internalType": "uint256",
-                    "name": "enrollmentWindow",
-                    "type": "uint256"
-                  },
-                  {
-                    "internalType": "uint256",
-                    "name": "enrollmentLevel2Delay",
-                    "type": "uint256"
-                  }
-                ],
-                "internalType": "struct ETourInstance_Base.TimeoutConfig",
-                "name": "timeouts",
-                "type": "tuple"
-              },
-              {
-                "internalType": "uint8",
-                "name": "totalRounds",
-                "type": "uint8"
-              },
-              {
-                "internalType": "bytes32",
-                "name": "tierKey",
-                "type": "bytes32"
-              }
-            ],
-            "internalType": "struct ETourInstance_Base.TierConfig",
-            "name": "config_",
-            "type": "tuple"
-          },
-          {
-            "internalType": "address",
-            "name": "factory_",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "creator_",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "moduleCore_",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "moduleMatches_",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "modulePrizes_",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "moduleEscalation_",
-            "type": "address"
-          },
-          {
             "internalType": "address",
             "name": "chessRules_",
             "type": "address"
           }
         ],
-        "name": "initializeChess",
+        "name": "initializeChessRules",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -3238,6 +3635,19 @@
         "name": "initializeRound",
         "outputs": [],
         "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "isConcluded",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {
@@ -3385,7 +3795,7 @@
             "type": "uint256"
           },
           {
-            "internalType": "enum ETourInstance_Base.EscalationLevel",
+            "internalType": "enum ETourStorage.EscalationLevel",
             "name": "activeEscalation",
             "type": "uint8"
           },
@@ -3434,7 +3844,7 @@
             "type": "address"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchStatus",
+            "internalType": "enum ETourStorage.MatchStatus",
             "name": "status",
             "type": "uint8"
           },
@@ -3479,12 +3889,12 @@
             "type": "string"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchCompletionReason",
+            "internalType": "enum ETourStorage.MatchCompletionReason",
             "name": "completionReason",
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.MatchCompletionCategory",
+            "internalType": "enum ETourStorage.MatchCompletionCategory",
             "name": "completionCategory",
             "type": "uint8"
           }
@@ -3503,7 +3913,7 @@
         "name": "playerPayoutReasons",
         "outputs": [
           {
-            "internalType": "enum ETourInstance_Base.PayoutReason",
+            "internalType": "enum ETourStorage.PayoutReason",
             "name": "",
             "type": "uint8"
           }
@@ -3636,7 +4046,7 @@
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ETourInstance_Base.TimeoutConfig",
+            "internalType": "struct ETourStorage.TimeoutConfig",
             "name": "timeouts",
             "type": "tuple"
           },
@@ -3659,7 +4069,7 @@
         "name": "tournament",
         "outputs": [
           {
-            "internalType": "enum ETourInstance_Base.TournamentStatus",
+            "internalType": "enum ETourStorage.TournamentStatus",
             "name": "status",
             "type": "uint8"
           },
@@ -3724,12 +4134,12 @@
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.TournamentResolutionReason",
+            "internalType": "enum ETourStorage.TournamentResolutionReason",
             "name": "completionReason",
             "type": "uint8"
           },
           {
-            "internalType": "enum ETourInstance_Base.TournamentResolutionCategory",
+            "internalType": "enum ETourStorage.TournamentResolutionCategory",
             "name": "completionCategory",
             "type": "uint8"
           },
@@ -3746,7 +4156,7 @@
                 "type": "uint256"
               },
               {
-                "internalType": "enum ETourInstance_Base.EscalationLevel",
+                "internalType": "enum ETourStorage.EscalationLevel",
                 "name": "activeEscalation",
                 "type": "uint8"
               },
@@ -3756,7 +4166,7 @@
                 "type": "uint256"
               }
             ],
-            "internalType": "struct ETourInstance_Base.EnrollmentTimeoutState",
+            "internalType": "struct ETourStorage.EnrollmentTimeoutState",
             "name": "enrollmentTimeout",
             "type": "tuple"
           },

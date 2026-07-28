@@ -5,6 +5,7 @@
 
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const TICTAC_GAME_TYPE = 0;
 
@@ -27,6 +28,7 @@ async function deployAll() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const factory = await Factory.deploy(
@@ -34,7 +36,8 @@ async function deployAll() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
 
@@ -67,7 +70,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         // Creator creates instance (auto-enrolls via enrollOnBehalf)
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -78,7 +81,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         );
 
         // Joiner enrolls normally
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Check creator's profile
         const creatorProfile = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
@@ -102,7 +105,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -132,7 +135,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -142,7 +145,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         const joinerProfileAddr = await registry.getProfile(joiner.address, TICTAC_GAME_TYPE);
         expect(joinerProfileAddr).to.not.equal(hre.ethers.ZeroAddress);
@@ -167,7 +170,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -178,7 +181,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", instanceAddr
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Check creator's enrollment record
         const creatorProfileAddr = await registry.getProfile(creator.address, TICTAC_GAME_TYPE);
@@ -205,7 +208,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -215,7 +218,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Play the match to completion
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -268,6 +271,9 @@ describe("Profile creation — both players (creator + joiner)", function () {
         const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
         const unauthorizedRegistry = await Registry.deploy(await profileImpl.getAddress());
         await unauthorizedRegistry.waitForDeployment();
+        const unauthorizedSessionRegistry = await deploySessionRegistry(
+            unauthorizedRegistry
+        );
 
         const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
         const unauthorizedFactory = await Factory.deploy(
@@ -275,7 +281,8 @@ describe("Profile creation — both players (creator + joiner)", function () {
             await moduleMatches.getAddress(),
             await modulePrizes.getAddress(),
             await moduleEscalation.getAddress(),
-            await unauthorizedRegistry.getAddress()
+            await unauthorizedRegistry.getAddress(),
+            await unauthorizedSessionRegistry.getAddress()
         );
         await unauthorizedFactory.waitForDeployment();
 
@@ -285,7 +292,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
         // Try to create instance and enroll
         const to = defaultTimeouts();
         const tx = await unauthorizedFactory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -295,7 +302,7 @@ describe("Profile creation — both players (creator + joiner)", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Check that NEITHER player has a profile
         const creatorProfile = await unauthorizedRegistry.getProfile(creator.address, TICTAC_GAME_TYPE);

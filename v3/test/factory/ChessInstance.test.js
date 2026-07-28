@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const ENTRY_FEE = hre.ethers.parseEther("0.001");
 const PLAYER_COUNT = 2;
@@ -38,6 +39,7 @@ async function deployFactory() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory("contracts/ChessOnChainFactory.sol:ChessOnChainFactory");
     const factory = await Factory.deploy(
@@ -46,7 +48,8 @@ async function deployFactory() {
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
         await chessRules.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
     await registry.authorizeFactory(await factory.getAddress());
@@ -62,7 +65,7 @@ async function createInstance(factory, signer) {
         timeouts.enrollmentWindow,
         timeouts.matchTimePerPlayer,
         timeouts.timeIncrementPerMove,
-        { value: ENTRY_FEE }
+        hre.ethers.ZeroAddress, { value: ENTRY_FEE }
     );
     const receipt = await tx.wait();
     const event = receipt.logs

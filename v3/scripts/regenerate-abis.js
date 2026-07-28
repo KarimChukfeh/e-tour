@@ -87,17 +87,34 @@ function buildPlayerProfileSection(deployment, profileAbi, registryAbi) {
     };
 }
 
+function buildSessionAuthorizationSection(deployment, sessionRegistryAbi) {
+    return {
+        SessionKeyRegistry: {
+            address:
+                deployment.sessionAuthorization?.SessionKeyRegistry ?? null,
+            abi: sessionRegistryAbi,
+        },
+    };
+}
+
 function main() {
     const { network } = parseArgs(process.argv.slice(2));
     const targetNetwork = resolveNetwork(network);
 
     const profileArtifactPath = path.join(ARTIFACTS_DIR, "PlayerProfile.sol", "PlayerProfile.json");
     const registryArtifactPath = path.join(ARTIFACTS_DIR, "PlayerRegistry.sol", "PlayerRegistry.json");
+    const sessionRegistryArtifactPath = path.join(
+        ARTIFACTS_DIR,
+        "SessionKeyRegistry.sol",
+        "SessionKeyRegistry.json"
+    );
     ensureFile(profileArtifactPath, "PlayerProfile artifact");
     ensureFile(registryArtifactPath, "PlayerRegistry artifact");
+    ensureFile(sessionRegistryArtifactPath, "SessionKeyRegistry artifact");
 
     const profileAbi = readAbi(profileArtifactPath);
     const registryAbi = readAbi(registryArtifactPath);
+    const sessionRegistryAbi = readAbi(sessionRegistryArtifactPath);
     const generatedAt = new Date().toISOString();
 
     const perGameOutputs = [];
@@ -111,6 +128,10 @@ function main() {
         const factoryAbi = readAbi(spec.factoryArtifact);
         const instanceAbi = readAbi(spec.instanceArtifact);
         const playerProfile = buildPlayerProfileSection(deployment, profileAbi, registryAbi);
+        const sessionAuthorization = buildSessionAuthorizationSection(
+            deployment,
+            sessionRegistryAbi
+        );
 
         const payload = {
             network: deployment.network,
@@ -118,6 +139,7 @@ function main() {
             deployedAt: deployment.timestamp,
             modules: deployment.modules,
             playerProfile,
+            sessionAuthorization,
             factory: {
                 address: deployment.factory?.[spec.factoryDeploymentKey] ?? null,
                 abi: factoryAbi,
@@ -137,8 +159,23 @@ function main() {
             label: spec.label,
             deployment,
             playerProfile,
+            sessionAuthorization,
             payload,
         });
+    }
+
+    const sessionRegistryAddress =
+        perGameOutputs[0]?.payload.sessionAuthorization.SessionKeyRegistry
+            .address ?? null;
+    for (const { label, payload } of perGameOutputs) {
+        if (
+            payload.sessionAuthorization.SessionKeyRegistry.address !==
+            sessionRegistryAddress
+        ) {
+            throw new Error(
+                `${label} does not use the shared SessionKeyRegistry`
+            );
+        }
     }
 
     const combined = {
@@ -149,6 +186,12 @@ function main() {
             PlayerProfileImpl: { abi: profileAbi },
             PlayerRegistry: { abi: registryAbi },
         },
+        sessionAuthorization: {
+            SessionKeyRegistry: {
+                address: sessionRegistryAddress,
+                abi: sessionRegistryAbi,
+            },
+        },
         factories: Object.fromEntries(
             perGameOutputs.map(({ label, payload }) => [
                 label,
@@ -157,6 +200,8 @@ function main() {
                     abi: payload.factory.abi,
                     playerRegistry: payload.playerProfile.PlayerRegistry.address,
                     playerProfileImpl: payload.playerProfile.PlayerProfileImpl.address,
+                    sessionRegistry:
+                        payload.sessionAuthorization.SessionKeyRegistry.address,
                 },
             ])
         ),
@@ -204,6 +249,24 @@ function main() {
         }, null, 2)
     );
 
+    fs.writeFileSync(
+        path.join(DEPLOYMENTS_DIR, "SessionKeyRegistry-ABI.json"),
+        JSON.stringify({
+            network: targetNetwork,
+            generatedAt,
+            contract: {
+                address: sessionRegistryAddress,
+                abi: sessionRegistryAbi,
+            },
+            addressesByGame: Object.fromEntries(
+                perGameOutputs.map(({ label, payload }) => [
+                    label,
+                    payload.sessionAuthorization.SessionKeyRegistry.address,
+                ])
+            ),
+        }, null, 2)
+    );
+
     console.log(`Regenerated V3 ABI files for network: ${targetNetwork}`);
     for (const spec of GAME_SPECS) {
         console.log(`  - ${spec.abiFile}`);
@@ -211,6 +274,7 @@ function main() {
     console.log("  - ETour-Factory-ABIs.json");
     console.log("  - PlayerProfile-ABI.json");
     console.log("  - PlayerRegistry-ABI.json");
+    console.log("  - SessionKeyRegistry-ABI.json");
 }
 
 main();

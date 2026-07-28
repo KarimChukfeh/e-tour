@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const PAYOUT_REASON = {
     None: 0n,
@@ -40,6 +41,7 @@ async function deployFactory() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory(
         "contracts/TicTacChainFactory.sol:TicTacChainFactory"
@@ -49,7 +51,8 @@ async function deployFactory() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
 
@@ -73,7 +76,7 @@ async function createInstance(factory, playerCount, entryFee, creator) {
         defaultTimeouts().enrollmentWindow,
         defaultTimeouts().matchTimePerPlayer,
         defaultTimeouts().timeIncrementPerMove,
-        { value: entryFee }
+        hre.ethers.ZeroAddress, { value: entryFee }
     );
     const receipt = await tx.wait();
 
@@ -91,7 +94,7 @@ function signerParticipant(instance, signer) {
     return {
         address: signer.address,
         async enroll(fee) {
-            await instance.connect(signer).enrollInTournament({ value: fee });
+            await instance.connect(signer).enrollInTournament(hre.ethers.ZeroAddress, { value: fee });
         },
         async move(roundNumber, matchNumber, cellIndex) {
             await instance.connect(signer).makeMove(roundNumber, matchNumber, cellIndex);
@@ -110,7 +113,7 @@ async function proxyParticipant(instanceAddress, controller) {
         address: await proxy.getAddress(),
         contract: proxy,
         async enroll(fee) {
-            await proxy.connect(controller).enrollInTournament({ value: fee });
+            await proxy.connect(controller).enrollInTournament(hre.ethers.ZeroAddress, { value: fee });
         },
         async move(roundNumber, matchNumber, cellIndex) {
             await proxy.connect(controller).makeMove(roundNumber, matchNumber, cellIndex);

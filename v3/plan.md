@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Implementation — storage/module hardening complete through tracking item 56
+> Status: Implementation — Phases 0–5 complete through tracking item 130
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -1680,15 +1680,15 @@ Exit gate:
 
 ### Phase 2 — Storage and module hardening
 
-- [ ] Extract canonical shared storage.
-- [ ] Remove full-instance inheritance from modules.
-- [ ] Introduce explicit module interfaces.
-- [ ] Add `onlySelfCall`.
-- [ ] Protect all state-changing bridges.
-- [ ] Add storage-layout CI checks.
-- [ ] Eliminate unreachable-code warnings.
-- [ ] Re-run all parity tests.
-- [ ] Achieve target bytecode headroom.
+- [x] Extract canonical shared storage.
+- [x] Remove full-instance inheritance from modules.
+- [x] Introduce explicit module interfaces.
+- [x] Add `onlySelfCall`.
+- [x] Protect all state-changing bridges.
+- [x] Add storage-layout CI checks.
+- [x] Eliminate unreachable-code warnings.
+- [x] Re-run all parity tests.
+- [x] Achieve target bytecode headroom.
 
 Exit gate:
 
@@ -1699,13 +1699,13 @@ Exit gate:
 
 ### Phase 3 — Game and factory abstraction
 
-- [ ] Introduce `ETourGame`.
-- [ ] Move shared lifecycle and clock code into it.
-- [ ] Reduce concrete games to game-specific hooks.
-- [ ] Introduce canonical factory initialization hooks.
-- [ ] Remove chess creation-flow duplication.
-- [ ] Add `isInstance`.
-- [ ] Re-run parity, size, and gas tests.
+- [x] Introduce `ETourGame`.
+- [x] Move shared lifecycle and clock code into it.
+- [x] Reduce concrete games to game-specific hooks.
+- [x] Introduce canonical factory initialization hooks.
+- [x] Remove chess creation-flow duplication.
+- [x] Add `isInstance`.
+- [x] Re-run parity, size, and gas tests.
 
 Exit gate:
 
@@ -1715,12 +1715,12 @@ Exit gate:
 
 ### Phase 4 — Session registry
 
-- [ ] Implement registry storage and API.
-- [ ] Implement registration, expiry, refresh, and revoke.
-- [ ] Implement global live-executor uniqueness.
-- [ ] Add events and custom errors.
-- [ ] Add registry unit, fuzz, and invariant tests.
-- [ ] Review lack of privileged mutation paths.
+- [x] Implement registry storage and API.
+- [x] Implement registration, expiry, refresh, and revoke.
+- [x] Implement global live-executor uniqueness.
+- [x] Add events and custom errors.
+- [x] Add registry unit, fuzz, and invariant tests.
+- [x] Review lack of privileged mutation paths.
 
 Exit gate:
 
@@ -1729,13 +1729,13 @@ Exit gate:
 
 ### Phase 5 — Enrollment integration
 
-- [ ] Add registry to factory and instance initialization.
-- [ ] Update create API with session executor.
-- [ ] Update creator auto-enrollment.
-- [ ] Update join enrollment.
-- [ ] Support zero-address opt-out.
-- [ ] Guarantee atomic rollback on registration failure.
-- [ ] Update deployment helpers and all enrollment tests.
+- [x] Add registry to factory and instance initialization.
+- [x] Update create API with session executor.
+- [x] Update creator auto-enrollment.
+- [x] Update join enrollment.
+- [x] Support zero-address opt-out.
+- [x] Guarantee atomic rollback on registration failure.
+- [x] Update deployment helpers and all enrollment tests.
 
 Exit gate:
 
@@ -1881,10 +1881,10 @@ The V3 project is complete when all of the following are true:
 
 | Risk | Impact | Mitigation | Status |
 |---|---|---|---|
-| Delegatecall storage mismatch | Critical state corruption | Canonical storage base, compiler layout comparison, integration tests | Open |
-| Public bridge remains callable | Critical match manipulation | `onlySelfCall`, ABI enumeration, adversarial tests | Open |
+| Delegatecall storage mismatch | Critical state corruption | Canonical storage base, compiler layout comparison, integration tests | Closed by Phase 2 |
+| Public bridge remains callable | Critical match manipulation | `onlySelfCall`, ABI enumeration, adversarial tests | Closed by Phase 2 |
 | Session actor accidentally receives prize | Critical fund misattribution | Effective-player abstraction and payout invariants | Open |
-| Module exceeds bytecode limit | Deployment failure | Remove full-base inheritance, size CI, 15% headroom target | Open |
+| Module exceeds bytecode limit | Deployment failure | Remove full-base inheritance, size CI, 15% headroom target | Closed; monitored by CI |
 | Session key stolen through XSS | Unauthorized legal moves | TTL, instance scope, rotation, CSP, isolated signing | Open |
 | Browser cache/device loss | User cannot use old session | Primary refresh/revoke and direct move fallback | Open |
 | Tournament exceeds TTL | Expected session expiry mid-play | Clear UX and primary-authorized refresh | Open |
@@ -1892,7 +1892,7 @@ The V3 project is complete when all of the following are true:
 | Paymaster drained by reverting calls | Sponsorship outage/cost | Strict validation, gas bounds, rate limits, capped budget | Open |
 | Account/EntryPoint version mismatch | UserOperation failure | Pin versions and test providers before deployment | Open |
 | CREATE address not predictable | Cannot pre-register executor | Use deterministic smart-account factory, not game clone address prediction | Open |
-| V2 regression during refactor | Broken tournament behavior | Baseline parity phase and full regression suite | Open |
+| V2 regression during refactor | Broken tournament behavior | Baseline parity phase and full regression suite | Closed through Phase 5; monitored |
 | Fresh profile registry fragments history | UX inconsistency | UI aggregation or explicit reuse decision | Open |
 | EIP-7702 tooling inconsistency | Delayed optional support | Keep it post-MVP and retain ERC-4337 executor path | Open |
 | Hosted infrastructure conflicts with RW3 goals | Availability dependency | On-chain authorization, provider portability, self-host option | Open |
@@ -1922,6 +1922,10 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-015 | Paymaster uses authoritative on-chain scope plus narrowing verifier signatures | Accepted | 2026-07-27 | Preserves RW3 authorization while enabling operational budget and abuse controls |
 | ADR-016 | Freeze identity, escrow, session-scope, and recovery invariants in the architecture decision record | Accepted | 2026-07-27 | Prevents transport convenience from changing protocol authority |
 | ADR-017 | Freeze the reviewed state-changing instance ABI in a machine-readable selector allowlist | Accepted | 2026-07-28 | Makes every new mutable entry point an explicit security review and CI decision |
+| ADR-018 | Centralize game lifecycle in `ETourGame` and instance creation in `ETourFactory` hooks | Accepted | 2026-07-28 | Gives session authorization one gameplay boundary, removes Chess factory duplication, and makes factory provenance explicit |
+| ADR-019 | Authenticate session hosts through matching registries, factory authorization, and `isInstance` provenance | Accepted | 2026-07-28 | Prevents arbitrary contracts from fabricating enrollment or consuming globally unique executors |
+| ADR-020 | Reject refresh after conclusion, permit primary revocation cleanup, and reclaim inactive bindings | Accepted | 2026-07-28 | A concluded game needs no new executor, while explicit cleanup and safe address reuse remain useful |
+| ADR-021 | Make zero an explicit session opt-out and non-zero registration atomic with paid enrollment | Accepted | 2026-07-28 | Preserves the direct-wallet path and prevents partial profile, accounting, or authorization state |
 
 ---
 
@@ -1965,3 +1969,24 @@ Append brief dated entries as work proceeds.
 - Clean compilation, all 256 tests, selector/ABI/storage/static/dependency gates,
   and all EIP-170 size limits pass. The next item is the canonical `ETourGame`
   abstraction.
+- Completed tracking items 57–76 and the Phase 3 exit gate. Added the canonical
+  `ETourGame` lifecycle/actor/clock/bridge abstraction, reduced all three games
+  to explicit hooks, preserved Chess repetition nonce behavior, and documented
+  the game extension surface.
+- Replaced Chess's duplicated creation pipeline with the canonical factory
+  initializer/post-initializer hooks and added `isInstance` provenance to every
+  factory.
+- Added cross-game factory tests, one-time Chess initialization tests, and
+  Chess reset/restart bookkeeping tests. A clean 29-file compile, all 259 tests,
+  gas capture, and every CI gate pass.
+- Completed tracking items 77–130 and the Phase 4–5 exit gates. Added the
+  ownerless, fixed-TTL `SessionKeyRegistry`, authenticated host provenance,
+  instance-scoped records, globally unique live reverse bindings, primary-only
+  refresh/revoke, strict expiry, and explicit conclusion policy.
+- Threaded the shared registry through every factory and clone initializer and
+  made optional creator/joiner registration atomic with paid enrollment. Zero
+  remains the direct-wallet opt-out.
+- Added registry lifecycle/property tests and real factory/clone rollback
+  tests. All 277 tests and every compiler, selector, storage, ABI, static,
+  dependency, and EIP-170 gate pass. Phase 6 gameplay authorization remains
+  intentionally separate.

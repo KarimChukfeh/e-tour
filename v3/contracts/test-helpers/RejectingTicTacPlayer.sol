@@ -2,7 +2,8 @@
 pragma solidity ^0.8.20;
 
 interface ITicTacInstanceLike {
-    function enrollInTournament() external payable;
+    /// @param sessionExecutor Temporary executor, or zero to opt out.
+    function enrollInTournament(address sessionExecutor) external payable;
     function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 cellIndex) external;
 }
 
@@ -27,8 +28,9 @@ contract RejectingTicTacPlayer {
         rejectPayments = reject_;
     }
 
-    function enrollInTournament() external payable {
-        instance.enrollInTournament{value: msg.value}();
+    /// @param sessionExecutor Temporary executor, or zero to opt out.
+    function enrollInTournament(address sessionExecutor) external payable {
+        instance.enrollInTournament{value: msg.value}(sessionExecutor);
     }
 
     function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 cellIndex) external {

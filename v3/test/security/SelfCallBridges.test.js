@@ -72,23 +72,28 @@ async function initializeBaseInstance(
         await modules.core.getAddress(),
         await moduleMatches.getAddress(),
         await modules.prizes.getAddress(),
-        await modules.escalation.getAddress()
+        await modules.escalation.getAddress(),
+        await modules.sessionRegistry.getAddress()
     );
-    await instance.connect(owner).enrollInTournament({ value: ENTRY_FEE });
+    await instance.connect(owner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 }
 
 async function deployFixture() {
     const [owner, joiner, attacker] = await hre.ethers.getSigners();
 
-    const [core, matches, prizes, escalation, rules, harness] = await Promise.all([
+    const [core, matches, prizes, escalation, rules, harness, sessionRegistry] = await Promise.all([
         deployContract("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core"),
         deployContract("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches"),
         deployContract("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes"),
         deployContract("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation"),
         deployContract("contracts/modules/ChessRulesModule.sol:ChessRulesModule"),
         deployContract("contracts/test-helpers/SelfCallBridgeHarness.sol:SelfCallBridgeHarness"),
+        deployContract(
+            "contracts/SessionKeyRegistry.sol:SessionKeyRegistry",
+            owner.address
+        ),
     ]);
-    const modules = { core, matches, prizes, escalation };
+    const modules = { core, matches, prizes, escalation, sessionRegistry };
 
     const [ticTac, connectFour, chess, harnessInstance] = await Promise.all([
         deployContract("contracts/TicTacInstance.sol:TicTacInstance"),
@@ -99,7 +104,7 @@ async function deployFixture() {
 
     await initializeBaseInstance(ticTac, owner, modules);
     await initializeBaseInstance(connectFour, owner, modules);
-    await chess.initializeChess(
+    await chess.initialize(
         tierConfig(),
         owner.address,
         owner.address,
@@ -107,9 +112,10 @@ async function deployFixture() {
         await matches.getAddress(),
         await prizes.getAddress(),
         await escalation.getAddress(),
-        await rules.getAddress()
+        await sessionRegistry.getAddress()
     );
-    await chess.connect(owner).enrollInTournament({ value: ENTRY_FEE });
+    await chess.connect(owner).initializeChessRules(await rules.getAddress());
+    await chess.connect(owner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
     await initializeBaseInstance(harnessInstance, owner, modules, harness);
 
     return {
@@ -202,7 +208,7 @@ describe("V3 protected self-call bridges", function () {
         const { joiner, instances } = await loadFixture(deployFixture);
 
         for (const { contract } of instances) {
-            await contract.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+            await contract.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const round = await contract.rounds(0);
             const match = await contract.matches(MATCH_ID);
@@ -214,7 +220,7 @@ describe("V3 protected self-call bridges", function () {
     it("accepts all six bridges from a legitimate delegatecall module", async function () {
         const { owner, joiner, harnessInstance } = await loadFixture(deployFixture);
 
-        await harnessInstance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+        await harnessInstance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         const match = await harnessInstance.matches(MATCH_ID);
         expect(match.player1).to.equal(owner.address);

@@ -3,6 +3,7 @@
 
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const PARTICIPANTS_SHARE_BPS = 9500n;
 const OWNER_SHARE_BPS = 500n;
@@ -74,6 +75,7 @@ async function deployFactory() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory(
         "contracts/TicTacChainFactory.sol:TicTacChainFactory"
@@ -83,7 +85,8 @@ async function deployFactory() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
 
@@ -128,7 +131,7 @@ async function createInstance(factory, playerCount, entryFee, signer, timeouts) 
     const caller = signer ?? (await hre.ethers.getSigners())[0];
     const to = timeouts ?? defaultTimeouts();
     const tx = await factory.connect(caller).createInstance(
-        playerCount, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+        playerCount, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
     );
     const receipt = await tx.wait();
 
@@ -150,7 +153,7 @@ async function createInstance(factory, playerCount, entryFee, signer, timeouts) 
  */
 async function enrollAll(instance, players, fee) {
     for (const p of players) {
-        await instance.connect(p).enrollInTournament({ value: fee });
+        await instance.connect(p).enrollInTournament(hre.ethers.ZeroAddress, { value: fee });
     }
 }
 
@@ -306,7 +309,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("rejects incorrect entry fee", async function () {
             await expect(
-                instance.connect(p1).enrollInTournament({ value: hre.ethers.parseEther("0.001") })
+                instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.001") })
             ).to.be.revertedWith("Enrollment failed");
         });
 
@@ -319,7 +322,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("accepts the second player at the correct fee", async function () {
             await expect(
-                instance.connect(p1).enrollInTournament({ value: ENTRY_FEE })
+                instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE })
             ).to.emit(instance, "PlayerEnrolled").withArgs(p1.address, await instance.getAddress());
 
             const t = await instance.tournament();
@@ -329,7 +332,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("rejects duplicate enrollment", async function () {
             await expect(
-                instance.connect(p1).enrollInTournament({ value: ENTRY_FEE })
+                instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE })
             ).to.be.revertedWith("Enrollment failed");
         });
 
@@ -353,7 +356,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
         });
 
         it("enrolls players 3 and 4 (still Enrolling after 3)", async function () {
-            await instance.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const t = await instance.tournament();
             expect(t.enrolledCount).to.equal(3);
@@ -362,7 +365,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("final player enrollment auto-starts the tournament", async function () {
             await expect(
-                instance.connect(p3).enrollInTournament({ value: ENTRY_FEE })
+                instance.connect(p3).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE })
             )
                 .to.emit(instance, "TournamentStarted")
                 .withArgs(await instance.getAddress(), PLAYER_COUNT);
@@ -531,7 +534,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
 
         it("instance is permanently locked — no further enrollment", async function () {
             await expect(
-                instance.connect(p1).enrollInTournament({ value: ENTRY_FEE })
+                instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE })
             ).to.be.revertedWith("Instance concluded");
         });
 
@@ -597,7 +600,7 @@ describe("TicTacInstance — 4-player, 0.002 ETH, finalist wins prize", function
             await factory.connect(owner).transferOwnership(rejectingOwner);
 
             const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
-            await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+            await inst.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const expectedOwnerBalance = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
             await playAndWin(inst, 0, 0, p1, p2);
@@ -675,7 +678,7 @@ describe("TicTacInstance — 2-player, 0.001 ETH, single-round tournament", func
 
     it("p1 enrolling fills the tournament and auto-starts it", async function () {
         await expect(
-            instance.connect(p1).enrollInTournament({ value: ENTRY_FEE })
+            instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE })
         )
             .to.emit(instance, "TournamentStarted")
             .withArgs(await instance.getAddress(), 2);
@@ -845,7 +848,7 @@ describe("TicTacInstance — 2-player draw in finals, equal prize split", functi
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         instance = await createInstance(factory, 2, ENTRY_FEE, owner);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
     });
 
     it("playing a draw completes the match as draw", async function () {
@@ -943,7 +946,7 @@ describe("TicTacInstance — move validation edge cases", function () {
         [owner, p1, outsider] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         instance = await createInstance(factory, 2, ENTRY_FEE, owner);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
         // Tournament is now InProgress, round 0 has 1 match
     });
 
@@ -1038,7 +1041,7 @@ describe("TicTacInstance — time bank (Fischer clock)", function () {
             matchLevel3Delay:     7200n,
         });
         instance = await createInstance(factory, 2, ENTRY_FEE, owner, timeouts);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
     });
 
     it("both players start with matchTimePerPlayer time bank", async function () {
@@ -1111,7 +1114,7 @@ describe("TicTacInstance — timeout claim (claimTimeoutWin)", function () {
             matchLevel3Delay:     10n,
         });
         instance = await createInstance(factory, 2, ENTRY_FEE, owner, timeouts);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
     });
 
     it("claimTimeoutWin reverts if opponent has not yet timed out", async function () {
@@ -1444,7 +1447,7 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
     });
 
     it("cancelTournament is not available once a second player enrolls", async function () {
-        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         expect(await instance.connect(owner).canCancelTournament()).to.equal(false);
         expect(await instance.connect(owner).canResetEnrollmentWindow()).to.equal(false);
@@ -1483,7 +1486,7 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
     });
 
     it("forceStartTournament succeeds after enrollment window expires when 2 players are enrolled", async function () {
-        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         await advanceTime(Number(ENROLLMENT_WINDOW) + 5);
 
@@ -1508,8 +1511,8 @@ describe("TicTacInstance — enrollment escalations (EL0 / EL1)", function () {
 
     it("awards the auto-advanced player if the only played EL1 semifinal ends in a draw", async function () {
         const [, , playerB] = await hre.ethers.getSigners();
-        await instance.connect(joiner).enrollInTournament({ value: ENTRY_FEE });
-        await instance.connect(playerB).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
+        await instance.connect(playerB).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         await advanceTime(Number(ENROLLMENT_WINDOW) + 5);
         await instance.connect(owner).forceStartTournament();
@@ -1569,7 +1572,7 @@ describe("TicTacInstance — conclusion settlement", function () {
 
     it("owner share stays on instance until conclusion", async function () {
         const inst = await createInstance(factory, 2, ENTRY_FEE, signers[0]);
-        await inst.connect(signers[1]).enrollInTournament({ value: ENTRY_FEE });
+        await inst.connect(signers[1]).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         const t = await inst.tournament();
         const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
@@ -1581,7 +1584,7 @@ describe("TicTacInstance — conclusion settlement", function () {
     it("pays the deferred 5% owner share to the owner wallet at conclusion", async function () {
         const [owner, p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
-        await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+        await inst.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
         const expectedOwner = (ENTRY_FEE * 2n * OWNER_SHARE_BPS) / BASIS_POINTS;
         const ownerBefore = await hre.ethers.provider.getBalance(owner.address);
 
@@ -1609,7 +1612,7 @@ describe("TicTacInstance — conclusion settlement", function () {
     it("extra forced ETH remains untouched after conclusion", async function () {
         const [p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
-        await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+        await inst.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         const instAddr = await inst.getAddress();
         const extraEth = hre.ethers.parseEther("1");
@@ -1667,7 +1670,7 @@ describe("TicTacInstance — conclusion settlement", function () {
     it("instance balance is 0 after conclusion", async function () {
         const [p1, p2] = signers;
         const inst = await createInstance(factory, 2, ENTRY_FEE, p1);
-        await inst.connect(p2).enrollInTournament({ value: ENTRY_FEE });
+        await inst.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const matchData = await inst.matches(matchId);
@@ -1818,7 +1821,7 @@ describe("TicTacInstance — players, activeTournaments, pastTournaments", funct
         const instAddr = await inst.getAddress();
 
         // p1 enrolls → tournament auto-starts (2-player)
-        await inst.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await inst.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
         expect(await factory.players(p1.address)).to.not.equal(hre.ethers.ZeroAddress);
 
         // still active until conclusion
@@ -1850,7 +1853,7 @@ describe("TicTacInstance — players, activeTournaments, pastTournaments", funct
         expect(await factory.getActiveTournamentCount()).to.equal(3);
 
         // Conclude instB (the middle one) by enrolling p1 and playing
-        await instB.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instB.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const m = await instB.matches(matchId);
         const first  = m.currentTurn === owner.address ? owner : p1;
@@ -1905,21 +1908,21 @@ describe("TicTacInstance — factory creation guardrails", function () {
 
     it("rejects non-power-of-2 player count (e.g. 3)", async function () {
         await expect(
-            factory.connect(owner).createInstance(3, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(3, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
 
     it("rejects player count 0", async function () {
         await expect(
-            factory.connect(owner).createInstance(0, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(0, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
 
     it("rejects player count above 64 (e.g. 128)", async function () {
         await expect(
-            factory.connect(owner).createInstance(128, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(128, hre.ethers.parseEther("0.001"), defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
@@ -1927,7 +1930,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("accepts the new minimum entry fee of 0.0001 ETH", async function () {
         const minFee = hre.ethers.parseEther("0.0001");
         await expect(
-            factory.connect(owner).createInstance(2, minFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: minFee }
+            factory.connect(owner).createInstance(2, minFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: minFee }
             )
         ).to.not.be.reverted;
     });
@@ -1935,14 +1938,14 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects entry fee that is not a multiple of 0.0001 ETH", async function () {
         const oddFee = hre.ethers.parseEther("0.00015");
         await expect(
-            factory.connect(owner).createInstance(2, oddFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: oddFee }
+            factory.connect(owner).createInstance(2, oddFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: oddFee }
             )
         ).to.be.reverted;
     });
 
     it("rejects zero entry fee", async function () {
         await expect(
-            factory.connect(owner).createInstance(2, 0n, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: 0n }
+            factory.connect(owner).createInstance(2, 0n, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: 0n }
             )
         ).to.be.reverted;
     });
@@ -1950,7 +1953,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects entry fee above the 1 ETH max", async function () {
         const tooHighFee = hre.ethers.parseEther("1.0001");
         await expect(
-            factory.connect(owner).createInstance(2, tooHighFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: tooHighFee }
+            factory.connect(owner).createInstance(2, tooHighFee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: tooHighFee }
             )
         ).to.be.reverted;
     });
@@ -1958,7 +1961,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
     it("rejects createInstance with mismatched msg.value (less than entryFee)", async function () {
         const fee = hre.ethers.parseEther("0.001");
         await expect(
-            factory.connect(owner).createInstance(2, fee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, { value: 0n } // no payment
+            factory.connect(owner).createInstance(2, fee, defaultTimeouts().enrollmentWindow, defaultTimeouts().matchTimePerPlayer, defaultTimeouts().timeIncrementPerMove, hre.ethers.ZeroAddress, { value: 0n } // no payment
             )
         ).to.be.reverted;
     });
@@ -1970,7 +1973,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 1n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.001") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.001"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.001") }
             )
         ).to.be.reverted;
     });
@@ -1981,7 +1984,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 31n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0015"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0015") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0015"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.0015") }
             )
         ).to.be.reverted;
     });
@@ -1992,7 +1995,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 150n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.002"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.002") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.002"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.002") }
             )
         ).to.be.reverted;
     });
@@ -2003,7 +2006,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 2n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0025"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0025") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0025"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.0025") }
             )
         ).to.not.be.reverted;
     });
@@ -2014,7 +2017,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 3n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.003"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.003") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.003"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.003") }
             )
         ).to.not.be.reverted;
     });
@@ -2025,7 +2028,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             enrollmentWindow: 30n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.004"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.004") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.004"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.004") }
             )
         ).to.not.be.reverted;
     });
@@ -2036,7 +2039,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 0n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.005"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.005") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.005"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.005") }
             )
         ).to.be.reverted;
     });
@@ -2047,7 +2050,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 21n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.006"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.006") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.006"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.006") }
             )
         ).to.be.reverted;
     });
@@ -2058,7 +2061,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 90n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0065"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0065") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0065"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.0065") }
             )
         ).to.be.reverted;
     });
@@ -2069,7 +2072,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 1n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.007"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.007") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.007"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.007") }
             )
         ).to.not.be.reverted;
     });
@@ -2080,7 +2083,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 3n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.008"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.008") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.008"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.008") }
             )
         ).to.not.be.reverted;
     });
@@ -2091,7 +2094,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             matchTimePerPlayer: 20n * 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.009"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.009") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.009"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.009") }
             )
         ).to.not.be.reverted;
     });
@@ -2102,7 +2105,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 61n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.010"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.010") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.010"), invalidTimeouts.enrollmentWindow, invalidTimeouts.matchTimePerPlayer, invalidTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.010") }
             )
         ).to.be.reverted;
     });
@@ -2113,7 +2116,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 0n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.011"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.011") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.011"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.011") }
             )
         ).to.not.be.reverted;
     });
@@ -2124,7 +2127,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 17n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.012"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.012") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.012"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.012") }
             )
         ).to.not.be.reverted;
     });
@@ -2135,7 +2138,7 @@ describe("TicTacInstance — factory creation guardrails", function () {
             timeIncrementPerMove: 60n
         };
         await expect(
-            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0125"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, { value: hre.ethers.parseEther("0.0125") }
+            factory.connect(owner).createInstance(2, hre.ethers.parseEther("0.0125"), validTimeouts.enrollmentWindow, validTimeouts.matchTimePerPlayer, validTimeouts.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: hre.ethers.parseEther("0.0125") }
             )
         ).to.not.be.reverted;
     });
@@ -2156,7 +2159,7 @@ describe("TicTacInstance — permanent record view functions", function () {
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         instance = await createInstance(factory, 2, ENTRY_FEE, owner);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         // Play to conclusion
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2252,7 +2255,7 @@ describe("TicTacInstance — player activity: normal win", function () {
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         instance = await createInstance(factory, 2, ENTRY_FEE, owner);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         // Resolve match
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2328,7 +2331,7 @@ describe("TicTacInstance — player activity: timeout win (ML1)", function () {
             matchLevel3Delay:     120n,
         });
         instance = await createInstance(factory, 2, ENTRY_FEE, owner, timeouts);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         // Determine who is active (current turn = timed-out player)
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2383,7 +2386,7 @@ describe("TicTacInstance — player activity: draw", function () {
         [owner, p1] = await hre.ethers.getSigners();
         ({ factory } = await deployFactory());
         instance = await createInstance(factory, 2, ENTRY_FEE, owner);
-        await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
         const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
         const m = await instance.matches(matchId);
@@ -2699,7 +2702,7 @@ describe("TicTacInstance — move history tracking", function () {
     describe("move history for ongoing match", function () {
         it("should record single move correctly", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
             const matchData = await instance.matches(matchId);
@@ -2713,7 +2716,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should record multiple moves with comma separation", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
             const matchData = await instance.matches(matchId);
@@ -2729,7 +2732,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should track full game sequence in ongoing match", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
             const matchData = await instance.matches(matchId);
@@ -2747,7 +2750,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should preserve move order in ongoing match", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
             const matchData = await instance.matches(matchId);
@@ -2765,7 +2768,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should handle edge cell indices correctly", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
             const matchData = await instance.matches(matchId);
@@ -2785,7 +2788,7 @@ describe("TicTacInstance — move history tracking", function () {
     describe("move history for completed match", function () {
         it("should preserve full move history after win", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             // Play a complete game to win (horizontal line: 0, 1, 2)
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2812,7 +2815,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should preserve full move history after draw", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             // Play a complete game to draw
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2843,7 +2846,7 @@ describe("TicTacInstance — move history tracking", function () {
 
         it("should preserve move history after tournament conclusion", async function () {
             instance = await createInstance(factory, 2, ENTRY_FEE, owner, defaultTimeouts());
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             // Complete the match quickly
             const matchId = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2871,9 +2874,9 @@ describe("TicTacInstance — move history tracking", function () {
             instance = await createInstance(factory, 4, ENTRY_FEE, owner, defaultTimeouts());
 
             const [, , p2, p3] = await hre.ethers.getSigners();
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
-            await instance.connect(p2).enrollInTournament({ value: ENTRY_FEE });
-            await instance.connect(p3).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
+            await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
+            await instance.connect(p3).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             // Complete match 0 (round 0)
             const match0Id = hre.ethers.solidityPackedKeccak256(["uint8", "uint8"], [0, 0]);
@@ -2919,9 +2922,9 @@ describe("TicTacInstance — move history tracking", function () {
             instance = await createInstance(factory, 4, ENTRY_FEE, owner, defaultTimeouts());
 
             const [, , p2, p3] = await hre.ethers.getSigners();
-            await instance.connect(p1).enrollInTournament({ value: ENTRY_FEE });
-            await instance.connect(p2).enrollInTournament({ value: ENTRY_FEE });
-            await instance.connect(p3).enrollInTournament({ value: ENTRY_FEE });
+            await instance.connect(p1).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
+            await instance.connect(p2).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
+            await instance.connect(p3).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
 
             // Check round 1, match 0 which hasn't been played yet
             const moves = await instance.getMatchMoves(1, 0);

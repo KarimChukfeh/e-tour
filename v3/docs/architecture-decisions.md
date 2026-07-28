@@ -189,3 +189,47 @@ Every state-changing module bridge is tested against direct EOA calls and calls
 forwarded by an unrelated contract. Rejected calls are required to preserve
 canonical storage and observable tournament state. Separate tests prove the
 same bridges remain usable through legitimate instance-context delegatecalls.
+
+## Canonical game and factory extension boundary
+
+ADR-018 is accepted and implemented. `ETourGame` is the single owner of common
+match creation, reset, restart, result state, Fischer clocks, gameplay-actor
+validation, escalation clearing, completion dispatch, protected bridges, and
+the internal game-state hash boundary.
+
+Concrete games supply only side-assignment policy, initial packed state,
+game-state hashing, optional reset/initialization bookkeeping, legal-move
+validation, mutation, terminal detection, history encoding, and views. The
+effective-player hook deliberately sits above game rules so session resolution
+can be added later without teaching each game about executors.
+
+`ETourFactory.createInstance` is the only creation pipeline. Internal
+initialization and post-initialization hooks cover game-specific setup.
+Chess no longer duplicates creation and instead configures its rules module
+through a factory-only, one-time post hook. Every created clone is recorded in
+`isInstance`; implementation contracts are not instances.
+
+## Session registry authority and lifecycle
+
+ADRs 019–021 are accepted and implemented.
+
+The registry authenticates a registration caller through the full deployed
+provenance chain: the instance's factory, the factory's `isInstance` mapping,
+the `PlayerRegistry.authorizedFactories` allowlist, matching immutable player
+and session registry addresses, instance enrollment, and non-conclusion. The
+registry deliberately has no owner or privileged session mutation API.
+
+The one-hour TTL is strict and exclusive at `validUntil`. An executor has only
+one globally live reverse binding, while a primary may use distinct executors
+in distinct instances. Expired and concluded bindings may be reclaimed.
+Refresh is rejected after conclusion; explicit primary revocation remains
+available for cleanup.
+
+Creator and joiner APIs accept an optional executor. Zero is an explicit
+opt-out. A non-zero registration is part of the paid enrollment transaction,
+so a registry rejection also rolls back the clone/tier, player/profile,
+tournament, accounting, ETH, and event effects.
+
+The implemented registry and enrollment boundaries are documented in
+`docs/SessionAuthorization.md`. Session-to-primary gameplay resolution remains
+the separate Phase 6 change.

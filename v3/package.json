@@ -38,7 +38,8 @@
     "deploy:connectfour": "hardhat run scripts/deploy-connectfour-factory.js --network localhost",
     "deploy:chess": "hardhat run scripts/deploy-chessonchain-factory.js --network localhost",
     "deploy:factories": "hardhat run scripts/deploy-factories.js --network localhost",
-    "deploy:all": "hardhat run scripts/deploy-all-factory.js --network localhost"
+    "deploy:all": "hardhat run scripts/deploy-all-factory.js --network localhost",
+    "deploy:all:force": "FORCE=1 hardhat run scripts/deploy-all-factory.js --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/edr": "0.12.0-next.16",

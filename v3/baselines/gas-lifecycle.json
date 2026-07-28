@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-27T06:55:16.479Z",
+  "generatedAt": "2026-07-28T05:02:41.268Z",
   "compiler": {
     "version": "0.8.20",
     "optimizerEnabled": true,
@@ -14,12 +14,12 @@
     "note": "The terminal settlement is atomic inside the final makeMove transaction; V2 has no separately callable normal-settlement transaction."
   },
   "gasUsed": {
-    "createInstanceAndCreatorEnrollment": "1413302",
-    "enrollmentWithoutTournamentStart": "381559",
-    "enrollmentWithTournamentStart": "840297",
-    "normalMove": "122919",
-    "terminalMatchMoveWithoutTournamentSettlement": "443887",
-    "terminalMoveWithTournamentSettlement": "1106249",
+    "createInstanceAndCreatorEnrollment": "1458865",
+    "enrollmentWithoutTournamentStart": "380531",
+    "enrollmentWithTournamentStart": "848746",
+    "normalMove": "129734",
+    "terminalMatchMoveWithoutTournamentSettlement": "441354",
+    "terminalMoveWithTournamentSettlement": "1106575",
     "standaloneSettlement": null
   }
 }

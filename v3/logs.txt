@@ -270,3 +270,102 @@ Next recommended action:
 Begin tracking item 57 by designing and creating the canonical ETourGame
 abstraction, then migrate common game behavior incrementally while preserving
 the storage, selector, size, and behavioral gates.
+
+2026-07-28 - Phases 2 and 3 complete (tracking items 30-76)
+
+- Synchronized the Phase 2 roadmap with its already completed storage, module,
+  bridge, warning, bytecode, selector, and regression exit gates.
+- Added contracts/ETourGame.sol as the canonical owner of match creation,
+  reset, restart, result storage, Fischer clocks, gameplay-player validation,
+  escalation clearing, completion dispatch, protected bridges, and the
+  game-state entropy hash boundary.
+- Refactored Tic-Tac-Toe, Connect Four, and Chess to the minimal ETourGame hook
+  surface. Concrete games now retain only side assignment, initial/game state,
+  legal moves, mutation, terminal detection, history, events, and views.
+- Preserved Chess's historical repetition bookkeeping: reset increments its
+  nonce and replay initialization increments it again.
+- Moved all game instance creation into ETourFactory.createInstance with
+  _initializeInstance and _postInitializeInstance hooks.
+- Removed the duplicated Chess createInstance implementation. Chess rules are
+  now configured by a non-zero, factory-only, one-time post-initializer.
+- Added isInstance(address) provenance tracking to the canonical factory and
+  therefore every concrete factory.
+- Added cross-game canonical creation, provenance, Chess one-time setup, and
+  Chess replay bookkeeping tests.
+- Added docs/BuildingGames.md and updated the storage, self-call, selector, and
+  architecture decision documents.
+- Refreshed the reviewed size, storage, ABI, and lifecycle gas baselines.
+
+Validation:
+- Clean Node 22.21.0 via-IR compile: 29 Solidity files, zero warnings.
+- Complete behavioral suite: 259 passing.
+- Storage check: 12 targets and 21 canonical entries.
+- ABI check: 28 contract/interface surfaces.
+- Selector check: 20 reviewed mutable signatures across 3 game instances.
+- Static analysis: 926 current findings against the 1,037 allowance.
+- Production dependency audit: clean.
+- Largest game: ConnectFourInstance at 21,069 bytes (3,507 bytes headroom).
+- Modules remain 44,240 bytes in aggregate.
+- Consolidated npm run ci:checks: passing.
+- Lifecycle gas baseline refreshed; creation now includes the isInstance SSTORE,
+  ordinary enrollment is slightly lower, normal move includes canonical
+  clock/escalation handling, and terminal settlement remains nearly flat.
+
+Next recommended action:
+Begin Phase 4 at tracking item 77 by freezing and implementing the
+SessionKeyRegistry API, storage, TTL, reverse binding, lifecycle transitions,
+events, unit tests, fuzz tests, and invariants.
+
+2026-07-28 - Phases 4 and 5 complete (tracking items 77-130)
+
+- Added the ownerless SessionKeyRegistry and its explicit interfaces. Sessions
+  are keyed by instance and primary, expire after the fixed one-hour TTL, carry
+  a monotonic generation, and maintain one globally unique live reverse
+  executor binding.
+- Authenticated registration hosts through matching player/session registries,
+  PlayerRegistry factory authorization, factory isInstance provenance,
+  enrollment, and non-conclusion. Arbitrary contracts cannot reserve executor
+  addresses.
+- Implemented primary-only refresh and revoke. Refresh atomically replaces the
+  old executor and is rejected after conclusion; revoke remains available
+  after conclusion for cleanup. Expired and concluded bindings are reclaimable.
+- Added strict active-time semantics (`block.timestamp < validUntil`) and raw,
+  active, and reverse-binding views.
+- Passed SessionKeyRegistry through all factory constructors and clone
+  initializers, rejecting zero, non-contract, or PlayerRegistry-mismatched
+  configuration. Updated createInstance,
+  enrollInTournament, and enrollOnBehalf to accept an optional session
+  executor, with zero as an explicit opt-out.
+- Made non-zero creator and joiner registration atomic with paid enrollment.
+  Tests prove registry failure rolls back tiers, clones, profiles, enrolled
+  players, tournament state, fee buckets, ETH, and emitted effects.
+- Updated all test helpers and deployment helpers. Consolidated the legacy
+  deploy-factories command onto deploy-all-factory, added
+  `npm run deploy:all:force`, emitted SessionKeyRegistry manifests/ABIs, and
+  extended ABI regeneration/frontend bundle validation.
+- Added docs/SessionAuthorization.md and recorded ADRs 019-021. Gameplay
+  executor resolution is intentionally not implemented yet; that starts in
+  Phase 6 at tracking item 131.
+
+Validation:
+- Clean via-IR compile: 34 Solidity files, zero warnings.
+- Complete behavioral suite: 277 passing.
+- Session-focused suites: 18 passing, including randomized transition and
+  atomic rollback coverage.
+- Localhost smoke deployment: modules, PlayerProfile, PlayerRegistry,
+  SessionKeyRegistry, all factories, and all implementations deployed;
+  generated session manifests and ABI validated.
+- Storage check: 12 targets and 21 canonical entries.
+- ABI check: 34 contract/interface surfaces.
+- Selector check: 20 reviewed mutable signatures across 3 game instances.
+- Static analysis: 921 reviewed findings, down from the 1,107 copied baseline.
+- Production dependency audit: clean.
+- Largest game: ConnectFourInstance at 21,316 bytes (3,260 bytes headroom).
+- SessionKeyRegistry: 4,681 bytes.
+- Consolidated `npm run ci:checks`: passing.
+
+Next recommended action:
+Begin Phase 6 at tracking item 131. Implement the shared effective-gameplay
+actor resolver in ETourGame, then migrate and test all three makeMove paths
+while preserving primary identity and retaining the actual executor only for
+move-event diagnostics.

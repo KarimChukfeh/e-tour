@@ -15,14 +15,16 @@ contract TicTacChainFactory is ETourFactory {
         address moduleMatches,
         address modulePrizes,
         address moduleEscalation,
-        address playerRegistry
+        address playerRegistry,
+        address sessionRegistry
     ) ETourFactory(
         address(new TicTacInstance()),
         moduleCore,
         moduleMatches,
         modulePrizes,
         moduleEscalation,
-        playerRegistry
+        playerRegistry,
+        sessionRegistry
     ) { }
 
     function _gameType() internal pure override returns (uint8) {

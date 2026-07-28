@@ -3,14 +3,13 @@ pragma solidity ^0.8.20;
 
 import "./ETourFactory.sol";
 import "./ChessInstance.sol";
-import {ETourStorage} from "./storage/ETourStorage.sol";
 
 /**
  * @title ChessOnChainFactory
  * @dev Factory contract for Chess tournament instances.
  *
- * Overrides createInstance() to also pass the CHESS_RULES address to each
- * newly deployed ChessInstance clone via initializeChess().
+ * Uses the canonical ETourFactory creation flow and configures CHESS_RULES in
+ * its one-time post-initialization hook.
  */
 contract ChessOnChainFactory is ETourFactory {
 
@@ -22,14 +21,16 @@ contract ChessOnChainFactory is ETourFactory {
         address modulePrizes,
         address moduleEscalation,
         address chessRules,
-        address playerRegistry
+        address playerRegistry,
+        address sessionRegistry
     ) ETourFactory(
         address(new ChessInstance()),
         moduleCore,
         moduleMatches,
         modulePrizes,
         moduleEscalation,
-        playerRegistry
+        playerRegistry,
+        sessionRegistry
     ) {
         require(chessRules != address(0), "CR");
         CHESS_RULES = chessRules;
@@ -39,63 +40,7 @@ contract ChessOnChainFactory is ETourFactory {
         return 2;
     }
 
-    /**
-     * @dev Override createInstance to pass CHESS_RULES to each clone via initializeChess().
-     */
-    function createInstance(
-        uint8 playerCount,
-        uint256 entryFee,
-        uint256 enrollmentWindow,
-        uint256 matchTimePerPlayer,
-        uint256 timeIncrementPerMove
-    ) external payable override returns (address instance) {
-        require(msg.value == entryFee, "Must send exact entry fee to auto-enroll");
-        _validatePlayerCount(playerCount);
-        _validateEntryFee(entryFee);
-        _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
-
-        // Construct full TimeoutConfig with hardcoded escalation delays
-        ETourStorage.TimeoutConfig memory timeouts = ETourStorage.TimeoutConfig({
-            matchTimePerPlayer: matchTimePerPlayer,
-            timeIncrementPerMove: timeIncrementPerMove,
-            matchLevel2Delay: MATCH_LEVEL_2_DELAY,
-            matchLevel3Delay: MATCH_LEVEL_3_DELAY,
-            enrollmentWindow: enrollmentWindow,
-            enrollmentLevel2Delay: ENROLLMENT_LEVEL_2_DELAY
-        });
-
-        bytes32 tierKey = _computeTierKey(playerCount, entryFee, timeouts);
-        if (!_tierExists(tierKey)) {
-            _registerTier(tierKey, playerCount, entryFee, timeouts);
-        }
-
-        TierConfig storage config = tierRegistry[tierKey];
-
-        ETourStorage.TierConfig memory instanceTierConfig = ETourStorage.TierConfig({
-            playerCount: playerCount,
-            entryFee: entryFee,
-            timeouts: config.timeouts,
-            totalRounds: config.totalRounds,
-            tierKey: tierKey
-        });
-
-        instance = _clone(implementation);
-
-        ChessInstance(instance).initializeChess(
-            instanceTierConfig,
-            address(this),
-            msg.sender,
-            MODULE_CORE,
-            MODULE_MATCHES,
-            MODULE_PRIZES,
-            MODULE_ESCALATION,
-            CHESS_RULES
-        );
-
-        _trackNewInstance(instance, tierKey);
-
-        emit InstanceDeployed(instance, tierKey, msg.sender, playerCount, entryFee);
-
-        ETourInstance_Base(instance).enrollOnBehalf{value: entryFee}(msg.sender);
+    function _postInitializeInstance(address instance) internal override {
+        ChessInstance(instance).initializeChessRules(CHESS_RULES);
     }
 }

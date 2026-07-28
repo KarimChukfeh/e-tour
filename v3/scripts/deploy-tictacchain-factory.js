@@ -1,10 +1,10 @@
 // scripts/deploy-tictacchain-factory.js
-// Deploy TicTacChainFactory (+ PlayerRegistry + instance modules if not already deployed).
+// Deploy TicTacChainFactory (+ player/session registries and instance modules).
 //
 // Usage:
 //   npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost
-//   npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost --force
-//   REGISTRY=0x... npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost
+//   FORCE=1 npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost
+//   REGISTRY=0x... SESSION_REGISTRY=0x... npx hardhat run scripts/deploy-tictacchain-factory.js --network localhost
 
 import hre from "hardhat";
 import fs from "fs";
@@ -14,7 +14,8 @@ import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
 const DEPLOYMENTS_DIR = "./deployments";
 
 async function main() {
-    const force = process.argv.includes("--force");
+    const force =
+        process.env.FORCE === "1" || process.argv.includes("--force");
 
     const [deployer] = await hre.ethers.getSigners();
     const network = hre.network.name;
@@ -54,12 +55,38 @@ async function main() {
     }
     console.log("");
 
-    // ── 3. TicTacChainFactory ────────────────────────────────────────────────
+    // ── 3. SessionKeyRegistry ────────────────────────────────────────────────
+    let sessionRegistryAddr = process.env.SESSION_REGISTRY;
+    if (sessionRegistryAddr) {
+        const existing = await hre.ethers.getContractAt(
+            "contracts/SessionKeyRegistry.sol:SessionKeyRegistry",
+            sessionRegistryAddr
+        );
+        if (
+            (await existing.PLAYER_REGISTRY()).toLowerCase() !==
+            registryAddr.toLowerCase()
+        ) {
+            throw new Error("SESSION_REGISTRY belongs to a different PlayerRegistry");
+        }
+        console.log("Using existing SessionKeyRegistry:", sessionRegistryAddr);
+    } else {
+        const SessionRegistry = await hre.ethers.getContractFactory(
+            "contracts/SessionKeyRegistry.sol:SessionKeyRegistry"
+        );
+        const sessionRegistry = await SessionRegistry.deploy(registryAddr);
+        await sessionRegistry.waitForDeployment();
+        sessionRegistryAddr = await sessionRegistry.getAddress();
+        console.log("  SessionKeyRegistry:  ", sessionRegistryAddr);
+    }
+    console.log("");
+
+    // ── 4. TicTacChainFactory ────────────────────────────────────────────────
     console.log("=".repeat(60));
     console.log("Deploying TicTacChainFactory...");
     const TicTacFactory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const factory = await TicTacFactory.deploy(
-        modules.core, modules.matches, modules.prizes, modules.escalation, registryAddr
+        modules.core, modules.matches, modules.prizes, modules.escalation,
+        registryAddr, sessionRegistryAddr
     );
     await factory.waitForDeployment();
     const factoryAddr = await factory.getAddress();
@@ -76,7 +103,7 @@ async function main() {
     console.log("  Factory authorized on registry");
     console.log("");
 
-    // ── 4. Save artifacts ────────────────────────────────────────────────────
+    // ── 5. Save artifacts ────────────────────────────────────────────────────
     if (!fs.existsSync(DEPLOYMENTS_DIR)) fs.mkdirSync(DEPLOYMENTS_DIR, { recursive: true });
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();
@@ -94,6 +121,9 @@ async function main() {
             PlayerProfileImpl: profileImplAddr,
             PlayerRegistry: registryAddr,
         },
+        sessionAuthorization: {
+            SessionKeyRegistry: sessionRegistryAddr,
+        },
         factory: { TicTacChainFactory: factoryAddr },
         implementation: { TicTacInstance: implAddr },
     };
@@ -101,11 +131,12 @@ async function main() {
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-tictac-factory.json`);
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
 
-    const [factoryArt, instanceArt, profileArt, registryArt] = await Promise.all([
+    const [factoryArt, instanceArt, profileArt, registryArt, sessionRegistryArt] = await Promise.all([
         hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
         hre.artifacts.readArtifact("contracts/TicTacInstance.sol:TicTacInstance"),
         hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
         hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
+        hre.artifacts.readArtifact("contracts/SessionKeyRegistry.sol:SessionKeyRegistry"),
     ]);
 
     const playerProfileArtifacts = {
@@ -118,6 +149,12 @@ async function main() {
         network, chainId: chainId.toString(), deployedAt: timestamp,
         modules: deployment.modules,
         playerProfile: playerProfileArtifacts,
+        sessionAuthorization: {
+            SessionKeyRegistry: {
+                address: sessionRegistryAddr,
+                abi: sessionRegistryArt.abi,
+            },
+        },
         factory:  { address: factoryAddr, abi: factoryArt.abi },
         instance: { address: implAddr,    abi: instanceArt.abi },
     }, null, 2));
@@ -141,11 +178,24 @@ async function main() {
             contract: playerProfileArtifacts.PlayerRegistry,
         }, null, 2)
     );
+    fs.writeFileSync(
+        path.join(DEPLOYMENTS_DIR, "SessionKeyRegistry-ABI.json"),
+        JSON.stringify({
+            network,
+            chainId: chainId.toString(),
+            deployedAt: timestamp,
+            contract: {
+                address: sessionRegistryAddr,
+                abi: sessionRegistryArt.abi,
+            },
+        }, null, 2)
+    );
 
     console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
     console.log("  Artifacts:", deployFile);
     const n = network;
-    console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}"`);
+    console.log(`npx hardhat verify --network ${n} ${sessionRegistryAddr} "${registryAddr}"`);
+    console.log(`npx hardhat verify --network ${n} ${factoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
 }
 
 main()

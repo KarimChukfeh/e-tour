@@ -27,6 +27,10 @@ async function deployFactory() {
         "contracts/PlayerRegistry.sol:PlayerRegistry",
         [await profile.getAddress()]
     );
+    const sessionRegistry = await deploy(
+        "contracts/SessionKeyRegistry.sol:SessionKeyRegistry",
+        [await registry.getAddress()]
+    );
     const factory = await deploy(
         "contracts/TicTacChainFactory.sol:TicTacChainFactory",
         [
@@ -35,6 +39,7 @@ async function deployFactory() {
             await prizes.getAddress(),
             await escalation.getAddress(),
             await registry.getAddress(),
+            await sessionRegistry.getAddress(),
         ]
     );
     await (await registry.authorizeFactory(await factory.getAddress())).wait();
@@ -111,7 +116,7 @@ async function main() {
             30n * 60n,
             15n * 60n,
             30n,
-            { value: entryFee }
+            hre.ethers.ZeroAddress, { value: entryFee }
         )
     ).wait();
     const instanceAddress = parseInstanceAddress(factory, creationReceipt);
@@ -121,11 +126,11 @@ async function main() {
     );
 
     const enrollmentReceipt = await (
-        await instance.connect(player2).enrollInTournament({ value: entryFee })
+        await instance.connect(player2).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee })
     ).wait();
-    await (await instance.connect(player3).enrollInTournament({ value: entryFee })).wait();
+    await (await instance.connect(player3).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee })).wait();
     const startingEnrollmentReceipt = await (
-        await instance.connect(player4).enrollInTournament({ value: entryFee })
+        await instance.connect(player4).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee })
     ).wait();
 
     const semifinal0 = await playWin(instance, 0, 0, signers);

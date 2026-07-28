@@ -136,6 +136,10 @@ function validateGameBundle(bundle, spec, network) {
         bundle.playerProfile?.PlayerRegistry?.address,
         `${spec.sourceAbiFile} PlayerRegistry address`
     );
+    assertAddress(
+        bundle.sessionAuthorization?.SessionKeyRegistry?.address,
+        `${spec.sourceAbiFile} SessionKeyRegistry address`
+    );
     assertAbi(bundle.factory?.abi, `${spec.sourceAbiFile} factory`);
     assertAbi(bundle.instance?.abi, `${spec.sourceAbiFile} instance`);
     assertAbi(
@@ -145,6 +149,10 @@ function validateGameBundle(bundle, spec, network) {
     assertAbi(
         bundle.playerProfile?.PlayerRegistry?.abi,
         `${spec.sourceAbiFile} PlayerRegistry`
+    );
+    assertAbi(
+        bundle.sessionAuthorization?.SessionKeyRegistry?.abi,
+        `${spec.sourceAbiFile} SessionKeyRegistry`
     );
 }
 
@@ -246,6 +254,14 @@ function buildFrontendPayloads(network) {
             PlayerProfileImpl: { abi: profilePayload.contract.abi },
             PlayerRegistry: { abi: registryPayload.contract.abi },
         },
+        sessionAuthorization: {
+            SessionKeyRegistry: {
+                address:
+                    firstBundle.sessionAuthorization.SessionKeyRegistry
+                        .address,
+                abi: firstBundle.sessionAuthorization.SessionKeyRegistry.abi,
+            },
+        },
         factories: {},
         instances: {},
     };
@@ -264,6 +280,8 @@ function buildFrontendPayloads(network) {
             abi: bundle.factory.abi,
             playerRegistry: bundle.playerProfile.PlayerRegistry.address,
             playerProfileImpl: bundle.playerProfile.PlayerProfileImpl.address,
+            sessionRegistry:
+                bundle.sessionAuthorization.SessionKeyRegistry.address,
         };
         combinedPayload.instances[spec.frontendInstanceKey] = {
             address: bundle.instance.address,

@@ -40,16 +40,16 @@ These historical acceptance numbers remain the V2-equivalence reference. The
 machine-readable ABI, size, storage, and static-analysis files are intentionally
 advanced when a reviewed V3 architecture batch changes those surfaces.
 
-## Current reviewed state after tracking item 56
+## Current reviewed state after tracking item 130
 
-- Clean compile: 27 Solidity files.
-- Full suite: 256 passing.
-- Storage-layout check: 11 targets with 21 canonical `ETourStorage` entries.
+- Clean compile: 34 Solidity files.
+- Full suite: 277 passing.
+- Storage-layout check: 12 targets with 21 canonical `ETourStorage` entries.
 - Compiler warnings: zero current warnings against a zero-warning allowance.
-- ABI surface: 26 compiled contract/interface ABIs.
+- ABI surface: 34 compiled contract/interface ABIs.
 - State-changing instance surface: 20 reviewed unique signatures across all
   three game instances.
-- Static analysis: 1,030 findings, reduced from the 1,107 copied baseline.
+- Static analysis: 921 findings, reduced from the 1,107 copied baseline.
 - Dependency audit: production graph clean and no regression against the
   reviewed development-inclusive allowance.
 
@@ -58,9 +58,10 @@ advanced when a reviewed V3 architecture batch changes those surfaces.
 | Contract | Deployed bytes | EIP-170 usage |
 |---|---:|---:|
 | `ETourInstance_Matches` | 13,527 | 55.0% |
-| `ConnectFourInstance` | 21,229 | 86.4% |
-| `ChessInstance` | 20,958 | 85.3% |
-| `TicTacInstance` | 20,621 | 83.9% |
+| `ConnectFourInstance` | 21,316 | 86.7% |
+| `ChessInstance` | 20,861 | 84.9% |
+| `TicTacInstance` | 20,579 | 83.7% |
+| `SessionKeyRegistry` | 4,681 | 19.0% |
 
 The complete machine-readable result is in
 [`contract-sizes.json`](./contract-sizes.json).
@@ -73,17 +74,23 @@ can be distinguished.
 
 | Operation | Gas used |
 |---|---:|
-| Create instance plus creator enrollment | 1,413,302 |
-| Ordinary enrollment without tournament start | 381,559 |
-| Final enrollment plus tournament start | 840,297 |
-| Normal move | 122,919 |
-| Terminal match move without tournament settlement | 443,887 |
-| Terminal move with tournament settlement | 1,106,249 |
+| Create instance plus creator enrollment | 1,458,865 |
+| Ordinary enrollment without tournament start | 380,531 |
+| Final enrollment plus tournament start | 848,746 |
+| Normal move | 129,734 |
+| Terminal match move without tournament settlement | 441,354 |
+| Terminal move with tournament settlement | 1,106,575 |
 
 V2 settlement is atomic inside the terminal gameplay transaction, so there is no
 separate normal-settlement transaction to measure. The complete deterministic
 result is in [`gas-lifecycle.json`](./gas-lifecycle.json); the aggregate suite
 report is in [`gas-report.txt`](./gas-report.txt).
+
+The Phase 5 creation cost includes `isInstance` provenance and the populated
+session-registry clone slot. The deterministic lifecycle scenario explicitly
+opts out of session registration, so it measures direct-wallet parity after the
+new enrollment signatures. Session registration, refresh, revoke, and delegated
+move gas receive separate measurements in later phases.
 
 ## Storage baseline
 

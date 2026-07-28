@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T04:24:46.139Z",
+  "generatedAt": "2026-07-28T04:42:54.531Z",
   "compilerVersions": [
     "0.8.20+commit.a1b79de6"
   ],
@@ -2275,6 +2275,769 @@
             },
             {
               "contract": "contracts/ETourInstance.sol:ETourInstance",
+              "label": "raffleRecipient",
+              "offset": 0,
+              "slot": "16",
+              "type": "t_address"
+            }
+          ],
+          "numberOfBytes": "544"
+        },
+        "t_uint256": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "t_uint8": {
+          "encoding": "inplace",
+          "label": "uint8",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    "ETourGame": {
+      "sourceName": "contracts/ETourGame.sol",
+      "role": "game-abstraction",
+      "storage": [
+        {
+          "label": "_status",
+          "slot": "0",
+          "offset": 0,
+          "type": "t_uint256",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "_initialized",
+          "slot": "1",
+          "offset": 0,
+          "type": "t_bool",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "factory",
+          "slot": "1",
+          "offset": 1,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "creator",
+          "slot": "2",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "MODULE_CORE",
+          "slot": "3",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "MODULE_MATCHES",
+          "slot": "4",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "MODULE_PRIZES",
+          "slot": "5",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "MODULE_ESCALATION",
+          "slot": "6",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "tierConfig",
+          "slot": "7",
+          "offset": 0,
+          "type": "t_struct(TierConfig)_storage",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "tournament",
+          "slot": "17",
+          "offset": 0,
+          "type": "t_struct(TournamentState)_storage",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "enrolledPlayers",
+          "slot": "34",
+          "offset": 0,
+          "type": "t_array(t_address)dyn_storage",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "isEnrolled",
+          "slot": "35",
+          "offset": 0,
+          "type": "t_mapping(t_address,t_bool)",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "rounds",
+          "slot": "36",
+          "offset": 0,
+          "type": "t_mapping(t_uint8,t_struct(Round)_storage)",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "matches",
+          "slot": "37",
+          "offset": 0,
+          "type": "t_mapping(t_bytes32,t_struct(Match)_storage)",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "matchTimeouts",
+          "slot": "38",
+          "offset": 0,
+          "type": "t_mapping(t_bytes32,t_struct(MatchTimeoutState)_storage)",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "playerPrizes",
+          "slot": "39",
+          "offset": 0,
+          "type": "t_mapping(t_address,t_uint256)",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "drawParticipants",
+          "slot": "40",
+          "offset": 0,
+          "type": "t_mapping(t_uint8,t_mapping(t_uint8,t_mapping(t_address,t_bool)))",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "_entropyState",
+          "slot": "41",
+          "offset": 0,
+          "type": "t_bytes32",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "_entropyNonce",
+          "slot": "42",
+          "offset": 0,
+          "type": "t_uint256",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "playerPayoutReasons",
+          "slot": "43",
+          "offset": 0,
+          "type": "t_mapping(t_address,t_enum(PayoutReason))",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        },
+        {
+          "label": "SESSION_REGISTRY",
+          "slot": "44",
+          "offset": 0,
+          "type": "t_address",
+          "contract": "contracts/ETourGame.sol:ETourGame"
+        }
+      ],
+      "types": {
+        "t_address": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "t_array(t_address)dyn_storage": {
+          "base": "t_address",
+          "encoding": "dynamic_array",
+          "label": "address[]",
+          "numberOfBytes": "32"
+        },
+        "t_bool": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        },
+        "t_bytes32": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "t_enum(EscalationLevel)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.EscalationLevel",
+          "numberOfBytes": "1"
+        },
+        "t_enum(MatchCompletionCategory)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.MatchCompletionCategory",
+          "numberOfBytes": "1"
+        },
+        "t_enum(MatchCompletionReason)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.MatchCompletionReason",
+          "numberOfBytes": "1"
+        },
+        "t_enum(MatchStatus)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.MatchStatus",
+          "numberOfBytes": "1"
+        },
+        "t_enum(PayoutReason)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.PayoutReason",
+          "numberOfBytes": "1"
+        },
+        "t_enum(TournamentResolutionCategory)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.TournamentResolutionCategory",
+          "numberOfBytes": "1"
+        },
+        "t_enum(TournamentResolutionReason)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.TournamentResolutionReason",
+          "numberOfBytes": "1"
+        },
+        "t_enum(TournamentStatus)": {
+          "encoding": "inplace",
+          "label": "enum ETourStorage.TournamentStatus",
+          "numberOfBytes": "1"
+        },
+        "t_mapping(t_address,t_bool)": {
+          "encoding": "mapping",
+          "key": "t_address",
+          "label": "mapping(address => bool)",
+          "numberOfBytes": "32",
+          "value": "t_bool"
+        },
+        "t_mapping(t_address,t_enum(PayoutReason))": {
+          "encoding": "mapping",
+          "key": "t_address",
+          "label": "mapping(address => enum ETourStorage.PayoutReason)",
+          "numberOfBytes": "32",
+          "value": "t_enum(PayoutReason)"
+        },
+        "t_mapping(t_address,t_uint256)": {
+          "encoding": "mapping",
+          "key": "t_address",
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": "t_uint256"
+        },
+        "t_mapping(t_bytes32,t_struct(Match)_storage)": {
+          "encoding": "mapping",
+          "key": "t_bytes32",
+          "label": "mapping(bytes32 => struct ETourStorage.Match)",
+          "numberOfBytes": "32",
+          "value": "t_struct(Match)_storage"
+        },
+        "t_mapping(t_bytes32,t_struct(MatchTimeoutState)_storage)": {
+          "encoding": "mapping",
+          "key": "t_bytes32",
+          "label": "mapping(bytes32 => struct ETourStorage.MatchTimeoutState)",
+          "numberOfBytes": "32",
+          "value": "t_struct(MatchTimeoutState)_storage"
+        },
+        "t_mapping(t_uint8,t_mapping(t_address,t_bool))": {
+          "encoding": "mapping",
+          "key": "t_uint8",
+          "label": "mapping(uint8 => mapping(address => bool))",
+          "numberOfBytes": "32",
+          "value": "t_mapping(t_address,t_bool)"
+        },
+        "t_mapping(t_uint8,t_mapping(t_uint8,t_mapping(t_address,t_bool)))": {
+          "encoding": "mapping",
+          "key": "t_uint8",
+          "label": "mapping(uint8 => mapping(uint8 => mapping(address => bool)))",
+          "numberOfBytes": "32",
+          "value": "t_mapping(t_uint8,t_mapping(t_address,t_bool))"
+        },
+        "t_mapping(t_uint8,t_struct(Round)_storage)": {
+          "encoding": "mapping",
+          "key": "t_uint8",
+          "label": "mapping(uint8 => struct ETourStorage.Round)",
+          "numberOfBytes": "32",
+          "value": "t_struct(Round)_storage"
+        },
+        "t_string_storage": {
+          "encoding": "bytes",
+          "label": "string",
+          "numberOfBytes": "32"
+        },
+        "t_struct(EnrollmentTimeoutState)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.EnrollmentTimeoutState",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "escalation1Start",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "escalation2Start",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "activeEscalation",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_enum(EscalationLevel)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "forfeitPool",
+              "offset": 0,
+              "slot": "3",
+              "type": "t_uint256"
+            }
+          ],
+          "numberOfBytes": "128"
+        },
+        "t_struct(Match)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.Match",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "player1",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "player2",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "winner",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "currentTurn",
+              "offset": 0,
+              "slot": "3",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "firstPlayer",
+              "offset": 0,
+              "slot": "4",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "status",
+              "offset": 20,
+              "slot": "4",
+              "type": "t_enum(MatchStatus)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "isDraw",
+              "offset": 21,
+              "slot": "4",
+              "type": "t_bool"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "packedBoard",
+              "offset": 0,
+              "slot": "5",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "packedState",
+              "offset": 0,
+              "slot": "6",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "startTime",
+              "offset": 0,
+              "slot": "7",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "lastMoveTime",
+              "offset": 0,
+              "slot": "8",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "player1TimeRemaining",
+              "offset": 0,
+              "slot": "9",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "player2TimeRemaining",
+              "offset": 0,
+              "slot": "10",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "moves",
+              "offset": 0,
+              "slot": "11",
+              "type": "t_string_storage"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "completionReason",
+              "offset": 0,
+              "slot": "12",
+              "type": "t_enum(MatchCompletionReason)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "completionCategory",
+              "offset": 1,
+              "slot": "12",
+              "type": "t_enum(MatchCompletionCategory)"
+            }
+          ],
+          "numberOfBytes": "416"
+        },
+        "t_struct(MatchTimeoutState)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.MatchTimeoutState",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "escalation1Start",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "escalation2Start",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "activeEscalation",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_enum(EscalationLevel)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "isStalled",
+              "offset": 1,
+              "slot": "2",
+              "type": "t_bool"
+            }
+          ],
+          "numberOfBytes": "96"
+        },
+        "t_struct(Round)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.Round",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "totalMatches",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "completedMatches",
+              "offset": 1,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "initialized",
+              "offset": 2,
+              "slot": "0",
+              "type": "t_bool"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "drawCount",
+              "offset": 3,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "playerCount",
+              "offset": 4,
+              "slot": "0",
+              "type": "t_uint8"
+            }
+          ],
+          "numberOfBytes": "32"
+        },
+        "t_struct(TierConfig)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.TierConfig",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "playerCount",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "entryFee",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "timeouts",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_struct(TimeoutConfig)_storage"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "totalRounds",
+              "offset": 0,
+              "slot": "8",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "tierKey",
+              "offset": 0,
+              "slot": "9",
+              "type": "t_bytes32"
+            }
+          ],
+          "numberOfBytes": "320"
+        },
+        "t_struct(TimeoutConfig)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.TimeoutConfig",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "matchTimePerPlayer",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "timeIncrementPerMove",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "matchLevel2Delay",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "matchLevel3Delay",
+              "offset": 0,
+              "slot": "3",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "enrollmentWindow",
+              "offset": 0,
+              "slot": "4",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "enrollmentLevel2Delay",
+              "offset": 0,
+              "slot": "5",
+              "type": "t_uint256"
+            }
+          ],
+          "numberOfBytes": "192"
+        },
+        "t_struct(TournamentState)_storage": {
+          "encoding": "inplace",
+          "label": "struct ETourStorage.TournamentState",
+          "members": [
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "status",
+              "offset": 0,
+              "slot": "0",
+              "type": "t_enum(TournamentStatus)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "currentRound",
+              "offset": 1,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "enrolledCount",
+              "offset": 2,
+              "slot": "0",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "totalEntryFeesAccrued",
+              "offset": 0,
+              "slot": "1",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "prizePool",
+              "offset": 0,
+              "slot": "2",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "ownerAccrued",
+              "offset": 0,
+              "slot": "3",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "protocolAccrued",
+              "offset": 0,
+              "slot": "4",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "startTime",
+              "offset": 0,
+              "slot": "5",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "createdAt",
+              "offset": 0,
+              "slot": "6",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "winner",
+              "offset": 0,
+              "slot": "7",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "finalsWasDraw",
+              "offset": 20,
+              "slot": "7",
+              "type": "t_bool"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "allDrawResolution",
+              "offset": 21,
+              "slot": "7",
+              "type": "t_bool"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "allDrawRound",
+              "offset": 22,
+              "slot": "7",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "completionReason",
+              "offset": 23,
+              "slot": "7",
+              "type": "t_enum(TournamentResolutionReason)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "completionCategory",
+              "offset": 24,
+              "slot": "7",
+              "type": "t_enum(TournamentResolutionCategory)"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "enrollmentTimeout",
+              "offset": 0,
+              "slot": "8",
+              "type": "t_struct(EnrollmentTimeoutState)_storage"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "actualTotalRounds",
+              "offset": 0,
+              "slot": "12",
+              "type": "t_uint8"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "prizeAwarded",
+              "offset": 0,
+              "slot": "13",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "prizeRecipient",
+              "offset": 0,
+              "slot": "14",
+              "type": "t_address"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
+              "label": "raffleAwarded",
+              "offset": 0,
+              "slot": "15",
+              "type": "t_uint256"
+            },
+            {
+              "contract": "contracts/ETourGame.sol:ETourGame",
               "label": "raffleRecipient",
               "offset": 0,
               "slot": "16",

@@ -3,6 +3,7 @@
 
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const TICTAC_GAME_TYPE = 0;
 
@@ -25,6 +26,7 @@ async function deployAll() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory("contracts/TicTacChainFactory.sol:TicTacChainFactory");
     const factory = await Factory.deploy(
@@ -32,7 +34,8 @@ async function deployAll() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
 
@@ -63,7 +66,7 @@ describe("Debug: factory.players() mapping population", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         await tx.wait();
 
@@ -95,7 +98,7 @@ describe("Debug: factory.players() mapping population", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -105,7 +108,7 @@ describe("Debug: factory.players() mapping population", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         // Check factory.players() mapping
         const joinerProfileFromMapping = await factory.players(joiner.address);
@@ -135,7 +138,7 @@ describe("Debug: factory.players() mapping population", function () {
 
         const to = defaultTimeouts();
         const tx = await factory.connect(creator).createInstance(
-            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, { value: entryFee }
+            2, entryFee, to.enrollmentWindow, to.matchTimePerPlayer, to.timeIncrementPerMove, hre.ethers.ZeroAddress, { value: entryFee }
         );
         const receipt = await tx.wait();
         const event = receipt.logs
@@ -145,7 +148,7 @@ describe("Debug: factory.players() mapping population", function () {
             "contracts/TicTacInstance.sol:TicTacInstance", event.args.instance
         );
 
-        await instance.connect(joiner).enrollInTournament({ value: entryFee });
+        await instance.connect(joiner).enrollInTournament(hre.ethers.ZeroAddress, { value: entryFee });
 
         console.log("\n=== After both players enrolled ===");
 

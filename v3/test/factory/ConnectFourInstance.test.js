@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import hre from "hardhat";
+import { deploySessionRegistry } from "../helpers/session-registry.js";
 
 const CONNECT_FOUR_GAME_TYPE = 1;
 const ENTRY_FEE = hre.ethers.parseEther("0.001");
@@ -60,6 +61,7 @@ async function deployFactory() {
     const Registry = await hre.ethers.getContractFactory("contracts/PlayerRegistry.sol:PlayerRegistry");
     const registry = await Registry.deploy(await profileImpl.getAddress());
     await registry.waitForDeployment();
+    const sessionRegistry = await deploySessionRegistry(registry);
 
     const Factory = await hre.ethers.getContractFactory("contracts/ConnectFourFactory.sol:ConnectFourFactory");
     const factory = await Factory.deploy(
@@ -67,7 +69,8 @@ async function deployFactory() {
         await moduleMatches.getAddress(),
         await modulePrizes.getAddress(),
         await moduleEscalation.getAddress(),
-        await registry.getAddress()
+        await registry.getAddress(),
+        await sessionRegistry.getAddress()
     );
     await factory.waitForDeployment();
     await registry.authorizeFactory(await factory.getAddress());
@@ -90,7 +93,7 @@ async function createInstance(factory, signer) {
         shortTimeouts().enrollmentWindow,
         shortTimeouts().matchTimePerPlayer,
         shortTimeouts().timeIncrementPerMove,
-        { value: ENTRY_FEE }
+        hre.ethers.ZeroAddress, { value: ENTRY_FEE }
     );
     const receipt = await tx.wait();
     const event = receipt.logs
@@ -105,7 +108,7 @@ async function createInstance(factory, signer) {
 
 async function enrollAll(instance, signers) {
     for (const signer of signers) {
-        await instance.connect(signer).enrollInTournament({ value: ENTRY_FEE });
+        await instance.connect(signer).enrollInTournament(hre.ethers.ZeroAddress, { value: ENTRY_FEE });
     }
 }
 
