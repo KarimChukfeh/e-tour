@@ -6,9 +6,12 @@ instance-scoped browser sessions delivered through ERC-4337. A player confirms
 creation or enrollment once with the primary wallet, then a temporary encrypted
 browser key can submit legal moves without repeated wallet prompts.
 
-V3 is locally complete and remains pre-testnet. Arbitrum Sepolia deployment,
-live two-bundler acceptance, external review, production canary, and cutover are
-still required. Existing V2 contracts and tournaments remain immutable.
+V3 is locally complete. Public-testnet infrastructure is intentionally not part
+of the development cycle: an isolated Hardhat chain uses Arbitrum One chain ID
+42161, deterministic funded player wallets, two independently funded local
+bundlers, the canonical EntryPoint, and a locally funded paymaster. External
+review, the Arbitrum One production canary, and cutover are still required.
+Existing V2 contracts and tournaments remain immutable.
 
 ## Security model
 
@@ -68,6 +71,32 @@ compatibility, selector, static-analysis, and dependency gates.
 
 ## Local deployment
 
+The preferred complete cycle is one command:
+
+```sh
+cd v3
+npm run local:arbitrum:cycle
+```
+
+It starts and later stops an isolated node on `127.0.0.1:8546`, builds the SDK,
+compiles, deploys the complete stack, validates EntryPoint/manifest/wiring,
+checks both funded local bundlers, concludes all three games through session
+UserOperations, exercises recovery and infrastructure outages, regenerates
+network ABIs, checks secret-safe output, and enforces contract sizes. It can
+run alongside the ordinary V2/V3 node on port 8545.
+
+Use the full release-grade local cycle when changing protocol behavior:
+
+```sh
+npm run local:arbitrum:cycle:full
+```
+
+That adds the complete test suite and every CI policy gate. Set
+`ARBITRUM_LOCAL_PORT` only when the isolated default port must change.
+
+The ordinary chain-ID-412346 workflow remains available for frontend
+compatibility work:
+
 Start the local chain:
 
 ```sh
@@ -91,9 +120,9 @@ V3 ABIs, validates deployed bytecode and every imported frontend JSON, and
 atomically copies the ten required compatibility payloads to the existing
 `tic-tac-react/src/v2/ABIs/` integration directory.
 
-See [`docs/Deployment.md`](./docs/Deployment.md) before using any public
-network. Do not deploy public contracts from a dirty tree or publish output
-before manifest, smoke, verification, bundler, test, and size checks pass.
+See [`docs/Deployment.md`](./docs/Deployment.md) before a production canary. Do
+not deploy public contracts from a dirty tree or publish output before
+manifest, smoke, verification, bundler, test, and size checks pass.
 
 ## Common commands
 
@@ -108,6 +137,8 @@ before manifest, smoke, verification, bundler, test, and size checks pass.
 | `npm run selectors:check` | Verify the complete mutable instance surface |
 | `npm run deployment:manifest:check` | Validate the canonical localhost manifest |
 | `npm run deployment:smoke` | Verify deployed code and protocol wiring |
+| `npm run local:arbitrum:cycle` | Run the isolated local Arbitrum-shaped acceptance cycle |
+| `npm run local:arbitrum:cycle:full` | Add full tests and CI gates to that cycle |
 | `npm run frontend:abis` | Generate, validate, and sync frontend ABI JSON |
 | `npm run paymaster:inspect` | Report deposit, stake, pause, and sponsored spend |
 
@@ -137,4 +168,3 @@ underlying change; never capture a baseline to hide an invalid regression.
 `plan.md`, `tracking.md`, and `logs.txt` are living coordination documents.
 They should be corrected when implementation evidence changes the route, while
 preserving the core identity, escrow, session-scope, and recovery invariants.
-

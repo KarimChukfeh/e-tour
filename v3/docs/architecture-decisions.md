@@ -47,7 +47,7 @@ and EntryPoint address
 `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` on:
 
 - local chain 412346;
-- Arbitrum Sepolia 421614;
+- fully local Arbitrum-shaped chain 42161;
 - Arbitrum One 42161.
 
 The local environment must deploy the official EntryPoint bytecode
@@ -86,21 +86,21 @@ decision.
 
 ## Bundlers
 
-The first two providers are:
+Development and acceptance use two separate funded Hardhat wallets:
 
-1. Pimlico, primary.
-2. Alchemy, failover.
+1. `HardhatBundlerA`, primary.
+2. `HardhatBundlerB`, failover.
 
-Pimlico's current chain reference lists Arbitrum One and Arbitrum Sepolia with
-EntryPoint v0.8 and `SimpleAccount` support. Alchemy's
-[supported-chain table](https://www.alchemy.com/docs/wallets/supported-chains)
-lists Bundler support for both Arbitrum networks, and its
-[Bundler FAQ](https://www.alchemy.com/docs/wallets/reference/bundler-faqs)
-lists EntryPoint v0.8 and the canonical address.
+Both adapters serve the ERC-7769 methods used by the V3 SDK against the
+canonical EntryPoint on the isolated chain-ID-42161 Hardhat node. The acceptance
+cycle validates supported EntryPoints, estimation, submission, receipts,
+failover, total outage, and direct-primary fallback without trusting a hosted
+service.
 
-This is provider selection, not final operational acceptance. Later integration
-steps must call `eth_supportedEntryPoints`, estimate, submit, and obtain receipts
-through both providers on Arbitrum Sepolia before production.
+Pimlico and Alchemy remain candidates for the Arbitrum One production canary.
+This is not advance acceptance: live endpoints, supported EntryPoint, fees,
+submission, and receipt behavior must be revalidated after audit and before
+funding the canary paymaster.
 
 ## Paymaster
 
@@ -116,10 +116,10 @@ a direct primary-wallet transaction.
 
 ## EIP-7702
 
-EIP-7702 is deferred until the ERC-4337 V3 MVP passes local and Arbitrum Sepolia
-integration tests. The on-chain session model remains executor-agnostic so a
-later 7702 transport can reuse the same instance scope, primary identity, TTL,
-rotation, and recovery rules.
+EIP-7702 is deferred until the ERC-4337 V3 MVP passes audit and the fully local
+Arbitrum-shaped integration suite. The on-chain session model remains
+executor-agnostic so a later 7702 transport can reuse the same instance scope,
+primary identity, TTL, rotation, and recovery rules.
 
 ## Frozen non-negotiable invariants
 

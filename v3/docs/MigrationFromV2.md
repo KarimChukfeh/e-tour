@@ -5,7 +5,7 @@
 V3 is a new source and deployment generation, not an upgrade to V2. Existing
 V2 factories, clones, profiles, tournaments, balances, results, and events stay
 where they are. Active V2 tournaments finish on V2. V3 becomes the creation
-target for new tournaments only after its testnet, audit, canary, and
+target for new tournaments only after its fully local acceptance, audit, canary, and
 operational gates pass.
 
 No migration transaction moves player funds or rewrites historical state.
@@ -117,13 +117,14 @@ Backfill V2 history before V3 cutover and verify combined user totals against
 generation-specific source records. Never rewrite historical V2 events into V3
 event shapes.
 
-## Testnet acceptance
+## Fully local Arbitrum-shaped acceptance
 
-Arbitrum Sepolia acceptance requires:
+The pre-audit acceptance gate is fully local and requires:
 
-- every V3 source and constructor verified;
-- canonical manifest and ABIs published from the reviewed commit;
-- both selected bundlers supporting EntryPoint v0.8;
+- every deployed V3 bytecode, constructor, registry anchor, allowlist, and
+  implementation pin validated;
+- canonical `arbitrumLocal` manifest and ABIs generated from the reviewed source;
+- two separately funded Hardhat bundlers supporting EntryPoint v0.8;
 - creator and joiner one-confirmation registration;
 - direct and sponsored moves for Tic-Tac-Toe, Connect Four, and Chess;
 - first-use account deployment and later operations;
@@ -131,10 +132,13 @@ Arbitrum Sepolia acceptance requires:
 - complete tournament settlement and profile attribution for all games;
 - bundler failover and paymaster-unavailable behavior;
 - measured gas, calldata, account-deployment, and sponsorship costs;
-- long-duration flow crossing the one-hour TTL.
+- deterministic time-travel coverage crossing the one-hour TTL.
 
 Production migration cannot begin while any acceptance item is incomplete or
 while critical/high-confidence security findings remain unresolved.
+
+`npm run local:arbitrum:cycle:full` is the repeatable gate. It uses no public
+RPC, faucet, hosted bundler, or API key.
 
 ## Production cutover
 
@@ -174,7 +178,7 @@ V3 replaces V2 for new activity only when:
 - V2 parity and complete V3 tests pass;
 - storage, ABI, selector, static, dependency, secret, gas, and size gates pass;
 - session/account/paymaster code has completed required external review;
-- Arbitrum Sepolia and production canary acceptance are complete;
+- fully local Arbitrum-shaped acceptance and the production canary are complete;
 - source, manifests, ABIs, and user documentation are published;
 - monitoring, funding, refill, failover, incident, and support ownership are
   operational;
@@ -184,4 +188,3 @@ V3 replaces V2 for new activity only when:
 V2 contracts are never deleted. “V3 replaces V2” means V3 is the default for
 new creation while V2 remains an immutable historical and active-instance
 generation.
-

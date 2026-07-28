@@ -2,8 +2,9 @@
 
 ## Purpose and source of truth
 
-This guide is the operator procedure for local, Arbitrum Sepolia, and Arbitrum
-One deployments. The complete deployment command is
+This guide is the operator procedure for ordinary local, fully local
+Arbitrum-shaped, and eventual Arbitrum One deployments. No public testnet is
+required by the V3 development cycle. The complete deployment command is
 `scripts/deploy-all-factory.js`. A run is publishable only when its canonical
 `deployments/<network>/manifest.json` passes the manifest validator, on-chain
 smoke test, source-verification plan, ABI generation, and contract-size gate.
@@ -19,7 +20,7 @@ read `deployments/<network>/` first.
 | --- | ---: | --- |
 | `hardhat` | `412346` | In-process tests |
 | `localhost` | `412346` | Local EntryPoint and end-to-end development |
-| `arbitrumSepolia` | `421614` | Public testnet acceptance |
+| `arbitrumLocal` | `42161` | Isolated funded-wallet Arbitrum-shaped acceptance |
 | `arbitrum` | `42161` | Production canary and production |
 
 Deployment scripts reject a known network name paired with the wrong chain ID.
@@ -54,14 +55,18 @@ Hardhat reads the repository-root `.env`. Public runs use:
 | Variable | Required | Meaning |
 | --- | --- | --- |
 | `PRIVATE_KEY` | Yes | Deployment signer; inject through the approved secret store |
-| `ARBITRUM_SEPOLIA_RPC_URL` | Testnet | Arbitrum Sepolia RPC |
 | `ARBITRUM_RPC_URL` | Production | Arbitrum One RPC |
 | `ARBISCAN_API_KEY` | Verification | Source-verification API credential |
 | `PAYMASTER_OWNER_ADDRESS` | Public | Operations multisig that receives paymaster ownership |
 | `PAYMASTER_FUNDING_ADDRESS` | Public | Funding wallet recorded as non-authoritative metadata |
 | `PAYMASTER_DEPOSIT_WEI` | Optional | Initial EntryPoint deposit; public default is zero |
-| `PIMLICO_API_KEY` | Acceptance | Primary bundler health check |
-| `ALCHEMY_API_KEY` | Acceptance | Failover bundler health check |
+| `PIMLICO_API_KEY` | Production canary | Candidate primary bundler health check |
+| `ALCHEMY_API_KEY` | Production canary | Candidate failover bundler health check |
+
+The local Arbitrum-shaped environment needs none of those secrets. It uses
+deterministic Hardhat wallets funded with 10,000 local ETH, defaults to
+`127.0.0.1:8546`, and accepts `ARBITRUM_LOCAL_PORT` as an override. Pimlico and
+Alchemy credentials are production-canary inputs only.
 
 `PAYMASTER_OWNER_ADDRESS` and `PAYMASTER_FUNDING_ADDRESS` should be separate
 from tournament escrow and ordinary player wallets. If the initial deposit is
@@ -114,7 +119,7 @@ arguments. `ETourSessionAccount` is counterfactually created per browser
 session with EntryPoint, browser owner, and factory values fixed by the account
 factory; it has no singleton deployment address.
 
-## Local deployment
+## Ordinary local deployment
 
 Start a clean local node in one terminal:
 
@@ -147,35 +152,54 @@ npm run size
 The local deployment defaults to a 0.5 ETH paymaster deposit. `FORCE=1`
 redeploys modules instead of reusing a bytecode-validated local module cache.
 
-## Arbitrum Sepolia deployment
+## Fully local Arbitrum-shaped acceptance
 
-Run from a clean reviewed commit:
+The preferred development and acceptance path is:
 
 ```sh
 cd v3
-npm run contracts:check
-AA_NETWORK=arbitrumSepolia npm run bundlers:check
-npx hardhat run scripts/check-entrypoint.js --network arbitrumSepolia
-npx hardhat run scripts/deploy-all-factory.js --network arbitrumSepolia
-node scripts/check-deployment-manifest.js --network arbitrumSepolia
-npx hardhat run scripts/smoke-deployment.js --network arbitrumSepolia
-DRY_RUN=1 npx hardhat run scripts/verify-deployment.js --network arbitrumSepolia
-npx hardhat run scripts/verify-deployment.js --network arbitrumSepolia
-node scripts/regenerate-abis.js --network arbitrumSepolia
+npm run local:arbitrum:cycle
 ```
 
-After verification, rerun the smoke and manifest checks. Publish only the
-`deployments/arbitrumSepolia/` output from the reviewed deployment commit.
-Testnet acceptance additionally requires complete create, join, direct move,
-sponsored move, refresh, revoke, expiry, recovery, tournament settlement,
-bundler failover, and paymaster-unavailable fallback flows for all three games.
+The runner refuses to reuse an occupied port, starts a managed local node on
+port 8546 with chain ID 42161 and 250 funded wallets, and always stops that node
+on completion or failure. Hardhat node output is suppressed because it contains
+deterministic development private keys.
+
+The cycle builds the browser SDK; compiles; deploys the complete V3 set and
+canonical EntryPoint; validates the manifest, bytecode, constructors, registry
+anchors, allowlists, and implementation pins; checks two funded local bundlers;
+concludes Tic-Tac-Toe, Connect Four, and Chess using sponsored session
+UserOperations; exercises rotation, revocation, bundler failover, total bundler
+outage, paymaster outage, and direct-primary fallback; regenerates ABIs; checks
+secret-safe output; and enforces the reviewed contract-size baseline.
+
+Use `npm run local:arbitrum:cycle:full` before handoff or when contract behavior
+changes. It additionally runs the complete tests and `ci:checks`. The canonical
+acceptance artifact is `deployments/arbitrumLocal/manifest.json`.
+
+For manual diagnosis, use two terminals:
+
+```sh
+npm run local:arbitrum:node
+```
+
+```sh
+npm run local:arbitrum:deploy
+npm run bundlers:check
+npm run local:arbitrum:accept
+```
+
+These wallets and balances are development fixtures only. They must never be
+funded or reused on a public network.
 
 ## Arbitrum One
 
-Arbitrum One uses the same process with network `arbitrum`, but only after
-testnet acceptance, audit remediation, and canary approval. Start with a
-limited paymaster deposit and controlled creation traffic. Verify and publish
-the manifest before routing general frontend traffic to V3.
+Arbitrum One uses network `arbitrum`, but only after the fully local acceptance
+cycle, audit remediation, live production-bundler revalidation, and canary
+approval. Start with a limited paymaster deposit and controlled creation
+traffic. Verify and publish the manifest before routing general frontend
+traffic to V3.
 
 Rollback never upgrades or mutates active V3 tournaments. Stop new V3
 creation, pause sponsorship if necessary, keep direct moves available, and
@@ -201,7 +225,7 @@ deployments/
     PlayerProfile-ABI.json
     PlayerRegistry-ABI.json
     SessionKeyRegistry-ABI.json
-  arbitrumSepolia/
+  arbitrumLocal/
     ...
   arbitrum/
     ...
@@ -256,4 +280,3 @@ Before publication, archive these non-secret results with the release record:
 - contract-size result;
 - complete test and CI-gate result;
 - paymaster deposit, owner, threshold, and funding approval.
-

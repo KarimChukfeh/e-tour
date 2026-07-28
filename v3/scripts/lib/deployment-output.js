@@ -6,9 +6,17 @@ import { spawnSync } from "child_process";
 const KNOWN_NETWORKS = Object.freeze({
     hardhat: "412346",
     localhost: "412346",
-    arbitrumSepolia: "421614",
+    arbitrumLocal: "42161",
     arbitrum: "42161",
 });
+
+export function isLocalDevelopmentNetwork(network) {
+    return (
+        network === "hardhat" ||
+        network === "localhost" ||
+        network === "arbitrumLocal"
+    );
+}
 
 export function assertDeploymentTarget(
     network,
@@ -119,8 +127,7 @@ export function requireReviewedSourceState(
 ) {
     if (
         repository.dirty &&
-        network !== "localhost" &&
-        network !== "hardhat" &&
+        !isLocalDevelopmentNetwork(network) &&
         process.env.ALLOW_DIRTY_DEPLOYMENT !== "1"
     ) {
         throw new Error(

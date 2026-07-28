@@ -548,7 +548,7 @@ describe("V3 ERC-4337 session executor", function () {
             env,
             descriptor,
             0,
-            { signingChainId: 421614n }
+            { signingChainId: 42161n }
         );
 
         expect(canonical.signed.signature).to.not.equal(
@@ -1083,7 +1083,7 @@ describe("V3 on-chain session sponsorship policy", function () {
                 ...operation.signed,
                 accountGasLimits: packUint128Pair(
                     2_000_000n,
-                    2_500_001n
+                    4_000_001n
                 ),
             },
             {

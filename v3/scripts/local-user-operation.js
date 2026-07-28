@@ -18,13 +18,16 @@ import {
     generateSessionSalt,
 } from "../sdk/dist/index.js";
 import {
+    isLocalDevelopmentNetwork,
+} from "./lib/deployment-output.js";
+import {
     loadDeploymentManifest,
     requiredAddress,
 } from "./lib/deployment-manifest.js";
 
-if (hre.network.name !== "localhost") {
+if (!isLocalDevelopmentNetwork(hre.network.name)) {
     throw new Error(
-        "local-user-operation must run against --network localhost"
+        "local-user-operation requires a local Hardhat development network"
     );
 }
 

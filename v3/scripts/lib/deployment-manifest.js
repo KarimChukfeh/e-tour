@@ -3,6 +3,7 @@ import path from "path";
 import { getAddress } from "ethers";
 import {
     canonicalManifestPath,
+    isLocalDevelopmentNetwork,
 } from "./deployment-output.js";
 
 export function manifestPath(network) {
@@ -48,8 +49,7 @@ export function environmentAddress(name) {
 
 export function requireLocalMutation(network) {
     if (
-        network !== "localhost" &&
-        network !== "hardhat" &&
+        !isLocalDevelopmentNetwork(network) &&
         process.env.ALLOW_PUBLIC_SESSION_MUTATION !== "1"
     ) {
         throw new Error(

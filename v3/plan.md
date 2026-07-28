@@ -726,7 +726,7 @@ event SessionRevoked(
 );
 ```
 
-Event fields and indexes must be finalized before public testnet deployment.
+Event fields and indexes must be finalized before the audit/API freeze.
 
 ### 9.8 Registry governance
 
@@ -945,8 +945,9 @@ V3 MVP pins:
 
 - `@account-abstraction/contracts@0.8.0`;
 - EntryPoint/UserOperation version `0.8`;
-- EntryPoint `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` on local
-  chain 412346, Arbitrum Sepolia 421614, and Arbitrum One 42161.
+- EntryPoint `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` on the ordinary
+  local chain 412346, the fully local Arbitrum-shaped chain 42161, and the
+  eventual Arbitrum One production chain 42161.
 
 The machine-readable source is
 [`config/account-abstraction.json`](./config/account-abstraction.json). Although
@@ -963,7 +964,7 @@ The selected account must:
 - validate replay-safe UserOperations bound to chain ID and EntryPoint;
 - execute a single target/value/calldata call;
 - expose calldata that the paymaster can validate deterministically;
-- work on Arbitrum Sepolia and Arbitrum One;
+- work in the funded local Arbitrum-shaped environment and on Arbitrum One;
 - not require the primary player to own or control the session account after registration;
 - allow first-use deployment through the UserOperation.
 
@@ -1027,7 +1028,7 @@ No game contract should contain bundler-specific decoding logic.
 
 ### 11.5 Bundler strategy
 
-Production requirements:
+Transport requirements:
 
 - at least two configured bundler endpoints;
 - health checks and failover;
@@ -1040,11 +1041,16 @@ Production requirements:
 
 Self-hosting a bundler is optional and belongs to an operations workstream. It must not block the first contract implementation unless provider testing shows unacceptable dependency risk.
 
-The selected initial providers are Pimlico (primary) and Alchemy (failover).
-Both currently document Arbitrum One, Arbitrum Sepolia, and EntryPoint v0.8
-support. Provider selection does not replace the later requirement to validate
-`eth_supportedEntryPoints`, estimation, submission, and receipts against both
-providers on Arbitrum Sepolia.
+Development and acceptance are fully local. Two independently funded Hardhat
+wallets act as `HardhatBundlerA` and `HardhatBundlerB` against the canonical
+EntryPoint on chain ID 42161. The acceptance suite validates supported
+EntryPoints, estimation, submission, receipts, failover, total outage, and
+direct-primary fallback without a hosted RPC, API key, faucet, or public
+network.
+
+Pimlico and Alchemy remain production candidates for Arbitrum One, not
+dependencies of the development cycle. Their live endpoints must be
+revalidated after audit and before a production canary.
 
 ---
 
@@ -1128,8 +1134,9 @@ Rate limits may affect sponsorship, but they must not change on-chain session au
 
 ## 13. EIP-7702 compatibility
 
-EIP-7702 is formally deferred as a second-stage feature until ERC-4337 session
-accounts work end to end locally and on Arbitrum Sepolia.
+EIP-7702 is formally deferred as a second-stage feature until the ERC-4337
+session-account MVP, audit, and fully local Arbitrum-shaped acceptance are
+complete.
 
 Goals:
 
@@ -1540,8 +1547,8 @@ The authoritative constructor table and operator procedure are maintained in
 Deployment progression:
 
 1. Hardhat/local EntryPoint environment
-2. Local Arbitrum-compatible development environment if maintained
-3. Arbitrum Sepolia
+2. Fully local Arbitrum-shaped chain ID 42161 with deterministic funded wallets
+3. Security review and audit
 4. Limited production canary on Arbitrum One
 5. General V3 production availability
 
@@ -1549,8 +1556,9 @@ No mainnet deployment before:
 
 - security prerequisite phases complete;
 - all test gates pass;
-- source verification succeeds on testnet;
-- at least two bundler paths are validated;
+- the local manifest, bytecode, wiring, and constructor checks pass;
+- two independent local bundler paths are validated and the selected
+  production endpoints are revalidated before canary;
 - paymaster failure fallback is exercised;
 - audit findings are resolved or explicitly accepted.
 
@@ -1598,7 +1606,7 @@ Policy:
 
 ### 19.3 Player profile decision
 
-Decision required before testnet:
+Decision recorded before the V3 deployment generation was implemented:
 
 1. Reuse the existing PlayerRegistry
    - preserves a continuous profile address/history;
@@ -1820,6 +1828,12 @@ Exit gate:
 - [x] Add multi-bundler client failover.
 - [x] Add paymaster monitoring scripts.
 - [x] Prove direct primary fallback.
+- [x] Deploy the complete stack to a local chain ID 42161 using deterministic
+  funded Hardhat wallets.
+- [x] Conclude Tic-Tac-Toe, Connect Four, and Chess using sponsored session
+  UserOperations.
+- [x] Exercise rotation, revocation, bundler failover, total bundler outage,
+  paymaster outage, and direct-primary recovery locally.
 
 Exit gate:
 
@@ -1849,22 +1863,24 @@ Exit gate:
 - browser integration has no raw-key export path;
 - recovery and direct fallback remain primary-wallet authorized;
 - local deployment and sponsored move diagnostics are reproducible;
-- remaining public-network work begins from reviewed manifests and tooling.
+- audit and production-canary work begins from reviewed local manifests and
+  tooling.
 
-### Phase 9 — Arbitrum testnet
+### Phase 9 — Fully local Arbitrum acceptance
 
-- [ ] Deploy complete V3 set to Arbitrum Sepolia.
-- [ ] Verify every contract.
-- [ ] Publish manifest and ABIs.
-- [ ] Validate at least two bundlers.
-- [ ] Run complete create/join/move/rotate/revoke/conclude flows.
-- [ ] Run long-duration expiry/recovery test.
-- [ ] Run all three games to conclusion.
-- [ ] Measure actual gas and sponsorship cost.
+- [x] Deploy the complete V3 set on an isolated local chain ID 42161.
+- [x] Validate every deployed bytecode, constructor, and protocol wiring entry.
+- [x] Generate and validate the network-scoped manifest and ABIs.
+- [x] Validate two independently funded local bundlers and failover.
+- [x] Run complete create/join/move/rotate/revoke/conclude flows.
+- [x] Run deterministic TTL-expiry/recovery tests using local time travel.
+- [x] Run all three games to conclusion through session UserOperations.
+- [x] Measure gas and sponsorship debit while enforcing cost and gas caps.
 
 Exit gate:
 
-- repeatable, documented testnet operation for every critical flow.
+- one repeatable command performs every critical acceptance flow without a
+  public RPC, hosted bundler, API key, or faucet.
 
 ### Phase 10 — Audit and remediation
 
@@ -1927,7 +1943,8 @@ The V3 project is complete when all of the following are true:
 - [ ] Session moves preserve the primary identity.
 - [ ] Session executors cannot exercise delegated financial or lifecycle authority.
 - [ ] All three games support direct and session moves.
-- [ ] ERC-4337 sponsored moves work on Arbitrum Sepolia and Arbitrum One.
+- [x] ERC-4337 sponsored moves work on the fully local Arbitrum-shaped
+  environment; Arbitrum One remains a post-audit production-canary gate.
 - [ ] Game contracts do not decode UserOperations.
 - [ ] Paymaster sponsorship is narrowly scoped and separately funded.
 - [ ] Direct primary-wallet fallback works without bundler/paymaster availability.
@@ -1982,7 +1999,7 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-011 | Paymaster gas is separately funded from escrow | Accepted | 2026-07-27 | Preserves fee and prize invariants |
 | ADR-012 | Modules inherit shared storage, not the full instance API | Accepted | 2026-07-27 | Implemented with `ETourStorage`, `ETourModuleGuard`, and `IETourInstanceSelf`; hardens bridges and restores bytecode headroom |
 | ADR-013 | Pin EntryPoint v0.8 at `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` | Accepted | 2026-07-27 | Canonical address and current two-provider Arbitrum compatibility |
-| ADR-014 | Use Pimlico primary and Alchemy failover bundlers | Accepted | 2026-07-27 | Both document Arbitrum One, Arbitrum Sepolia, and EntryPoint v0.8 support |
+| ADR-014 | Use two funded Hardhat bundlers for local acceptance; treat Pimlico and Alchemy as production candidates only | Accepted, refined | 2026-07-28 | Keeps development fully local while preserving a two-path production validation requirement before canary |
 | ADR-015 | Paymaster uses fully on-chain deterministic sponsorship scope with no verifier key | Accepted, refined | 2026-07-28 | Removes an off-chain authorization key; providers may narrow availability but cannot broaden policy |
 | ADR-016 | Freeze identity, escrow, session-scope, and recovery invariants in the architecture decision record | Accepted | 2026-07-27 | Prevents transport convenience from changing protocol authority |
 | ADR-017 | Freeze the reviewed state-changing instance ABI in a machine-readable selector allowlist | Accepted | 2026-07-28 | Makes every new mutable entry point an explicit security review and CI decision |
@@ -2121,3 +2138,21 @@ Append brief dated entries as work proceeds.
 - Added ADR-023 for atomic, self-describing, network-scoped manifests.
   Relative links across all 13 V3 Markdown documents and the secret-output
   policy pass. Complete NatSpec remains a separate open audit-readiness item.
+- Refined ADR-014 and the deployment route to remove Arbitrum Sepolia from the
+  V3 development cycle. Added `arbitrumLocal`, an isolated Hardhat chain using
+  chain ID 42161, port 8546, 250 deterministic funded wallets, the canonical
+  EntryPoint, two independently funded local bundlers, and a locally deposited
+  paymaster.
+- Completed the fully local Phase 8/9 acceptance gate. All three games conclude
+  through browser-key session UserOperations; rotation, revocation, stale-key
+  rejection, primary recovery, bundler failover, total bundler outage,
+  paymaster outage, and direct-primary fallback are exercised without hosted
+  infrastructure.
+- The acceptance path executes 19 sponsored moves across the three complete
+  games and a recovery tournament. The Chess checkmate path measured 2,808,746
+  direct gas, requiring a reviewed paymaster call-gas ceiling of 4,000,000
+  while preserving the independent 0.02 ETH maximum operation-cost bound.
+- `npm run local:arbitrum:cycle -- --full` passed the complete deployment and
+  acceptance sequence, all 333 tests, every CI policy gate, and the reviewed
+  bytecode baseline. `ETourSessionPaymaster` is 4,744 bytes and every deployed
+  contract remains below 24,576 bytes.

@@ -597,3 +597,56 @@ Address complete NatSpec and the outstanding coverage/static-analysis release
 evidence before a security review, or begin Arbitrum Sepolia only after the
 required funded roles, API credentials, and explicit public-deployment
 authorization are available.
+
+2026-07-28 - Phase 8 fully local Arbitrum acceptance complete
+
+- Replaced the Arbitrum Sepolia development/acceptance route with an isolated
+  Hardhat environment named `arbitrumLocal`. It uses Arbitrum One chain ID
+  42161, port 8546 by default, 250 deterministic wallets funded with 10,000
+  local ETH each, and a separate network-scoped deployment directory. The
+  existing V2-style localhost workflow remains on chain 412346 and port 8545.
+- Added `hardhat.arbitrum-local.config.js`,
+  `scripts/run-local-arbitrum-cycle.js`, `scripts/check-local-bundlers.js`, and
+  `scripts/local-arbitrum-acceptance.js`. The managed runner refuses occupied
+  ports, suppresses Hardhat development private-key output, starts and stops
+  its own node, and has normal and full-regression modes.
+- Deployed the complete V3 stack locally: canonical EntryPoint v0.8 and
+  SimpleAccount reference stack, four shared modules, Chess rules,
+  PlayerProfile/PlayerRegistry, SessionKeyRegistry, session-account factory,
+  paymaster, all three factories, and all three pinned implementations. The
+  canonical manifest validates 20 contract records and 13 scoped outputs; the
+  smoke check validates 22 code-bearing addresses and every registry,
+  factory, allowlist, and implementation link.
+- Added two local ERC-7769 bundler adapters backed by independently funded
+  Hardhat wallets. Acceptance proves primary-to-secondary failover, complete
+  bundler outage, paymaster outage, and direct-primary fallback without a
+  public RPC, hosted bundler, faucet, or API key.
+- Completed Tic-Tac-Toe in 5 sponsored moves, Connect Four in 7, and Chess in
+  4. A separate outage tournament recovered with 2 direct-primary and 3
+  sponsored moves. All four tournaments settled completely; player/profile/
+  prize attribution remained on the primary wallets. Rotation and revocation
+  rejected stale session accounts and resumed through primary-authorized
+  refresh.
+- The acceptance run submitted 19 sponsored moves and debited the isolated
+  0.5 ETH EntryPoint deposit as expected. Direct gas measurement showed the
+  Chess checkmate path at 2,808,746 gas before the session-account wrapper, so
+  the reviewed paymaster call-gas ceiling was raised from 2.5M to 4M. The
+  separate 0.02 ETH maximum UserOperation-cost cap is unchanged.
+- The paymaster is 4,744 runtime bytes after that policy change, only 19.3% of
+  the 24,576-byte limit. The reviewed size baseline was intentionally updated;
+  all deployables remain below both EIP-170 and the recorded project baseline.
+- Removed the Sepolia network/configuration and rewrote the plan, tracking,
+  README, deployment guide, operations runbook, migration guide, and
+  architecture decisions around the fully local acceptance path. Pimlico and
+  Alchemy are production candidates only and must be revalidated after audit
+  before an Arbitrum One canary.
+- Final command `npm run local:arbitrum:cycle -- --full` passed. It completed
+  deployment, manifest/EntryPoint/bundler/smoke/acceptance/ABI/secret/size
+  checks, all 333 tests, and every SDK, compiler, official-artifact, storage,
+  ABI, V2-compatibility, selector, static-analysis, and dependency gate.
+
+Next recommended action:
+Proceed to audit readiness: complete public/external NatSpec, obtain the
+outstanding coverage evidence, perform the internal privilege/call-graph
+review, and extend fuzz/invariant campaigns. No public deployment is required
+for the development cycle; Arbitrum One remains a post-audit capped canary.

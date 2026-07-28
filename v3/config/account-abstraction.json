@@ -25,9 +25,14 @@
         "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
         "requireCanonicalDeterministicDeployment": true
       },
-      "arbitrumSepolia": {
-        "chainId": 421614,
-        "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"
+      "arbitrumLocal": {
+        "chainId": 42161,
+        "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+        "rpc": "http://127.0.0.1:8546",
+        "rpcPortOverride": "ARBITRUM_LOCAL_PORT",
+        "wallets": "250 deterministic funded Hardhat development accounts",
+        "requireCanonicalDeterministicDeployment": true,
+        "productionChainIdSimulation": true
       },
       "arbitrumOne": {
         "chainId": 42161,
@@ -47,7 +52,7 @@
     "provenancePolicy": "paymaster accepts only accounts recorded by the configured ETourSessionAccountFactory",
     "factoryAddresses": {
       "local": "deployment-manifest",
-      "arbitrumSepolia": null,
+      "arbitrumLocal": "deployment-manifest",
       "arbitrumOne": null
     },
     "officialReferenceArtifactHashes": {
@@ -57,13 +62,28 @@
       "SimpleAccountFactoryRuntime": "0x81a1a5e5faf3f52e1831f910a1fc05c9461ae5e92bf5e1ca48a2800bab15b354"
     }
   },
-  "bundlers": [
+  "localBundlers": [
+    {
+      "name": "HardhatBundlerA",
+      "priority": 1,
+      "type": "in-process-local",
+      "network": "arbitrumLocal",
+      "fundedSignerIndex": 3
+    },
+    {
+      "name": "HardhatBundlerB",
+      "priority": 2,
+      "type": "in-process-local",
+      "network": "arbitrumLocal",
+      "fundedSignerIndex": 4
+    }
+  ],
+  "productionBundlerCandidates": [
     {
       "name": "Pimlico",
       "priority": 1,
       "entryPointVersion": "0.8",
       "networks": {
-        "arbitrumSepolia": "https://api.pimlico.io/v2/arbitrum-sepolia/rpc?apikey=${PIMLICO_API_KEY}",
         "arbitrumOne": "https://api.pimlico.io/v2/arbitrum/rpc?apikey=${PIMLICO_API_KEY}"
       }
     },
@@ -72,7 +92,6 @@
       "priority": 2,
       "entryPointVersion": "0.8",
       "networks": {
-        "arbitrumSepolia": "https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
         "arbitrumOne": "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
       }
     }
@@ -84,21 +103,21 @@
     "usesOffChainVerifier": false,
     "verifierMayBroadenOnChainPolicy": false,
     "maxVerificationGas": 2500000,
-    "maxCallGas": 2500000,
+    "maxCallGas": 4000000,
     "maxPreVerificationGas": 200000,
     "maxPaymasterVerificationGas": 500000,
     "maxPaymasterPostOpGas": 100000,
     "maxUserOperationCostWei": "20000000000000000",
     "localInitialDepositWei": "500000000000000000",
-    "publicNetworkDepositSource": "PAYMASTER_DEPOSIT_WEI",
+    "productionDepositSource": "PAYMASTER_DEPOSIT_WEI",
     "fundingWalletPolicy": {
-      "local": "deployment signer",
-      "publicNetworks": "dedicated operations multisig funded independently from tournament escrow",
+      "local": "funded Hardhat deployment signer",
+      "production": "dedicated operations multisig funded independently from tournament escrow",
       "manifestSource": "PAYMASTER_FUNDING_ADDRESS"
     },
     "ownerPolicy": {
-      "local": "deployment signer",
-      "publicNetworks": "operations multisig",
+      "local": "funded Hardhat deployment signer",
+      "production": "operations multisig",
       "deploymentSource": "PAYMASTER_OWNER_ADDRESS"
     },
     "refillThresholdSource": "PAYMASTER_ALERT_THRESHOLD_WEI",

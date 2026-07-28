@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T06:26:02.954Z",
+  "generatedAt": "2026-07-28T23:12:31.246Z",
   "deployedBytecodeLimit": 24576,
   "contracts": [
     {
@@ -101,9 +101,9 @@
     },
     {
       "name": "ETourSessionPaymaster",
-      "bytes": 4715,
-      "kb": "4.60",
-      "percentage": "19.2"
+      "bytes": 4744,
+      "kb": "4.63",
+      "percentage": "19.3"
     },
     {
       "name": "SessionKeyRegistry",

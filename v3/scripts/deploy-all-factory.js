@@ -24,6 +24,7 @@ import {
     atomicWriteJson,
     canonicalManifestPath,
     compilerMetadata,
+    isLocalDevelopmentNetwork,
     networkDeploymentDirectory,
     repositoryMetadata,
     requireReviewedSourceState,
@@ -142,7 +143,7 @@ async function main() {
     const initialPaymasterDeposit =
         configuredDeposit !== undefined
             ? BigInt(configuredDeposit)
-            : network === "localhost" || network === "hardhat"
+            : isLocalDevelopmentNetwork(network)
                 ? hre.ethers.parseEther("0.5")
                 : 0n;
     if (initialPaymasterDeposit > 0n) {
@@ -879,20 +880,27 @@ async function main() {
     console.log("  -", abiFile);
     console.log("");
     const n = network;
-    console.log("Verification Commands:");
-    console.log(`npx hardhat verify --network ${n} ${modules.core}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.matches}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.prizes}`);
-    console.log(`npx hardhat verify --network ${n} ${modules.escalation}`);
-    console.log(`npx hardhat verify --network ${n} ${chessRulesAddr}`);
-    console.log(`npx hardhat verify --network ${n} ${profileImplAddr}`);
-    console.log(`npx hardhat verify --network ${n} ${registryAddr} "${profileImplAddr}"`);
-    console.log(`npx hardhat verify --network ${n} ${sessionRegistryAddr} "${registryAddr}"`);
-    console.log(`npx hardhat verify --network ${n} ${sessionAccountFactoryAddr} "${ENTRY_POINT_ADDRESS}"`);
-    console.log(`npx hardhat verify --network ${n} ${sessionPaymasterAddr} "${ENTRY_POINT_ADDRESS}" "${sessionRegistryAddr}" "${sessionAccountFactoryAddr}"`);
-    console.log(`npx hardhat verify --network ${n} ${ticTacFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
-    console.log(`npx hardhat verify --network ${n} ${c4FactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
-    console.log(`npx hardhat verify --network ${n} ${chessFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${chessRulesAddr}" "${registryAddr}" "${sessionRegistryAddr}"`);
+    if (isLocalDevelopmentNetwork(n)) {
+        console.log(
+            "Local deployment: validate with the manifest, smoke, " +
+                "acceptance, and bytecode-size checks."
+        );
+    } else {
+        console.log("Verification Commands:");
+        console.log(`npx hardhat verify --network ${n} ${modules.core}`);
+        console.log(`npx hardhat verify --network ${n} ${modules.matches}`);
+        console.log(`npx hardhat verify --network ${n} ${modules.prizes}`);
+        console.log(`npx hardhat verify --network ${n} ${modules.escalation}`);
+        console.log(`npx hardhat verify --network ${n} ${chessRulesAddr}`);
+        console.log(`npx hardhat verify --network ${n} ${profileImplAddr}`);
+        console.log(`npx hardhat verify --network ${n} ${registryAddr} "${profileImplAddr}"`);
+        console.log(`npx hardhat verify --network ${n} ${sessionRegistryAddr} "${registryAddr}"`);
+        console.log(`npx hardhat verify --network ${n} ${sessionAccountFactoryAddr} "${ENTRY_POINT_ADDRESS}"`);
+        console.log(`npx hardhat verify --network ${n} ${sessionPaymasterAddr} "${ENTRY_POINT_ADDRESS}" "${sessionRegistryAddr}" "${sessionAccountFactoryAddr}"`);
+        console.log(`npx hardhat verify --network ${n} ${ticTacFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
+        console.log(`npx hardhat verify --network ${n} ${c4FactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
+        console.log(`npx hardhat verify --network ${n} ${chessFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${chessRulesAddr}" "${registryAddr}" "${sessionRegistryAddr}"`);
+    }
     console.log("");
 }
 

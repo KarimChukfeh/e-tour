@@ -87,35 +87,33 @@ paused sponsorship, or abnormal spend.
 
 ## Local commands
 
-Run artifact and contract gates:
+Run the complete local Arbitrum-shaped deployment and acceptance cycle:
 
 ```sh
-npm run contracts:check
+npm run local:arbitrum:cycle
 ```
 
-Deploy the canonical local EntryPoint reference stack:
+For a release-grade local handoff, include every regression and CI gate:
+
+```sh
+npm run local:arbitrum:cycle:full
+```
+
+The runner uses chain ID 42161, starts and stops its own node on port 8546,
+deploys the canonical EntryPoint and complete V3 protocol, and checks two
+independently funded local bundlers. The ordinary chain-ID-412346 commands
+remain available for focused diagnosis:
 
 ```sh
 npm run aa:deploy:localhost
-```
-
-Deploy the complete protocol, session account factory, paymaster, and approved
-game factories:
-
-```sh
 npm run deploy:all
-```
-
-Run the EntryPoint and sponsorship integration suite:
-
-```sh
 npm run test:aa
 ```
 
 The local bundler adapter implements the ERC-7769 methods used by the SDK for
-estimation, submission, lookup, and receipt handling. Public-network phases
-must repeat compatibility tests against at least two independent Arbitrum
-bundlers.
+estimation, submission, lookup, and receipt handling. The Arbitrum One canary
+must separately revalidate at least two independent production bundlers after
+audit.
 
 The typed browser integration, encrypted key vault, nonce coordination,
 recovery sequence, and frontend security requirements are documented in

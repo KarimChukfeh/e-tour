@@ -47,13 +47,21 @@ Monitor at least:
 Run the built-in checks:
 
 ```sh
-AA_NETWORK=arbitrumSepolia npm run bundlers:check
+npm run local:arbitrum:cycle
+```
+
+For a manually running `arbitrumLocal` node, use:
+
+```sh
+npm run bundlers:check
 PAYMASTER_ALERT_THRESHOLD_WEI=50000000000000000 \
 PAYMASTER_SPEND_ALERT_WEI=<reviewed-window-limit> \
 PAYMASTER_LOOKBACK_BLOCKS=50000 \
-npx hardhat run scripts/inspect-paymaster.js --network arbitrumSepolia
-node scripts/check-deployment-manifest.js --network arbitrumSepolia
-npx hardhat run scripts/smoke-deployment.js --network arbitrumSepolia
+npx hardhat --config hardhat.arbitrum-local.config.js run \
+  scripts/inspect-paymaster.js --network arbitrumLocal
+node scripts/check-deployment-manifest.js --network arbitrumLocal
+npx hardhat --config hardhat.arbitrum-local.config.js run \
+  scripts/smoke-deployment.js --network arbitrumLocal
 ```
 
 `inspect-paymaster.js` exits with status 2 when sponsorship is paused, the
@@ -72,8 +80,10 @@ Recommended alert classes:
 
 ## Bundler failover
 
-The SDK uses ordered providers from `config/account-abstraction.json`: Pimlico
-first and Alchemy second. Failover must preserve the same signed
+Local acceptance uses the ordered `HardhatBundlerA` and `HardhatBundlerB`
+adapters from `config/account-abstraction.json`, backed by separate funded
+Hardhat wallets. Production bundler endpoints are selected and revalidated
+after audit. In either environment, failover must preserve the same signed
 `PackedUserOperation`; never silently rebuild it with a different nonce or fee.
 
 For a transport error or timeout:
@@ -97,7 +107,7 @@ material.
 
 The refill threshold must cover the measured peak spend rate through the
 longest approved response window plus safety margin. Recalculate it from actual
-Arbitrum costs after testnet and canary measurement.
+Arbitrum One costs during the capped production canary.
 
 To refill:
 
@@ -233,4 +243,3 @@ deployment:
 - use multisig approval where required;
 - run post-change health, smoke, and manifest checks;
 - update `logs.txt`, `tracking.md`, and documentation when assumptions change.
-

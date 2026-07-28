@@ -24,7 +24,10 @@ import {
  */
 contract ETourSessionPaymaster {
     uint256 public constant MAX_VERIFICATION_GAS = 2_500_000;
-    uint256 public constant MAX_CALL_GAS = 2_500_000;
+    // Chess checkmate validation can exceed 2.8M gas before the session
+    // account wrapper. The absolute-cost cap below remains the primary
+    // monetary bound on any sponsored operation.
+    uint256 public constant MAX_CALL_GAS = 4_000_000;
     uint256 public constant MAX_PRE_VERIFICATION_GAS = 200_000;
     uint256 public constant MAX_PAYMASTER_VERIFICATION_GAS = 500_000;
     uint256 public constant MAX_PAYMASTER_POST_OP_GAS = 100_000;

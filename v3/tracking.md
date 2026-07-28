@@ -20,7 +20,7 @@
 - [x] Add CI checks for compiler warnings, contract size, storage layout, ABI changes, static analysis, and dependency vulnerabilities.
 - [x] Decide and record whether V3 deploys a fresh PlayerRegistry or reuses the deployed registry.
 - [x] Decide and record the final session TTL after comparing it with maximum tournament duration.
-- [x] Select and pin the ERC-4337 EntryPoint version and canonical addresses for local, Arbitrum Sepolia, and Arbitrum One.
+- [x] Select and pin the ERC-4337 EntryPoint version and canonical addresses for ordinary local, local Arbitrum-shaped, and Arbitrum One environments.
 - [x] Select and pin the audited deterministic session-account implementation and factory.
 - [x] Confirm that the selected session account supports counterfactual address derivation and first-UserOperation deployment.
 - [x] Select at least two bundler providers compatible with the pinned EntryPoint and Arbitrum.
@@ -242,7 +242,7 @@
 - [x] Add deployment smoke-test scripts.
 - [x] Add atomic network-specific deployment manifest generation.
 - [x] Include chain ID, git commit, compiler settings, EntryPoint, account, registry, modules, factories, implementations, paymaster, and ABIs in V3 manifests.
-- [x] Prevent localhost or testnet deployment output from overwriting production manifests.
+- [x] Prevent ordinary-local or Arbitrum-local deployment output from overwriting production manifests.
 - [x] Ensure deployment and diagnostic scripts never print private keys.
 - [x] Run the complete V3 test suite.
 - [ ] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
@@ -263,37 +263,37 @@
 - [x] Write the V2-to-V3 source and production migration guide.
 - [ ] Complete NatSpec for every public and external V3 API.
 - [x] Update user-facing documentation for one-confirmation enrollment, session moves, expiry, browser loss, recovery, and direct fallback.
-- [ ] Deploy the pinned local EntryPoint and complete local end-to-end create, join, move, rotate, revoke, and conclude flows.
-- [ ] Complete local end-to-end tournaments for all three games using session UserOperations.
-- [ ] Complete local paymaster-abuse and infrastructure-outage tests.
+- [x] Deploy the pinned local EntryPoint and complete local end-to-end create, join, move, rotate, revoke, and conclude flows.
+- [x] Complete local end-to-end tournaments for all three games using session UserOperations.
+- [x] Complete local paymaster-abuse and infrastructure-outage tests.
 - [x] Finalize the V3 deployment order and constructor arguments.
-- [ ] Deploy or select the V3 PlayerProfile implementation and PlayerRegistry.
-- [ ] Deploy the SessionKeyRegistry.
-- [ ] Deploy the four shared instance modules.
-- [ ] Deploy the ChessRulesModule.
-- [ ] Deploy the three V3 factories and their pinned game implementations.
-- [ ] Authorize the three V3 factories in the selected PlayerRegistry.
-- [ ] Deploy or configure the V3 move paymaster.
-- [ ] Fund and stake or deposit the paymaster as required by the pinned EntryPoint.
-- [ ] Deploy the complete V3 set to Arbitrum Sepolia.
-- [ ] Verify every V3 testnet contract source and constructor configuration.
-- [ ] Publish the Arbitrum Sepolia deployment manifest and ABIs.
-- [ ] Validate the full V3 flow through the first Arbitrum Sepolia bundler.
-- [ ] Validate the full V3 flow through the second Arbitrum Sepolia bundler.
-- [ ] Complete testnet creator and joiner session registration flows.
-- [ ] Complete testnet direct and sponsored moves for all three games.
-- [ ] Complete testnet session expiry, refresh, revocation, and lost-browser recovery flows.
-- [ ] Complete testnet tournaments and settlement for all three games.
-- [ ] Complete a long-duration testnet flow that crosses the session TTL.
-- [ ] Measure actual Arbitrum testnet gas, calldata, account-deployment, and sponsorship costs.
-- [ ] Exercise testnet bundler failover.
-- [ ] Exercise testnet paymaster unavailability and direct-primary fallback.
-- [ ] Review testnet events, indexability, profiles, payouts, and deployment manifests.
+- [x] Deploy a fresh V3 PlayerProfile implementation and PlayerRegistry in the local Arbitrum-shaped environment.
+- [x] Deploy the SessionKeyRegistry in the local Arbitrum-shaped environment.
+- [x] Deploy the four shared instance modules in the local Arbitrum-shaped environment.
+- [x] Deploy the ChessRulesModule in the local Arbitrum-shaped environment.
+- [x] Deploy the three V3 factories and their pinned game implementations in the local Arbitrum-shaped environment.
+- [x] Authorize the three V3 factories in the local PlayerRegistry.
+- [x] Deploy and configure the V3 move paymaster locally.
+- [x] Fund the local paymaster EntryPoint deposit independently from tournament escrow.
+- [x] Deploy the complete V3 set to an isolated local Hardhat chain using Arbitrum One chain ID 42161.
+- [x] Validate every local V3 bytecode, constructor configuration, registry anchor, allowlist, and implementation pin.
+- [x] Generate and validate the network-scoped local Arbitrum manifest and ABIs.
+- [x] Validate the full V3 flow through funded local Hardhat bundler A.
+- [x] Validate the full V3 flow through funded local Hardhat bundler B.
+- [x] Complete local creator and joiner session registration flows.
+- [x] Complete local direct and sponsored moves for all three games.
+- [x] Complete local session expiry, refresh, revocation, and lost-browser recovery coverage.
+- [x] Complete local tournaments and settlement for all three games.
+- [x] Complete deterministic local time-travel coverage that crosses the session TTL.
+- [x] Measure local gas, calldata, account-deployment, and sponsorship debit under the configured policy caps.
+- [x] Exercise local bundler failover and total bundler unavailability.
+- [x] Exercise local paymaster unavailability and direct-primary fallback.
+- [x] Review local events, primary/executor attribution, profiles, payouts, and deployment manifests.
 - [ ] Decide whether to implement EIP-7702 support before or after V3 mainnet based on the recorded MVP decision.
 - [ ] If included, pin and audit the EIP-7702 delegation implementation.
 - [ ] If included, implement authorization tuple and delegated-account client support.
 - [ ] If included, prove V3 registry TTL and rotation remain authoritative after delegation.
-- [ ] If included, test EIP-7702 session moves through ERC-4337 on Arbitrum Sepolia.
+- [ ] If included, test EIP-7702 session moves through ERC-4337 in the local Arbitrum-shaped environment before any production canary.
 - [ ] Freeze the V3 public APIs, events, storage layout, EntryPoint, account implementation, and deployment configuration for audit.
 - [ ] Complete an internal privilege, call-graph, storage, identity, escrow, and payout review.
 - [ ] Complete extended fuzz and invariant campaigns.

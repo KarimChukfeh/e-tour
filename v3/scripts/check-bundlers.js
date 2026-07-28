@@ -19,7 +19,7 @@ const config = JSON.parse(
         "utf8"
     )
 );
-const network = process.env.AA_NETWORK ?? "arbitrumSepolia";
+const network = process.env.AA_NETWORK ?? "arbitrumOne";
 const entryPoint = config.entryPoint.networks[network]?.address;
 if (!entryPoint) {
     throw new Error(`unsupported AA_NETWORK ${network}`);
@@ -36,7 +36,7 @@ function resolveEnvironment(value) {
 
 const providers = [];
 const skipped = [];
-for (const configured of config.bundlers) {
+for (const configured of config.productionBundlerCandidates) {
     const template = configured.networks[network];
     if (!template) continue;
     const resolved = resolveEnvironment(template);
@@ -63,7 +63,8 @@ if (providers.length < 2) {
                 network,
                 entryPoint,
                 status: "not-ready",
-                configuredProviders: config.bundlers.length,
+                configuredProviders:
+                    config.productionBundlerCandidates.length,
                 runnableProviders: providers.length,
                 skipped,
             },

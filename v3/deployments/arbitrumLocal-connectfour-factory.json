@@ -1,0 +1,26 @@
+{
+  "network": "arbitrumLocal",
+  "chainId": "42161",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "timestamp": "2026-07-28T23:17:32.083Z",
+  "blockNumber": 24,
+  "modules": {
+    "ETourInstance_Core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ETourInstance_Matches": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ETourInstance_Prizes": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "ETourInstance_Escalation": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+  },
+  "playerProfile": {
+    "PlayerProfileImpl": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "PlayerRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+  },
+  "sessionAuthorization": {
+    "SessionKeyRegistry": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+  },
+  "factory": {
+    "ConnectFourFactory": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+  },
+  "implementation": {
+    "ConnectFourInstance": "0x24B3c7704709ed1491473F30393FFc93cFB0FC34"
+  }
+}

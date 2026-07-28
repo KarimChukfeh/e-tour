@@ -40,7 +40,7 @@ const ADDRESSES = Object.freeze({
 
 function identity(instance = ADDRESSES.instance) {
     return {
-        chainId: 421614n,
+        chainId: 42161n,
         instance,
         primary: ADDRESSES.primary,
     };
@@ -170,7 +170,7 @@ describe("V3 browser session SDK", function () {
             coordinator.subscribe((event) => received.push(event));
             coordinator.publish({
                 type: "session-saved",
-                sessionId: "421614:instance:primary",
+                sessionId: "42161:instance:primary",
                 account: ADDRESSES.executor,
             });
 

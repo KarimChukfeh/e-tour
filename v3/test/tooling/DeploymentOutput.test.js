@@ -41,12 +41,12 @@ describe("deployment output safety", function () {
             temporaryDirectory,
             "localhost"
         );
-        const sepolia = canonicalManifestPath(
+        const arbitrumLocal = canonicalManifestPath(
             temporaryDirectory,
-            "arbitrumSepolia"
+            "arbitrumLocal"
         );
 
-        expect(localhost).to.not.equal(sepolia);
+        expect(localhost).to.not.equal(arbitrumLocal);
         expect(localhost).to.equal(
             path.join(
                 temporaryDirectory,
@@ -54,10 +54,10 @@ describe("deployment output safety", function () {
                 "manifest.json"
             )
         );
-        expect(sepolia).to.equal(
+        expect(arbitrumLocal).to.equal(
             path.join(
                 temporaryDirectory,
-                "arbitrumSepolia",
+                "arbitrumLocal",
                 "manifest.json"
             )
         );
@@ -72,10 +72,10 @@ describe("deployment output safety", function () {
         ).to.throw("invalid network output name");
         expect(() =>
             assertDeploymentTarget(
-                "arbitrumSepolia",
-                42161n
+                "arbitrumLocal",
+                412346n
             )
-        ).to.throw("must use chain ID 421614");
+        ).to.throw("must use chain ID 42161");
     });
 
     it("atomically replaces JSON without leaving a temporary file", function () {
@@ -105,13 +105,19 @@ describe("deployment output safety", function () {
 
         expect(() =>
             requireReviewedSourceState(
-                "arbitrumSepolia",
+                "arbitrum",
                 repository
             )
         ).to.throw("dirty source tree");
         expect(() =>
             requireReviewedSourceState(
                 "localhost",
+                repository
+            )
+        ).to.not.throw();
+        expect(() =>
+            requireReviewedSourceState(
+                "arbitrumLocal",
                 repository
             )
         ).to.not.throw();
