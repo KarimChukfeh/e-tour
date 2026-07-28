@@ -16,44 +16,44 @@
 - [x] Capture baseline gas measurements for enrollment, normal moves, terminal moves, and settlement.
 - [x] Capture the compiler storage layout for every V3 instance implementation and delegatecall module.
 - [x] Add V3 commands for compile, full test, focused test, ABI generation, size checks, storage checks, and gas reporting.
-- [ ] Add CI jobs for V3 compilation and the complete V3 test suite.
-- [ ] Add CI checks for compiler warnings, contract size, storage layout, ABI changes, static analysis, and dependency vulnerabilities.
-- [ ] Decide and record whether V3 deploys a fresh PlayerRegistry or reuses the deployed registry.
-- [ ] Decide and record the final session TTL after comparing it with maximum tournament duration.
-- [ ] Select and pin the ERC-4337 EntryPoint version and canonical addresses for local, Arbitrum Sepolia, and Arbitrum One.
-- [ ] Select and pin the audited deterministic session-account implementation and factory.
-- [ ] Confirm that the selected session account supports counterfactual address derivation and first-UserOperation deployment.
-- [ ] Select at least two bundler providers compatible with the pinned EntryPoint and Arbitrum.
-- [ ] Decide and record whether the production paymaster uses on-chain policy, verifying signatures, or both.
-- [ ] Decide and record whether EIP-7702 is deferred until after the ERC-4337 V3 MVP.
-- [ ] Freeze the V3 non-negotiable identity, escrow, session-scope, and recovery invariants.
-- [ ] Design the canonical V3 shared storage layout.
-- [ ] Create the storage-only `ETourStorage` base.
-- [ ] Move all shared V2 enums, structs, and state variables into the canonical storage layout without accidental reordering.
-- [ ] Add the session-registry reference to the canonical V3 instance storage.
-- [ ] Ensure ReentrancyGuard storage is inherited in the same order by instances and delegatecall modules.
-- [ ] Refactor the core module to inherit only the canonical shared storage and required interfaces.
-- [ ] Refactor the matches module to inherit only the canonical shared storage and required interfaces.
-- [ ] Refactor the prizes module to inherit only the canonical shared storage and required interfaces.
-- [ ] Refactor the escalation module to inherit only the canonical shared storage and required interfaces.
-- [ ] Remove full-instance API inheritance and reverting abstract stubs from delegatecall modules.
-- [ ] Create the explicit module-to-instance self-call interface.
-- [ ] Add the `onlySelfCall` authorization modifier and custom error.
-- [ ] Enumerate every state-changing bridge called through `this.<function>()`.
-- [ ] Apply `onlySelfCall` to every state-changing module bridge.
-- [ ] Review every remaining public or external state-changing instance function for intentional caller access.
-- [ ] Add a machine-readable allowlist of intentional external state-changing selectors.
-- [ ] Add a CI check that fails when an unreviewed state-changing selector enters the ABI.
-- [ ] Add tests proving direct EOAs cannot call any state-changing bridge.
-- [ ] Add tests proving unrelated contracts cannot call any state-changing bridge.
-- [ ] Add tests proving rejected bridge calls leave state unchanged.
-- [ ] Add tests proving legitimate module-driven self-calls still succeed.
-- [ ] Add automated storage-layout comparison between every instance implementation and every delegatecall module.
-- [ ] Make storage-layout mismatch fail CI.
-- [ ] Eliminate or explicitly resolve every baseline unreachable-code warning.
-- [ ] Re-run the complete behavioral regression suite after storage and module hardening.
-- [ ] Reduce module deployed bytecode to the agreed headroom target.
-- [ ] Confirm every deployable contract remains below the EIP-170 limit.
+- [x] Add CI jobs for V3 compilation and the complete V3 test suite.
+- [x] Add CI checks for compiler warnings, contract size, storage layout, ABI changes, static analysis, and dependency vulnerabilities.
+- [x] Decide and record whether V3 deploys a fresh PlayerRegistry or reuses the deployed registry.
+- [x] Decide and record the final session TTL after comparing it with maximum tournament duration.
+- [x] Select and pin the ERC-4337 EntryPoint version and canonical addresses for local, Arbitrum Sepolia, and Arbitrum One.
+- [x] Select and pin the audited deterministic session-account implementation and factory.
+- [x] Confirm that the selected session account supports counterfactual address derivation and first-UserOperation deployment.
+- [x] Select at least two bundler providers compatible with the pinned EntryPoint and Arbitrum.
+- [x] Decide and record whether the production paymaster uses on-chain policy, verifying signatures, or both.
+- [x] Decide and record whether EIP-7702 is deferred until after the ERC-4337 V3 MVP.
+- [x] Freeze the V3 non-negotiable identity, escrow, session-scope, and recovery invariants.
+- [x] Design the canonical V3 shared storage layout.
+- [x] Create the storage-only `ETourStorage` base.
+- [x] Move all shared V2 enums, structs, and state variables into the canonical storage layout without accidental reordering.
+- [x] Add the session-registry reference to the canonical V3 instance storage.
+- [x] Ensure ReentrancyGuard storage is inherited in the same order by instances and delegatecall modules.
+- [x] Refactor the core module to inherit only the canonical shared storage and required interfaces.
+- [x] Refactor the matches module to inherit only the canonical shared storage and required interfaces.
+- [x] Refactor the prizes module to inherit only the canonical shared storage and required interfaces.
+- [x] Refactor the escalation module to inherit only the canonical shared storage and required interfaces.
+- [x] Remove full-instance API inheritance and reverting abstract stubs from delegatecall modules.
+- [x] Create the explicit module-to-instance self-call interface.
+- [x] Add the `onlySelfCall` authorization modifier and custom error.
+- [x] Enumerate every state-changing bridge called through `this.<function>()`.
+- [x] Apply `onlySelfCall` to every state-changing module bridge.
+- [x] Review every remaining public or external state-changing instance function for intentional caller access.
+- [x] Add a machine-readable allowlist of intentional external state-changing selectors.
+- [x] Add a CI check that fails when an unreviewed state-changing selector enters the ABI.
+- [x] Add tests proving direct EOAs cannot call any state-changing bridge.
+- [x] Add tests proving unrelated contracts cannot call any state-changing bridge.
+- [x] Add tests proving rejected bridge calls leave state unchanged.
+- [x] Add tests proving legitimate module-driven self-calls still succeed.
+- [x] Add automated storage-layout comparison between every instance implementation and every delegatecall module.
+- [x] Make storage-layout mismatch fail CI.
+- [x] Eliminate or explicitly resolve every baseline unreachable-code warning.
+- [x] Re-run the complete behavioral regression suite after storage and module hardening.
+- [x] Reduce module deployed bytecode to the agreed headroom target.
+- [x] Confirm every deployable contract remains below the EIP-170 limit.
 - [ ] Create the canonical `ETourGame` abstraction.
 - [ ] Move common match reset behavior into `ETourGame`.
 - [ ] Move common match-result access and completion behavior into `ETourGame`.

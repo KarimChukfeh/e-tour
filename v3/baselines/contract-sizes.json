@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-27T06:52:22.762Z",
+  "generatedAt": "2026-07-28T03:27:41.773Z",
   "deployedBytecodeLimit": 24576,
   "contracts": [
     {
@@ -29,21 +29,21 @@
     },
     {
       "name": "ConnectFourInstance",
-      "bytes": 21023,
-      "kb": "20.53",
-      "percentage": "85.5"
+      "bytes": 21229,
+      "kb": "20.73",
+      "percentage": "86.4"
     },
     {
       "name": "ChessInstance",
-      "bytes": 20654,
-      "kb": "20.17",
-      "percentage": "84.0"
+      "bytes": 20958,
+      "kb": "20.47",
+      "percentage": "85.3"
     },
     {
       "name": "TicTacInstance",
-      "bytes": 20333,
-      "kb": "19.86",
-      "percentage": "82.7"
+      "bytes": 20621,
+      "kb": "20.14",
+      "percentage": "83.9"
     },
     {
       "name": "ETourInstance",
@@ -59,33 +59,33 @@
     },
     {
       "name": "ETourInstance_Matches",
-      "bytes": 23841,
-      "kb": "23.28",
-      "percentage": "97.0"
+      "bytes": 13527,
+      "kb": "13.21",
+      "percentage": "55.0"
     },
     {
       "name": "ETourInstance_Escalation",
-      "bytes": 20889,
-      "kb": "20.40",
-      "percentage": "85.0"
-    },
-    {
-      "name": "ETourInstance_Core",
-      "bytes": 15320,
-      "kb": "14.96",
-      "percentage": "62.3"
-    },
-    {
-      "name": "ETourInstance_Prizes",
-      "bytes": 14782,
-      "kb": "14.44",
-      "percentage": "60.1"
+      "bytes": 11432,
+      "kb": "11.16",
+      "percentage": "46.5"
     },
     {
       "name": "ChessRulesModule",
       "bytes": 8993,
       "kb": "8.78",
       "percentage": "36.6"
+    },
+    {
+      "name": "ETourInstance_Core",
+      "bytes": 5383,
+      "kb": "5.26",
+      "percentage": "21.9"
+    },
+    {
+      "name": "ETourInstance_Prizes",
+      "bytes": 4905,
+      "kb": "4.79",
+      "percentage": "20.0"
     },
     {
       "name": "PlayerProfile",

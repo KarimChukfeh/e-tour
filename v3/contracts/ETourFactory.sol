@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./ETourInstance_Base.sol";
 import "./interfaces/IPlayerRegistry.sol";
+import {ETourStorage} from "./storage/ETourStorage.sol";
 
 /**
  * @title ETourFactory
@@ -49,7 +50,7 @@ contract ETourFactory is ReentrancyGuard {
     struct TierConfig {
         uint8 playerCount;
         uint256 entryFee;
-        ETourInstance_Base.TimeoutConfig timeouts;
+        ETourStorage.TimeoutConfig timeouts;
         uint8 totalRounds;      // log2(playerCount)
         bytes32 tierKey;
     }
@@ -167,7 +168,7 @@ contract ETourFactory is ReentrancyGuard {
         _validateUserTimeouts(enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove);
 
         // Construct full TimeoutConfig with hardcoded escalation delays
-        ETourInstance_Base.TimeoutConfig memory timeouts = ETourInstance_Base.TimeoutConfig({
+        ETourStorage.TimeoutConfig memory timeouts = ETourStorage.TimeoutConfig({
             matchTimePerPlayer: matchTimePerPlayer,
             timeIncrementPerMove: timeIncrementPerMove,
             matchLevel2Delay: MATCH_LEVEL_2_DELAY,
@@ -183,7 +184,7 @@ contract ETourFactory is ReentrancyGuard {
 
         TierConfig storage config = tierRegistry[tierKey];
 
-        ETourInstance_Base.TierConfig memory instanceTierConfig = ETourInstance_Base.TierConfig({
+        ETourStorage.TierConfig memory instanceTierConfig = ETourStorage.TierConfig({
             playerCount: playerCount,
             entryFee: entryFee,
             timeouts: config.timeouts,
@@ -374,7 +375,7 @@ contract ETourFactory is ReentrancyGuard {
     function _computeTierKey(
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig memory timeouts
+        ETourStorage.TimeoutConfig memory timeouts
     ) internal pure returns (bytes32) {
         return keccak256(
             abi.encodePacked(
@@ -398,7 +399,7 @@ contract ETourFactory is ReentrancyGuard {
         bytes32 tierKey,
         uint8 playerCount,
         uint256 entryFee,
-        ETourInstance_Base.TimeoutConfig memory timeouts
+        ETourStorage.TimeoutConfig memory timeouts
     ) internal {
         tierRegistry[tierKey] = TierConfig({
             playerCount: playerCount,

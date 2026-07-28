@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import {IETourInstanceSelf} from "../interfaces/IETourInstanceSelf.sol";
+import {ETourStorage} from "../storage/ETourStorage.sol";
+import {ETourModuleGuard} from "./ETourModuleGuard.sol";
 
 /**
  * @title ETourInstance_Matches
@@ -15,26 +17,55 @@ import "../ETourInstance_Base.sol";
  *
  * DELEGATECALL SEMANTICS: Executes in instance contract's storage context.
  */
-contract ETourInstance_Matches is ETourInstance_Base {
+contract ETourInstance_Matches is ETourStorage, ETourModuleGuard {
+    bytes32 private constant ENTROPY_WALKOVER = keccak256("ETOUR_ENTROPY_WALKOVER");
 
-    constructor() {}
+    function _getMatchId(uint8 roundNumber, uint8 matchNumber) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(roundNumber, matchNumber));
+    }
 
-    // ============ Abstract Stubs ============
+    function _previousBlockHash() internal view returns (bytes32) {
+        if (block.number == 0) return bytes32(0);
+        return blockhash(block.number - 1);
+    }
 
-    function _createMatchGame(uint8, uint8, address, address) public override {}
-    function _resetMatchGame(bytes32) public override {}
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { return (address(0), false, MatchStatus.NotStarted); }
-    function _getMatchPlayers(bytes32) public view override returns (address, address) { return (address(0), address(0)); }
-    function _setMatchPlayer(bytes32, uint8, address) public override {}
-    function _initializeMatchForPlay(bytes32) public override {}
-    function _completeMatchWithResult(bytes32, address, bool) public override {}
-    function _getTimeIncrement() public view override returns (uint256) { return 0; }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { return false; }
-    function _isMatchActive(bytes32) public view override returns (bool) { return false; }
-    function _getActiveMatchData(bytes32, uint8, uint8) public view override returns (CommonMatchData memory) {
-        return CommonMatchData({ player1: address(0), player2: address(0), winner: address(0), loser: address(0),
-            status: MatchStatus.NotStarted, isDraw: false, startTime: 0, lastMoveTime: 0,
-            roundNumber: 0, matchNumber: 0, isCached: false });
+    function _drawRandomIndex(bytes32 domain, bytes32 salt, uint256 upperBound)
+        internal
+        returns (uint256)
+    {
+        require(upperBound > 0, "RB");
+        _entropyState = keccak256(abi.encodePacked(
+            _entropyState,
+            domain,
+            salt,
+            _entropyNonce,
+            address(this),
+            creator,
+            block.prevrandao,
+            _previousBlockHash(),
+            tournament.status,
+            tournament.currentRound,
+            tournament.enrolledCount,
+            tournament.totalEntryFeesAccrued
+        ));
+        unchecked {
+            ++_entropyNonce;
+        }
+        return uint256(_entropyState) % upperBound;
+    }
+
+    function _setTournamentResolution(TournamentResolutionReason reason) internal {
+        tournament.completionReason = reason;
+        if (reason == TournamentResolutionReason.Draw) {
+            tournament.completionCategory = TournamentResolutionCategory.DrawResolution;
+        } else if (
+            reason == TournamentResolutionReason.ForceElimination ||
+            reason == TournamentResolutionReason.Replacement
+        ) {
+            tournament.completionCategory = TournamentResolutionCategory.Escalation;
+        } else {
+            tournament.completionCategory = TournamentResolutionCategory.MatchResult;
+        }
     }
 
     // ============ Round Initialization ============
@@ -43,7 +74,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
      * @dev Initialize a new round with matches.
      * Called via delegatecall from the instance after tournament starts or round completes.
      */
-    function initializeRound(uint8 roundNumber) public payable override onlyDelegateCall {
+    function initializeRound(uint8 roundNumber) public payable onlyDelegateCall {
         uint8 playerCount;
         if (roundNumber == 0) {
             playerCount = tournament.enrolledCount;
@@ -80,7 +111,12 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
             for (uint8 i = 0; i < matchCount;) {
                 require(enrolledPlayers[i * 2] != address(0) && enrolledPlayers[i * 2 + 1] != address(0), "Invalid player addresses");
-                this._createMatchGame(roundNumber, i, enrolledPlayers[i * 2], enrolledPlayers[i * 2 + 1]);
+                IETourInstanceSelf(address(this))._createMatchGame(
+                    roundNumber,
+                    i,
+                    enrolledPlayers[i * 2],
+                    enrolledPlayers[i * 2 + 1]
+                );
                 unchecked { i++; }
             }
 
@@ -135,12 +171,13 @@ contract ETourInstance_Matches is ETourInstance_Base {
         }
 
         bytes32 nextMatchId = _getMatchId(nextRound, matchNumber / 2);
-        this._setMatchPlayer(nextMatchId, matchNumber & 1, winner);
+        IETourInstanceSelf(address(this))._setMatchPlayer(nextMatchId, matchNumber & 1, winner);
 
-        (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+        (address p1, address p2) =
+            IETourInstanceSelf(address(this))._getMatchPlayers(nextMatchId);
         if (p1 != address(0) && p2 != address(0)) {
             require(p1 != p2, "Cannot match player against themselves");
-            this._initializeMatchForPlay(nextMatchId);
+            IETourInstanceSelf(address(this))._initializeMatchForPlay(nextMatchId);
         }
     }
 
@@ -177,7 +214,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 nextRound = roundNumber + 1;
         if (nextRound == tournament.actualTotalRounds - 1) {
             bytes32 finalsMatchId = _getMatchId(nextRound, 0);
-            (address fp1, address fp2) = this._getMatchPlayers(finalsMatchId);
+            (address fp1, address fp2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(finalsMatchId);
             if ((fp1 != address(0) && fp2 == address(0)) || (fp2 != address(0) && fp1 == address(0))) {
                 _completeTournamentAsUncontestedFinalsWin(fp1 != address(0) ? fp1 : fp2);
             }
@@ -195,7 +233,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 nextRound = roundNumber + 1;
         for (uint8 m = 0; m < 4;) {
             bytes32 nextMatchId = _getMatchId(nextRound, m);
-            (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(nextMatchId);
             if (p1 != address(0) || p2 != address(0)) return false;
             unchecked { m++; }
         }
@@ -204,7 +243,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
     function _handleFinalsCompletion(uint8 roundNumber, MatchCompletionReason reason) internal {
         bytes32 finalMatchId = _getMatchId(roundNumber, 0);
-        (address finalWinner, bool finalIsDraw, ) = this._getMatchResult(finalMatchId);
+        (address finalWinner, bool finalIsDraw, ) =
+            IETourInstanceSelf(address(this))._getMatchResult(finalMatchId);
 
         if (finalIsDraw) {
             tournament.finalsWasDraw = true;
@@ -231,7 +271,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) = this._getMatchResult(matchId);
+            (address matchWinner, bool matchIsDraw, MatchStatus matchStatus) =
+                IETourInstanceSelf(address(this))._getMatchResult(matchId);
             if (matchStatus == MatchStatus.Completed && matchWinner != address(0) && !matchIsDraw) {
                 soleWinner = matchWinner;
                 winnerCount++;
@@ -244,7 +285,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 playersInNextRound = 0;
         for (uint8 m = 0; m < 4;) {
             bytes32 nextMatchId = _getMatchId(nextRound, m);
-            (address p1, address p2) = this._getMatchPlayers(nextMatchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(nextMatchId);
             if (p1 != address(0)) playersInNextRound++;
             if (p2 != address(0)) playersInNextRound++;
             if (p1 == address(0) && p2 == address(0)) break;
@@ -292,7 +334,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(matchId);
             bool hasP1 = p1 != address(0);
             bool hasP2 = p2 != address(0);
             if (hasP1) playersInRound[playerCount++] = p1;
@@ -306,7 +349,7 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            this._resetMatchGame(matchId);
+            IETourInstanceSelf(address(this))._resetMatchGame(matchId);
             unchecked { i++; }
         }
 
@@ -323,7 +366,12 @@ contract ETourInstance_Matches is ETourInstance_Base {
         round.playerCount = originalPlayerCount;
 
         for (uint8 i = 0; i < newMatchCount;) {
-            this._createMatchGame(roundNumber, i, playersInRound[i * 2], playersInRound[i * 2 + 1]);
+            IETourInstanceSelf(address(this))._createMatchGame(
+                roundNumber,
+                i,
+                playersInRound[i * 2],
+                playersInRound[i * 2 + 1]
+            );
             unchecked { i++; }
         }
 
@@ -341,7 +389,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         for (uint8 i = 0; i < completedRoundStruct.totalMatches;) {
             bytes32 matchId = _getMatchId(completedRound, i);
-            (address winner, bool isDraw, MatchStatus status) = this._getMatchResult(matchId);
+            (address winner, bool isDraw, MatchStatus status) =
+                IETourInstanceSelf(address(this))._getMatchResult(matchId);
             if (status == MatchStatus.Completed && !isDraw && winner != address(0)) {
                 winners[winnersCount++] = winner;
             }
@@ -369,7 +418,12 @@ contract ETourInstance_Matches is ETourInstance_Base {
         (walkoverPlayer, winnersCount) = _selectWalkoverPlayer(winners, winnersCount, nextRound);
 
         for (uint8 i = 0; i < properMatchCount;) {
-            this._createMatchGame(nextRound, i, winners[i * 2], winners[i * 2 + 1]);
+            IETourInstanceSelf(address(this))._createMatchGame(
+                nextRound,
+                i,
+                winners[i * 2],
+                winners[i * 2 + 1]
+            );
             unchecked { i++; }
         }
 
@@ -386,8 +440,10 @@ contract ETourInstance_Matches is ETourInstance_Base {
             if (i + 1 >= matchCount) break;
             bytes32 mid1 = _getMatchId(roundNumber, i);
             bytes32 mid2 = _getMatchId(roundNumber, i + 1);
-            (address w1, bool d1, MatchStatus s1) = this._getMatchResult(mid1);
-            (address w2, bool d2, MatchStatus s2) = this._getMatchResult(mid2);
+            (address w1, bool d1, MatchStatus s1) =
+                IETourInstanceSelf(address(this))._getMatchResult(mid1);
+            (address w2, bool d2, MatchStatus s2) =
+                IETourInstanceSelf(address(this))._getMatchResult(mid2);
             bool m1Complete = s1 == MatchStatus.Completed;
             bool m2Complete = s2 == MatchStatus.Completed;
             bool m1HasWinner = w1 != address(0) && !d1;
@@ -405,8 +461,10 @@ contract ETourInstance_Matches is ETourInstance_Base {
             if (i + 1 >= matchCount) break;
             bytes32 mid1 = _getMatchId(roundNumber, i);
             bytes32 mid2 = _getMatchId(roundNumber, i + 1);
-            (address w1, bool d1, MatchStatus s1) = this._getMatchResult(mid1);
-            (address w2, bool d2, MatchStatus s2) = this._getMatchResult(mid2);
+            (address w1, bool d1, MatchStatus s1) =
+                IETourInstanceSelf(address(this))._getMatchResult(mid1);
+            (address w2, bool d2, MatchStatus s2) =
+                IETourInstanceSelf(address(this))._getMatchResult(mid2);
             bool m1Complete = s1 == MatchStatus.Completed;
             bool m2Complete = s2 == MatchStatus.Completed;
             if (m1Complete && m2Complete) {
@@ -424,7 +482,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 count = 0;
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(matchId);
             if (p1 != address(0)) count++;
             if (p2 != address(0)) count++;
             unchecked { i++; }
@@ -433,7 +492,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
         uint8 index = 0;
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(matchId);
             if (p1 != address(0)) result[index++] = p1;
             if (p2 != address(0)) result[index++] = p2;
             unchecked { i++; }
@@ -473,7 +533,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         for (uint8 i = 0; i < round.totalMatches;) {
             bytes32 matchId = _getMatchId(roundNumber, i);
-            (address p1, address p2) = this._getMatchPlayers(matchId);
+            (address p1, address p2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(matchId);
             if (p1 != address(0)) { solePlayer = p1; playerCount++; }
             if (p2 != address(0)) { solePlayer = p2; playerCount++; }
             unchecked { i++; }
@@ -481,7 +542,8 @@ contract ETourInstance_Matches is ETourInstance_Base {
 
         if (round.playerCount % 2 == 1) {
             bytes32 byeMatchId = _getMatchId(roundNumber, round.totalMatches);
-            (address byeP1, address byeP2) = this._getMatchPlayers(byeMatchId);
+            (address byeP1, address byeP2) =
+                IETourInstanceSelf(address(this))._getMatchPlayers(byeMatchId);
             if (byeP1 != address(0)) { solePlayer = byeP1; playerCount++; }
             if (byeP2 != address(0)) { solePlayer = byeP2; playerCount++; }
         }

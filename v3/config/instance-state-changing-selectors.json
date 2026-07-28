@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "contracts": [
+    "TicTacInstance",
+    "ConnectFourInstance",
+    "ChessInstance"
+  ],
+  "selectors": [
+    {
+      "signature": "claimTimeoutWin(uint8,uint8)",
+      "selector": "0x01864d14",
+      "stateMutability": "nonpayable",
+      "access": "match-participant",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "The non-current match participant may claim after the current player's clock expires."
+    },
+    {
+      "signature": "enrollOnBehalf(address)",
+      "selector": "0x206e5718",
+      "stateMutability": "payable",
+      "access": "factory-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "The creating factory atomically auto-enrolls the creator."
+    },
+    {
+      "signature": "makeMove(uint8,uint8,uint8,uint8,uint8)",
+      "selector": "0x23e737aa",
+      "stateMutability": "nonpayable",
+      "access": "current-gameplay-actor",
+      "contracts": ["ChessInstance"],
+      "rationale": "Chess gameplay entry point; V3 session resolution will be limited to this selector."
+    },
+    {
+      "signature": "initializeChess((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
+      "selector": "0x2d019c39",
+      "stateMutability": "nonpayable",
+      "access": "atomic-clone-initializer",
+      "contracts": ["ChessInstance"],
+      "rationale": "The Chess factory initializes a fresh clone and its rules module atomically."
+    },
+    {
+      "signature": "rescueStuckFunds(address)",
+      "selector": "0x390a182f",
+      "stateMutability": "nonpayable",
+      "access": "factory-owner-only-after-conclusion",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Recovers only funds left on a concluded instance after failed transfers."
+    },
+    {
+      "signature": "forceStartTournament()",
+      "selector": "0x404e4520",
+      "stateMutability": "nonpayable",
+      "access": "enrolled-player-after-deadline",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "An enrolled player may force-start a sufficiently populated tournament after enrollment expiry."
+    },
+    {
+      "signature": "cancelTournament()",
+      "selector": "0x646156aa",
+      "stateMutability": "nonpayable",
+      "access": "solo-enrolled-player",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "The sole enrolled player may cancel and receive the defined refund."
+    },
+    {
+      "signature": "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address)",
+      "selector": "0x6a9d6eda",
+      "stateMutability": "nonpayable",
+      "access": "atomic-clone-initializer",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "A factory initializes a fresh clone in the same transaction that creates it; the one-time guard prevents reuse."
+    },
+    {
+      "signature": "initializeRound(uint8)",
+      "selector": "0x6e759c93",
+      "stateMutability": "payable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected bridge from instance lifecycle code to the matches delegatecall module."
+    },
+    {
+      "signature": "claimMatchSlotByReplacement(uint8,uint8)",
+      "selector": "0x7244639f",
+      "stateMutability": "nonpayable",
+      "access": "eligible-external-player-after-escalation",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Intentionally permissionless to an eligible non-advanced player after level-three escalation."
+    },
+    {
+      "signature": "resetEnrollmentWindow()",
+      "selector": "0x7482a4ac",
+      "stateMutability": "nonpayable",
+      "access": "solo-enrolled-player",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "The sole enrolled player may extend enrollment while the tournament remains open."
+    },
+    {
+      "signature": "_createMatchGame(uint8,uint8,address,address)",
+      "selector": "0x8e0b5ac3",
+      "stateMutability": "nonpayable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected module-to-instance match creation bridge."
+    },
+    {
+      "signature": "forceEliminateStalledMatch(uint8,uint8)",
+      "selector": "0x93998a73",
+      "stateMutability": "nonpayable",
+      "access": "advanced-player-after-escalation",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "An advanced player may resolve a stalled earlier-round match after level-two escalation."
+    },
+    {
+      "signature": "_setMatchPlayer(bytes32,uint8,address)",
+      "selector": "0x95dd9176",
+      "stateMutability": "nonpayable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected module-to-instance bracket assignment bridge."
+    },
+    {
+      "signature": "makeMove(uint8,uint8,uint8)",
+      "selector": "0x960edffb",
+      "stateMutability": "nonpayable",
+      "access": "current-gameplay-actor",
+      "contracts": ["TicTacInstance", "ConnectFourInstance"],
+      "rationale": "Tic-Tac-Toe and Connect Four gameplay entry point; V3 session resolution will be limited to this selector."
+    },
+    {
+      "signature": "_initializeMatchForPlay(bytes32)",
+      "selector": "0xd7f8f16a",
+      "stateMutability": "nonpayable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected module-to-instance match activation bridge."
+    },
+    {
+      "signature": "_resetMatchGame(bytes32)",
+      "selector": "0xd893088d",
+      "stateMutability": "nonpayable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected module-to-instance match reset bridge."
+    },
+    {
+      "signature": "claimAbandonedPool()",
+      "selector": "0xe1d39ee8",
+      "stateMutability": "nonpayable",
+      "access": "permissionless-after-enrollment-escalation",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Intentionally permissionless after the abandoned-enrollment deadline and subject to pool-state checks."
+    },
+    {
+      "signature": "enrollInTournament()",
+      "selector": "0xef55ac9f",
+      "stateMutability": "payable",
+      "access": "public-exact-stake",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Primary-wallet enrollment with the exact configured entry fee."
+    },
+    {
+      "signature": "_completeMatchWithResult(bytes32,address,bool)",
+      "selector": "0xf4df7cf0",
+      "stateMutability": "nonpayable",
+      "access": "instance-self-only",
+      "contracts": ["TicTacInstance", "ConnectFourInstance", "ChessInstance"],
+      "rationale": "Protected module-to-instance escalation completion bridge."
+    }
+  ]
+}

@@ -120,3 +120,153 @@ Ran the command successfully against the active local V3 deployment. Verified al
 ten destination files parse, contain the expected localhost chain ID 412346 and
 compatibility keys, and contain non-empty factory/instance ABIs. The
 tic-tac-react production build then passed with 1,874 modules transformed.
+
+2026-07-27 — V3 CI gates and pre-contract architecture decisions complete
+
+Completed tracking items 19–29.
+
+CI and tooling:
+- Added .github/workflows/v3-ci.yml with separate clean compile/analysis and
+  complete V3 test-suite jobs using Node 22.21.0 and the V3 npm lockfile.
+- Added compiler-warning, ABI-surface, Solhint static-analysis, and npm-audit
+  baseline scripts and package commands.
+- Strengthened the size gate to reject EIP-170 violations, reviewed-baseline
+  growth, missing artifacts, and newly deployable contracts that have not been
+  classified in the size policy.
+- Strengthened the storage gate to compare current compiler output with the
+  reviewed machine-readable baseline in addition to checking instance/module
+  prefix compatibility.
+- The warning and static gates allow debt reduction but reject new or increased
+  finding groups. The dependency gate requires zero production findings and
+  rejects regressions from the reviewed development-tooling advisory set.
+
+Architecture decisions:
+- V3 deploys a fresh PlayerRegistry and PlayerProfile implementation; the UI and
+  indexer aggregate immutable V2 and V3 history.
+- SESSION_TTL is fixed at 3,600 seconds. This is intentionally shorter than
+  maximum legal tournament duration and is a stolen-key containment window;
+  primary-wallet refresh/direct play are normal recovery paths.
+- Pinned @account-abstraction/contracts 0.8.0, EntryPoint/UserOperation v0.8,
+  and canonical EntryPoint address
+  0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108 for local chain 412346,
+  Arbitrum Sepolia 421614, and Arbitrum One 42161.
+- Selected the v0.8 SimpleAccount/SimpleAccountFactory. Factory getAddress uses
+  CREATE2 for counterfactual registration and createAccount supports deployment
+  from the first UserOperation through EntryPoint SenderCreator.
+- Selected Pimlico as primary bundler and Alchemy as failover. Live provider
+  integration remains a later Arbitrum Sepolia acceptance step.
+- Production paymaster design combines authoritative on-chain scope with
+  verifier signatures that may narrow but never broaden sponsorship.
+- Deferred EIP-7702 until after the ERC-4337 MVP.
+- Froze the non-negotiable identity, escrow, session-scope, rotation, recovery,
+  sponsorship, and direct-primary fallback invariants in
+  docs/architecture-decisions.md.
+- Added config/account-abstraction.json as the machine-readable version/address
+  and provider source. Factory deployment addresses remain null until the later
+  deterministic deployment step.
+
+Validation:
+- Clean npm ci under Node 22.21.0/npm 10.9.4 succeeded.
+- Clean via-IR compile: 21 Solidity files.
+- Compiler warning gate: 42 baseline warnings, no regression.
+- ABI gate: 22 contract/interface ABIs, no change.
+- Storage gate: 10 targets and 20 canonical base entries, exact baseline match.
+- Size gate: all tracked deployables under EIP-170 and no growth; the Matches
+  module remains at 23,841 bytes with 735 bytes headroom.
+- Solhint gate: 1,107 baseline findings, no regression.
+- npm audit gate: zero production findings; 54 known development-inclusive
+  findings, no regression.
+- Complete V3 suite: 251 passing.
+- GitHub Actions YAML and every new JSON baseline/config file parse successfully.
+
+Important implementation note:
+The pinned v0.8 EntryPoint, SimpleAccount, and factory sources require Solidity
+^0.8.28. The later local ERC-4337 integration step must add a pinned 0.8.28
+compiler for vendor contracts without changing the ETour 0.8.20 compiler, then
+re-run all compiler/storage/ABI/size baselines.
+
+Next recommended action:
+Begin tracking item 30 by designing the canonical shared storage layout, then
+implement ETourStorage and migrate state carefully before adding session state.
+
+2026-07-27 - Canonical storage and module self-call hardening (items 30-43)
+
+- Added contracts/storage/ETourStorage.sol as the single canonical declaration
+  for game-independent instance and delegatecall-module storage.
+- Preserved the semantic label, slot, offset, and type shape of all 20 V2
+  storage entries. ReentrancyGuard._status remains slot 0.
+- Appended SESSION_REGISTRY as the only new field at slot 44.
+- Added the storage-free ETourModuleGuard and refactored Core, Matches, Prizes,
+  and Escalation to stop inheriting ETourInstance_Base.
+- Removed every module abstract stub and its inherited full-instance API.
+- Added interfaces/IETourInstanceSelf.sol and replaced all module `this.*`
+  calls with explicit host-interface calls.
+- Added OnlySelfCall and protected initializeRound, create/reset match, set
+  player, initialize-for-play, and complete-with-result bridges across all
+  three concrete games.
+- Documented the canonical slots in docs/storage-layout.md and the complete
+  bridge inventory in docs/self-call-bridges.md.
+- Updated the storage checker to use ETourStorage as the canonical prefix and
+  refreshed the reviewed storage, ABI, size, and static-analysis baselines.
+
+Validation:
+- Clean Node 22.21.0 via-IR compile: 24 Solidity files.
+- Complete regression suite: 251 passing.
+- CI regression gates: all passing.
+- Compiler warnings reduced from the 42-warning allowance to 9 current
+  warnings.
+- Storage check: 11 instance/module targets, 21 canonical entries.
+- ABI check: 25 contract/interface surfaces.
+- Solhint findings reduced from 1,107 to 1,037.
+- Production dependency audit remains clean.
+- Delegatecall-module deployed bytecode reduced from 83,825 bytes total to
+  44,240 bytes. ETourInstance_Matches fell from 23,841 bytes (735 bytes
+  headroom) to 13,527 bytes (11,049 bytes headroom).
+
+Next recommended action:
+Continue with tracking item 44: review every remaining public/external
+state-changing selector, add the machine-readable allowlist and CI gate, then
+add adversarial self-call bridge tests before completing the storage-hardening
+workstream.
+
+2026-07-28 - Mutable-surface and bridge hardening complete (items 44-56)
+
+- Audited all public/external state-changing functions exposed by
+  TicTacInstance, ConnectFourInstance, and ChessInstance.
+- Added config/instance-state-changing-selectors.json with the exact 20 reviewed
+  signatures, selectors, mutability, contract coverage, caller class, and
+  rationale.
+- Added scripts/check-instance-selectors.js and selectors:check. The
+  consolidated CI gate now fails on any added, removed, changed, or newly
+  exposed mutable instance function.
+- Added test/security/SelfCallBridges.test.js and the test-only
+  SelfCallBridgeHarness. The suite covers all six bridges across all games
+  against direct EOAs and unrelated contracts, verifies canonical and
+  observable state is unchanged after rejection, and proves production and
+  purpose-built legitimate delegatecall paths still work.
+- Replaced the reverting abstract game-completion hook with a true abstract
+  declaration, removing the compiler's unreachable-code warning chain. The
+  warning baseline is now zero, so any future warning fails CI.
+- Updated the storage checker to compare normalized structural type graphs.
+  It remains strict on layout and types while no longer treating unrelated AST
+  identifier renumbering as a storage change.
+- Refreshed the reviewed warning, ABI, and storage baselines. Module bytecode
+  remains 44,240 bytes in aggregate, with ETourInstance_Matches at 13,527 bytes
+  and 11,049 bytes of EIP-170 headroom.
+
+Validation:
+- Clean Node 22.21.0 via-IR compile: 27 Solidity files, zero warnings.
+- Focused bridge security suite: 5 passing.
+- Complete behavioral regression suite: 256 passing.
+- Storage check: 11 targets and 21 canonical entries.
+- ABI check: 26 contract/interface surfaces.
+- Selector check: 20 reviewed mutable signatures across 3 game instances.
+- Static analysis: 1,030 current findings against the 1,037 allowance.
+- Production dependency audit: clean.
+- Every deployable contract remains below the 24,576-byte EIP-170 limit.
+- Consolidated npm run ci:checks: passing.
+
+Next recommended action:
+Begin tracking item 57 by designing and creating the canonical ETourGame
+abstraction, then migrate common game behavior incrementally while preserving
+the storage, selector, size, and behavioral gates.

@@ -12,6 +12,8 @@ Captured on 2026-07-27 from V2 source commit
 - `@nomicfoundation/edr`: `0.12.0-next.16`
 - Solidity: `0.8.20`
 - OpenZeppelin Contracts: `5.4.0`
+- Eth-Infinitism account-abstraction contracts: `0.8.0`
+- Solhint: `6.2.3`
 - optimizer: enabled, 1 run
 - via IR: enabled
 
@@ -19,7 +21,7 @@ Captured on 2026-07-27 from V2 source commit
 range currently resolves EDR 0.12.1, which is incompatible with Hardhat 2.27's
 network-provider schema. The known-good V2 lock used `0.12.0-next.16`.
 
-## Reproduction results
+## Original copied-baseline acceptance
 
 - Clean compile: 21 Solidity files compiled successfully.
 - Full copied suite: 251 passing.
@@ -28,15 +30,37 @@ network-provider schema. The known-good V2 lock used `0.12.0-next.16`.
 - Contract-size check: all deployable contracts remain under 24,576 bytes.
 - Compiler warnings: 42 baseline warnings; see
   [`compiler-warnings.md`](./compiler-warnings.md).
+- ABI surface: 22 compiled contract/interface ABIs.
+- Static analysis: 1,107 copied-baseline Solhint findings; reductions pass and
+  new/increased finding groups fail.
+- Dependency audit: zero production dependency findings; 54 known findings in
+  the development-inclusive legacy Hardhat graph, with no regressions allowed.
 
-## Critical size baseline
+These historical acceptance numbers remain the V2-equivalence reference. The
+machine-readable ABI, size, storage, and static-analysis files are intentionally
+advanced when a reviewed V3 architecture batch changes those surfaces.
+
+## Current reviewed state after tracking item 56
+
+- Clean compile: 27 Solidity files.
+- Full suite: 256 passing.
+- Storage-layout check: 11 targets with 21 canonical `ETourStorage` entries.
+- Compiler warnings: zero current warnings against a zero-warning allowance.
+- ABI surface: 26 compiled contract/interface ABIs.
+- State-changing instance surface: 20 reviewed unique signatures across all
+  three game instances.
+- Static analysis: 1,030 findings, reduced from the 1,107 copied baseline.
+- Dependency audit: production graph clean and no regression against the
+  reviewed development-inclusive allowance.
+
+## Current critical size baseline
 
 | Contract | Deployed bytes | EIP-170 usage |
 |---|---:|---:|
-| `ETourInstance_Matches` | 23,841 | 97.0% |
-| `ConnectFourInstance` | 21,023 | 85.5% |
-| `ChessInstance` | 20,654 | 84.0% |
-| `TicTacInstance` | 20,333 | 82.7% |
+| `ETourInstance_Matches` | 13,527 | 55.0% |
+| `ConnectFourInstance` | 21,229 | 86.4% |
+| `ChessInstance` | 20,958 | 85.3% |
+| `TicTacInstance` | 20,621 | 83.9% |
 
 The complete machine-readable result is in
 [`contract-sizes.json`](./contract-sizes.json).
@@ -65,6 +89,7 @@ report is in [`gas-report.txt`](./gas-report.txt).
 
 [`storage-layout.json`](./storage-layout.json) captures:
 
+- `ETourStorage`
 - `ETourInstance_Base`
 - `ETourInstance`
 - all three game instance implementations
@@ -72,8 +97,9 @@ report is in [`gas-report.txt`](./gas-report.txt).
 - the stateless Chess rules module
 
 The checker requires every stateful instance/module layout to retain the
-`ETourInstance_Base` layout as an exact prefix and requires the Chess rules module
-to remain stateless.
+21-entry `ETourStorage` layout as an exact prefix and requires the Chess rules
+module to remain stateless. The first 20 entries preserve the copied V2 layout;
+`SESSION_REGISTRY` is the append-only V3 entry at slot 44.
 
 ## Commands
 
@@ -84,13 +110,23 @@ npm ci --ignore-scripts
 npm run compile
 npm test
 npm run test:focused -- --grep "<pattern>"
+npm run warnings:check
+npm run warnings:capture
 npm run abi:generate -- --network <network>
+npm run abi:check
+npm run abi:capture
+npm run selectors:check
 npm run abi:sync
 npm run frontend:abis
 npm run size
 npm run size:capture
 npm run storage:check
 npm run storage:capture
+npm run static:check
+npm run static:capture
+npm run audit:check
+npm run audit:capture
+npm run ci:checks
 npm run gas
 npm run gas:capture
 npm run gas:baseline

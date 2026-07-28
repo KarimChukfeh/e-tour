@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Implementation — copied baseline complete through tracking item 18
+> Status: Implementation — storage/module hardening complete through tracking item 56
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -547,7 +547,7 @@ This refactor must land before adding the session parameter so the creation flow
 
 ### 9.1 Constants
 
-Initial proposal:
+Final V3 MVP decision:
 
 ```solidity
 uint48 public constant SESSION_TTL = 1 hours;
@@ -555,7 +555,7 @@ uint48 public constant SESSION_TTL = 1 hours;
 
 The duration is fixed in code for the first V3 release. Changing it requires a new registry/version rather than an admin mutation.
 
-Before freezing this value, validate it against:
+The value was validated against:
 
 - maximum configured enrollment window;
 - maximum per-player match clock;
@@ -563,6 +563,11 @@ Before freezing this value, validate it against:
 - realistic inactive-tab and mobile-resume behavior.
 
 Expiry is expected during long tournaments; refresh is part of normal recovery.
+The detailed duration comparison is recorded in
+[`docs/architecture-decisions.md`](./docs/architecture-decisions.md). A maximum
+Connect Four match can exceed one hour, a 32-player tournament has five rounds,
+and Chess has no practical one-hour tournament ceiling. The TTL is therefore a
+credential-compromise containment period, not a promise to cover a tournament.
 
 ### 9.2 Session record
 
@@ -909,6 +914,18 @@ Do not select a version based only on a single provider. Confirm support from:
 
 Record the final choice in the decision log.
 
+V3 MVP pins:
+
+- `@account-abstraction/contracts@0.8.0`;
+- EntryPoint/UserOperation version `0.8`;
+- EntryPoint `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` on local
+  chain 412346, Arbitrum Sepolia 421614, and Arbitrum One 42161.
+
+The machine-readable source is
+[`config/account-abstraction.json`](./config/account-abstraction.json). Although
+EntryPoint v0.9 exists, V3 remains on v0.8 until both selected Arbitrum bundlers
+document and pass integration tests for a later version.
+
 ### 11.2 Session account requirements
 
 The selected account must:
@@ -924,6 +941,14 @@ The selected account must:
 - allow first-use deployment through the UserOperation.
 
 The session account should not hold player funds. If ETH is accidentally sent to it, recovery semantics must be documented; this does not grant it primary-player authority.
+
+The selected MVP account is the official v0.8 `SimpleAccount` deployed through
+`SimpleAccountFactory`, both pinned by the package above. The factory's CREATE2
+`getAddress(owner, salt)` supplies the counterfactual address, while
+`createAccount(owner, salt)` supports first-UserOperation deployment through the
+EntryPoint `SenderCreator`. The account is reference/sample code despite its
+public audit history, so the exact v0.8 account, factory, deterministic
+deployment, and ETour integration remain in the external audit scope.
 
 ### 11.3 Browser key lifecycle
 
@@ -980,6 +1005,12 @@ Production requirements:
 
 Self-hosting a bundler is optional and belongs to an operations workstream. It must not block the first contract implementation unless provider testing shows unacceptable dependency risk.
 
+The selected initial providers are Pimlico (primary) and Alchemy (failover).
+Both currently document Arbitrum One, Arbitrum Sepolia, and EntryPoint v0.8
+support. Provider selection does not replace the later requirement to validate
+`eth_supportedEntryPoints`, estimation, submission, and receipts against both
+providers on Arbitrum Sepolia.
+
 ---
 
 ## 12. Paymaster plan
@@ -1028,9 +1059,9 @@ Any future plan to fund gas from protocol revenue requires:
 - new invariants and tests;
 - separate audit review.
 
-### 12.3 On-chain versus verifying paymaster
+### 12.3 On-chain and verifying paymaster
 
-Evaluate two implementations:
+V3 uses both implementation layers:
 
 1. On-chain policy paymaster
    - Reads factory/registry state.
@@ -1042,7 +1073,9 @@ Evaluate two implementations:
    - Easier rate limiting and abuse prevention.
    - Introduces an availability dependency.
 
-Preferred final state is an on-chain-enforced scope even if an off-chain service adds rate limits. An off-chain signature must never broaden what the on-chain paymaster accepts.
+The on-chain policy is authoritative. The verifying signature provides budget,
+rate-limit, and abuse controls, but it may only narrow or decline sponsorship;
+it must never broaden what the on-chain paymaster accepts.
 
 ### 12.4 Abuse and denial-of-service protections
 
@@ -1063,7 +1096,8 @@ Rate limits may affect sponsorship, but they must not change on-chain session au
 
 ## 13. EIP-7702 compatibility
 
-EIP-7702 is a second-stage feature after ERC-4337 session accounts work end to end.
+EIP-7702 is formally deferred as a second-stage feature until ERC-4337 session
+accounts work end to end locally and on Arbitrum Sepolia.
 
 Goals:
 
@@ -1336,6 +1370,19 @@ Add:
 - test coverage reporting;
 - manual privilege and call-graph review.
 
+The initial CI implementation is
+[`.github/workflows/v3-ci.yml`](../.github/workflows/v3-ci.yml). It has separate
+clean-compile/analysis and complete-suite jobs pinned to the V3 Node and npm
+lockfile. The analysis job enforces reviewed compiler-warning, bytecode-size,
+storage-layout, ABI-surface, Solhint, and npm-audit baselines.
+
+Baseline findings are not waivers for release. Reductions pass automatically;
+new or increased groups fail. The production dependency graph must remain at
+zero advisories. The current 54 npm findings are confined to the
+development-inclusive legacy Hardhat toolchain and may not increase. The copied
+baseline's 42 compiler warnings and 1,107 Solhint findings remain explicit
+cleanup debt for later hardening and release gates.
+
 ---
 
 ## 16. Scripts and tooling migration
@@ -1523,7 +1570,9 @@ Decision required before testnet:
    - splits profile history;
    - UI must aggregate V2 and V3 profiles.
 
-Default recommendation: deploy a fresh V3 registry for clean security/version isolation, while preserving V2 history in UI/indexer queries. Reuse requires an explicit decision after reviewing deployed ownership and authorization state.
+Accepted decision: deploy a fresh V3 registry for clean security/version
+isolation while preserving V2 history in UI/indexer queries. V3 deployment
+scripts must never authorize V3 factories on or publish a V2 registry as V3.
 
 ### 19.4 Cutover criteria
 
@@ -1599,17 +1648,17 @@ User-facing documentation must explain:
 
 ### Phase 0 — Freeze baseline and decisions
 
-- [ ] Record the V2 source commit used for V3.
-- [ ] Confirm V2 test baseline and gas/size reports.
-- [ ] Create the initial V3 source tree from V2.
-- [ ] Inventory every V2 contract, test, script, deployment file, and document.
-- [ ] Select Solidity, OpenZeppelin, Hardhat, Node, and package versions.
-- [ ] Select EntryPoint version.
-- [ ] Select session account implementation/factory.
-- [ ] Select initial bundler providers.
-- [ ] Decide paymaster architecture.
-- [ ] Decide PlayerRegistry reuse versus fresh deployment.
-- [ ] Finalize TTL.
+- [x] Record the V2 source commit used for V3.
+- [x] Confirm V2 test baseline and gas/size reports.
+- [x] Create the initial V3 source tree from V2.
+- [x] Inventory every V2 contract, test, script, deployment file, and document.
+- [x] Select Solidity, OpenZeppelin, Hardhat, Node, and package versions.
+- [x] Select EntryPoint version.
+- [x] Select session account implementation/factory.
+- [x] Select initial bundler providers.
+- [x] Decide paymaster architecture.
+- [x] Decide PlayerRegistry reuse versus fresh deployment.
+- [x] Finalize TTL.
 
 Exit gate:
 
@@ -1619,11 +1668,11 @@ Exit gate:
 
 ### Phase 1 — V3 namespace and behavioral parity
 
-- [ ] Copy authoritative V2 sources and tests into V3.
-- [ ] Rename package/config/deployment namespaces.
-- [ ] Remove stale generated artifacts and addresses.
-- [ ] Make all migrated V2 tests pass unchanged in behavior.
-- [ ] Add V3 compile, test, ABI, and size commands.
+- [x] Copy authoritative V2 sources and tests into V3.
+- [x] Rename package/config/deployment namespaces.
+- [x] Remove stale generated artifacts and addresses.
+- [x] Make all migrated V2 tests pass unchanged in behavior.
+- [x] Add V3 compile, test, ABI, and size commands.
 
 Exit gate:
 
@@ -1860,14 +1909,19 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-002 | Primary wallet remains enrolled identity and settlement recipient | Accepted | 2026-07-27 | Prevents session compromise from reaching escrow or profiles |
 | ADR-003 | Session registry is external and instance-scoped | Accepted | 2026-07-27 | Clear authorization boundary and reduced instance storage/code pressure |
 | ADR-004 | Game contracts do not decode UserOperations | Accepted | 2026-07-27 | ERC-4337 validation belongs to EntryPoint/account/paymaster layers |
-| ADR-005 | ERC-4337 deterministic session account is the initial transport | Proposed | 2026-07-27 | Supports counterfactual address and gas sponsorship |
-| ADR-006 | EIP-7702 is optional after the ERC-4337 MVP | Proposed | 2026-07-27 | Limits initial tooling and compatibility risk |
+| ADR-005 | Pin ERC-4337 v0.8 `SimpleAccount`/`SimpleAccountFactory` as the initial transport | Accepted | 2026-07-27 | Provider-compatible counterfactual account with first-UserOperation deployment; exact integration remains in audit scope |
+| ADR-006 | EIP-7702 is deferred until after the ERC-4337 MVP | Accepted | 2026-07-27 | Limits initial tooling and compatibility risk |
 | ADR-007 | Session authorization initially covers only `makeMove` | Accepted | 2026-07-27 | Narrowest deterministic gameplay scope |
-| ADR-008 | One globally unique live executor binding per registry | Proposed | 2026-07-27 | Enforces strict per-instance isolation |
-| ADR-009 | Session TTL is one hour | Pending validation | 2026-07-27 | Matches initial product requirement but needs gameplay-duration review |
-| ADR-010 | Deploy fresh V3 PlayerRegistry | Proposed | 2026-07-27 | Clean deployment/security boundary; history can be aggregated |
+| ADR-008 | One globally unique live executor binding per registry | Accepted | 2026-07-27 | Enforces strict per-instance isolation |
+| ADR-009 | Session TTL is one hour | Accepted | 2026-07-27 | Deliberately shorter than legal tournament duration; refresh is normal recovery and TTL limits stolen-key exposure |
+| ADR-010 | Deploy fresh V3 PlayerRegistry | Accepted | 2026-07-27 | Clean deployment/security boundary; history is aggregated across generations |
 | ADR-011 | Paymaster gas is separately funded from escrow | Accepted | 2026-07-27 | Preserves fee and prize invariants |
-| ADR-012 | Modules inherit shared storage, not the full instance API | Proposed | 2026-07-27 | Hardens bridges and restores bytecode headroom |
+| ADR-012 | Modules inherit shared storage, not the full instance API | Accepted | 2026-07-27 | Implemented with `ETourStorage`, `ETourModuleGuard`, and `IETourInstanceSelf`; hardens bridges and restores bytecode headroom |
+| ADR-013 | Pin EntryPoint v0.8 at `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` | Accepted | 2026-07-27 | Canonical address and current two-provider Arbitrum compatibility |
+| ADR-014 | Use Pimlico primary and Alchemy failover bundlers | Accepted | 2026-07-27 | Both document Arbitrum One, Arbitrum Sepolia, and EntryPoint v0.8 support |
+| ADR-015 | Paymaster uses authoritative on-chain scope plus narrowing verifier signatures | Accepted | 2026-07-27 | Preserves RW3 authorization while enabling operational budget and abuse controls |
+| ADR-016 | Freeze identity, escrow, session-scope, and recovery invariants in the architecture decision record | Accepted | 2026-07-27 | Prevents transport convenience from changing protocol authority |
+| ADR-017 | Freeze the reviewed state-changing instance ABI in a machine-readable selector allowlist | Accepted | 2026-07-28 | Makes every new mutable entry point an explicit security review and CI decision |
 
 ---
 
@@ -1879,4 +1933,35 @@ Append brief dated entries as work proceeds.
 
 - Created the V3 source-of-truth plan.
 - Defined V3 as a full V2 successor with session authorization, bridge hardening, ERC-4337 transport, paymaster scope, testing, audit, and deployment workstreams.
-- No V3 contracts, tests, scripts, or deployment files have been created yet.
+- Copied and validated the isolated V3 baseline: 21 Solidity files compile and
+  all 251 copied tests pass.
+- Completed tracking items 1–18 for migration, inventory, namespacing,
+  reproducibility, baseline evidence, commands, local deployment, and frontend
+  ABI synchronization.
+- Completed tracking items 19–29 for CI/regression gates and the recorded
+  pre-contract PlayerRegistry, TTL, EntryPoint, account, bundler, paymaster,
+  EIP-7702, and invariant decisions.
+- Completed tracking items 30–43: extracted canonical shared storage, appended
+  the session-registry reference, removed full-instance inheritance and stubs
+  from all delegatecall modules, introduced the explicit self-call interface,
+  and protected every state-changing module bridge with `onlySelfCall`.
+
+### 2026-07-28
+
+- Completed tracking items 44–56: reviewed and allowlisted all 20 unique
+  state-changing instance signatures, made unexpected mutable selectors fail
+  CI, and added ABI-driven adversarial tests for every protected self-call
+  bridge.
+- Verified that EOAs and unrelated contracts cannot invoke any bridge and that
+  rejected calls preserve canonical storage, balance, tournament, player,
+  round, and match state.
+- Verified production-module self-calls and a purpose-built delegatecall harness
+  can invoke all six bridges through the legitimate host path.
+- Normalized compiler storage type graphs so the strict storage-layout gate is
+  stable across unrelated AST renumbering while retaining exact structural
+  comparison.
+- Removed the unreachable-code warning source and tightened the compiler warning
+  allowance to zero.
+- Clean compilation, all 256 tests, selector/ABI/storage/static/dependency gates,
+  and all EIP-170 size limits pass. The next item is the canonical `ETourGame`
+  abstraction.

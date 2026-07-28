@@ -1,0 +1,66 @@
+name: V3 CI
+
+on:
+  pull_request:
+    paths:
+      - "v3/**"
+      - ".github/workflows/v3-ci.yml"
+  push:
+    paths:
+      - "v3/**"
+      - ".github/workflows/v3-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v3-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: v3
+
+jobs:
+  compile-and-analyze:
+    name: Compile and analyze V3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: v3/.nvmrc
+          cache: npm
+          cache-dependency-path: v3/package-lock.json
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Compile from a clean workspace
+        run: npm run clean && npm run compile
+
+      - name: Run compiler, ABI, selector, storage, size, static, and dependency gates
+        run: npm run ci:checks
+
+  full-test-suite:
+    name: Run complete V3 test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: v3/.nvmrc
+          cache: npm
+          cache-dependency-path: v3/package-lock.json
+
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run all V3 tests
+        run: npm test

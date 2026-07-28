@@ -64,7 +64,7 @@ contract TicTacInstance is ETourInstance {
         uint8 matchNumber,
         address player1,
         address player2
-    ) public override {
+    ) public override onlySelfCall {
         require(player1 != player2, "P1");
         require(player1 != address(0) && player2 != address(0), "P2");
 
@@ -92,7 +92,7 @@ contract TicTacInstance is ETourInstance {
         m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
     }
 
-    function _resetMatchGame(bytes32 matchId) public override {
+    function _resetMatchGame(bytes32 matchId) public override onlySelfCall {
         Match storage m = matches[matchId];
         m.player1 = address(0);
         m.player2 = address(0);
@@ -120,7 +120,7 @@ contract TicTacInstance is ETourInstance {
         return (m.winner, m.isDraw, m.status);
     }
 
-    function _initializeMatchForPlay(bytes32 matchId) public override {
+    function _initializeMatchForPlay(bytes32 matchId) public override onlySelfCall {
         Match storage m = matches[matchId];
         m.status = MatchStatus.InProgress;
         m.startTime = block.timestamp;
@@ -141,7 +141,11 @@ contract TicTacInstance is ETourInstance {
         m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
     }
 
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
+    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw)
+        public
+        override
+        onlySelfCall
+    {
         Match storage m = matches[matchId];
         m.status = MatchStatus.Completed;
         m.winner = isDraw ? address(0) : winner;

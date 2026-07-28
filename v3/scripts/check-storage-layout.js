@@ -9,6 +9,7 @@ const BUILD_INFO_DIR = path.join(V3_DIR, "artifacts", "build-info");
 const BASELINE_PATH = path.join(V3_DIR, "baselines", "storage-layout.json");
 
 const TARGETS = [
+    ["contracts/storage/ETourStorage.sol", "ETourStorage", "canonical-storage"],
     ["contracts/ETourInstance_Base.sol", "ETourInstance_Base", "base"],
     ["contracts/ETourInstance.sol", "ETourInstance", "instance"],
     ["contracts/TicTacInstance.sol", "TicTacInstance", "instance"],
@@ -26,14 +27,52 @@ function fail(message) {
     process.exit(1);
 }
 
+function normalizeTypeId(typeId) {
+    if (typeof typeId !== "string") return typeId;
+    return typeId.replace(/(t_(?:struct|enum|contract)\([^)]*\))\d+/g, "$1");
+}
+
 function normalizeEntry(entry) {
     return {
         label: entry.label,
         slot: entry.slot,
         offset: entry.offset,
-        type: entry.type,
+        type: normalizeTypeId(entry.type),
         contract: entry.contract,
     };
+}
+
+function normalizeTypeValue(value) {
+    if (Array.isArray(value)) {
+        return value.map(normalizeTypeValue);
+    }
+    if (value && typeof value === "object") {
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => key !== "astId")
+                .map(([key, nested]) => [key, normalizeTypeValue(nested)])
+                .sort(([left], [right]) => left.localeCompare(right))
+        );
+    }
+    return normalizeTypeId(value);
+}
+
+function normalizeTypes(types) {
+    const normalized = {};
+    for (const [typeId, definition] of Object.entries(types || {})) {
+        const stableTypeId = normalizeTypeId(typeId);
+        const stableDefinition = normalizeTypeValue(definition);
+        if (
+            normalized[stableTypeId] &&
+            JSON.stringify(normalized[stableTypeId]) !== JSON.stringify(stableDefinition)
+        ) {
+            fail(`normalized compiler type collision for ${stableTypeId}`);
+        }
+        normalized[stableTypeId] = stableDefinition;
+    }
+    return Object.fromEntries(
+        Object.entries(normalized).sort(([left], [right]) => left.localeCompare(right))
+    );
 }
 
 function loadCompilationOutputs() {
@@ -72,7 +111,7 @@ function assertPrefix(contractName, actual, expected) {
         for (const field of ["label", "slot", "offset", "type"]) {
             if (left[field] !== right[field]) {
                 fail(
-                    `${contractName} diverges from ETourInstance_Base at entry ${i} (${field}: ` +
+                    `${contractName} diverges from ETourStorage at entry ${i} (${field}: ` +
                     `${String(left[field])} != ${String(right[field])})`
                 );
             }
@@ -93,11 +132,11 @@ for (const [sourceName, contractName, role] of TARGETS) {
         sourceName,
         role,
         storage: output.storageLayout.storage.map(normalizeEntry),
-        types: output.storageLayout.types,
+        types: normalizeTypes(output.storageLayout.types),
     };
 }
 
-const baseStorage = contracts.ETourInstance_Base.storage;
+const baseStorage = contracts.ETourStorage.storage;
 for (const [contractName, contract] of Object.entries(contracts)) {
     if (contract.role === "stateless-rules-module") {
         if (contract.storage.length !== 0) {
@@ -105,7 +144,7 @@ for (const [contractName, contract] of Object.entries(contracts)) {
         }
         continue;
     }
-    if (contractName !== "ETourInstance_Base") {
+    if (contractName !== "ETourStorage") {
         assertPrefix(contractName, contract.storage, baseStorage);
     }
 }
@@ -114,7 +153,7 @@ const report = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     compilerVersions,
-    canonicalBase: "contracts/ETourInstance_Base.sol:ETourInstance_Base",
+    canonicalBase: "contracts/storage/ETourStorage.sol:ETourStorage",
     contracts,
 };
 
@@ -122,6 +161,29 @@ if (process.argv.includes("--write")) {
     fs.mkdirSync(path.dirname(BASELINE_PATH), { recursive: true });
     fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(report, null, 2)}\n`);
     console.log(`Wrote storage layout baseline: ${BASELINE_PATH}`);
+} else {
+    if (!fs.existsSync(BASELINE_PATH)) {
+        fail(`missing ${BASELINE_PATH}; run npm run storage:capture after review`);
+    }
+
+    const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, "utf8"));
+    const expected = {
+        compilerVersions: baseline.compilerVersions,
+        canonicalBase: baseline.canonicalBase,
+        contracts: baseline.contracts,
+    };
+    const actual = {
+        compilerVersions: report.compilerVersions,
+        canonicalBase: report.canonicalBase,
+        contracts: report.contracts,
+    };
+
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        fail(
+            "compiler storage output differs from the reviewed baseline; " +
+            "review and run npm run storage:capture if intentional"
+        );
+    }
 }
 
 console.log(

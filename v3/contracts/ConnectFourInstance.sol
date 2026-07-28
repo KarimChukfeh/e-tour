@@ -76,7 +76,11 @@ contract ConnectFourInstance is ETourInstance {
 
     // ============ ETourInstance_Base Abstract Implementations ============
 
-    function _createMatchGame(uint8 roundNumber, uint8 matchNumber, address player1, address player2) public override {
+    function _createMatchGame(uint8 roundNumber, uint8 matchNumber, address player1, address player2)
+        public
+        override
+        onlySelfCall
+    {
         require(player1 != player2 && player1 != address(0) && player2 != address(0), "IP");
 
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
@@ -100,7 +104,7 @@ contract ConnectFourInstance is ETourInstance {
         m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
     }
 
-    function _resetMatchGame(bytes32 matchId) public override {
+    function _resetMatchGame(bytes32 matchId) public override onlySelfCall {
         Match storage m = matches[matchId];
         m.player1 = address(0); m.player2 = address(0); m.winner = address(0);
         m.currentTurn = address(0); m.firstPlayer = address(0);
@@ -118,7 +122,7 @@ contract ConnectFourInstance is ETourInstance {
         return (m.winner, m.isDraw, m.status);
     }
 
-    function _initializeMatchForPlay(bytes32 matchId) public override {
+    function _initializeMatchForPlay(bytes32 matchId) public override onlySelfCall {
         Match storage m = matches[matchId];
         m.status = MatchStatus.InProgress;
         m.startTime = block.timestamp;
@@ -140,7 +144,11 @@ contract ConnectFourInstance is ETourInstance {
         m.player2TimeRemaining = tierConfig.timeouts.matchTimePerPlayer;
     }
 
-    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public override {
+    function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw)
+        public
+        override
+        onlySelfCall
+    {
         Match storage m = matches[matchId];
         m.status = MatchStatus.Completed;
         m.winner = isDraw ? address(0) : winner;

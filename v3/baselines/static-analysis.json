@@ -1,0 +1,5797 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-28T03:24:40.759Z",
+  "tool": "solhint",
+  "total": 1037,
+  "groups": [
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 64 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 8
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [from] on Event [MoveMade] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [to] on Event [MoveMade] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 6
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, from, to], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_completeMatchWithResult'. Expected: [matchId, winner, isDraw], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_createMatchGame'. Expected: [roundNumber, matchNumber, player1, player2], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getMatchResult'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_hasCurrentPlayerTimedOut'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_initializeMatchForPlay'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_resetMatchGame'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getBoard'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initializeChess'. Expected: [config_, factory_, creator_, moduleCore_, moduleMatches_, modulePrizes_, moduleEscalation_, chessRules_], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'processMove'. Expected: [board, state, from, to, promotion, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function '_getMatchResult'. Expected: [winner, isDraw, status], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getBoard'. Expected: [board, state], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'processMove'. Expected: [valid, newBoard, newState, gameEnd], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ChessInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'IChessRules'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ChessInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'IChessRules'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getTimeIncrement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initializeChess'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'makeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'CHESS_RULES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initializeChess'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @title tag in contract 'IChessRules'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessInstance.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase CHESS_RULES",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 54 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 2
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ChessInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourFactory.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for require is too long: 40 counted / 32 allowed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'createInstance'. Expected: [playerCount, entryFee, enrollmentWindow, matchTimePerPlayer, timeIncrementPerMove], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'createInstance'. Expected: [instance], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ChessOnChainFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ChessOnChainFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'createInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'CHESS_RULES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'createInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ChessOnChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'createInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourFactory.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ConnectFourInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourFactory.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ConnectFourFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ConnectFourFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 59 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 4
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ row ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [column] on Event [MoveMade] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [row] on Event [MoveMade] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 7
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, column, row], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_completeMatchWithResult'. Expected: [matchId, winner, isDraw], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_createMatchGame'. Expected: [roundNumber, matchNumber, player1, player2], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getMatchResult'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_hasCurrentPlayerTimedOut'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_initializeMatchForPlay'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_resetMatchGame'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getBoard'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'makeMove'. Expected: [roundNumber, matchNumber, column], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function '_getMatchResult'. Expected: [winner, isDraw, status], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getBoard'. Expected: [board], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ConnectFourInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ConnectFourInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getTimeIncrement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'makeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'makeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ConnectFourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "avoid-low-level-calls",
+      "severity": 3,
+      "message": "Avoid to use low level calls.",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 56 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 3
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ result ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [amount] on Event [OwnerShareReceived] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [amount] on Event [OwnerWithdrawn] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [entryFee] on Event [TierCreated] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [playerCount] on Event [TierCreated] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 2
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 2
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ TierConfig ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "immutable-vars-naming",
+      "severity": 3,
+      "message": "Immutable variables name are set to be in capitalized SNAKE_CASE",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourInstance_Base.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./interfaces/IPlayerRegistry.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path @openzeppelin/contracts/utils/ReentrancyGuard.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "no-inline-assembly",
+      "severity": 3,
+      "message": "Avoid to use inline assembly. It is acceptable only in rare cases",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for require is too long: 40 counted / 32 allowed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'InstanceDeployed'. Expected: [instance, tierKey, creator, playerCount, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'OwnerShareReceived'. Expected: [instance, amount], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'OwnerWithdrawn'. Expected: [to, amount], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'PlayerRegistered'. Expected: [player, instance], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'TierCreated'. Expected: [tierKey, playerCount, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getInstances'. Expected: [offset, limit], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getPlayerProfile'. Expected: [player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getTierInstances'. Expected: [tierKey], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'registerPlayer'. Expected: [player, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setMaxEntryFee'. Expected: [newMax], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'transferOwnership'. Expected: [newOwner], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getActiveTierConfigs'. Expected: [keys, configs], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getInstances'. Expected: [result], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'InstanceDeployed'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'OwnerShareReceived'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'OwnerWithdrawn'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'PlayerRegistered'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'TierCreated'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '<anonymous>'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'createInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'gameType'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getActiveTierConfigs'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getActiveTournamentCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getInstanceCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPastTournamentCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getTierInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'receiveOwnerShare'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'registerPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setMaxEntryFee'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'transferOwnership'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'withdrawOwnerBalance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'activeTournaments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BASIS_POINTS'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'ENROLLMENT_LEVEL_2_DELAY'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'FEE_INCREMENT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'implementation'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'instances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MATCH_LEVEL_2_DELAY'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MATCH_LEVEL_3_DELAY'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'maxEntryFee'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MIN_ENTRY_FEE'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_CORE'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_ESCALATION'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_MATCHES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_PRIZES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'owner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'ownerBalance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'pastTournaments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PLAYER_REGISTRY'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'players'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'tierInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'tierKeys'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'tierRegistry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'InstanceDeployed'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'OwnerShareReceived'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'OwnerWithdrawn'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'PlayerRegistered'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'TierCreated'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getPlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getTierInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'registerPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setMaxEntryFee'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'transferOwnership'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getActiveTierConfigs'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getInstances'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "avoid-low-level-calls",
+      "severity": 3,
+      "message": "Avoid to use low level calls.",
+      "count": 16
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "contract-name-capwords",
+      "severity": 3,
+      "message": "Contract, Structs and Enums should be in CapWords",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 57 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 61 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 94 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-calldata-parameters",
+      "severity": 3,
+      "message": "GC: [_tierConfig] argument on Function [initialize] could be [calldata] if it's not being updated",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 24
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of revert statements",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 3
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ m ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ r ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 3
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ result ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [playerCount] on Event [TournamentStarted] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [value] on Event [Transfer] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 7
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 9
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "immutable-vars-naming",
+      "severity": 3,
+      "message": "Immutable variables name are set to be in capitalized SNAKE_CASE",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "no-unused-vars",
+      "severity": 3,
+      "message": "Variable \"isDraw\" is unused",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "no-unused-vars",
+      "severity": 3,
+      "message": "Variable \"matchNumber\" is unused",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "no-unused-vars",
+      "severity": 3,
+      "message": "Variable \"roundNumber\" is unused",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "no-unused-vars",
+      "severity": 3,
+      "message": "Variable \"winner\" is unused",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for revert is too long: 56 counted / 32 allowed",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MatchCompleted'. Expected: [instance, roundNumber, matchNumber, winner, isDraw, reason, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'PlayerEnrolled'. Expected: [player, instance], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'TournamentConcluded'. Expected: [instance, winner, reason, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'TournamentStarted'. Expected: [instance, playerCount], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'Transfer'. Expected: [from, to, value], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_completeMatchWithResult'. Expected: [matchId, winner, isDraw], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_createMatchGame'. Expected: [roundNumber, matchNumber, player1, player2], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getActiveMatchData'. Expected: [matchId, roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getMatchPlayers'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getMatchResult'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_hasCurrentPlayerTimedOut'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_initializeMatchForPlay'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_isMatchActive'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_resetMatchGame'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_setMatchPlayer'. Expected: [matchId, slot, player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'claimTimeoutWin'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'enrollOnBehalf'. Expected: [player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getMatch'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getMatchMoves'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getPlayerResult'. Expected: [player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initialize'. Expected: [_tierConfig, _factory, _creator, _moduleCore, _moduleMatches, _modulePrizes, _moduleEscalation], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initializeRound'. Expected: [roundNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isMatchEscL2Available'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isMatchEscL3Available'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isPlayerInAdvancedRound'. Expected: [stalledRoundNumber, player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'rescueStuckFunds'. Expected: [to], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function '_getMatchPlayers'. Expected: [player1, player2], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function '_getMatchResult'. Expected: [winner, isDraw, status], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getBracket'. Expected: [totalRounds, matchCounts, completedCounts], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getInstanceInfo'. Expected: [tierKey, playerCount, entryFee, instanceCreator, createdAt, startTime, status, enrolledCount, totalEntryFeesAccrued, winner, completionReason, completionCategory, prizeAwarded, prizeRecipient], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getMatch'. Expected: [player1, player2, matchWinner, isDraw, status, startTime, lastMoveTime, moves, completionReason, completionCategory], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getPlayerResult'. Expected: [participated, prizeWon, isWinner, payout, payoutReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getPrizeDistribution'. Expected: [players, amounts], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance_Base'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance_Base'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MatchCompleted'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'PlayerEnrolled'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'TournamentConcluded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'TournamentStarted'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'Transfer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getActiveMatchData'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getMatchPlayers'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getTimeIncrement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_isMatchActive'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_setMatchPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'canCancelTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'cancelTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'canForceStartTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'canResetEnrollmentWindow'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'claimAbandonedPool'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'claimTimeoutWin'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'enrollInTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'enrollOnBehalf'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'forceStartTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getBracket'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getInstanceInfo'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchMoves'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPlayerResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPlayers'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPrizeDistribution'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isMatchEscL2Available'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isMatchEscL3Available'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isPlayerInAdvancedRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'rescueStuckFunds'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'resetEnrollmentWindow'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BASIS_POINTS'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'NO_ROUND'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'OWNER_SHARE_BPS'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PARTICIPANTS_SHARE_BPS'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MatchCompleted'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'PlayerEnrolled'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'TournamentConcluded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'TournamentStarted'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'Transfer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getActiveMatchData'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getMatchPlayers'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_isMatchActive'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_setMatchPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'claimTimeoutWin'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'enrollOnBehalf'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getMatchMoves'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getPlayerResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isMatchEscL2Available'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isMatchEscL3Available'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isPlayerInAdvancedRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'rescueStuckFunds'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function '_getMatchPlayers'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getBracket'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getInstanceInfo'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getPlayerResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance_Base.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getPrizeDistribution'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "avoid-low-level-calls",
+      "severity": 3,
+      "message": "Avoid to use low level calls.",
+      "count": 3
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 3
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 2
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourInstance_Base.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'claimMatchSlotByReplacement'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'forceEliminateStalledMatch'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initializeRound'. Expected: [roundNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'claimMatchSlotByReplacement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'forceEliminateStalledMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'claimMatchSlotByReplacement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'forceEliminateStalledMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/ETourInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ EnrollmentRecord ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getEnrollments'. Expected: [offset, limit], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getMatchRecords'. Expected: [offset, limit], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initialize'. Expected: [_owner, _registry], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordEnrollment'. Expected: [instance, gameType, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordMatchOutcome'. Expected: [instance, gameType, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordResult'. Expected: [instance, won, prize, payout, payoutReason, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'IPlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'IPlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnrollmentCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnrollments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchRecordCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchRecords'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getStats'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'owner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getEnrollments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getMatchRecords'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getProfile'. Expected: [player, gameType], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordEnrollment'. Expected: [player, instance, gameType, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordMatchOutcome'. Expected: [player, instance, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordResult'. Expected: [player, instance, won, prize, payout, payoutReason, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'IPlayerRegistry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'IPlayerRegistry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/IPlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'playerPrizes'. Expected: [player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getInstanceInfo'. Expected: [tierKey, playerCount, entryFee, instanceCreator, createdAt, startTime, status, enrolledCount, totalEntryFeesAccrued, winner, completionReason, completionCategory, prizeAwarded, prizeRecipient], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ITournamentInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ITournamentInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getInstanceInfo'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'playerPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'playerPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/interfaces/ITournamentInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getInstanceInfo'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 113 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of revert statements",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ blackPieceCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ from ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 3
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ to ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ whitePieceCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 10
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'clearFlag'. Expected: [state, flag], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'executeMove'. Expected: [board, state, from, to, promotion, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getEnPassantSquare'. Expected: [state], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getFullMoveNumber'. Expected: [state], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getHalfMoveClock'. Expected: [state], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getPiece'. Expected: [board, square], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getPieceType'. Expected: [piece], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'hasFlag'. Expected: [state, flag], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'hasLegalMoves'. Expected: [board, state, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isBlackPiece'. Expected: [piece], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isEnemyPiece'. Expected: [piece, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isInsufficientMaterial'. Expected: [board], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isKingInCheck'. Expected: [board, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isOwnPiece'. Expected: [piece, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isValidMove'. Expected: [board, state, from, to, isWhite, promotion], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'isWhitePiece'. Expected: [piece], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'processMove'. Expected: [board, state, from, to, promotion, isWhite], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setEnPassantSquare'. Expected: [state, square], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setFlag'. Expected: [state, flag], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setFullMoveNumber'. Expected: [state, value], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setHalfMoveClock'. Expected: [state, value], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setPiece'. Expected: [board, square, piece], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'executeMove'. Expected: [newBoard, newState, isCapture, isPawnMove, capturedEnPassantSquare], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'processMove'. Expected: [valid, newBoard, newState, gameEnd], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ChessRulesModule'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ChessRulesModule'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'clearFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'executeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnPassantSquare'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getFullMoveNumber'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getHalfMoveClock'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getPieceType'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'hasFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'hasLegalMoves'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isBlackPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isEnemyPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isInsufficientMaterial'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isKingInCheck'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isOwnPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isValidMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'isWhitePiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setEnPassantSquare'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setFullMoveNumber'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setHalfMoveClock'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_BISHOP'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_IN_CHECK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_KING_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_KING'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_KNIGHT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_OFFSET'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_PAWN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_QUEEN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_ROOK_A_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_ROOK_H_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'BLACK_ROOK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'EP_MASK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'FULL_MOVE_MASK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'FULL_MOVE_SHIFT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'HALF_MOVE_MASK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'HALF_MOVE_SHIFT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'INITIAL_BOARD'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'INITIAL_STATE'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'NO_EN_PASSANT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_BISHOP'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_KING'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_KNIGHT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_NONE'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_PAWN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_QUEEN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'PIECE_ROOK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_BISHOP'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_IN_CHECK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_KING_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_KING'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_KNIGHT'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_PAWN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_QUEEN'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_ROOK_A_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_ROOK_H_MOVED'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'WHITE_ROOK'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'clearFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'executeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getEnPassantSquare'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getFullMoveNumber'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getHalfMoveClock'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getPieceType'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'hasFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'hasLegalMoves'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isBlackPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isEnemyPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isInsufficientMaterial'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isKingInCheck'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isOwnPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isValidMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'isWhitePiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setEnPassantSquare'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setFlag'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setFullMoveNumber'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setHalfMoveClock'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setPiece'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'executeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ChessRulesModule.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'processMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "contract-name-capwords",
+      "severity": 3,
+      "message": "Contract, Structs and Enums should be in CapWords",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 21
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ tournament ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 7
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'coreEnrollOnBehalf'. Expected: [player], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance_Core'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance_Core'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'canClaimAbandonedPool'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'canForceStart'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreCancelTournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreClaimAbandonedPool'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreEnroll'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreEnrollOnBehalf'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreForceStart'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'coreResetEnrollmentWindow'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Core.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'coreEnrollOnBehalf'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "avoid-low-level-calls",
+      "severity": 3,
+      "message": "Avoid to use low level calls.",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "contract-name-capwords",
+      "severity": 3,
+      "message": "Contract, Structs and Enums should be in CapWords",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 52 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 71 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 9
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ m ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 5
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ playersInNextRound ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 4
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ r ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 3
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ round ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ tournament ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ winnersCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 4
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for require is too long: 34 counted / 32 allowed",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'claimMatchSlotByReplacement'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'clearEscalationState'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'forceEliminateStalledMatch'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'markMatchStalled'. Expected: [matchId, timeoutOccurredAt], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance_Escalation'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance_Escalation'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'claimMatchSlotByReplacement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'clearEscalationState'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'forceEliminateStalledMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'markMatchStalled'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'claimMatchSlotByReplacement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'clearEscalationState'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'forceEliminateStalledMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Escalation.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'markMatchStalled'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "contract-name-capwords",
+      "severity": 3,
+      "message": "Contract, Structs and Enums should be in CapWords",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 53 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 5
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ count ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 10
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ index ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ m ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ playerCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 6
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ playersInNextRound ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ round ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ winnerCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ winnersCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 6
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for require is too long: 38 counted / 32 allowed",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'advanceWinner'. Expected: [roundNumber, matchNumber, winner], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'completeMatch'. Expected: [roundNumber, matchNumber, winner, isDraw, reason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'consolidateAndStartOddRound'. Expected: [completedRound], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initializeRound'. Expected: [roundNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance_Matches'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance_Matches'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'advanceWinner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'completeMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'consolidateAndStartOddRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'advanceWinner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'completeMatch'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'consolidateAndStartOddRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Matches.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initializeRound'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "contract-name-capwords",
+      "severity": 3,
+      "message": "Contract, Structs and Enums should be in CapWords",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 79 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-calldata-parameters",
+      "severity": 3,
+      "message": "GC: [remainingPlayers] argument on Function [distributeEqualPrizes] could be [calldata] if it's not being updated",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ eligibleCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 7
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ initialAmounts ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ newQueueLen ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ payout ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ remainder ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ successCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'distributeEqualPrizes'. Expected: [remainingPlayers, winnersPot], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'distributePrizes'. Expected: [winnersPot], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'distributeEqualPrizes'. Expected: [winners, prizes], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'distributePrizes'. Expected: [winners, prizes], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ETourInstance_Prizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ETourInstance_Prizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'distributeEqualPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'distributePrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'distributeEqualPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'distributePrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'distributeEqualPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'distributePrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/modules/ETourInstance_Prizes.sol",
+      "ruleId": "visibility-modifier-order",
+      "severity": 3,
+      "message": "Visibility modifier must be first in list of modifiers",
+      "count": 2
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ _stats ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 3
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [entryFee] on Event [EnrollmentRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [gameType] on Event [EnrollmentRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [payout] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [payoutReason] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [tournamentResolutionReason] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [won] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 2
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./interfaces/IPlayerProfile.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'EnrollmentRecorded'. Expected: [instance, gameType, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MatchOutcomeRecorded'. Expected: [instance, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'ResultRecorded'. Expected: [instance, won, payout, payoutReason, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getEnrollmentByInstance'. Expected: [instance], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getMatchRecordByKey'. Expected: [instance, roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getMatchRecords'. Expected: [offset, limit], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'initialize'. Expected: [_owner, _registry], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordEnrollment'. Expected: [instance, gameType, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordMatchOutcome'. Expected: [instance, gameType, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordResult'. Expected: [instance, won, prize, payout, payoutReason, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getEnrollments'. Expected: [result], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getMatchRecords'. Expected: [result], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'PlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'PlayerProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'EnrollmentRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MatchOutcomeRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'ResultRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnrollmentByInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnrollmentCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getEnrollments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchRecordByKey'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchRecordCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getMatchRecords'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getStats'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'owner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'registry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'EnrollmentRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MatchOutcomeRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'ResultRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getEnrollmentByInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getMatchRecordByKey'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getMatchRecords'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'initialize'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getEnrollments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerProfile.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getMatchRecords'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [category] on Event [MatchOutcomeRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [gameType] on Event [EnrollmentRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [gameType] on Event [MatchOutcomeRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [gameType] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [matchNumber] on Event [MatchOutcomeRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [outcome] on Event [MatchOutcomeRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [payout] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [roundNumber] on Event [MatchOutcomeRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [tournamentResolutionReason] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [won] on Event [ResultRecorded] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "immutable-vars-naming",
+      "severity": 3,
+      "message": "Immutable variables name are set to be in capitalized SNAKE_CASE",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "no-empty-blocks",
+      "severity": 3,
+      "message": "Code contains empty blocks",
+      "count": 3
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./interfaces/IPlayerProfile.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./interfaces/IPlayerRegistry.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "no-inline-assembly",
+      "severity": 3,
+      "message": "Avoid to use inline assembly. It is acceptable only in rare cases",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'EnrollmentRecorded'. Expected: [player, instance, gameType], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'FactoryAuthorized'. Expected: [factory], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'FactoryDeauthorized'. Expected: [factory], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MatchOutcomeRecorded'. Expected: [player, instance, gameType, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'ProfileCreated'. Expected: [player, gameType, profile], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'ResultRecorded'. Expected: [player, instance, gameType, won, payout, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'authorizeFactory'. Expected: [factory], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'deauthorizeFactory'. Expected: [factory], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getProfile'. Expected: [player, gameType], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordEnrollment'. Expected: [player, instance, gameType, entryFee], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordMatchOutcome'. Expected: [player, instance, roundNumber, matchNumber, outcome, category], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'recordResult'. Expected: [player, instance, won, prize, payout, payoutReason, tournamentResolutionReason], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'transferOwnership'. Expected: [newOwner], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'PlayerRegistry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'PlayerRegistry'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'EnrollmentRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'FactoryAuthorized'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'FactoryDeauthorized'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MatchOutcomeRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'ProfileCreated'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'ResultRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'authorizeFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'deauthorizeFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'transferOwnership'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'authorizedFactories'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'owner'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'profileImplementation'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'profiles'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'EnrollmentRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'FactoryAuthorized'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'FactoryDeauthorized'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MatchOutcomeRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'ProfileCreated'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'ResultRecorded'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'authorizeFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'deauthorizeFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getProfile'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordEnrollment'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordMatchOutcome'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'recordResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/PlayerRegistry.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'transferOwnership'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ CommonMatchData ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ Match ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ TierConfig ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "gas-struct-packing",
+      "severity": 3,
+      "message": "GC: For [ TournamentState ] struct, packing seems inefficient. Try rearranging to achieve 32bytes slots",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "max-states-count",
+      "severity": 3,
+      "message": "Contract has 20 states declarations but allowed no more than 15",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'creator'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'drawParticipants'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'enrolledPlayers'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'factory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'isEnrolled'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'matches'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'matchTimeouts'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_CORE'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_ESCALATION'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_MATCHES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'MODULE_PRIZES'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'playerPayoutReasons'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'playerPrizes'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'rounds'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'tierConfig'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'tournament'",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase MODULE_CORE",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase MODULE_ESCALATION",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase MODULE_MATCHES",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase MODULE_PRIZES",
+      "count": 1
+    },
+    {
+      "source": "contracts/storage/ETourStorage.sol",
+      "ruleId": "var-name-mixedcase",
+      "severity": 3,
+      "message": "Variable name must be in mixedCase SESSION_REGISTRY",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of revert statements",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ rejectionCount ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [amount] on Event [PaymentReceived] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [amount] on Event [PaymentRejected] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "gas-small-strings",
+      "severity": 3,
+      "message": "GC: String exceeds 32 bytes",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "immutable-vars-naming",
+      "severity": 3,
+      "message": "Immutable variables name are set to be in capitalized SNAKE_CASE",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "no-complex-fallback",
+      "severity": 3,
+      "message": "Fallback function must be simple",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "reason-string",
+      "severity": 3,
+      "message": "Error message for revert is too long: 39 counted / 32 allowed",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'PaymentReceived'. Expected: [amount], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'PaymentRejected'. Expected: [amount], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'makeMove'. Expected: [roundNumber, matchNumber, cellIndex], Found: []",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'setRejectPayments'. Expected: [reject_], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'ITicTacInstanceLike'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'RejectingTicTacPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'ITicTacInstanceLike'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'RejectingTicTacPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'PaymentReceived'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'PaymentRejected'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '<anonymous>'",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'enrollInTournament'",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'makeMove'",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'setRejectPayments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'instance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'receivedAmount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'rejectionCount'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in variable 'rejectPayments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'PaymentReceived'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'PaymentRejected'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'makeMove'",
+      "count": 2
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'setRejectPayments'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @title tag in contract 'ITicTacInstanceLike'",
+      "count": 1
+    },
+    {
+      "source": "contracts/test-helpers/RejectingTicTacPlayer.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @title tag in contract 'RejectingTicTacPlayer'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacChainFactory.sol",
+      "ruleId": "func-visibility",
+      "severity": 3,
+      "message": "Explicitly mark visibility in function (Set ignoreConstructors to true if using solidity >=0.7.0)",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacChainFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourFactory.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacChainFactory.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./TicTacInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'TicTacChainFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacChainFactory.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'TicTacChainFactory'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "function-max-lines",
+      "severity": 3,
+      "message": "Function body contains 54 lines but allowed no more than 50 lines",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "gas-custom-errors",
+      "severity": 3,
+      "message": "GC: Use Custom Errors instead of require statements",
+      "count": 7
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ digits ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "gas-increment-by-one",
+      "severity": 3,
+      "message": "GC: For [ i ] variable, increment/decrement by 1 using: [ ++variable ] to save gas",
+      "count": 2
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "gas-indexed-events",
+      "severity": 3,
+      "message": "GC: [cellIndex] on Event [MoveMade] could be Indexed",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "gas-strict-inequalities",
+      "severity": 3,
+      "message": "GC: Non strict inequality found. Try converting to a strict one",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "no-global-import",
+      "severity": 3,
+      "message": "global import of path ./ETourInstance.sol is not allowed. Specify names to import individually or bind all exports of the module into a name (import \"path\" as Name)",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, cellIndex], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_completeMatchWithResult'. Expected: [matchId, winner, isDraw], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_createMatchGame'. Expected: [roundNumber, matchNumber, player1, player2], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_getMatchResult'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_hasCurrentPlayerTimedOut'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_initializeMatchForPlay'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function '_resetMatchGame'. Expected: [matchId], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @param names for function 'getBoard'. Expected: [roundNumber, matchNumber], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function '_getMatchResult'. Expected: [winner, isDraw, status], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Mismatch in @return names for function 'getBoard'. Expected: [board], Found: []",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @author tag in contract 'TicTacInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in contract 'TicTacInstance'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_getTimeIncrement'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @notice tag in function 'makeMove'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in event 'MoveMade'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_completeMatchWithResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_createMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_hasCurrentPlayerTimedOut'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_initializeMatchForPlay'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function '_resetMatchGame'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @param tag in function 'getBoard'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function '_getMatchResult'",
+      "count": 1
+    },
+    {
+      "source": "contracts/TicTacInstance.sol",
+      "ruleId": "use-natspec",
+      "severity": 3,
+      "message": "Missing @return tag in function 'getBoard'",
+      "count": 1
+    }
+  ]
+}

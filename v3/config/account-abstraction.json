@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "decisionDate": "2026-07-27",
+  "entryPoint": {
+    "release": "0.8.0",
+    "package": "@account-abstraction/contracts",
+    "packageVersion": "0.8.0",
+    "userOperationVersion": "0.8",
+    "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+    "networks": {
+      "local": {
+        "chainId": 412346,
+        "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+        "requireCanonicalDeterministicDeployment": true
+      },
+      "arbitrumSepolia": {
+        "chainId": 421614,
+        "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"
+      },
+      "arbitrumOne": {
+        "chainId": 42161,
+        "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"
+      }
+    }
+  },
+  "sessionAccount": {
+    "package": "@account-abstraction/contracts",
+    "packageVersion": "0.8.0",
+    "implementation": "contracts/accounts/SimpleAccount.sol:SimpleAccount",
+    "factory": "contracts/accounts/SimpleAccountFactory.sol:SimpleAccountFactory",
+    "ownerKeyType": "browser-generated secp256k1 EOA",
+    "saltPolicy": "browser-generated random uint256 per session account",
+    "factoryDeployment": "ETour-managed deterministic deployment per network",
+    "factoryAddresses": {
+      "local": null,
+      "arbitrumSepolia": null,
+      "arbitrumOne": null
+    }
+  },
+  "bundlers": [
+    {
+      "name": "Pimlico",
+      "priority": 1,
+      "entryPointVersion": "0.8",
+      "networks": {
+        "arbitrumSepolia": "https://api.pimlico.io/v2/arbitrum-sepolia/rpc?apikey=${PIMLICO_API_KEY}",
+        "arbitrumOne": "https://api.pimlico.io/v2/arbitrum/rpc?apikey=${PIMLICO_API_KEY}"
+      }
+    },
+    {
+      "name": "Alchemy",
+      "priority": 2,
+      "entryPointVersion": "0.8",
+      "networks": {
+        "arbitrumSepolia": "https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
+        "arbitrumOne": "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+      }
+    }
+  ],
+  "paymaster": {
+    "policy": "on-chain scope enforcement plus verifying signatures",
+    "onChainPolicyIsAuthoritative": true,
+    "verifierMayBroadenOnChainPolicy": false
+  },
+  "eip7702": {
+    "status": "deferred",
+    "earliestPhase": "after ERC-4337 V3 MVP"
+  }
+}

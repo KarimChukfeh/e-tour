@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../ETourInstance_Base.sol";
+import {ETourStorage} from "../storage/ETourStorage.sol";
+import {ETourModuleGuard} from "./ETourModuleGuard.sol";
 
 /**
  * @title ETourInstance_Core
@@ -19,20 +20,10 @@ import "../ETourInstance_Base.sol";
  * storage (not this module's). address(this) = instance address when called via
  * delegatecall.
  */
-contract ETourInstance_Core is ETourInstance_Base {
-
-    constructor() {}
-
-    // ============ Abstract Stubs (required for deployment, never called directly) ============
-
-    function _createMatchGame(uint8, uint8, address, address) public override { revert("Module stub"); }
-    function _resetMatchGame(bytes32) public override { revert("Module stub"); }
-    function _getMatchResult(bytes32) public view override returns (address, bool, MatchStatus) { revert("Module stub"); }
-    function _initializeMatchForPlay(bytes32) public override { revert("Module stub"); }
-    function _completeMatchWithResult(bytes32, address, bool) public override { revert("Module stub"); }
-    function _getTimeIncrement() public view override returns (uint256) { revert("Module stub"); }
-    function _hasCurrentPlayerTimedOut(bytes32) public view override returns (bool) { revert("Module stub"); }
-    function initializeRound(uint8) public payable override { revert("Module stub"); }
+contract ETourInstance_Core is ETourStorage, ETourModuleGuard {
+    uint256 private constant PARTICIPANTS_SHARE_BPS = 9500;
+    uint256 private constant OWNER_SHARE_BPS = 500;
+    uint256 private constant BASIS_POINTS = 10000;
 
     // ============ Enrollment ============
 
@@ -229,6 +220,32 @@ contract ETourInstance_Core is ETourInstance_Base {
                 tournament.prizePool = refundAmount;
                 playerPrizes[soloPlayer] = refundAmount;
             }
+        }
+    }
+
+    function _log2(uint8 x) internal pure returns (uint8 result) {
+        while (x > 1) {
+            x /= 2;
+            ++result;
+        }
+    }
+
+    function _setTournamentResolution(TournamentResolutionReason reason) internal {
+        tournament.completionReason = reason;
+        if (
+            reason == TournamentResolutionReason.SoloEnrollCancelled ||
+            reason == TournamentResolutionReason.AbandonedTournamentClaimed
+        ) {
+            tournament.completionCategory = TournamentResolutionCategory.EnrollmentResolution;
+        } else if (reason == TournamentResolutionReason.Draw) {
+            tournament.completionCategory = TournamentResolutionCategory.DrawResolution;
+        } else if (
+            reason == TournamentResolutionReason.ForceElimination ||
+            reason == TournamentResolutionReason.Replacement
+        ) {
+            tournament.completionCategory = TournamentResolutionCategory.Escalation;
+        } else {
+            tournament.completionCategory = TournamentResolutionCategory.MatchResult;
         }
     }
 

@@ -13,13 +13,23 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "test:focused": "hardhat test",
+    "warnings:check": "node scripts/check-compiler-warnings.js",
+    "warnings:capture": "node scripts/check-compiler-warnings.js --write",
     "abi:generate": "node scripts/regenerate-abis.js",
+    "abi:check": "node scripts/check-abi-surface.js",
+    "abi:capture": "node scripts/check-abi-surface.js --write",
+    "selectors:check": "node scripts/check-instance-selectors.js",
     "abi:sync": "node scripts/generate-and-sync-frontend-v2-abis.js --network localhost",
     "frontend:abis": "node scripts/generate-and-sync-frontend-v2-abis.js --network localhost",
     "size": "node scripts/check-contract-sizes.js",
     "size:capture": "node scripts/check-contract-sizes.js --write",
     "storage:check": "node scripts/check-storage-layout.js",
     "storage:capture": "node scripts/check-storage-layout.js --write",
+    "static:check": "node scripts/check-static-analysis.js",
+    "static:capture": "node scripts/check-static-analysis.js --write",
+    "audit:check": "node scripts/check-dependency-audit.js",
+    "audit:capture": "node scripts/check-dependency-audit.js --write",
+    "ci:checks": "npm run warnings:check && npm run size && npm run storage:check && npm run abi:check && npm run selectors:check && npm run static:check && npm run audit:check",
     "gas": "REPORT_GAS=1 hardhat test",
     "gas:capture": "REPORT_GAS=1 REPORT_GAS_FILE=baselines/gas-report.txt hardhat test",
     "gas:baseline": "hardhat run scripts/capture-gas-baseline.js",
@@ -34,9 +44,11 @@
     "@nomicfoundation/edr": "0.12.0-next.16",
     "@nomicfoundation/hardhat-ethers": "3.1.2",
     "@nomicfoundation/hardhat-toolbox": "5.0.0",
-    "hardhat": "2.27.0"
+    "hardhat": "2.27.0",
+    "solhint": "6.2.3"
   },
   "dependencies": {
+    "@account-abstraction/contracts": "0.8.0",
     "@openzeppelin/contracts": "5.4.0",
     "dotenv": "17.2.3"
   }

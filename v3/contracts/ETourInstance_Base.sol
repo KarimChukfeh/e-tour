@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ETourStorage} from "./storage/ETourStorage.sol";
 
 /**
  * @title ETourInstance_Base
@@ -21,11 +21,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * - Uses initialize() instead of constructor (EIP-1167 proxy pattern)
  *
  * STORAGE LAYOUT NOTE:
- * Modules execute via delegatecall and access this storage directly.
- * The storage layout here must match what the adapted modules expect.
- * NEVER reorder or insert variables between existing ones.
+ * Modules execute via delegatecall against the canonical ETourStorage layout.
+ * Shared state declarations must never be added directly to this contract.
  */
-abstract contract ETourInstance_Base is ReentrancyGuard {
+abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Constants ============
 
@@ -42,244 +41,9 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
     bytes32 internal constant ENTROPY_MATCH_RESULT = keccak256("ETOUR_ENTROPY_MATCH_RESULT");
     bytes32 internal constant ENTROPY_WALKOVER = keccak256("ETOUR_ENTROPY_WALKOVER");
 
-    // ============ Enums ============
-
-    enum TournamentStatus { Enrolling, InProgress, Concluded }
-    enum MatchStatus { NotStarted, InProgress, Completed }
-
-    enum EscalationLevel {
-        None,
-        Escalation0_SoloCancel,
-        Escalation1_OpponentClaim,
-        Escalation2_AdvancedPlayers,
-        Escalation3_ExternalPlayers
-    }
-
-    enum MatchCompletionCategory {
-        None,
-        MatchResult,
-        Escalation
-    }
-
-    // Resolution code legend:
-    // - R0  -> Normal Resolution (win)
-    // - R1  -> Draw Resolution
-    // - R2  -> Uncontested Finals Resolution (finalist auto-wins because everyone in the previous round drew)
-    // - EL0 -> Tournament Canceled (by solo enrolled player)
-    // - EL2 -> Abandoned Pool Claimed (tournament never started so pool was claimed by outsider)
-    // - ML1 -> Timeout (match/tournament ended because player claimed Timeout victory)
-    // - ML2 -> Force Elimination (match/tournament ended because advanced player force eliminated both players in stalled match)
-    // - ML3 -> Replacement (match/tournament ended because outside player replaced both players in stalled match)
-    enum MatchCompletionReason {
-        NormalWin,                  // 0 (R0): Normal Resolution (win)
-        Timeout,                    // 1 (ML1): Timeout victory claimed
-        Draw,                       // 2 (R1): Draw Resolution
-        ForceElimination,           // 3 (ML2): Advanced player force eliminated both stalled players
-        Replacement                 // 4 (ML3): Outside player replaced both stalled players
-    }
-
-    enum TournamentResolutionCategory {
-        None,
-        MatchResult,
-        Escalation,
-        DrawResolution,
-        EnrollmentResolution
-    }
-
-    enum TournamentResolutionReason {
-        NormalWin,                  // 0 (R0): Normal Resolution (win)
-        Timeout,                    // 1 (ML1): Timeout victory claimed
-        Draw,                       // 2 (R1): Draw Resolution
-        ForceElimination,           // 3 (ML2): Advanced player force eliminated both stalled players
-        Replacement,                // 4 (ML3): Outside player replaced both stalled players
-        SoloEnrollCancelled,        // 5 (EL0): Tournament Canceled by solo enrolled player
-        AbandonedTournamentClaimed, // 6 (EL2): Abandoned pool claimed by outsider
-        UncontestedFinalsWin        // 7 (R2): Finalist auto-wins because everyone in the previous round drew
-    }
-
-    enum PlayerMatchOutcomeCategory {
-        None,
-        Victory,
-        Defeat,
-        Draw
-    }
-
-    enum PlayerMatchOutcome {
-        None,
-        NormalVictory,
-        NormalDefeat,
-        TimeoutVictory,
-        TimeoutDefeat,
-        Draw,
-        ForceEliminationVictory,
-        ForceEliminationDefeat,
-        ReplacementVictory,
-        ReplacementDefeat
-    }
-
-    enum PayoutReason {
-        None,
-        Victory,
-        EvenSplit,
-        WalletRejected,
-        Cancelation
-    }
-
-    // ============ Structs ============
-
-    struct TimeoutConfig {
-        uint256 matchTimePerPlayer;
-        uint256 timeIncrementPerMove;
-        uint256 matchLevel2Delay;
-        uint256 matchLevel3Delay;
-        uint256 enrollmentWindow;
-        uint256 enrollmentLevel2Delay;
-    }
-
-    /**
-     * @dev Tier config is set once at initialize() and never changes.
-     * instanceCount and initialized fields are dropped — not needed per-instance.
-     */
-    struct TierConfig {
-        uint8 playerCount;
-        uint256 entryFee;
-        TimeoutConfig timeouts;
-        uint8 totalRounds;          // log2(playerCount)
-        bytes32 tierKey;            // keccak256(playerCount, entryFee) — for factory grouping
-    }
-
-    struct EnrollmentTimeoutState {
-        uint256 escalation1Start;
-        uint256 escalation2Start;
-        EscalationLevel activeEscalation;
-        uint256 forfeitPool;
-    }
-
-    /**
-     * @dev Single tournament state — replaces tournaments[tierId][instanceId].
-     * This struct IS the tournament; there is only one per instance.
-     */
-    struct TournamentState {
-        TournamentStatus status;
-        uint8 currentRound;
-        uint8 enrolledCount;
-        uint256 totalEntryFeesAccrued; // Gross entry fees collected for this instance
-        uint256 prizePool;      // 95% of entry fees — distributed to winner(s)
-        uint256 ownerAccrued;   // 5% of entry fees — sent to factory at conclusion for immediate owner payout
-        uint256 protocolAccrued; // Deprecated raffle bucket, kept only for layout compatibility
-        uint256 startTime;
-        uint256 createdAt;
-        address winner;
-        bool finalsWasDraw;
-        bool allDrawResolution;
-        uint8 allDrawRound;
-        TournamentResolutionReason completionReason;
-        TournamentResolutionCategory completionCategory;
-        EnrollmentTimeoutState enrollmentTimeout;
-        uint8 actualTotalRounds;
-        uint256 prizeAwarded;
-        address prizeRecipient;
-        uint256 raffleAwarded;  // Deprecated raffle tracking, kept only for layout compatibility
-        address raffleRecipient; // Deprecated raffle tracking, kept only for layout compatibility
-    }
-
-    struct Round {
-        uint8 totalMatches;
-        uint8 completedMatches;
-        bool initialized;
-        uint8 drawCount;
-        uint8 playerCount;
-    }
-
-    struct MatchTimeoutState {
-        uint256 escalation1Start;
-        uint256 escalation2Start;
-        EscalationLevel activeEscalation;
-        bool isStalled;
-    }
-
-    struct Match {
-        address player1;
-        address player2;
-        address winner;
-        address currentTurn;
-        address firstPlayer;
-        MatchStatus status;
-        bool isDraw;
-        uint256 packedBoard;
-        uint256 packedState;
-        uint256 startTime;
-        uint256 lastMoveTime;
-        uint256 player1TimeRemaining;
-        uint256 player2TimeRemaining;
-        string moves;
-        MatchCompletionReason completionReason;
-        MatchCompletionCategory completionCategory;
-    }
-
-    struct LeaderboardEntry {
-        address player;
-        int256 earnings;
-    }
-
-    struct CommonMatchData {
-        address player1;
-        address player2;
-        address winner;
-        address loser;
-        MatchStatus status;
-        bool isDraw;
-        uint256 startTime;
-        uint256 lastMoveTime;
-        uint8 roundNumber;
-        uint8 matchNumber;
-        bool isCached;
-    }
-
-    // ============ Initialization Guard ============
-
-    bool private _initialized;
-
-    // ============ Instance Identity (set at initialize) ============
-
-    address public factory;          // Parent factory — receives fee splits
-    address public creator;          // Who called factory.createInstance()
-    address public MODULE_CORE;
-    address public MODULE_MATCHES;
-    address public MODULE_PRIZES;
-    address public MODULE_ESCALATION;
-
     // Delegatecall protection (same pattern as ETour_Base)
     // immutable — burned into bytecode, not overwritten by delegatecall storage context
     address internal immutable _self;
-
-    // ============ Tier Configuration (set once at initialize) ============
-
-    TierConfig public tierConfig;
-
-    // ============ Tournament State (single instance, flat storage) ============
-
-    TournamentState public tournament;
-
-    address[] public enrolledPlayers;
-    mapping(address => bool) public isEnrolled;
-    mapping(uint8 => Round) public rounds;
-
-    // Match data: key = keccak256(roundNumber, matchNumber)
-    mapping(bytes32 => Match) public matches;
-    mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
-
-    // Prize tracking: key = player address
-    mapping(address => uint256) public playerPrizes;
-
-    // Draw tracking: drawParticipants[roundNumber][matchNumber][player]
-    mapping(uint8 => mapping(uint8 => mapping(address => bool))) public drawParticipants;
-
-    // Tournament-scoped entropy accumulator used for lightweight in-protocol random draws.
-    // Appended at the end of storage to preserve module layout compatibility.
-    bytes32 private _entropyState;
-    uint256 private _entropyNonce;
-    mapping(address => PayoutReason) public playerPayoutReasons;
 
     // ============ Events ============
 
@@ -301,6 +65,8 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         MatchCompletionCategory category
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
+
+    error OnlySelfCall();
 
     // ============ Constructor ============
 
@@ -353,6 +119,11 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
     modifier onlyDelegateCall() {
         require(address(this) != _self, "Must be called via delegatecall");
+        _;
+    }
+
+    modifier onlySelfCall() {
+        if (msg.sender != address(this)) revert OnlySelfCall();
         _;
     }
 
@@ -799,7 +570,11 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         return (matchData.player1, matchData.player2);
     }
 
-    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player) public virtual {
+    function _setMatchPlayer(bytes32 matchId, uint8 slot, address player)
+        public
+        virtual
+        onlySelfCall
+    {
         Match storage matchData = matches[matchId];
         if (slot == 0) {
             matchData.player1 = player;
@@ -889,9 +664,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         uint8 matchNumber,
         address winner,
         bool isDraw
-    ) internal virtual {
-        revert("ETourInstance_Base: must be implemented by game contract");
-    }
+    ) internal virtual;
 
     function initializeRound(uint8 roundNumber) public payable virtual;
 
@@ -924,7 +697,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {
-            initializeRound(0);
+            this.initializeRound(0);
             emit TournamentStarted(address(this), tournament.enrolledCount);
         }
 
@@ -963,7 +736,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
 
         if (oldStatus == TournamentStatus.Enrolling &&
             tournament.status == TournamentStatus.InProgress) {
-            initializeRound(0);
+            this.initializeRound(0);
             emit TournamentStarted(address(this), tournament.enrolledCount);
         }
 
@@ -982,7 +755,7 @@ abstract contract ETourInstance_Base is ReentrancyGuard {
         if (oldStatus != TournamentStatus.Enrolling) return;
 
         if (newStatus == TournamentStatus.InProgress) {
-            initializeRound(0);
+            this.initializeRound(0);
             emit TournamentStarted(address(this), tournament.enrolledCount);
             return;
         }

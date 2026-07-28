@@ -82,6 +82,39 @@ function getModuleSize(modulePath) {
     }
 }
 
+function findUntrackedDeployables(reportedNames) {
+    const artifactsRoot = path.join(__dirname, '..', 'artifacts', 'contracts');
+    if (!fs.existsSync(artifactsRoot)) return [];
+
+    const untracked = [];
+    const visit = (directory) => {
+        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+            const target = path.join(directory, entry.name);
+            if (entry.isDirectory()) {
+                visit(target);
+                continue;
+            }
+            if (!entry.name.endsWith('.json') || entry.name.endsWith('.dbg.json')) continue;
+
+            const artifact = JSON.parse(fs.readFileSync(target, 'utf8'));
+            const deployedBytecode = artifact.deployedBytecode || '0x';
+            const isTestHelper =
+                artifact.sourceName?.startsWith('contracts/test/') ||
+                artifact.sourceName?.startsWith('contracts/test-helpers/');
+            if (
+                deployedBytecode !== '0x' &&
+                !isTestHelper &&
+                !reportedNames.has(artifact.contractName)
+            ) {
+                untracked.push(`${artifact.sourceName}:${artifact.contractName}`);
+            }
+        }
+    };
+
+    visit(artifactsRoot);
+    return untracked.sort();
+}
+
 function formatSize(bytes) {
     const kb = (bytes / 1024).toFixed(2);
     const percentage = ((bytes / SPURIOUS_DRAGON_LIMIT) * 100).toFixed(1);
@@ -231,6 +264,15 @@ if (gameCount > 0) {
 const allContracts = [...factoryData, ...instanceData, ...moduleData, ...supportData];
 const overLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT);
 const nearLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT * 0.9 && d.bytes <= SPURIOUS_DRAGON_LIMIT);
+const untrackedDeployables = findUntrackedDeployables(new Set(allContracts.map((contract) => contract.name)));
+
+if (untrackedDeployables.length > 0) {
+    console.error('❌  Deployable contracts missing from the size policy:');
+    for (const contract of untrackedDeployables) console.error(`  ${contract}`);
+    console.error('Classify each contract in check-contract-sizes.js and capture a reviewed baseline.');
+    console.error('');
+    process.exitCode = 1;
+}
 
 if (process.argv.includes('--write')) {
     fs.mkdirSync(path.dirname(BASELINE_PATH), { recursive: true });
@@ -247,6 +289,40 @@ if (process.argv.includes('--write')) {
     }, null, 2)}\n`);
     console.log(`Wrote contract size baseline: ${BASELINE_PATH}`);
     console.log('');
+} else {
+    if (!fs.existsSync(BASELINE_PATH)) {
+        console.error(`❌  Missing reviewed size baseline: ${BASELINE_PATH}`);
+        console.error('Run npm run size:capture after reviewing the compiled contracts.');
+        process.exitCode = 1;
+    } else {
+        const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'));
+        const allowed = new Map(baseline.contracts.map((contract) => [contract.name, contract.bytes]));
+        const regressions = allContracts.filter((contract) =>
+            !allowed.has(contract.name) || contract.bytes > allowed.get(contract.name)
+        );
+        const missing = baseline.contracts.filter((contract) =>
+            !allContracts.some((actual) => actual.name === contract.name)
+        );
+
+        if (regressions.length > 0 || missing.length > 0) {
+            console.error('❌  Contract size differs from the reviewed baseline:');
+            for (const contract of regressions) {
+                console.error(
+                    `  ${contract.name}: ${contract.bytes} bytes ` +
+                    `(allowed ${allowed.get(contract.name) ?? 'not tracked'})`
+                );
+            }
+            for (const contract of missing) {
+                console.error(`  ${contract.name}: missing compiled artifact`);
+            }
+            console.error('Review the change and run npm run size:capture if intentional.');
+            console.error('');
+            process.exitCode = 1;
+        } else {
+            console.log('✅  No contract grew beyond the reviewed size baseline.');
+            console.log('');
+        }
+    }
 }
 
 if (overLimit.length > 0) {
