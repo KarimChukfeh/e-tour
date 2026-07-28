@@ -120,3 +120,6 @@ bundlers.
 The typed browser integration, encrypted key vault, nonce coordination,
 recovery sequence, and frontend security requirements are documented in
 [`BrowserSessionIntegration.md`](./BrowserSessionIntegration.md).
+Deployment, manifest, constructor, and verification procedures are in
+[`Deployment.md`](./Deployment.md). Monitoring, refill, failover, pause, and
+incident procedures are in [`Operations.md`](./Operations.md).

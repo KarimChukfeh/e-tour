@@ -1,7 +1,11 @@
-import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
 import { fileURLToPath } from "url";
+import {
+    assertDeploymentTarget,
+    atomicWriteJson,
+    networkDeploymentDirectory,
+} from "./deployment-output.js";
 
 const require = createRequire(import.meta.url);
 const ENTRY_POINT_ARTIFACT = require(
@@ -175,10 +179,14 @@ export async function deployLocalAccountAbstraction(
     }
 
     const network = await hre.ethers.provider.getNetwork();
+    const chainId = assertDeploymentTarget(
+        hre.network.name,
+        network.chainId
+    );
     const manifest = {
         schemaVersion: 1,
         network: hre.network.name,
-        chainId: network.chainId.toString(),
+        chainId,
         entryPoint: ENTRY_POINT_ADDRESS,
         deterministicDeployer: DETERMINISTIC_DEPLOYER,
         salt: ENTRY_POINT_SALT,
@@ -187,12 +195,25 @@ export async function deployLocalAccountAbstraction(
         senderCreator,
     };
     if (writeManifest) {
-        const output = path.join(
+        const deploymentsDirectory = path.join(
             V3_DIR,
-            "deployments",
-            `${hre.network.name}-account-abstraction.json`
+            "deployments"
         );
-        fs.writeFileSync(output, `${JSON.stringify(manifest, null, 2)}\n`);
+        const output = path.join(
+            networkDeploymentDirectory(
+                deploymentsDirectory,
+                hre.network.name
+            ),
+            "account-abstraction.json"
+        );
+        atomicWriteJson(output, manifest);
+        atomicWriteJson(
+            path.join(
+                deploymentsDirectory,
+                `${hre.network.name}-account-abstraction.json`
+            ),
+            manifest
+        );
     }
     return {
         ...manifest,

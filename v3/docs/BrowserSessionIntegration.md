@@ -133,6 +133,32 @@ that could duplicate intent or hide a deterministic failure.
 The direct call is the ordinary game `makeMove` from the enrolled primary.
 It bypasses the account, bundler, and paymaster but not game rules.
 
+## User-visible behavior and copy
+
+The product should describe the session as a convenience key for this game,
+not as a second wallet or a transfer of custody.
+
+| State | Expected experience | Required action/copy |
+| --- | --- | --- |
+| Creating or joining with a session | One primary-wallet confirmation pays the entry fee, enrolls the player, and authorizes this tournament's browser session atomically | “Confirm once to join and enable prompt-free moves for this game.” |
+| Active session | Legal moves submit without primary-wallet popups; show pending/included state from the UserOperation receipt | “Move submitted securely from this browser session.” |
+| Expired | Tournament state is unchanged and the primary can still play | “Your one-hour play session expired. Reconnect your wallet to refresh it, or make this move directly.” |
+| Browser storage lost or new device | No local key exists, but the on-chain tournament and funds are safe | “This browser no longer has the game key. Connect the enrolled wallet to authorize a new one.” |
+| Rotated or revoked | The local key is no longer authorized | “This browser session was replaced or revoked. Refresh with the enrolled wallet.” |
+| Bundler or paymaster unavailable | Do not imply the game or funds are unavailable | “Prompt-free submission is temporarily unavailable. Make the move directly with your wallet.” |
+| Illegal/reverted move | Do not retry automatically through the primary wallet | Show the decoded game reason and let the user correct the move |
+
+Never say that the session controls funds, lasts for the whole tournament, or
+can recover without the enrolled wallet. A tournament can legally last longer
+than one hour; refresh is a normal flow rather than an exceptional failure.
+
+During refresh, distinguish wallet approval from completion. Show success only
+after the transaction confirms and the new executor matches the registry. If
+the wallet rejects, keep the old local record and say that nothing changed. If
+the transaction confirmed but local promotion was interrupted, startup
+recovery should reconcile the staged key before asking the user to approve
+another refresh.
+
 ## Content security and dependencies
 
 Production frontend requirements:

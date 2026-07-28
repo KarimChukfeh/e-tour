@@ -1,6 +1,10 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+    atomicWriteJson,
+    networkDeploymentDirectory,
+} from "./lib/deployment-output.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -100,6 +104,29 @@ function buildSessionAuthorizationSection(deployment, sessionRegistryAbi) {
 function main() {
     const { network } = parseArgs(process.argv.slice(2));
     const targetNetwork = resolveNetwork(network);
+    const outputDirectory = networkDeploymentDirectory(
+        DEPLOYMENTS_DIR,
+        targetNetwork
+    );
+    const compatibilityDirectory =
+        targetNetwork === "localhost"
+            ? DEPLOYMENTS_DIR
+            : null;
+    const writeOutput = (fileName, payload) => {
+        atomicWriteJson(
+            path.join(outputDirectory, fileName),
+            payload
+        );
+        if (compatibilityDirectory) {
+            atomicWriteJson(
+                path.join(
+                    compatibilityDirectory,
+                    fileName
+                ),
+                payload
+            );
+        }
+    };
 
     const profileArtifactPath = path.join(ARTIFACTS_DIR, "PlayerProfile.sol", "PlayerProfile.json");
     const registryArtifactPath = path.join(ARTIFACTS_DIR, "PlayerRegistry.sol", "PlayerRegistry.json");
@@ -119,7 +146,23 @@ function main() {
 
     const perGameOutputs = [];
     for (const spec of GAME_SPECS) {
-        const deploymentPath = path.join(DEPLOYMENTS_DIR, spec.deploymentFile(targetNetwork));
+        const legacyDeploymentName =
+            spec.deploymentFile(targetNetwork);
+        const canonicalDeploymentPath = path.join(
+            outputDirectory,
+            legacyDeploymentName.replace(
+                `${targetNetwork}-`,
+                ""
+            )
+        );
+        const deploymentPath = fs.existsSync(
+            canonicalDeploymentPath
+        )
+            ? canonicalDeploymentPath
+            : path.join(
+                  DEPLOYMENTS_DIR,
+                  legacyDeploymentName
+              );
         ensureFile(deploymentPath, `${spec.label} deployment`);
         ensureFile(spec.factoryArtifact, `${spec.label} artifact`);
         ensureFile(spec.instanceArtifact, `${spec.label} instance artifact`);
@@ -150,10 +193,7 @@ function main() {
             },
         };
 
-        fs.writeFileSync(
-            path.join(DEPLOYMENTS_DIR, spec.abiFile),
-            JSON.stringify(payload, null, 2)
-        );
+        writeOutput(spec.abiFile, payload);
 
         perGameOutputs.push({
             label: spec.label,
@@ -216,25 +256,22 @@ function main() {
         ),
     };
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "ETour-Factory-ABIs.json"),
-        JSON.stringify(combined, null, 2)
-    );
+    writeOutput("ETour-Factory-ABIs.json", combined);
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "PlayerProfile-ABI.json"),
-        JSON.stringify({
+    writeOutput(
+        "PlayerProfile-ABI.json",
+        {
             network: targetNetwork,
             generatedAt,
             contract: {
                 abi: profileAbi,
             },
-        }, null, 2)
+        }
     );
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "PlayerRegistry-ABI.json"),
-        JSON.stringify({
+    writeOutput(
+        "PlayerRegistry-ABI.json",
+        {
             network: targetNetwork,
             generatedAt,
             contract: {
@@ -246,12 +283,12 @@ function main() {
                     payload.playerProfile.PlayerRegistry.address,
                 ])
             ),
-        }, null, 2)
+        }
     );
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "SessionKeyRegistry-ABI.json"),
-        JSON.stringify({
+    writeOutput(
+        "SessionKeyRegistry-ABI.json",
+        {
             network: targetNetwork,
             generatedAt,
             contract: {
@@ -264,7 +301,7 @@ function main() {
                     payload.sessionAuthorization.SessionKeyRegistry.address,
                 ])
             ),
-        }, null, 2)
+        }
     );
 
     console.log(`Regenerated V3 ABI files for network: ${targetNetwork}`);

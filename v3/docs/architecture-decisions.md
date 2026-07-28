@@ -67,26 +67,22 @@ baseline.
 
 ## Session account and counterfactual deployment
 
-V3 pins the official v0.8 `SimpleAccount` and `SimpleAccountFactory` from
-`@account-abstraction/contracts@0.8.0`. ETour deploys the factory
-deterministically on each supported network and records its address in
-`config/account-abstraction.json`.
+V3 uses the non-upgradeable `ETourSessionAccount` and
+`ETourSessionAccountFactory`. The factory computes a CREATE2 address from a
+browser-generated secp256k1 owner and random salt before deployment, records
+the accounts it creates, and supplies first-use init code through EntryPoint
+`SenderCreator`. The registered executor can therefore be counterfactual at
+enrollment and deployed by its first UserOperation.
 
-The factory's
-[`getAddress(owner, salt)`](https://github.com/eth-infinitism/account-abstraction/blob/v0.8.0/contracts/accounts/SimpleAccountFactory.sol)
-computes the ERC-1967 proxy CREATE2 address before deployment. Its
-`createAccount(owner, salt)` is designed for factory data on the first
-UserOperation and is restricted to the EntryPoint `SenderCreator`. Thus V3 can
-register the counterfactual executor during enrollment and deploy it atomically
-with the first move.
+EntryPoint, browser owner, and factory are immutable account values. The
+account is intentionally narrow and should not hold funds. V3 also pins and
+reproducibly validates the official v0.8 `SimpleAccount` and
+`SimpleAccountFactory` artifacts as compatibility references, but they are not
+the player-session authorization boundary.
 
-The account-abstraction repository includes OpenZeppelin and Spearbit audit
-reports, but its own documentation calls `SimpleAccount` a sample/reference
-account. V3 accepts that limited implementation only because the session account
-must never hold stake or prize authority and the game registry independently
-limits it to one instance, one primary player, `makeMove`, and one TTL. The
-pinned v0.8 account/factory and ETour integration remain in the V3 external
-audit scope; an adverse review reopens this decision.
+The session account, factory, official reference artifacts, and ETour
+integration remain in the V3 external audit scope; adverse review reopens this
+decision.
 
 ## Bundlers
 
@@ -108,17 +104,15 @@ through both providers on Arbitrum Sepolia before production.
 
 ## Paymaster
 
-The production design uses both:
+The implemented `ETourSessionPaymaster` uses a fully on-chain deterministic
+policy. It enforces EntryPoint and account-factory provenance, approved V3
+factories and instances, the exact account wrapper, active session/TTL, approved
+`makeMove` shapes, zero value, and hard gas/cost bounds.
 
-- an on-chain policy that independently enforces approved V3 factories,
-  instances, account wrapper, registered executor, active TTL, `makeMove`
-  selector, zero value, gas bounds, chain ID, and EntryPoint; and
-- a verifying signature for budget allocation, rate limiting, expiry, and abuse
-  response.
-
-The verifier may narrow or decline sponsorship but can never broaden what the
-on-chain policy accepts. Paymaster outage or refusal does not alter game
-authorization and never blocks a direct primary-wallet transaction.
+There is no off-chain verifier key. RPC providers may still decline submission
+for operational budgets or rate limits, but they cannot broaden sponsorship.
+Paymaster outage or refusal does not alter game authorization and never blocks
+a direct primary-wallet transaction.
 
 ## EIP-7702
 
@@ -230,6 +224,6 @@ opt-out. A non-zero registration is part of the paid enrollment transaction,
 so a registry rejection also rolls back the clone/tier, player/profile,
 tournament, accounting, ETH, and event effects.
 
-The implemented registry and enrollment boundaries are documented in
-`docs/SessionAuthorization.md`. Session-to-primary gameplay resolution remains
-the separate Phase 6 change.
+The implemented registry, enrollment, and gameplay boundaries are documented
+in `docs/SessionAuthorization.md`. Phase 6 session-to-primary resolution is
+complete and exists only at the shared `makeMove` boundary.

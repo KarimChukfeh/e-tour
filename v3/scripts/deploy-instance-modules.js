@@ -5,11 +5,28 @@
 import hre from "hardhat";
 import fs from "fs";
 import path from "path";
+import {
+    atomicWriteJson,
+    networkDeploymentDirectory,
+} from "./lib/deployment-output.js";
 
-function deploymentFile() {
-    return hre.network.name === "localhost"
-        ? "./deployments/instance-modules.json"
-        : `./deployments/${hre.network.name}-instance-modules.json`;
+function deploymentFiles() {
+    const deployments = "./deployments";
+    const canonical = path.join(
+        networkDeploymentDirectory(
+            deployments,
+            hre.network.name
+        ),
+        "instance-modules.json"
+    );
+    const compatibility =
+        hre.network.name === "localhost"
+            ? path.join(deployments, "instance-modules.json")
+            : path.join(
+                  deployments,
+                  `${hre.network.name}-instance-modules.json`
+              );
+    return { canonical, compatibility };
 }
 const MODULE_ARTIFACTS = {
     core: "contracts/modules/ETourInstance_Core.sol:ETourInstance_Core",
@@ -127,11 +144,14 @@ async function validateExistingInstanceModules(deployment) {
 }
 
 export function loadExistingInstanceModuleDeployment() {
-    const file = deploymentFile();
-    if (fs.existsSync(file)) {
-        const data = JSON.parse(fs.readFileSync(file, "utf8"));
-        if (data.network === hre.network.name) {
-            return data;
+    for (const file of Object.values(deploymentFiles())) {
+        if (fs.existsSync(file)) {
+            const data = JSON.parse(
+                fs.readFileSync(file, "utf8")
+            );
+            if (data.network === hre.network.name) {
+                return data;
+            }
         }
     }
     return null;
@@ -142,19 +162,21 @@ export function loadExistingInstanceModules() {
 }
 
 export function saveInstanceModules(modules, chainId, artifactHashes, codeHashes) {
-    const dir = "./deployments";
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-    const file = deploymentFile();
-    fs.writeFileSync(file, JSON.stringify({
+    const files = deploymentFiles();
+    const payload = {
         network: hre.network.name,
         chainId,
         timestamp: new Date().toISOString(),
         modules,
         artifactHashes,
         codeHashes,
-    }, null, 2));
-    console.log("💾 Instance module addresses saved to:", file);
+    };
+    atomicWriteJson(files.canonical, payload);
+    atomicWriteJson(files.compatibility, payload);
+    console.log(
+        "💾 Instance module addresses saved to:",
+        files.canonical
+    );
 }
 
 export async function getOrDeployInstanceModules(forceDeploy = false) {

@@ -240,9 +240,9 @@
 - [x] Add a storage-layout comparison script.
 - [x] Add a V2-versus-V3 ABI surface comparison script.
 - [x] Add deployment smoke-test scripts.
-- [ ] Add atomic network-specific deployment manifest generation.
-- [ ] Include chain ID, git commit, compiler settings, EntryPoint, account, registry, modules, factories, implementations, paymaster, and ABIs in V3 manifests.
-- [ ] Prevent localhost or testnet deployment output from overwriting production manifests.
+- [x] Add atomic network-specific deployment manifest generation.
+- [x] Include chain ID, git commit, compiler settings, EntryPoint, account, registry, modules, factories, implementations, paymaster, and ABIs in V3 manifests.
+- [x] Prevent localhost or testnet deployment output from overwriting production manifests.
 - [x] Ensure deployment and diagnostic scripts never print private keys.
 - [x] Run the complete V3 test suite.
 - [ ] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
@@ -253,20 +253,20 @@
 - [x] Run deployed-bytecode size checks and confirm agreed headroom.
 - [x] Run gas snapshots for direct moves, session moves, terminal moves, registration, refresh, revoke, first UserOperation, and later UserOperations.
 - [x] Investigate and approve every material gas regression.
-- [ ] Write `v3/README.md`.
-- [ ] Write the V3 architecture and delegatecall storage documentation.
-- [ ] Write the session authorization, TTL, scope, events, recovery, and threat-model documentation.
-- [ ] Write the ERC-4337 account, EntryPoint, bundler, paymaster, and UserOperation documentation.
-- [ ] Write the V3 game-development guide.
-- [ ] Write the V3 deployment and verification guide.
-- [ ] Write the bundler failover, paymaster refill, monitoring, and incident operations runbook.
-- [ ] Write the V2-to-V3 source and production migration guide.
+- [x] Write `v3/README.md`.
+- [x] Write the V3 architecture and delegatecall storage documentation.
+- [x] Write the session authorization, TTL, scope, events, recovery, and threat-model documentation.
+- [x] Write the ERC-4337 account, EntryPoint, bundler, paymaster, and UserOperation documentation.
+- [x] Write the V3 game-development guide.
+- [x] Write the V3 deployment and verification guide.
+- [x] Write the bundler failover, paymaster refill, monitoring, and incident operations runbook.
+- [x] Write the V2-to-V3 source and production migration guide.
 - [ ] Complete NatSpec for every public and external V3 API.
-- [ ] Update user-facing documentation for one-confirmation enrollment, session moves, expiry, browser loss, recovery, and direct fallback.
+- [x] Update user-facing documentation for one-confirmation enrollment, session moves, expiry, browser loss, recovery, and direct fallback.
 - [ ] Deploy the pinned local EntryPoint and complete local end-to-end create, join, move, rotate, revoke, and conclude flows.
 - [ ] Complete local end-to-end tournaments for all three games using session UserOperations.
 - [ ] Complete local paymaster-abuse and infrastructure-outage tests.
-- [ ] Finalize the V3 deployment order and constructor arguments.
+- [x] Finalize the V3 deployment order and constructor arguments.
 - [ ] Deploy or select the V3 PlayerProfile implementation and PlayerRegistry.
 - [ ] Deploy the SessionKeyRegistry.
 - [ ] Deploy the four shared instance modules.

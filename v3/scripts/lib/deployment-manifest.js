@@ -1,11 +1,22 @@
 import fs from "fs";
 import path from "path";
 import { getAddress } from "ethers";
+import {
+    canonicalManifestPath,
+} from "./deployment-output.js";
 
 export function manifestPath(network) {
-    return path.join(
+    const deploymentsDirectory = path.join(
         process.cwd(),
-        "deployments",
+        "deployments"
+    );
+    const canonical = canonicalManifestPath(
+        deploymentsDirectory,
+        network
+    );
+    if (fs.existsSync(canonical)) return canonical;
+    return path.join(
+        deploymentsDirectory,
         `${network}-factory.json`
     );
 }

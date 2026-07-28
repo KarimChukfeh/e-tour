@@ -18,6 +18,16 @@ import {
     ENTRY_POINT_ADDRESS,
     deployLocalAccountAbstraction,
 } from "./lib/account-abstraction-deployment.js";
+import {
+    artifactRecord,
+    assertDeploymentTarget,
+    atomicWriteJson,
+    canonicalManifestPath,
+    compilerMetadata,
+    networkDeploymentDirectory,
+    repositoryMetadata,
+    requireReviewedSourceState,
+} from "./lib/deployment-output.js";
 
 async function main() {
     const force =
@@ -26,13 +36,34 @@ async function main() {
     const [deployer] = await hre.ethers.getSigners();
     const network = hre.network.name;
     const { chainId } = await hre.ethers.provider.getNetwork();
+    const normalizedChainId = assertDeploymentTarget(
+        network,
+        chainId
+    );
+    const repository = repositoryMetadata(
+        path.resolve(process.cwd(), "..")
+    );
+    requireReviewedSourceState(network, repository);
+    const protocolCompiler = await compilerMetadata(
+        hre,
+        "contracts/TicTacChainFactory.sol:TicTacChainFactory"
+    );
 
     console.log("=".repeat(60));
     console.log("ETour Full Factory Deployment");
     console.log("=".repeat(60));
     console.log("Deployer:", deployer.address);
     console.log("Balance: ", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH");
-    console.log("Network: ", network, `(chainId: ${chainId})`);
+    console.log(
+        "Network: ",
+        network,
+        `(chainId: ${normalizedChainId})`
+    );
+    console.log(
+        "Source:  ",
+        repository.commit,
+        repository.dirty ? "(dirty development tree)" : "(clean)"
+    );
     if (force) console.log("Mode:     FORCE (redeploying everything)");
     console.log("");
 
@@ -207,23 +238,27 @@ async function main() {
     // ── Step 7: Save artifacts ────────────────────────────────────────────────
     const deploymentsDir = "./deployments";
     if (!fs.existsSync(deploymentsDir)) fs.mkdirSync(deploymentsDir, { recursive: true });
-    const abiOutputDir =
-        network === "localhost"
-            ? deploymentsDir
-            : path.join(deploymentsDir, network);
-    if (!fs.existsSync(abiOutputDir)) {
-        fs.mkdirSync(abiOutputDir, { recursive: true });
+    const networkOutputDir = networkDeploymentDirectory(
+        deploymentsDir,
+        network
+    );
+    if (!fs.existsSync(networkOutputDir)) {
+        fs.mkdirSync(networkOutputDir, { recursive: true });
     }
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();
     const timestamp   = new Date().toISOString();
 
     const deployment = {
+        schemaVersion: 2,
+        generation: "v3",
         network,
-        chainId: chainId.toString(),
+        chainId: normalizedChainId,
         deployer: deployer.address,
         timestamp,
         blockNumber,
+        source: repository,
+        compiler: protocolCompiler,
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
@@ -265,8 +300,6 @@ async function main() {
     };
 
     const deployFile = path.join(deploymentsDir, `${network}-factory.json`);
-    fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
-    console.log("Deployment saved to:", deployFile);
 
     const [
         ticTacArt,
@@ -281,6 +314,11 @@ async function main() {
         sessionAccountArt,
         sessionAccountFactoryArt,
         sessionPaymasterArt,
+        coreArt,
+        matchesArt,
+        prizesArt,
+        escalationArt,
+        chessRulesArt,
     ] =
         await Promise.all([
             hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
@@ -295,16 +333,38 @@ async function main() {
             hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionAccount.sol:ETourSessionAccount"),
             hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionAccountFactory.sol:ETourSessionAccountFactory"),
             hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionPaymaster.sol:ETourSessionPaymaster"),
+            hre.artifacts.readArtifact("contracts/modules/ETourInstance_Core.sol:ETourInstance_Core"),
+            hre.artifacts.readArtifact("contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches"),
+            hre.artifacts.readArtifact("contracts/modules/ETourInstance_Prizes.sol:ETourInstance_Prizes"),
+            hre.artifacts.readArtifact("contracts/modules/ETourInstance_Escalation.sol:ETourInstance_Escalation"),
+            hre.artifacts.readArtifact("contracts/modules/ChessRulesModule.sol:ChessRulesModule"),
         ]);
 
-    const abiFile = path.join(abiOutputDir, "ETour-Factory-ABIs.json");
+    const abiFile = path.join(
+        networkOutputDir,
+        "ETour-Factory-ABIs.json"
+    );
     const playerProfileArtifacts = {
         PlayerProfileImpl: { address: profileImplAddr, abi: profileArt.abi },
         PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
     };
-    fs.writeFileSync(abiFile, JSON.stringify({
+    const writeNetworkOutput = (fileName, payload) => {
+        const canonical = path.join(
+            networkOutputDir,
+            fileName
+        );
+        atomicWriteJson(canonical, payload);
+        if (network === "localhost") {
+            atomicWriteJson(
+                path.join(deploymentsDir, fileName),
+                payload
+            );
+        }
+        return canonical;
+    };
+    const combinedAbiPayload = {
         network,
-        chainId: chainId.toString(),
+        chainId: normalizedChainId,
         deployedAt: timestamp,
         modules: deployment.modules,
         playerProfile: playerProfileArtifacts,
@@ -342,38 +402,42 @@ async function main() {
             ConnectFourInstance: { address: c4ImplAddr,       abi: c4InstArt.abi },
             ChessInstance:       { address: chessImplAddr,    abi: chessInstArt.abi },
         },
-    }, null, 2));
+    };
+    writeNetworkOutput(
+        "ETour-Factory-ABIs.json",
+        combinedAbiPayload
+    );
     console.log("ABI file saved to:", abiFile);
 
-    fs.writeFileSync(
-        path.join(abiOutputDir, "PlayerProfile-ABI.json"),
-        JSON.stringify({
+    writeNetworkOutput(
+        "PlayerProfile-ABI.json",
+        {
             network,
-            chainId: chainId.toString(),
+            chainId: normalizedChainId,
             deployedAt: timestamp,
             contract: playerProfileArtifacts.PlayerProfileImpl,
-        }, null, 2)
+        }
     );
-    fs.writeFileSync(
-        path.join(abiOutputDir, "PlayerRegistry-ABI.json"),
-        JSON.stringify({
+    writeNetworkOutput(
+        "PlayerRegistry-ABI.json",
+        {
             network,
-            chainId: chainId.toString(),
+            chainId: normalizedChainId,
             deployedAt: timestamp,
             contract: playerProfileArtifacts.PlayerRegistry,
-        }, null, 2)
+        }
     );
-    fs.writeFileSync(
-        path.join(abiOutputDir, "SessionKeyRegistry-ABI.json"),
-        JSON.stringify({
+    writeNetworkOutput(
+        "SessionKeyRegistry-ABI.json",
+        {
             network,
-            chainId: chainId.toString(),
+            chainId: normalizedChainId,
             deployedAt: timestamp,
             contract: {
                 address: sessionRegistryAddr,
                 abi: sessionRegistryArt.abi,
             },
-        }, null, 2)
+        }
     );
 
     const perGameDeploymentFiles = [
@@ -381,7 +445,7 @@ async function main() {
             path: path.join(deploymentsDir, `${network}-tictac-factory.json`),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployer: deployer.address,
                 timestamp,
                 blockNumber,
@@ -406,7 +470,7 @@ async function main() {
             path: path.join(deploymentsDir, `${network}-connectfour-factory.json`),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployer: deployer.address,
                 timestamp,
                 blockNumber,
@@ -431,7 +495,7 @@ async function main() {
             path: path.join(deploymentsDir, `${network}-chess-factory.json`),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployer: deployer.address,
                 timestamp,
                 blockNumber,
@@ -456,16 +520,25 @@ async function main() {
     ];
 
     for (const file of perGameDeploymentFiles) {
-        fs.writeFileSync(file.path, JSON.stringify(file.payload, null, 2));
+        atomicWriteJson(file.path, file.payload);
+        atomicWriteJson(
+            path.join(
+                networkOutputDir,
+                path
+                    .basename(file.path)
+                    .replace(`${network}-`, "")
+            ),
+            file.payload
+        );
         console.log("Deployment saved to:", file.path);
     }
 
     const perGameAbiFiles = [
         {
-            path: path.join(abiOutputDir, "TicTacChainFactory-ABI.json"),
+            path: path.join(networkOutputDir, "TicTacChainFactory-ABI.json"),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployedAt: timestamp,
                 modules: {
                     ETourInstance_Core: modules.core,
@@ -485,10 +558,10 @@ async function main() {
             },
         },
         {
-            path: path.join(abiOutputDir, "ConnectFourFactory-ABI.json"),
+            path: path.join(networkOutputDir, "ConnectFourFactory-ABI.json"),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployedAt: timestamp,
                 modules: {
                     ETourInstance_Core: modules.core,
@@ -508,10 +581,10 @@ async function main() {
             },
         },
         {
-            path: path.join(abiOutputDir, "ChessOnChainFactory-ABI.json"),
+            path: path.join(networkOutputDir, "ChessOnChainFactory-ABI.json"),
             payload: {
                 network,
-                chainId: chainId.toString(),
+                chainId: normalizedChainId,
                 deployedAt: timestamp,
                 modules: {
                     ETourInstance_Core: modules.core,
@@ -534,9 +607,237 @@ async function main() {
     ];
 
     for (const file of perGameAbiFiles) {
-        fs.writeFileSync(file.path, JSON.stringify(file.payload, null, 2));
+        atomicWriteJson(file.path, file.payload);
+        if (network === "localhost") {
+            atomicWriteJson(
+                path.join(
+                    deploymentsDir,
+                    path.basename(file.path)
+                ),
+                file.payload
+            );
+        }
         console.log("ABI file saved to:", file.path);
     }
+
+    const contracts = {
+        EntryPoint: artifactRecord(
+            hre.ethers,
+            accountAbstraction.artifacts.EntryPoint,
+            { address: ENTRY_POINT_ADDRESS }
+        ),
+        SimpleAccountImplementation: artifactRecord(
+            hre.ethers,
+            accountAbstraction.artifacts.SimpleAccount,
+            {
+                address:
+                    accountAbstraction.simpleAccountImplementation,
+                constructorArguments: [ENTRY_POINT_ADDRESS],
+            }
+        ),
+        SimpleAccountFactory: artifactRecord(
+            hre.ethers,
+            accountAbstraction.artifacts.SimpleAccountFactory,
+            {
+                address:
+                    accountAbstraction.simpleAccountFactory,
+                constructorArguments: [ENTRY_POINT_ADDRESS],
+            }
+        ),
+        ETourInstance_Core: artifactRecord(
+            hre.ethers,
+            coreArt,
+            { address: modules.core }
+        ),
+        ETourInstance_Matches: artifactRecord(
+            hre.ethers,
+            matchesArt,
+            { address: modules.matches }
+        ),
+        ETourInstance_Prizes: artifactRecord(
+            hre.ethers,
+            prizesArt,
+            { address: modules.prizes }
+        ),
+        ETourInstance_Escalation: artifactRecord(
+            hre.ethers,
+            escalationArt,
+            { address: modules.escalation }
+        ),
+        ChessRulesModule: artifactRecord(
+            hre.ethers,
+            chessRulesArt,
+            { address: chessRulesAddr }
+        ),
+        PlayerProfile: artifactRecord(
+            hre.ethers,
+            profileArt,
+            { address: profileImplAddr }
+        ),
+        PlayerRegistry: artifactRecord(
+            hre.ethers,
+            registryArt,
+            {
+                address: registryAddr,
+                constructorArguments: [profileImplAddr],
+            }
+        ),
+        SessionKeyRegistry: artifactRecord(
+            hre.ethers,
+            sessionRegistryArt,
+            {
+                address: sessionRegistryAddr,
+                constructorArguments: [registryAddr],
+            }
+        ),
+        ETourSessionAccount: {
+            ...artifactRecord(
+                hre.ethers,
+                sessionAccountArt,
+                {
+                    deployment:
+                        "counterfactual-per-session",
+                }
+            ),
+            constructorArgumentPolicy: [
+                ENTRY_POINT_ADDRESS,
+                "<browser-session-owner>",
+                sessionAccountFactoryAddr,
+            ],
+        },
+        ETourSessionAccountFactory: artifactRecord(
+            hre.ethers,
+            sessionAccountFactoryArt,
+            {
+                address: sessionAccountFactoryAddr,
+                constructorArguments: [ENTRY_POINT_ADDRESS],
+            }
+        ),
+        ETourSessionPaymaster: artifactRecord(
+            hre.ethers,
+            sessionPaymasterArt,
+            {
+                address: sessionPaymasterAddr,
+                constructorArguments: [
+                    ENTRY_POINT_ADDRESS,
+                    sessionRegistryAddr,
+                    sessionAccountFactoryAddr,
+                ],
+            }
+        ),
+        TicTacChainFactory: artifactRecord(
+            hre.ethers,
+            ticTacArt,
+            {
+                address: ticTacFactoryAddr,
+                constructorArguments: [
+                    modules.core,
+                    modules.matches,
+                    modules.prizes,
+                    modules.escalation,
+                    registryAddr,
+                    sessionRegistryAddr,
+                ],
+            }
+        ),
+        ConnectFourFactory: artifactRecord(
+            hre.ethers,
+            c4Art,
+            {
+                address: c4FactoryAddr,
+                constructorArguments: [
+                    modules.core,
+                    modules.matches,
+                    modules.prizes,
+                    modules.escalation,
+                    registryAddr,
+                    sessionRegistryAddr,
+                ],
+            }
+        ),
+        ChessOnChainFactory: artifactRecord(
+            hre.ethers,
+            chessArt,
+            {
+                address: chessFactoryAddr,
+                constructorArguments: [
+                    modules.core,
+                    modules.matches,
+                    modules.prizes,
+                    modules.escalation,
+                    chessRulesAddr,
+                    registryAddr,
+                    sessionRegistryAddr,
+                ],
+            }
+        ),
+        TicTacInstance: artifactRecord(
+            hre.ethers,
+            ticTacInstArt,
+            { address: ticTacImplAddr }
+        ),
+        ConnectFourInstance: artifactRecord(
+            hre.ethers,
+            c4InstArt,
+            { address: c4ImplAddr }
+        ),
+        ChessInstance: artifactRecord(
+            hre.ethers,
+            chessInstArt,
+            { address: chessImplAddr }
+        ),
+    };
+    const completeManifest = {
+        ...deployment,
+        manifestKind: "complete-v3-deployment",
+        compilers: {
+            protocol: protocolCompiler,
+            canonicalEntryPoint: {
+                version: "0.8.28",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1_000_000,
+                    },
+                    viaIR: true,
+                    evmVersion: "cancun",
+                },
+                package:
+                    "@account-abstraction/contracts@0.8.0",
+            },
+        },
+        entryPoint: {
+            version: "0.8",
+            address: ENTRY_POINT_ADDRESS,
+            senderCreator: accountAbstraction.senderCreator,
+        },
+        accountAbstraction: {
+            ...deployment.accountAbstraction,
+            simpleAccountImplementation:
+                accountAbstraction.simpleAccountImplementation,
+            senderCreator: accountAbstraction.senderCreator,
+        },
+        abiPolicy: {
+            embedded: true,
+            contractCount: Object.keys(contracts).length,
+            canonicalBundle:
+                "ETour-Factory-ABIs.json",
+        },
+        contracts,
+    };
+    const canonicalManifest = canonicalManifestPath(
+        deploymentsDir,
+        network
+    );
+    // Write the complete manifest last. Its presence means every sibling
+    // deployment and ABI output for this run was written successfully.
+    atomicWriteJson(canonicalManifest, completeManifest);
+    atomicWriteJson(deployFile, completeManifest);
+    console.log(
+        "Canonical deployment manifest saved to:",
+        canonicalManifest
+    );
+    console.log("Compatibility manifest saved to:", deployFile);
     console.log("");
 
     // ── Summary ───────────────────────────────────────────────────────────────

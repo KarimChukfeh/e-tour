@@ -27,6 +27,7 @@ const GAME_SPECS = [
         sourceAbiFile: "TicTacChainFactory-ABI.json",
         frontendAbiFile: "TicTacToeFactory-ABI.json",
         deploymentFile: (network) => `${network}-tictac-factory.json`,
+        canonicalDeploymentFile: "tictac-factory.json",
         sourceFactoryKey: "TicTacChainFactory",
         sourceImplementationKey: "TicTacInstance",
         frontendFactoryKey: "TicTacToeFactory",
@@ -37,6 +38,7 @@ const GAME_SPECS = [
         sourceAbiFile: "ConnectFourFactory-ABI.json",
         frontendAbiFile: "ConnectFourFactory-ABI.json",
         deploymentFile: (network) => `${network}-connectfour-factory.json`,
+        canonicalDeploymentFile: "connectfour-factory.json",
         sourceFactoryKey: "ConnectFourFactory",
         sourceImplementationKey: "ConnectFourInstance",
         frontendFactoryKey: "ConnectFourFactory",
@@ -47,6 +49,7 @@ const GAME_SPECS = [
         sourceAbiFile: "ChessOnChainFactory-ABI.json",
         frontendAbiFile: "ChessFactory-ABI.json",
         deploymentFile: (network) => `${network}-chess-factory.json`,
+        canonicalDeploymentFile: "chess-factory.json",
         sourceFactoryKey: "ChessOnChainFactory",
         sourceImplementationKey: "ChessInstance",
         frontendFactoryKey: "ChessFactory",
@@ -190,14 +193,21 @@ function discoverImportedAbiFiles(frontendV2Dir, frontendAbisDir) {
 function buildFrontendPayloads(network) {
     const gameBundles = new Map();
     const localDeployments = new Map();
+    const networkDirectory = path.join(
+        DEPLOYMENTS_DIR,
+        network
+    );
 
     for (const spec of GAME_SPECS) {
         const bundle = readJson(
-            path.join(DEPLOYMENTS_DIR, spec.sourceAbiFile),
+            path.join(networkDirectory, spec.sourceAbiFile),
             spec.sourceAbiFile
         );
         const deployment = readJson(
-            path.join(DEPLOYMENTS_DIR, spec.deploymentFile(network)),
+            path.join(
+                networkDirectory,
+                spec.canonicalDeploymentFile
+            ),
             spec.deploymentFile(network)
         );
         validateGameBundle(bundle, spec, network);
@@ -217,16 +227,16 @@ function buildFrontendPayloads(network) {
     }
 
     const profilePayload = readJson(
-        path.join(DEPLOYMENTS_DIR, "PlayerProfile-ABI.json"),
+        path.join(networkDirectory, "PlayerProfile-ABI.json"),
         "PlayerProfile-ABI.json"
     );
     const registryPayload = readJson(
-        path.join(DEPLOYMENTS_DIR, "PlayerRegistry-ABI.json"),
+        path.join(networkDirectory, "PlayerRegistry-ABI.json"),
         "PlayerRegistry-ABI.json"
     );
     const sharedDeployment = readJson(
-        path.join(DEPLOYMENTS_DIR, `${network}-factory.json`),
-        `${network}-factory.json`
+        path.join(networkDirectory, "manifest.json"),
+        `${network}/manifest.json`
     );
 
     assertAbi(profilePayload.contract?.abi, "PlayerProfile-ABI.json contract");

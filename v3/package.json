@@ -27,6 +27,7 @@
     "entrypoint:check": "hardhat run scripts/check-entrypoint.js --network localhost",
     "secrets:check": "node scripts/check-secret-output.js",
     "deployment:smoke": "hardhat run scripts/smoke-deployment.js --network localhost",
+    "deployment:manifest:check": "node scripts/check-deployment-manifest.js --network localhost",
     "deployment:verify:dry": "DRY_RUN=1 hardhat run scripts/verify-deployment.js --network arbitrumSepolia",
     "deployment:verify:sepolia": "hardhat run scripts/verify-deployment.js --network arbitrumSepolia",
     "deployment:verify:arbitrum": "hardhat run scripts/verify-deployment.js --network arbitrum",

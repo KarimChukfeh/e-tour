@@ -1511,21 +1511,29 @@ Map errors to clear client messages. Do not collapse all failures into “transa
 
 ### 18.1 Deployment order
 
-Proposed order:
+Finalized order:
 
-1. Confirm canonical EntryPoint and bundler support.
-2. Deploy PlayerProfile implementation.
-3. Deploy PlayerRegistry, or record the approved reused registry.
-4. Deploy SessionKeyRegistry.
-5. Deploy shared modules.
-6. Deploy ChessRulesModule.
-7. Deploy three V3 factories; each creates/pins its game implementation.
-8. Authorize V3 factories in PlayerRegistry.
-9. Deploy/configure paymaster against the selected EntryPoint and factories.
-10. Fund and stake/deposit the paymaster as required.
-11. Verify all source code.
-12. Run deployment smoke tests.
-13. Publish immutable deployment manifest.
+1. Validate the target chain, reviewed git commit, and compiler metadata.
+2. Confirm or deterministically deploy the pinned EntryPoint v0.8 and official
+   reference SimpleAccount stack.
+3. Deploy the four shared instance modules.
+4. Deploy ChessRulesModule.
+5. Deploy a fresh V3 PlayerProfile implementation and PlayerRegistry.
+6. Deploy SessionKeyRegistry anchored to that V3 PlayerRegistry.
+7. Deploy ETourSessionAccountFactory against the pinned EntryPoint.
+8. Deploy ETourSessionPaymaster against EntryPoint, SessionKeyRegistry, and the
+   session-account factory, then make the approved initial deposit.
+9. Deploy the three V3 factories; each creates and permanently pins its game
+   implementation.
+10. Authorize the factories in PlayerRegistry and allow them in the paymaster.
+11. Transfer paymaster ownership to the approved operations multisig.
+12. Atomically write network-scoped outputs and the complete manifest last.
+13. Validate the manifest and run on-chain deployment smoke tests.
+14. Verify all ETour source and constructor configurations.
+15. Regenerate/publish the network ABIs and immutable deployment manifest.
+
+The authoritative constructor table and operator procedure are maintained in
+[`docs/Deployment.md`](./docs/Deployment.md).
 
 ### 18.2 Networks
 
@@ -1965,7 +1973,7 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-002 | Primary wallet remains enrolled identity and settlement recipient | Accepted | 2026-07-27 | Prevents session compromise from reaching escrow or profiles |
 | ADR-003 | Session registry is external and instance-scoped | Accepted | 2026-07-27 | Clear authorization boundary and reduced instance storage/code pressure |
 | ADR-004 | Game contracts do not decode UserOperations | Accepted | 2026-07-27 | ERC-4337 validation belongs to EntryPoint/account/paymaster layers |
-| ADR-005 | Pin ERC-4337 v0.8 `SimpleAccount`/`SimpleAccountFactory` as the initial transport | Accepted | 2026-07-27 | Provider-compatible counterfactual account with first-UserOperation deployment; exact integration remains in audit scope |
+| ADR-005 | Use non-upgradeable `ETourSessionAccount`/factory for sessions and pin official v0.8 `SimpleAccount` artifacts as compatibility references | Accepted, refined | 2026-07-28 | CREATE2 first-use deployment, immutable narrow execution, and explicit factory provenance fit the paymaster boundary; all remain in audit scope |
 | ADR-006 | EIP-7702 is deferred until after the ERC-4337 MVP | Accepted | 2026-07-27 | Limits initial tooling and compatibility risk |
 | ADR-007 | Session authorization initially covers only `makeMove` | Accepted | 2026-07-27 | Narrowest deterministic gameplay scope |
 | ADR-008 | One globally unique live executor binding per registry | Accepted | 2026-07-27 | Enforces strict per-instance isolation |
@@ -1975,7 +1983,7 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-012 | Modules inherit shared storage, not the full instance API | Accepted | 2026-07-27 | Implemented with `ETourStorage`, `ETourModuleGuard`, and `IETourInstanceSelf`; hardens bridges and restores bytecode headroom |
 | ADR-013 | Pin EntryPoint v0.8 at `0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108` | Accepted | 2026-07-27 | Canonical address and current two-provider Arbitrum compatibility |
 | ADR-014 | Use Pimlico primary and Alchemy failover bundlers | Accepted | 2026-07-27 | Both document Arbitrum One, Arbitrum Sepolia, and EntryPoint v0.8 support |
-| ADR-015 | Paymaster uses authoritative on-chain scope plus narrowing verifier signatures | Accepted | 2026-07-27 | Preserves RW3 authorization while enabling operational budget and abuse controls |
+| ADR-015 | Paymaster uses fully on-chain deterministic sponsorship scope with no verifier key | Accepted, refined | 2026-07-28 | Removes an off-chain authorization key; providers may narrow availability but cannot broaden policy |
 | ADR-016 | Freeze identity, escrow, session-scope, and recovery invariants in the architecture decision record | Accepted | 2026-07-27 | Prevents transport convenience from changing protocol authority |
 | ADR-017 | Freeze the reviewed state-changing instance ABI in a machine-readable selector allowlist | Accepted | 2026-07-28 | Makes every new mutable entry point an explicit security review and CI decision |
 | ADR-018 | Centralize game lifecycle in `ETourGame` and instance creation in `ETourFactory` hooks | Accepted | 2026-07-28 | Gives session authorization one gameplay boundary, removes Chess factory duplication, and makes factory provenance explicit |
@@ -1983,6 +1991,7 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-020 | Reject refresh after conclusion, permit primary revocation cleanup, and reclaim inactive bindings | Accepted | 2026-07-28 | A concluded game needs no new executor, while explicit cleanup and safe address reuse remain useful |
 | ADR-021 | Make zero an explicit session opt-out and non-zero registration atomic with paid enrollment | Accepted | 2026-07-28 | Preserves the direct-wallet path and prevents partial profile, accounting, or authorization state |
 | ADR-022 | Resolve session identity only at the shared `makeMove` boundary and preserve the executor only in diagnostics | Accepted | 2026-07-28 | Gives all games one narrow delegated authority path while keeping turns, results, profiles, prizes, and every non-move function bound to primary or ordinary caller identity |
+| ADR-023 | Publish complete deployment state through atomic, self-describing, network-scoped manifests | Accepted | 2026-07-28 | Prevents partial JSON and cross-environment overwrite while binding addresses and ABIs to source, compiler, chain, constructors, and infrastructure |
 
 ---
 
@@ -2070,3 +2079,45 @@ Append brief dated entries as work proceeds.
   automatic ambiguous nonce resubmission, structured metrics, paymaster
   deposit/stake/spend inspection and alerts, one-shot deployment wiring, and
   dedicated UserOperation gas snapshots.
+- Completed tracking items 243–245, 261–262, and 269. Deployment outputs now
+  use atomic JSON replacement and canonical per-network directories, while
+  localhost root files remain explicit compatibility aliases and public
+  outputs cannot overwrite them.
+- The complete version-2 manifest now embeds 20 contract records with ABIs,
+  source/artifact hashes, constructor arguments, addresses/deployment modes,
+  actual compiler settings, chain ID, git commit/dirty state, EntryPoint,
+  SimpleAccount infrastructure, modules, registries, factories,
+  implementations, session TTL, paymaster owner/funder/deposit, and canonical
+  network metadata.
+- Added a strict manifest validator and deployment-output safety tests for
+  chain mismatches, path traversal, dirty public releases, atomic replacement,
+  and network isolation. Updated all deployment, ABI, smoke, verification,
+  paymaster, and frontend consumers to prefer canonical network output.
+- Finalized the implemented deployment/constructor order in this plan and
+  added `docs/Deployment.md` plus `docs/Operations.md` for public deployment,
+  verification, artifact publication, bundler failover, paymaster refill and
+  pause, monitoring, incidents, and recovery.
+- A fresh localhost deployment produced 13 network-scoped files. Its manifest
+  validated 20 embedded contract records; smoke checks found code at 22
+  addresses and confirmed all factory, implementation, authorization, and
+  registry wiring. The dry verification plan and 10-payload frontend ABI
+  check also passed.
+- Complete V3 suite: 333 passing. All SDK, secret, compiler, official
+  artifact, size, storage, ABI, V2 compatibility, selector, static-analysis,
+  and dependency gates pass. Largest contracts remain EntryPoint at 21,738
+  bytes and ConnectFourInstance at 21,702 bytes, both below 24,576 bytes.
+- Completed tracking items 256–263 and 265. Added the V3 README, consolidated
+  architecture/trust/delegatecall document, and V2-to-V3 migration/cutover
+  guide. Audited and accepted the existing session-authorization,
+  account-abstraction, and game-development guides against their release
+  requirements.
+- Added explicit user-facing states and copy for one-confirmation enrollment,
+  prompt-free moves, expiry, browser loss, rotation/revocation, primary-wallet
+  recovery, infrastructure failure, and direct fallback.
+- Corrected the pre-implementation architecture decisions to match deployed
+  code: `ETourSessionAccount` is the non-upgradeable session transport,
+  official SimpleAccount artifacts are compatibility references, and the
+  paymaster has fully on-chain deterministic policy with no verifier key.
+- Added ADR-023 for atomic, self-describing, network-scoped manifests.
+  Relative links across all 13 V3 Markdown documents and the secret-output
+  policy pass. Complete NatSpec remains a separate open audit-readiness item.

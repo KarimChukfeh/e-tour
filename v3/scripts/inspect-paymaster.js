@@ -1,25 +1,14 @@
-import fs from "fs";
-import path from "path";
 import { createRequire } from "module";
 import hre from "hardhat";
+import {
+    loadDeploymentManifest,
+} from "./lib/deployment-manifest.js";
 
 const require = createRequire(import.meta.url);
 const entryPointArtifact = require(
     "@account-abstraction/contracts/artifacts/EntryPoint.json"
 );
-const manifestPath = path.join(
-    process.cwd(),
-    "deployments",
-    `${hre.network.name}-factory.json`
-);
-if (!fs.existsSync(manifestPath)) {
-    throw new Error(
-        `missing ${manifestPath}; deploy the complete V3 stack first`
-    );
-}
-const manifest = JSON.parse(
-    fs.readFileSync(manifestPath, "utf8")
-);
+const { manifest } = loadDeploymentManifest(hre.network.name);
 const entryPointAddress =
     manifest.accountAbstraction?.entryPoint;
 const paymasterAddress =

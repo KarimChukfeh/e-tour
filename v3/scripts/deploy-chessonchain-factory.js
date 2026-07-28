@@ -6,9 +6,13 @@
 //   REGISTRY=0x... SESSION_REGISTRY=0x... npx hardhat run scripts/deploy-chessonchain-factory.js --network localhost
 
 import hre from "hardhat";
-import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
+import {
+    assertDeploymentTarget,
+    atomicWriteJson,
+    networkDeploymentDirectory,
+} from "./lib/deployment-output.js";
 
 const DEPLOYMENTS_DIR = "./deployments";
 
@@ -19,6 +23,7 @@ async function main() {
     const [deployer] = await hre.ethers.getSigners();
     const network = hre.network.name;
     const { chainId } = await hre.ethers.provider.getNetwork();
+    const normalizedChainId = assertDeploymentTarget(network, chainId);
 
     console.log("=".repeat(60));
     console.log("ChessOnChainFactory Deployment");
@@ -106,13 +111,21 @@ async function main() {
     console.log("");
 
     // ── 5. Save artifacts ────────────────────────────────────────────────────
-    if (!fs.existsSync(DEPLOYMENTS_DIR)) fs.mkdirSync(DEPLOYMENTS_DIR, { recursive: true });
-
     const blockNumber = await hre.ethers.provider.getBlockNumber();
     const timestamp   = new Date().toISOString();
+    const networkOutputDir = networkDeploymentDirectory(
+        DEPLOYMENTS_DIR,
+        network
+    );
+    const writeNetworkOutput = (fileName, value) => {
+        atomicWriteJson(path.join(networkOutputDir, fileName), value);
+        if (network === "localhost") {
+            atomicWriteJson(path.join(DEPLOYMENTS_DIR, fileName), value);
+        }
+    };
 
     const deployment = {
-        network, chainId: chainId.toString(), deployer: deployer.address, timestamp, blockNumber,
+        network, chainId: normalizedChainId, deployer: deployer.address, timestamp, blockNumber,
         modules: {
             ETourInstance_Core:       modules.core,
             ETourInstance_Matches:    modules.matches,
@@ -132,7 +145,11 @@ async function main() {
     };
 
     const deployFile = path.join(DEPLOYMENTS_DIR, `${network}-chess-factory.json`);
-    fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
+    atomicWriteJson(deployFile, deployment);
+    atomicWriteJson(
+        path.join(networkOutputDir, "chess-factory.json"),
+        deployment
+    );
 
     const [factoryArt, instanceArt, profileArt, registryArt, sessionRegistryArt] = await Promise.all([
         hre.artifacts.readArtifact("contracts/ChessOnChainFactory.sol:ChessOnChainFactory"),
@@ -147,9 +164,9 @@ async function main() {
         PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
     };
 
-    const abiFile = path.join(DEPLOYMENTS_DIR, "ChessOnChainFactory-ABI.json");
-    fs.writeFileSync(abiFile, JSON.stringify({
-        network, chainId: chainId.toString(), deployedAt: timestamp,
+    const abiFile = path.join(networkOutputDir, "ChessOnChainFactory-ABI.json");
+    writeNetworkOutput("ChessOnChainFactory-ABI.json", {
+        network, chainId: normalizedChainId, deployedAt: timestamp,
         modules: deployment.modules,
         playerProfile: playerProfileArtifacts,
         sessionAuthorization: {
@@ -160,39 +177,30 @@ async function main() {
         },
         factory:  { address: factoryAddr, abi: factoryArt.abi },
         instance: { address: implAddr, abi: instanceArt.abi },
-    }, null, 2));
+    });
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "PlayerProfile-ABI.json"),
-        JSON.stringify({
-            network,
-            chainId: chainId.toString(),
-            deployedAt: timestamp,
-            contract: playerProfileArtifacts.PlayerProfileImpl,
-        }, null, 2)
-    );
+    writeNetworkOutput("PlayerProfile-ABI.json", {
+        network,
+        chainId: normalizedChainId,
+        deployedAt: timestamp,
+        contract: playerProfileArtifacts.PlayerProfileImpl,
+    });
 
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "PlayerRegistry-ABI.json"),
-        JSON.stringify({
-            network,
-            chainId: chainId.toString(),
-            deployedAt: timestamp,
-            contract: playerProfileArtifacts.PlayerRegistry,
-        }, null, 2)
-    );
-    fs.writeFileSync(
-        path.join(DEPLOYMENTS_DIR, "SessionKeyRegistry-ABI.json"),
-        JSON.stringify({
-            network,
-            chainId: chainId.toString(),
-            deployedAt: timestamp,
-            contract: {
-                address: sessionRegistryAddr,
-                abi: sessionRegistryArt.abi,
-            },
-        }, null, 2)
-    );
+    writeNetworkOutput("PlayerRegistry-ABI.json", {
+        network,
+        chainId: normalizedChainId,
+        deployedAt: timestamp,
+        contract: playerProfileArtifacts.PlayerRegistry,
+    });
+    writeNetworkOutput("SessionKeyRegistry-ABI.json", {
+        network,
+        chainId: normalizedChainId,
+        deployedAt: timestamp,
+        contract: {
+            address: sessionRegistryAddr,
+            abi: sessionRegistryArt.abi,
+        },
+    });
 
     console.log("DEPLOYMENT COMPLETE | Network:", network, "| Block:", blockNumber);
     console.log("  Artifacts:", deployFile);

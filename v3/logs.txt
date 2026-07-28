@@ -528,3 +528,72 @@ fully self-describing, and environment-isolated, then write the remaining
 deployment/runbook/migration documents. Arbitrum Sepolia Phase 9 still requires
 deployment credentials, funded roles, two live bundler API keys, verification,
 and explicit authorization to publish the public testnet deployment.
+
+2026-07-28 - Atomic manifests and deployment operations gate complete
+
+- Completed tracking items 243-245, 261-262, and 269.
+- Added atomic, flushed, same-directory JSON replacement and canonical
+  `deployments/<network>/` isolation. All complete, standalone, module,
+  account-abstraction, ABI regeneration, diagnostics, smoke, verification, and
+  frontend consumers now write or prefer the correct network scope.
+- Added a complete version-2 manifest with git commit/dirty state, actual
+  compiler settings, chain and EntryPoint metadata, all registry/account/module/
+  factory/implementation/paymaster addresses, deployment modes, constructor
+  arguments, artifact hashes, and embedded ABIs for 20 contracts.
+- Added `scripts/check-deployment-manifest.js` and four deployment-output safety
+  tests covering chain guards, traversal, network isolation, atomic
+  replacement, and dirty public-deployment rejection.
+- Finalized the executable deployment and constructor order in `plan.md`.
+  Added `docs/Deployment.md` and `docs/Operations.md`, including local/testnet/
+  production procedures, verification and publication, bundler failover,
+  paymaster monitoring/refill/pause, incident response, and recovery.
+- Fresh localhost force deployment passed. The canonical directory contains
+  13 output files; the validator confirmed 20 embedded contract records and the
+  smoke test checked 22 code-bearing addresses plus every registry/factory/
+  implementation authorization link.
+- ABI regeneration, the 10-payload frontend check-only flow, and the
+  16-contract dry source-verification plan all passed from canonical output.
+- Complete V3 suite: 333 passing. Full CI checks pass, including the secret,
+  compiler, official ERC-4337 artifact, storage, ABI, V2 compatibility,
+  selector, static-analysis, dependency, and contract-size gates.
+- Contract size remains valid: EntryPoint is 21,738 bytes and the largest game,
+  ConnectFourInstance, is 21,702 bytes, both below the 24,576-byte limit.
+
+Next recommended action:
+Complete the remaining V3 overview, architecture, migration, and user-facing
+documentation before Phase 9. Arbitrum Sepolia deployment still requires
+funded deployment/operations roles, both live bundler credentials, an
+Arbiscan key, and explicit authorization to publish public testnet contracts.
+
+2026-07-28 - Pre-testnet documentation gate complete
+
+- Completed tracking items 256-263 and 265.
+- Added `README.md` with the V3 security model, repository map, supported Node
+  versions, local setup/deployment, mandatory size/CI commands, frontend ABI
+  workflow, status, and documentation index.
+- Added `docs/Architecture.md`, consolidating factories/clones, canonical game
+  boundaries, delegatecall storage, protected self-call bridges, primary and
+  executor identity, atomic enrollment, ERC-4337 transport, paymaster policy,
+  browser trust, immutable generations, rollback, and review gates.
+- Added `docs/MigrationFromV2.md` with source/on-chain separation, ABI and event
+  changes, explicit generation routing, frontend/indexer aggregation, testnet
+  acceptance, production canary/cutover, rollback, and final replacement
+  criteria. V2 state and active tournaments remain immutable.
+- Reviewed and accepted `SessionAuthorization.md`, `AccountAbstraction.md`, and
+  `BuildingGames.md` as the corresponding release documents.
+- Added a concrete user-visible behavior/copy table for one-confirmation
+  enrollment, prompt-free moves, TTL expiry, browser loss, rotation/revocation,
+  recovery confirmation, infrastructure fallback, and illegal move handling.
+- Corrected stale pre-implementation decisions: sessions use the immutable
+  ETour account/factory while official SimpleAccount artifacts are reference
+  compatibility evidence, and paymaster policy is fully on-chain with no
+  verifier key. Added ADR-023 for canonical atomic manifests.
+- All relative Markdown links across 13 documents pass. The secret-output check
+  and whitespace/diff checks pass. Complete public/external NatSpec remains an
+  open audit-readiness item.
+
+Next recommended action:
+Address complete NatSpec and the outstanding coverage/static-analysis release
+evidence before a security review, or begin Arbitrum Sepolia only after the
+required funded roles, API credentials, and explicit public-deployment
+authorization are available.
