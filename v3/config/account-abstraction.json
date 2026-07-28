@@ -5,8 +5,20 @@
     "release": "0.8.0",
     "package": "@account-abstraction/contracts",
     "packageVersion": "0.8.0",
+    "solidityCompiler": "0.8.28",
+    "compilerSettings": {
+      "evmVersion": "cancun",
+      "viaIR": true,
+      "optimizerEnabled": true,
+      "optimizerRuns": 1000000
+    },
     "userOperationVersion": "0.8",
     "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+    "deterministicDeployment": {
+      "deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "salt": "0x0a59dbff790c23c976a548690c27297883cc66b4c67024f9117b0238995e35e9",
+      "creationCodeHash": "0x2a7c999e10f113d5f71f2abb9069a95091852afbd016309139559b9e47bb59dd"
+    },
     "networks": {
       "local": {
         "chainId": 412346,
@@ -24,17 +36,25 @@
     }
   },
   "sessionAccount": {
-    "package": "@account-abstraction/contracts",
-    "packageVersion": "0.8.0",
-    "implementation": "contracts/accounts/SimpleAccount.sol:SimpleAccount",
-    "factory": "contracts/accounts/SimpleAccountFactory.sol:SimpleAccountFactory",
+    "referencePackage": "@account-abstraction/contracts",
+    "referencePackageVersion": "0.8.0",
+    "implementation": "contracts/account-abstraction/ETourSessionAccount.sol:ETourSessionAccount",
+    "factory": "contracts/account-abstraction/ETourSessionAccountFactory.sol:ETourSessionAccountFactory",
     "ownerKeyType": "browser-generated secp256k1 EOA",
     "saltPolicy": "browser-generated random uint256 per session account",
-    "factoryDeployment": "ETour-managed deterministic deployment per network",
+    "upgradePolicy": "non-upgradeable immutable account",
+    "factoryDeployment": "ETour-managed deployment recorded in each network manifest",
+    "provenancePolicy": "paymaster accepts only accounts recorded by the configured ETourSessionAccountFactory",
     "factoryAddresses": {
-      "local": null,
+      "local": "deployment-manifest",
       "arbitrumSepolia": null,
       "arbitrumOne": null
+    },
+    "officialReferenceArtifactHashes": {
+      "SimpleAccountCreation": "0x07189e53de89fdd954eafab24194ade337af2ef16d2147fbeafbefb95b3ed23e",
+      "SimpleAccountRuntime": "0x013b950eb5d44a379995379da00f9fdf0cc2bfce392e4b476defc6b61e8928c4",
+      "SimpleAccountFactoryCreation": "0x59fab2d3ec602f4ee808d7ca07b15ffeae2c42e8e0215f230399226a94b1cf9d",
+      "SimpleAccountFactoryRuntime": "0x81a1a5e5faf3f52e1831f910a1fc05c9461ae5e92bf5e1ca48a2800bab15b354"
     }
   },
   "bundlers": [
@@ -58,9 +78,32 @@
     }
   ],
   "paymaster": {
-    "policy": "on-chain scope enforcement plus verifying signatures",
+    "implementation": "contracts/account-abstraction/ETourSessionPaymaster.sol:ETourSessionPaymaster",
+    "policy": "fully on-chain deterministic scope enforcement",
     "onChainPolicyIsAuthoritative": true,
-    "verifierMayBroadenOnChainPolicy": false
+    "usesOffChainVerifier": false,
+    "verifierMayBroadenOnChainPolicy": false,
+    "maxVerificationGas": 2500000,
+    "maxCallGas": 2500000,
+    "maxPreVerificationGas": 200000,
+    "maxPaymasterVerificationGas": 500000,
+    "maxPaymasterPostOpGas": 100000,
+    "maxUserOperationCostWei": "20000000000000000",
+    "localInitialDepositWei": "500000000000000000",
+    "publicNetworkDepositSource": "PAYMASTER_DEPOSIT_WEI",
+    "fundingWalletPolicy": {
+      "local": "deployment signer",
+      "publicNetworks": "dedicated operations multisig funded independently from tournament escrow",
+      "manifestSource": "PAYMASTER_FUNDING_ADDRESS"
+    },
+    "ownerPolicy": {
+      "local": "deployment signer",
+      "publicNetworks": "operations multisig",
+      "deploymentSource": "PAYMASTER_OWNER_ADDRESS"
+    },
+    "refillThresholdSource": "PAYMASTER_ALERT_THRESHOLD_WEI",
+    "recommendedRefillThresholdWei": "50000000000000000",
+    "emergencyStop": "owner setPaused(true)"
   },
   "eip7702": {
     "status": "deferred",

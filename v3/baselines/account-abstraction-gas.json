@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-28T11:32:29.115Z",
+  "entryPointVersion": "0.8",
+  "chainId": "412346",
+  "gas": {
+    "selfFundedFirstUserOperation": {
+      "userOperationGasUsed": "992766",
+      "entryPointTransactionGasUsed": "750696",
+      "bundlerTotalGasEstimate": "2688288"
+    },
+    "selfFundedLaterUserOperation": {
+      "userOperationGasUsed": "407653",
+      "entryPointTransactionGasUsed": "156903",
+      "bundlerTotalGasEstimate": "2143542"
+    },
+    "selfFundedTerminalUserOperation": {
+      "userOperationGasUsed": "1153298",
+      "entryPointTransactionGasUsed": "968198",
+      "bundlerTotalGasEstimate": "2140660"
+    },
+    "sponsoredFirstUserOperation": {
+      "userOperationGasUsed": "998937",
+      "entryPointTransactionGasUsed": "755844",
+      "bundlerTotalGasEstimate": "2758226"
+    },
+    "sponsoredLaterUserOperation": {
+      "userOperationGasUsed": "435415",
+      "entryPointTransactionGasUsed": "183651",
+      "bundlerTotalGasEstimate": "2241615"
+    },
+    "sponsoredTerminalUserOperation": {
+      "userOperationGasUsed": "1177010",
+      "entryPointTransactionGasUsed": "990446",
+      "bundlerTotalGasEstimate": "2236276"
+    },
+    "sponsoredRevertingUserOperation": {
+      "userOperationGasUsed": "921497",
+      "entryPointTransactionGasUsed": "669796",
+      "bundlerTotalGasEstimate": "2764232"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T05:43:35.672Z",
+  "generatedAt": "2026-07-28T11:32:19.959Z",
   "compiler": {
     "version": "0.8.20",
     "optimizerEnabled": true,
@@ -17,9 +17,14 @@
     "createInstanceAndCreatorEnrollment": "1458887",
     "enrollmentWithoutTournamentStart": "380531",
     "enrollmentWithTournamentStart": "848731",
-    "normalMove": "132720",
-    "terminalMatchMoveWithoutTournamentSettlement": "444431",
-    "terminalMoveWithTournamentSettlement": "1104754",
+    "normalMove": "132782",
+    "delegatedNormalMove": "152256",
+    "createAndRegisterCreatorSession": "1532973",
+    "enrollAndRegisterJoinerSession": "764974",
+    "refreshSession": "115694",
+    "revokeSession": "60263",
+    "terminalMatchMoveWithoutTournamentSettlement": "444482",
+    "terminalMoveWithTournamentSettlement": "1107735",
     "standaloneSettlement": null
   }
 }

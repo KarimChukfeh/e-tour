@@ -418,3 +418,113 @@ Begin Phase 7 at tracking item 172. Integrate and test the pinned ERC-4337 v0.8
 account transport in a bounded batch, starting with the local EntryPoint,
 deterministic session-account address derivation, and counterfactual first
 UserOperation deployment before adding SDK or paymaster work.
+
+2026-07-28 - Phases 7 and 8 account abstraction and sponsorship complete
+
+- Pinned `@account-abstraction/contracts@0.8.0`, solc 0.8.28 for official
+  artifact verification, the canonical v0.8 EntryPoint address, deployment
+  salt, deterministic deployer, official creation/runtime hashes, and a
+  deterministic local reference deployment.
+- Added the non-upgradeable `ETourSessionAccount` controlled by one
+  browser-generated secp256k1 key and its CREATE2
+  `ETourSessionAccountFactory`. The factory records account provenance for
+  sponsorship enforcement, while the primary wallet remains the protocol
+  player in every game, profile, and payout path.
+- Added UserOperation SDK helpers for deterministic init code, execute
+  calldata, packed v0.8 operations, EIP-712 chain/EntryPoint-bound signatures,
+  nonce, ERC-7769 conversion, gas estimation, submission, receipt lookup, and
+  revert decoding. Games continue receiving ordinary calls and never decode a
+  raw UserOperation.
+- Added a local ERC-7769 bundler adapter and a two-provider public client with
+  health checks, bounded read-only failover, inclusion polling, structured
+  metrics, and no automatic resubmission after an ambiguous send.
+- Added `ETourSessionPaymaster` with fully on-chain policy enforcement:
+  configured account provenance, owner-approved factory/instance attestation,
+  exact execute/move selectors, zero value, active session/TTL, and hard
+  verification/call/paymaster/cost bounds. No off-chain verifier can broaden
+  sponsorship.
+- Added paymaster funding/deposit isolation, configurable public owner/funding
+  policy, emergency pause, deposit/stake/spend inspection, low-balance and
+  abnormal-spend alerts, and direct-primary fallback on outage or depletion.
+- Integrated the canonical EntryPoint, account factory, paymaster, approved
+  game factories, manifests, and ABIs into the one-shot deployment. Non-local
+  ABI and module outputs are now network-namespaced so they cannot overwrite
+  localhost frontend artifacts.
+- Focused account-abstraction suite: 23 passing. It covers first-use and later
+  UserOperations, invalid signatures/domains/nonces, validation versus
+  execution failures, terminal settlement, every paymaster constraint,
+  deliberate reverts, rotation/revocation/expiry, depletion, escrow isolation,
+  and bundler failover safety.
+- Complete V3 regression suite: 315 passing. Final compiler-warning, official
+  artifact, storage, ABI (39 surfaces), mutable-selector, static-analysis,
+  dependency-audit, and contract-size gates all pass.
+- All production deployables pass the 24,576-byte check. New sizes:
+  ETourSessionPaymaster 4,715 bytes, ETourSessionAccountFactory 3,620 bytes,
+  ETourSessionAccount 2,148 bytes, official EntryPoint 21,738 bytes.
+- Added `baselines/account-abstraction-gas.json` covering self-funded and
+  sponsored first, later, terminal, and reverting UserOperations.
+
+Next recommended action:
+Begin the browser key lifecycle and V3 TypeScript/client SDK batch immediately
+after the completed Phase 8 tracking block. Keep public Arbitrum deployment and
+live two-bundler compatibility validation for Phase 9.
+
+2026-07-28 - Browser SDK, recovery, and operational tooling gate complete
+
+- Added the strict TypeScript V3 browser SDK with Web Crypto secp256k1 key
+  generation, per-instance random salts, counterfactual executor derivation,
+  common game move encoding, atomic enrollment arguments, ERC-4337 operation
+  construction/submission/receipts, lifecycle inspection, refresh, revoke,
+  direct-primary fallback, and specific client-facing error mapping.
+- Added AES-256-GCM IndexedDB persistence using a non-extractable wrapping key.
+  Raw key bytes have no export method: the key object encrypts the scalar
+  directly and overwrites its temporary byte copy. Stored record identity is
+  authenticated as additional data and tampering fails closed.
+- Added cross-tab public-state notification and nonce serialization using Web
+  Locks, a renewable public storage lease fallback, and an in-process final
+  fallback. Private keys and signatures never enter coordination messages.
+- Documented browser storage clearing, private mode, mobile eviction,
+  cross-device recovery, refresh/revoke confirmation order, ambiguous nonce
+  handling, direct fallback policy, XSS limits, strict CSP, and frontend
+  dependency requirements in `docs/BrowserSessionIntegration.md`.
+- Added deterministic executor, development session generation, local
+  sponsored UserOperation, session inspect/refresh/revoke, EntryPoint
+  compatibility, deployment smoke, manifest-driven verification, and
+  secret-output scripts. Replaced the useful archived V2 instance/enrollment
+  diagnostics without reintroducing hardcoded frontend paths or addresses.
+- Added an eight-contract reviewed V2-to-V3 ABI comparison baseline and CI
+  gate. Existing final V3 module/factory/ABI/size/storage scripts and the
+  archived one-off classification now complete tracking items 233 through 242.
+- Proved a clean localhost deployment, 20-address code/wiring smoke check,
+  canonical EntryPoint/account factory/paymaster compatibility, counterfactual
+  sponsored move, active-to-rotated inspection, primary refresh, and primary
+  revocation. No session or diagnostic command printed private key material.
+- Complete V3 suite: 329 passing. TypeScript SDK suite: 14 passing. ERC-4337
+  suite: 23 passing. All compiler-warning, official artifact, secret-output,
+  storage, ABI, V2/V3 ABI delta, mutable-selector, static-analysis,
+  dependency-audit, and size checks pass.
+- Refresh recovery now encrypts and stages a replacement before the wallet
+  request, preserves the active local key on rejection, and exposes
+  `recoverPendingRefresh` for the rare case where the on-chain confirmation
+  succeeds but final IndexedDB promotion is interrupted.
+- Every deployable remains under 24,576 bytes. Largest V3 game is
+  ConnectFourInstance at 21,702 bytes; the canonical EntryPoint is 21,738
+  bytes. A clean non-instrumented 39-file compile and size check passed after
+  validation.
+- Refreshed gas evidence. Direct/delegated normal moves are 132,782/152,256
+  gas; creator/joiner transactions with registration are 1,532,973/764,974;
+  refresh is 115,694 and revoke is 60,263. First/later/terminal self-funded
+  and sponsored UserOperation measurements remain in the AA baseline. Small
+  rerun differences were below 0.3% and arise from calldata/address byte
+  composition; no material regression was found.
+- `solidity-coverage` remains open. Its first instrumented via-IR compilation
+  produced no report after five minutes and was stopped. The normal artifacts
+  were cleaned, rebuilt, and size-checked afterward; coverage is not marked
+  complete or waived.
+
+Next recommended action:
+Complete tracking items 243-245 by making all deployment manifests atomic,
+fully self-describing, and environment-isolated, then write the remaining
+deployment/runbook/migration documents. Arbitrum Sepolia Phase 9 still requires
+deployment credentials, funded roles, two live bundler API keys, verification,
+and explicit authorization to publish the public testnet deployment.

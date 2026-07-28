@@ -14,6 +14,10 @@ import hre from "hardhat";
 import fs from "fs";
 import path from "path";
 import { getOrDeployInstanceModules } from "./deploy-instance-modules.js";
+import {
+    ENTRY_POINT_ADDRESS,
+    deployLocalAccountAbstraction,
+} from "./lib/account-abstraction-deployment.js";
 
 async function main() {
     const force =
@@ -30,6 +34,18 @@ async function main() {
     console.log("Balance: ", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "ETH");
     console.log("Network: ", network, `(chainId: ${chainId})`);
     if (force) console.log("Mode:     FORCE (redeploying everything)");
+    console.log("");
+
+    // ── Step 0: Canonical ERC-4337 infrastructure ────────────────────────────
+    const accountAbstraction = await deployLocalAccountAbstraction(
+        hre,
+        { signer: deployer, writeManifest: true }
+    );
+    console.log("ERC-4337 EntryPoint:", ENTRY_POINT_ADDRESS);
+    console.log(
+        "Official SimpleAccountFactory:",
+        accountAbstraction.simpleAccountFactory
+    );
     console.log("");
 
     // ── Step 1: Instance Modules ──────────────────────────────────────────────
@@ -67,6 +83,52 @@ async function main() {
     await sessionRegistry.waitForDeployment();
     const sessionRegistryAddr = await sessionRegistry.getAddress();
     console.log("  SessionKeyRegistry:  ", sessionRegistryAddr);
+
+    const SessionAccountFactory = await hre.ethers.getContractFactory(
+        "contracts/account-abstraction/ETourSessionAccountFactory.sol:ETourSessionAccountFactory"
+    );
+    const sessionAccountFactory =
+        await SessionAccountFactory.deploy(ENTRY_POINT_ADDRESS);
+    await sessionAccountFactory.waitForDeployment();
+    const sessionAccountFactoryAddr =
+        await sessionAccountFactory.getAddress();
+    console.log(
+        "  SessionAccountFactory:",
+        sessionAccountFactoryAddr
+    );
+
+    const SessionPaymaster = await hre.ethers.getContractFactory(
+        "contracts/account-abstraction/ETourSessionPaymaster.sol:ETourSessionPaymaster"
+    );
+    const sessionPaymaster = await SessionPaymaster.deploy(
+        ENTRY_POINT_ADDRESS,
+        sessionRegistryAddr,
+        sessionAccountFactoryAddr
+    );
+    await sessionPaymaster.waitForDeployment();
+    const sessionPaymasterAddr = await sessionPaymaster.getAddress();
+    const configuredDeposit = process.env.PAYMASTER_DEPOSIT_WEI;
+    const initialPaymasterDeposit =
+        configuredDeposit !== undefined
+            ? BigInt(configuredDeposit)
+            : network === "localhost" || network === "hardhat"
+                ? hre.ethers.parseEther("0.5")
+                : 0n;
+    if (initialPaymasterDeposit > 0n) {
+        await (
+            await sessionPaymaster.deposit({
+                value: initialPaymasterDeposit,
+            })
+        ).wait();
+    }
+    console.log("  SessionPaymaster:    ", sessionPaymasterAddr);
+    console.log(
+        "  Paymaster deposit:   ",
+        hre.ethers.formatEther(
+            await sessionPaymaster.getDeposit()
+        ),
+        "ETH"
+    );
     console.log("");
 
     // ── Step 4: TicTacChainFactory ────────────────────────────────────────────
@@ -113,6 +175,31 @@ async function main() {
     const chessFactoryAddr = await chessFactory.getAddress();
     const chessImplAddr    = await chessFactory.implementation();
     await (await registry.authorizeFactory(chessFactoryAddr)).wait();
+    for (const approvedFactory of [
+        ticTacFactoryAddr,
+        c4FactoryAddr,
+        chessFactoryAddr,
+    ]) {
+        await (
+            await sessionPaymaster.setFactoryAllowed(
+                approvedFactory,
+                true
+            )
+        ).wait();
+    }
+    const configuredPaymasterOwner =
+        process.env.PAYMASTER_OWNER_ADDRESS;
+    if (
+        configuredPaymasterOwner &&
+        hre.ethers.getAddress(configuredPaymasterOwner) !==
+            deployer.address
+    ) {
+        await (
+            await sessionPaymaster.transferOwnership(
+                configuredPaymasterOwner
+            )
+        ).wait();
+    }
     console.log("  ChessOnChainFactory:", chessFactoryAddr, "[authorized]");
     console.log("  ChessInstance impl:", chessImplAddr);
     console.log("");
@@ -120,6 +207,13 @@ async function main() {
     // ── Step 7: Save artifacts ────────────────────────────────────────────────
     const deploymentsDir = "./deployments";
     if (!fs.existsSync(deploymentsDir)) fs.mkdirSync(deploymentsDir, { recursive: true });
+    const abiOutputDir =
+        network === "localhost"
+            ? deploymentsDir
+            : path.join(deploymentsDir, network);
+    if (!fs.existsSync(abiOutputDir)) {
+        fs.mkdirSync(abiOutputDir, { recursive: true });
+    }
 
     const blockNumber = await hre.ethers.provider.getBlockNumber();
     const timestamp   = new Date().toISOString();
@@ -145,6 +239,19 @@ async function main() {
             SessionKeyRegistry: sessionRegistryAddr,
             ttlSeconds: (await sessionRegistry.SESSION_TTL()).toString(),
         },
+        accountAbstraction: {
+            entryPoint: ENTRY_POINT_ADDRESS,
+            officialSimpleAccountFactory:
+                accountAbstraction.simpleAccountFactory,
+            sessionAccountFactory: sessionAccountFactoryAddr,
+            sessionPaymaster: sessionPaymasterAddr,
+            paymasterDeposit:
+                (await sessionPaymaster.getDeposit()).toString(),
+            paymasterOwner: await sessionPaymaster.owner(),
+            paymasterFundingAddress:
+                process.env.PAYMASTER_FUNDING_ADDRESS ??
+                deployer.address,
+        },
         factories: {
             TicTacChainFactory:  ticTacFactoryAddr,
             ConnectFourFactory:  c4FactoryAddr,
@@ -161,7 +268,20 @@ async function main() {
     fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
     console.log("Deployment saved to:", deployFile);
 
-    const [ticTacArt, c4Art, chessArt, ticTacInstArt, c4InstArt, chessInstArt, profileArt, registryArt, sessionRegistryArt] =
+    const [
+        ticTacArt,
+        c4Art,
+        chessArt,
+        ticTacInstArt,
+        c4InstArt,
+        chessInstArt,
+        profileArt,
+        registryArt,
+        sessionRegistryArt,
+        sessionAccountArt,
+        sessionAccountFactoryArt,
+        sessionPaymasterArt,
+    ] =
         await Promise.all([
             hre.artifacts.readArtifact("contracts/TicTacChainFactory.sol:TicTacChainFactory"),
             hre.artifacts.readArtifact("contracts/ConnectFourFactory.sol:ConnectFourFactory"),
@@ -172,9 +292,12 @@ async function main() {
             hre.artifacts.readArtifact("contracts/PlayerProfile.sol:PlayerProfile"),
             hre.artifacts.readArtifact("contracts/PlayerRegistry.sol:PlayerRegistry"),
             hre.artifacts.readArtifact("contracts/SessionKeyRegistry.sol:SessionKeyRegistry"),
+            hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionAccount.sol:ETourSessionAccount"),
+            hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionAccountFactory.sol:ETourSessionAccountFactory"),
+            hre.artifacts.readArtifact("contracts/account-abstraction/ETourSessionPaymaster.sol:ETourSessionPaymaster"),
         ]);
 
-    const abiFile = path.join(deploymentsDir, "ETour-Factory-ABIs.json");
+    const abiFile = path.join(abiOutputDir, "ETour-Factory-ABIs.json");
     const playerProfileArtifacts = {
         PlayerProfileImpl: { address: profileImplAddr, abi: profileArt.abi },
         PlayerRegistry: { address: registryAddr, abi: registryArt.abi },
@@ -191,6 +314,24 @@ async function main() {
                 abi: sessionRegistryArt.abi,
             },
         },
+        accountAbstraction: {
+            EntryPoint: {
+                address: ENTRY_POINT_ADDRESS,
+                abi: accountAbstraction.artifacts.EntryPoint.abi,
+            },
+            ETourSessionAccount: {
+                address: null,
+                abi: sessionAccountArt.abi,
+            },
+            ETourSessionAccountFactory: {
+                address: sessionAccountFactoryAddr,
+                abi: sessionAccountFactoryArt.abi,
+            },
+            ETourSessionPaymaster: {
+                address: sessionPaymasterAddr,
+                abi: sessionPaymasterArt.abi,
+            },
+        },
         factories: {
             TicTacChainFactory:  { address: ticTacFactoryAddr,  abi: ticTacArt.abi },
             ConnectFourFactory:  { address: c4FactoryAddr,       abi: c4Art.abi },
@@ -205,7 +346,7 @@ async function main() {
     console.log("ABI file saved to:", abiFile);
 
     fs.writeFileSync(
-        path.join(deploymentsDir, "PlayerProfile-ABI.json"),
+        path.join(abiOutputDir, "PlayerProfile-ABI.json"),
         JSON.stringify({
             network,
             chainId: chainId.toString(),
@@ -214,7 +355,7 @@ async function main() {
         }, null, 2)
     );
     fs.writeFileSync(
-        path.join(deploymentsDir, "PlayerRegistry-ABI.json"),
+        path.join(abiOutputDir, "PlayerRegistry-ABI.json"),
         JSON.stringify({
             network,
             chainId: chainId.toString(),
@@ -223,7 +364,7 @@ async function main() {
         }, null, 2)
     );
     fs.writeFileSync(
-        path.join(deploymentsDir, "SessionKeyRegistry-ABI.json"),
+        path.join(abiOutputDir, "SessionKeyRegistry-ABI.json"),
         JSON.stringify({
             network,
             chainId: chainId.toString(),
@@ -321,7 +462,7 @@ async function main() {
 
     const perGameAbiFiles = [
         {
-            path: path.join(deploymentsDir, "TicTacChainFactory-ABI.json"),
+            path: path.join(abiOutputDir, "TicTacChainFactory-ABI.json"),
             payload: {
                 network,
                 chainId: chainId.toString(),
@@ -344,7 +485,7 @@ async function main() {
             },
         },
         {
-            path: path.join(deploymentsDir, "ConnectFourFactory-ABI.json"),
+            path: path.join(abiOutputDir, "ConnectFourFactory-ABI.json"),
             payload: {
                 network,
                 chainId: chainId.toString(),
@@ -367,7 +508,7 @@ async function main() {
             },
         },
         {
-            path: path.join(deploymentsDir, "ChessOnChainFactory-ABI.json"),
+            path: path.join(abiOutputDir, "ChessOnChainFactory-ABI.json"),
             payload: {
                 network,
                 chainId: chainId.toString(),
@@ -415,6 +556,12 @@ async function main() {
     console.log("  PlayerProfile (impl):", profileImplAddr);
     console.log("  PlayerRegistry:      ", registryAddr);
     console.log("  SessionKeyRegistry:  ", sessionRegistryAddr);
+    console.log("  EntryPoint:          ", ENTRY_POINT_ADDRESS);
+    console.log(
+        "  SessionAccountFactory:",
+        sessionAccountFactoryAddr
+    );
+    console.log("  SessionPaymaster:    ", sessionPaymasterAddr);
     console.log("");
     console.log("Factories (all authorized on registry):");
     console.log("  TicTacChainFactory: ", ticTacFactoryAddr);
@@ -440,6 +587,8 @@ async function main() {
     console.log(`npx hardhat verify --network ${n} ${profileImplAddr}`);
     console.log(`npx hardhat verify --network ${n} ${registryAddr} "${profileImplAddr}"`);
     console.log(`npx hardhat verify --network ${n} ${sessionRegistryAddr} "${registryAddr}"`);
+    console.log(`npx hardhat verify --network ${n} ${sessionAccountFactoryAddr} "${ENTRY_POINT_ADDRESS}"`);
+    console.log(`npx hardhat verify --network ${n} ${sessionPaymasterAddr} "${ENTRY_POINT_ADDRESS}" "${sessionRegistryAddr}" "${sessionAccountFactoryAddr}"`);
     console.log(`npx hardhat verify --network ${n} ${ticTacFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
     console.log(`npx hardhat verify --network ${n} ${c4FactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${registryAddr}" "${sessionRegistryAddr}"`);
     console.log(`npx hardhat verify --network ${n} ${chessFactoryAddr} "${modules.core}" "${modules.matches}" "${modules.prizes}" "${modules.escalation}" "${chessRulesAddr}" "${registryAddr}" "${sessionRegistryAddr}"`);

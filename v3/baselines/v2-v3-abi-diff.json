@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "policy": "Reviewed V2-to-V3 public ABI delta; changes require an explicit baseline update.",
+  "contracts": {
+    "TicTacChainFactory": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "SESSION_REGISTRY()",
+        "createInstance(uint8,uint256,uint256,uint256,uint256,address)",
+        "isInstance(address)"
+      ],
+      "removed": [
+        "createInstance(uint8,uint256,uint256,uint256,uint256)"
+      ],
+      "unchangedCount": 46
+    },
+    "TicTacInstance": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "MoveMade(bytes32,address,address,uint8)",
+        "OnlySelfCall()",
+        "SESSION_REGISTRY()",
+        "enrollInTournament(address)",
+        "enrollOnBehalf(address,address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
+        "isConcluded()",
+        "resolveGameplayPlayer(address)"
+      ],
+      "removed": [
+        "MoveMade(bytes32,address,uint8)",
+        "enrollInTournament()",
+        "enrollOnBehalf(address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address)"
+      ],
+      "unchangedCount": 61
+    },
+    "ConnectFourFactory": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "SESSION_REGISTRY()",
+        "createInstance(uint8,uint256,uint256,uint256,uint256,address)",
+        "isInstance(address)"
+      ],
+      "removed": [
+        "createInstance(uint8,uint256,uint256,uint256,uint256)"
+      ],
+      "unchangedCount": 46
+    },
+    "ConnectFourInstance": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "MoveMade(bytes32,address,address,uint8,uint8)",
+        "OnlySelfCall()",
+        "SESSION_REGISTRY()",
+        "enrollInTournament(address)",
+        "enrollOnBehalf(address,address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
+        "isConcluded()",
+        "resolveGameplayPlayer(address)"
+      ],
+      "removed": [
+        "MoveMade(bytes32,address,uint8,uint8)",
+        "enrollInTournament()",
+        "enrollOnBehalf(address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address)"
+      ],
+      "unchangedCount": 63
+    },
+    "ChessOnChainFactory": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "SESSION_REGISTRY()",
+        "createInstance(uint8,uint256,uint256,uint256,uint256,address)",
+        "isInstance(address)"
+      ],
+      "removed": [
+        "createInstance(uint8,uint256,uint256,uint256,uint256)"
+      ],
+      "unchangedCount": 47
+    },
+    "ChessInstance": {
+      "added": [
+        "InvalidSessionRegistry()",
+        "MoveMade(bytes32,address,address,uint8,uint8)",
+        "OnlySelfCall()",
+        "SESSION_REGISTRY()",
+        "enrollInTournament(address)",
+        "enrollOnBehalf(address,address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)",
+        "initializeChessRules(address)",
+        "isConcluded()",
+        "resolveGameplayPlayer(address)"
+      ],
+      "removed": [
+        "MoveMade(bytes32,address,uint8,uint8)",
+        "enrollInTournament()",
+        "enrollOnBehalf(address)",
+        "initialize((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address)",
+        "initializeChess((uint8,uint256,(uint256,uint256,uint256,uint256,uint256,uint256),uint8,bytes32),address,address,address,address,address,address,address)"
+      ],
+      "unchangedCount": 62
+    },
+    "PlayerRegistry": {
+      "added": [],
+      "removed": [],
+      "unchangedCount": 20
+    },
+    "PlayerProfile": {
+      "added": [],
+      "removed": [],
+      "unchangedCount": 19
+    }
+  }
+}

@@ -6,7 +6,11 @@ import hre from "hardhat";
 import fs from "fs";
 import path from "path";
 
-const DEPLOYMENT_FILE = "./deployments/instance-modules.json";
+function deploymentFile() {
+    return hre.network.name === "localhost"
+        ? "./deployments/instance-modules.json"
+        : `./deployments/${hre.network.name}-instance-modules.json`;
+}
 const MODULE_ARTIFACTS = {
     core: "contracts/modules/ETourInstance_Core.sol:ETourInstance_Core",
     matches: "contracts/modules/ETourInstance_Matches.sol:ETourInstance_Matches",
@@ -123,8 +127,9 @@ async function validateExistingInstanceModules(deployment) {
 }
 
 export function loadExistingInstanceModuleDeployment() {
-    if (fs.existsSync(DEPLOYMENT_FILE)) {
-        const data = JSON.parse(fs.readFileSync(DEPLOYMENT_FILE, "utf8"));
+    const file = deploymentFile();
+    if (fs.existsSync(file)) {
+        const data = JSON.parse(fs.readFileSync(file, "utf8"));
         if (data.network === hre.network.name) {
             return data;
         }
@@ -140,7 +145,8 @@ export function saveInstanceModules(modules, chainId, artifactHashes, codeHashes
     const dir = "./deployments";
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    fs.writeFileSync(DEPLOYMENT_FILE, JSON.stringify({
+    const file = deploymentFile();
+    fs.writeFileSync(file, JSON.stringify({
         network: hre.network.name,
         chainId,
         timestamp: new Date().toISOString(),
@@ -148,7 +154,7 @@ export function saveInstanceModules(modules, chainId, artifactHashes, codeHashes
         artifactHashes,
         codeHashes,
     }, null, 2));
-    console.log("💾 Instance module addresses saved to:", DEPLOYMENT_FILE);
+    console.log("💾 Instance module addresses saved to:", file);
 }
 
 export async function getOrDeployInstanceModules(forceDeploy = false) {

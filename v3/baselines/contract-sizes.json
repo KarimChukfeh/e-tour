@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T05:40:26.206Z",
+  "generatedAt": "2026-07-28T06:26:02.954Z",
   "deployedBytecodeLimit": 24576,
   "contracts": [
     {
@@ -100,16 +100,52 @@
       "percentage": "19.5"
     },
     {
+      "name": "ETourSessionPaymaster",
+      "bytes": 4715,
+      "kb": "4.60",
+      "percentage": "19.2"
+    },
+    {
       "name": "SessionKeyRegistry",
       "bytes": 4681,
       "kb": "4.57",
       "percentage": "19.0"
     },
     {
+      "name": "ETourSessionAccountFactory",
+      "bytes": 3620,
+      "kb": "3.54",
+      "percentage": "14.7"
+    },
+    {
       "name": "PlayerRegistry",
       "bytes": 2988,
       "kb": "2.92",
       "percentage": "12.2"
+    },
+    {
+      "name": "ETourSessionAccount",
+      "bytes": 2148,
+      "kb": "2.10",
+      "percentage": "8.7"
+    },
+    {
+      "name": "EntryPoint",
+      "bytes": 21738,
+      "kb": "21.23",
+      "percentage": "88.5"
+    },
+    {
+      "name": "SimpleAccount",
+      "bytes": 6362,
+      "kb": "6.21",
+      "percentage": "25.9"
+    },
+    {
+      "name": "SimpleAccountFactory",
+      "bytes": 2173,
+      "kb": "2.12",
+      "percentage": "8.8"
     }
   ]
 }

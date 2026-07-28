@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Implementation — Phases 0–6 complete through tracking item 171
+> Status: Implementation — Phases 0–8 and the browser SDK/tooling gate through tracking item 242 are complete
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -969,13 +969,21 @@ The selected account must:
 
 The session account should not hold player funds. If ETH is accidentally sent to it, recovery semantics must be documented; this does not grant it primary-player authority.
 
-The selected MVP account is the official v0.8 `SimpleAccount` deployed through
-`SimpleAccountFactory`, both pinned by the package above. The factory's CREATE2
+The implemented MVP account is the non-upgradeable `ETourSessionAccount`
+deployed through `ETourSessionAccountFactory`. The factory's CREATE2
 `getAddress(owner, salt)` supplies the counterfactual address, while
-`createAccount(owner, salt)` supports first-UserOperation deployment through the
-EntryPoint `SenderCreator`. The account is reference/sample code despite its
-public audit history, so the exact v0.8 account, factory, deterministic
-deployment, and ETour integration remain in the external audit scope.
+`createAccount(owner, salt)` supports first-UserOperation deployment through
+the EntryPoint `SenderCreator`. The factory records every account it creates so
+the paymaster can enforce account provenance on-chain. The account has only an
+immutable browser-key owner, immutable EntryPoint/factory bindings, the v0.8
+validation surface, and a single-call `execute` wrapper.
+
+The official v0.8 `SimpleAccount` and `SimpleAccountFactory` artifacts remain
+pinned as compatibility references and are exercised against the canonical
+EntryPoint. ETour chose the smaller non-upgradeable account because an
+unverifiable proxy implementation is a poor fit for an on-chain sponsorship
+allowlist. The ETour account, factory, and paymaster remain in external audit
+scope.
 
 ### 11.3 Browser key lifecycle
 
@@ -1086,23 +1094,20 @@ Any future plan to fund gas from protocol revenue requires:
 - new invariants and tests;
 - separate audit review.
 
-### 12.3 On-chain and verifying paymaster
+### 12.3 On-chain paymaster
 
-V3 uses both implementation layers:
+V3 implements `ETourSessionPaymaster` as the complete on-chain sponsorship
+authority. It reads immutable account-factory provenance, approved game-factory
+provenance, instance and session-registry state, exact wrapper/selector/value
+constraints, the session TTL, and bounded gas/cost fields. No off-chain
+signature is required to make a valid session move sponsorable.
 
-1. On-chain policy paymaster
-   - Reads factory/registry state.
-   - Minimizes centralized authorization.
-   - Must satisfy ERC-4337 validation and staking/storage-access rules.
-
-2. Verifying paymaster
-   - Off-chain service signs sponsorship approval.
-   - Easier rate limiting and abuse prevention.
-   - Introduces an availability dependency.
-
-The on-chain policy is authoritative. The verifying signature provides budget,
-rate-limit, and abuse controls, but it may only narrow or decline sponsorship;
-it must never broaden what the on-chain paymaster accepts.
+Bundlers or an API gateway may still decline or rate-limit requests to protect
+availability and budget, but they cannot broaden the on-chain policy. This
+removes a centralized verifier key and keeps protocol authorization
+deterministic. Any future verifying layer is a separate, narrowing-only
+operational control and requires its own plan, threat-model update, tests, and
+audit.
 
 ### 12.4 Abuse and denial-of-service protections
 
@@ -1787,13 +1792,13 @@ Exit gate:
 
 ### Phase 7 — ERC-4337 session executor
 
-- [ ] Integrate selected account contracts/dependencies.
-- [ ] Add deterministic address derivation.
-- [ ] Add local EntryPoint integration environment.
-- [ ] Build UserOperation SDK helpers.
-- [ ] Test first-use account deployment.
-- [ ] Test replay and invalid signatures.
-- [ ] Test game reverts and receipt handling.
+- [x] Integrate selected account contracts/dependencies.
+- [x] Add deterministic address derivation.
+- [x] Add local EntryPoint integration environment.
+- [x] Build UserOperation SDK helpers.
+- [x] Test first-use account deployment.
+- [x] Test replay and invalid signatures.
+- [x] Test game reverts and receipt handling.
 
 Exit gate:
 
@@ -1801,18 +1806,42 @@ Exit gate:
 
 ### Phase 8 — Paymaster and bundlers
 
-- [ ] Implement/configure sponsorship policy.
-- [ ] Enforce target, selector, value, executor, TTL, and gas bounds.
-- [ ] Test abuse cases and deposit exhaustion.
-- [ ] Add multi-bundler client failover.
-- [ ] Add paymaster monitoring scripts.
-- [ ] Prove direct primary fallback.
+- [x] Implement/configure sponsorship policy.
+- [x] Enforce target, selector, value, executor, TTL, and gas bounds.
+- [x] Test abuse cases and deposit exhaustion.
+- [x] Add multi-bundler client failover.
+- [x] Add paymaster monitoring scripts.
+- [x] Prove direct primary fallback.
 
 Exit gate:
 
 - legal session moves are sponsored;
 - all unauthorized calls are rejected;
 - sponsorship outage does not block protocol gameplay.
+
+### Post-Phase 8 — Browser SDK and release tooling gate
+
+- [x] Generate browser keys from Web Crypto without wallet-signature-derived
+  entropy.
+- [x] Encrypt local key persistence with a non-extractable wrapping key.
+- [x] Coordinate public key state and nonce-sensitive submission across tabs.
+- [x] Add typed session lifecycle, game encoding, UserOperation, receipt,
+  recovery, revocation, direct fallback, and client error APIs.
+- [x] Document browser loss, private mode, mobile eviction, XSS/CSP, dependency,
+  and recovery requirements.
+- [x] Add executor, EntryPoint, UserOperation, session lifecycle, deployment
+  smoke, verification, secret-output, and V2/V3 ABI diagnostics.
+- [x] Run the complete local regression, CI, gas, and bytecode gates.
+- [ ] Produce a complete `solidity-coverage` report; the first instrumented
+  via-IR compile was stopped after five minutes without completing and remains
+  a tooling task, not a waived release gate.
+
+Exit gate:
+
+- browser integration has no raw-key export path;
+- recovery and direct fallback remain primary-wallet authorized;
+- local deployment and sponsored move diagnostics are reproducible;
+- remaining public-network work begins from reviewed manifests and tooling.
 
 ### Phase 9 — Arbitrum testnet
 
@@ -2027,3 +2056,17 @@ Append brief dated entries as work proceeds.
   revocation, mismatch, scope-isolation, payout/profile, permissionless-path,
   and property-style tests. All 292 tests and every compiler, size, storage,
   ABI, selector, static, dependency, and gas-capture gate pass.
+- Completed the Phase 7 and Phase 8 local exit gates. Pinned and reproducibly
+  validated EntryPoint v0.8, added the non-upgradeable counterfactual
+  `ETourSessionAccount` and provenance-recording factory, and implemented
+  browser-key EIP-712 UserOperation construction, ERC-7769 submission,
+  estimation, nonce, receipt, revert, and replay handling.
+- Added the fully on-chain `ETourSessionPaymaster`. Sponsorship is restricted
+  to known accounts, attested V3 instances, approved move selectors, zero
+  value, active instance-scoped sessions, and bounded gas/cost fields. Added
+  deposit isolation/depletion, deliberate revert, terminal settlement,
+  rotation/revocation/expiry, malformed wrapper, and direct fallback tests.
+- Added two-provider bundler health/failover and inclusion polling without
+  automatic ambiguous nonce resubmission, structured metrics, paymaster
+  deposit/stake/spend inspection and alerts, one-shot deployment wiring, and
+  dedicated UserOperation gas snapshots.

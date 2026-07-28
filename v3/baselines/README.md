@@ -40,13 +40,15 @@ These historical acceptance numbers remain the V2-equivalence reference. The
 machine-readable ABI, size, storage, and static-analysis files are intentionally
 advanced when a reviewed V3 architecture batch changes those surfaces.
 
-## Current reviewed state after tracking item 171
+## Current reviewed state after browser SDK/tooling tracking item 242
 
-- Clean compile: 34 Solidity files.
-- Full suite: 292 passing.
+- Clean compile: 39 Solidity files.
+- Full suite: 329 passing, including 14 typed browser SDK tests and 23
+  account-abstraction tests.
 - Storage-layout check: 12 targets with 21 canonical `ETourStorage` entries.
 - Compiler warnings: zero current warnings against a zero-warning allowance.
-- ABI surface: 34 compiled contract/interface ABIs.
+- ABI surface: 39 compiled contract/interface ABIs plus an eight-contract
+  reviewed V2-to-V3 ABI delta.
 - State-changing instance surface: 20 reviewed unique signatures across all
   three game instances.
 - Static analysis: 907 findings, reduced from the 1,107 copied baseline.
@@ -77,9 +79,14 @@ can be distinguished.
 | Create instance plus creator enrollment | 1,458,887 |
 | Ordinary enrollment without tournament start | 380,531 |
 | Final enrollment plus tournament start | 848,731 |
-| Normal move | 132,720 |
-| Terminal match move without tournament settlement | 444,431 |
-| Terminal move with tournament settlement | 1,104,754 |
+| Direct normal move | 132,782 |
+| Delegated normal move | 152,256 |
+| Create and register creator session | 1,532,973 |
+| Enroll and register joiner session | 764,974 |
+| Refresh session | 115,694 |
+| Revoke session | 60,263 |
+| Terminal match move without tournament settlement | 444,482 |
+| Terminal move with tournament settlement | 1,107,735 |
 
 V2 settlement is atomic inside the terminal gameplay transaction, so there is no
 separate normal-settlement transaction to measure. The complete deterministic
@@ -87,10 +94,10 @@ result is in [`gas-lifecycle.json`](./gas-lifecycle.json); the aggregate suite
 report is in [`gas-report.txt`](./gas-report.txt).
 
 The Phase 6 creation cost includes `isInstance` provenance and the populated
-session-registry clone slot. The deterministic lifecycle scenario explicitly
-opts out of session registration, so its move rows measure the enrolled-primary
-resolution branch. Session registration, refresh, revoke, delegated moves, and
-UserOperations receive separate measurements in later phases.
+session-registry clone slot. The baseline now separately records the
+enrolled-primary move branch, delegated move branch, atomic session
+registration, refresh, revoke, and the account-abstraction UserOperation
+measurements in [`account-abstraction-gas.json`](./account-abstraction-gas.json).
 
 ## Storage baseline
 
@@ -122,6 +129,7 @@ npm run warnings:capture
 npm run abi:generate -- --network <network>
 npm run abi:check
 npm run abi:capture
+npm run abi:v2-compare
 npm run selectors:check
 npm run abi:sync
 npm run frontend:abis
@@ -137,6 +145,9 @@ npm run ci:checks
 npm run gas
 npm run gas:capture
 npm run gas:baseline
+npm run sdk:check
+npm run test:sdk
+npm run secrets:check
 ```
 
 ABI generation requires fresh V3 deployment manifests. Both `abi:sync` and

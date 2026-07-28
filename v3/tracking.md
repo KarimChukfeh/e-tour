@@ -169,90 +169,90 @@
 - [x] Add invariants proving delegated moves mutate only the current primary player’s active match.
 - [x] Re-run every migrated V2 regression test with the V3 session changes.
 - [x] Update ABI snapshots for all intentional V3 API and event changes.
-- [ ] Add the pinned ERC-4337 account-abstraction contracts or dependencies.
-- [ ] Build a local test environment using the pinned EntryPoint.
-- [ ] Implement deterministic session-account address derivation from the browser public key and salt.
-- [ ] Verify that the deterministic executor address can be registered before account deployment.
-- [ ] Implement local first-UserOperation counterfactual account deployment.
-- [ ] Implement account `execute` calldata generation for a game move.
-- [ ] Implement UserOperation nonce retrieval.
-- [ ] Implement UserOperation gas estimation.
-- [ ] Implement browser-key UserOperation signing.
-- [ ] Bind UserOperation signatures to the correct chain ID and EntryPoint.
-- [ ] Implement ERC-7769 UserOperation submission.
-- [ ] Implement UserOperation receipt and transaction-receipt tracking.
-- [ ] Distinguish bundler simulation failures from on-chain game execution reverts.
-- [ ] Add tests for valid browser-key UserOperations.
-- [ ] Add tests for invalid signatures and wrong owner keys.
-- [ ] Add tests for wrong EntryPoint and replayed nonces.
-- [ ] Add tests for first-use account deployment and later moves without deployment.
-- [ ] Add tests for account execution reverts and game execution reverts.
-- [ ] Add tests for sponsored terminal moves that execute settlement.
-- [ ] Prove that game contracts never decode or depend on raw UserOperation structs.
-- [ ] Define the final paymaster validation policy for the pinned account execution wrapper.
-- [ ] Implement or configure V3 factory allowlisting in the paymaster.
-- [ ] Parse and validate the account target, value, and inner game calldata.
-- [ ] Accept only targets attested by approved V3 factories.
-- [ ] Accept only the three approved `makeMove` selectors.
-- [ ] Require zero ETH value for sponsored moves.
-- [ ] Require the UserOperation sender to be the active session executor for the target instance.
-- [ ] Reject expired, revoked, rotated, missing, or mismatched sessions.
-- [ ] Enforce bounded verification, execution, and post-operation gas limits.
-- [ ] Reject unknown account implementations and malformed execution wrappers.
-- [ ] Add paymaster tests for every accepted and rejected policy branch.
-- [ ] Add tests for deliberately reverting sponsored moves.
-- [ ] Add tests for paymaster deposit depletion and sponsorship unavailability.
-- [ ] Prove paymaster failure does not prevent direct primary-wallet gameplay.
-- [ ] Define a paymaster funding wallet, initial budget, refill threshold, and emergency stop policy.
-- [ ] Ensure paymaster funding is separate from tournament entry fees, prize pools, refunds, and owner accounting.
-- [ ] Add scripts to inspect EntryPoint deposits, paymaster stake, balance, and spending.
-- [ ] Add alerts for low paymaster balance and abnormal sponsorship spend.
-- [ ] Implement at least two bundler configurations for each supported public network.
-- [ ] Implement bundler health checks and bounded failover.
-- [ ] Implement inclusion timeouts without unsafe nonce reuse.
-- [ ] Add metrics for UserOperation submission, rejection, inclusion, latency, revert reason, and bundler.
-- [ ] Generate browser session keys exclusively from the browser cryptographic RNG.
-- [ ] Ensure session private keys are never derived solely from a primary-wallet signature.
-- [ ] Implement secure local session-key persistence.
-- [ ] Prevent private-key logging, analytics capture, or server upload.
-- [ ] Implement cross-tab coordination for session nonce and key state.
-- [ ] Document private browsing, storage clearing, mobile, and cache-reset behavior.
-- [ ] Generate a fresh session executor per tournament instance by default.
-- [ ] Implement client detection of expiry, revocation, and rotation.
-- [ ] Implement the primary-wallet refresh flow for a new browser or device.
-- [ ] Implement the primary-wallet revocation flow.
-- [ ] Implement direct-primary-wallet move fallback.
-- [ ] Create the V3 TypeScript session and UserOperation SDK.
-- [ ] Add SDK helpers for session generation, executor derivation, enrollment arguments, move encoding, submission, receipts, refresh, revoke, and fallback.
-- [ ] Map V3 custom errors to specific client-facing messages.
-- [ ] Add strict CSP and frontend dependency-hardening requirements to the integration documentation.
-- [ ] Add scripts for deterministic executor computation and development-only session generation.
-- [ ] Add scripts for local UserOperation construction, signing, submission, and receipt inspection.
-- [ ] Add scripts for session inspection, refresh, and revocation.
-- [ ] Add scripts for bundler and EntryPoint compatibility checks.
-- [ ] Port every useful V2 module deployment script to V3.
-- [ ] Port every useful V2 factory deployment script to V3.
-- [ ] Port every useful V2 ABI synchronization and regeneration script to V3.
-- [ ] Port every useful V2 Arbitrum verification script to V3.
-- [ ] Port every useful V2 instance and enrollment diagnostic script to V3.
-- [ ] Archive or deliberately omit each obsolete one-off V2 debug script with a recorded reason.
-- [ ] Rewrite the contract-size check for the final V3 paths and headroom policy.
-- [ ] Add a storage-layout comparison script.
-- [ ] Add a V2-versus-V3 ABI surface comparison script.
-- [ ] Add deployment smoke-test scripts.
+- [x] Add the pinned ERC-4337 account-abstraction contracts or dependencies.
+- [x] Build a local test environment using the pinned EntryPoint.
+- [x] Implement deterministic session-account address derivation from the browser public key and salt.
+- [x] Verify that the deterministic executor address can be registered before account deployment.
+- [x] Implement local first-UserOperation counterfactual account deployment.
+- [x] Implement account `execute` calldata generation for a game move.
+- [x] Implement UserOperation nonce retrieval.
+- [x] Implement UserOperation gas estimation.
+- [x] Implement browser-key UserOperation signing.
+- [x] Bind UserOperation signatures to the correct chain ID and EntryPoint.
+- [x] Implement ERC-7769 UserOperation submission.
+- [x] Implement UserOperation receipt and transaction-receipt tracking.
+- [x] Distinguish bundler simulation failures from on-chain game execution reverts.
+- [x] Add tests for valid browser-key UserOperations.
+- [x] Add tests for invalid signatures and wrong owner keys.
+- [x] Add tests for wrong EntryPoint and replayed nonces.
+- [x] Add tests for first-use account deployment and later moves without deployment.
+- [x] Add tests for account execution reverts and game execution reverts.
+- [x] Add tests for sponsored terminal moves that execute settlement.
+- [x] Prove that game contracts never decode or depend on raw UserOperation structs.
+- [x] Define the final paymaster validation policy for the pinned account execution wrapper.
+- [x] Implement or configure V3 factory allowlisting in the paymaster.
+- [x] Parse and validate the account target, value, and inner game calldata.
+- [x] Accept only targets attested by approved V3 factories.
+- [x] Accept only the approved game `makeMove` signatures/selectors.
+- [x] Require zero ETH value for sponsored moves.
+- [x] Require the UserOperation sender to be the active session executor for the target instance.
+- [x] Reject expired, revoked, rotated, missing, or mismatched sessions.
+- [x] Enforce bounded verification, execution, and post-operation gas limits.
+- [x] Reject unknown account implementations and malformed execution wrappers.
+- [x] Add paymaster tests for every accepted and rejected policy branch.
+- [x] Add tests for deliberately reverting sponsored moves.
+- [x] Add tests for paymaster deposit depletion and sponsorship unavailability.
+- [x] Prove paymaster failure does not prevent direct primary-wallet gameplay.
+- [x] Define a paymaster funding wallet, initial budget, refill threshold, and emergency stop policy.
+- [x] Ensure paymaster funding is separate from tournament entry fees, prize pools, refunds, and owner accounting.
+- [x] Add scripts to inspect EntryPoint deposits, paymaster stake, balance, and spending.
+- [x] Add alerts for low paymaster balance and abnormal sponsorship spend.
+- [x] Implement at least two bundler configurations for each supported public network.
+- [x] Implement bundler health checks and bounded failover.
+- [x] Implement inclusion timeouts without unsafe nonce reuse.
+- [x] Add metrics for UserOperation submission, rejection, inclusion, latency, revert reason, and bundler.
+- [x] Generate browser session keys exclusively from the browser cryptographic RNG.
+- [x] Ensure session private keys are never derived solely from a primary-wallet signature.
+- [x] Implement secure local session-key persistence.
+- [x] Prevent private-key logging, analytics capture, or server upload.
+- [x] Implement cross-tab coordination for session nonce and key state.
+- [x] Document private browsing, storage clearing, mobile, and cache-reset behavior.
+- [x] Generate a fresh session executor per tournament instance by default.
+- [x] Implement client detection of expiry, revocation, and rotation.
+- [x] Implement the primary-wallet refresh flow for a new browser or device.
+- [x] Implement the primary-wallet revocation flow.
+- [x] Implement direct-primary-wallet move fallback.
+- [x] Create the V3 TypeScript session and UserOperation SDK.
+- [x] Add SDK helpers for session generation, executor derivation, enrollment arguments, move encoding, submission, receipts, refresh, revoke, and fallback.
+- [x] Map V3 custom errors to specific client-facing messages.
+- [x] Add strict CSP and frontend dependency-hardening requirements to the integration documentation.
+- [x] Add scripts for deterministic executor computation and development-only session generation.
+- [x] Add scripts for local UserOperation construction, signing, submission, and receipt inspection.
+- [x] Add scripts for session inspection, refresh, and revocation.
+- [x] Add scripts for bundler and EntryPoint compatibility checks.
+- [x] Port every useful V2 module deployment script to V3.
+- [x] Port every useful V2 factory deployment script to V3.
+- [x] Port every useful V2 ABI synchronization and regeneration script to V3.
+- [x] Port every useful V2 Arbitrum verification script to V3.
+- [x] Port every useful V2 instance and enrollment diagnostic script to V3.
+- [x] Archive or deliberately omit each obsolete one-off V2 debug script with a recorded reason.
+- [x] Rewrite the contract-size check for the final V3 paths and headroom policy.
+- [x] Add a storage-layout comparison script.
+- [x] Add a V2-versus-V3 ABI surface comparison script.
+- [x] Add deployment smoke-test scripts.
 - [ ] Add atomic network-specific deployment manifest generation.
 - [ ] Include chain ID, git commit, compiler settings, EntryPoint, account, registry, modules, factories, implementations, paymaster, and ABIs in V3 manifests.
 - [ ] Prevent localhost or testnet deployment output from overwriting production manifests.
-- [ ] Ensure deployment and diagnostic scripts never print private keys.
-- [ ] Run the complete V3 test suite.
+- [x] Ensure deployment and diagnostic scripts never print private keys.
+- [x] Run the complete V3 test suite.
 - [ ] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
 - [ ] Run static analysis and resolve every critical or high-confidence result.
-- [ ] Run dependency and lockfile vulnerability checks.
-- [ ] Run the ABI allowlist check.
-- [ ] Run storage-layout compatibility checks.
-- [ ] Run deployed-bytecode size checks and confirm agreed headroom.
-- [ ] Run gas snapshots for direct moves, session moves, terminal moves, registration, refresh, revoke, first UserOperation, and later UserOperations.
-- [ ] Investigate and approve every material gas regression.
+- [x] Run dependency and lockfile vulnerability checks.
+- [x] Run the ABI allowlist check.
+- [x] Run storage-layout compatibility checks.
+- [x] Run deployed-bytecode size checks and confirm agreed headroom.
+- [x] Run gas snapshots for direct moves, session moves, terminal moves, registration, refresh, revoke, first UserOperation, and later UserOperations.
+- [x] Investigate and approve every material gas regression.
 - [ ] Write `v3/README.md`.
 - [ ] Write the V3 architecture and delegatecall storage documentation.
 - [ ] Write the session authorization, TTL, scope, events, recovery, and threat-model documentation.

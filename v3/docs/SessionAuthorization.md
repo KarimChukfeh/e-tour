@@ -163,6 +163,9 @@ Fee percentages and accounting are unchanged from V2.
 
 ## Recovery and operational guidance
 
+- Follow [`BrowserSessionIntegration.md`](./BrowserSessionIntegration.md) for
+  browser RNG, encrypted IndexedDB persistence, cross-tab locking, CSP,
+  recovery sequencing, and direct-primary fallback requirements.
 - Generate a fresh executor per tournament by default.
 - Treat refresh as the cross-device/cache-loss recovery path.
 - Treat revocation as explicit key invalidation and record cleanup.

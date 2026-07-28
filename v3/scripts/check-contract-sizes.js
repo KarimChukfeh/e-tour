@@ -44,12 +44,43 @@ const MODULES = [
 const SUPPORT = [
     'PlayerProfile',
     'PlayerRegistry',
-    'SessionKeyRegistry'
+    'SessionKeyRegistry',
+    'contracts/account-abstraction/ETourSessionAccount.sol:ETourSessionAccount',
+    'contracts/account-abstraction/ETourSessionAccountFactory.sol:ETourSessionAccountFactory',
+    'contracts/account-abstraction/ETourSessionPaymaster.sol:ETourSessionPaymaster'
+];
+
+// Pinned ERC-4337 production deployables (official package artifacts).
+const ACCOUNT_ABSTRACTION = [
+    {
+        name: 'EntryPoint',
+        artifact: 'EntryPoint.json'
+    },
+    {
+        name: 'SimpleAccount',
+        artifact: 'SimpleAccount.json'
+    },
+    {
+        name: 'SimpleAccountFactory',
+        artifact: 'SimpleAccountFactory.json'
+    }
 ];
 
 function getContractSize(contractName) {
     try {
-        const artifactPath = path.join(__dirname, '..', 'artifacts', 'contracts', `${contractName}.sol`, `${contractName}.json`);
+        let artifactPath;
+        if (contractName.includes(':')) {
+            const [sourceName, qualifiedName] = contractName.split(':');
+            artifactPath = path.join(
+                __dirname,
+                '..',
+                'artifacts',
+                sourceName,
+                `${qualifiedName}.json`
+            );
+        } else {
+            artifactPath = path.join(__dirname, '..', 'artifacts', 'contracts', `${contractName}.sol`, `${contractName}.json`);
+        }
         const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 
         // Get deployed bytecode (more accurate for deployment size)
@@ -79,6 +110,25 @@ function getModuleSize(modulePath) {
         const sizeInBytes = bytecodeWithout0x.length / 2;
 
         return sizeInBytes;
+    } catch (error) {
+        return null;
+    }
+}
+
+function getAccountAbstractionSize(spec) {
+    try {
+        const artifactPath = path.join(
+            __dirname,
+            '..',
+            'node_modules',
+            '@account-abstraction',
+            'contracts',
+            'artifacts',
+            spec.artifact
+        );
+        const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+        const bytecode = artifact.deployedBytecode || artifact.bytecode;
+        return bytecode.replace('0x', '').length / 2;
     } catch (error) {
         return null;
     }
@@ -142,9 +192,11 @@ function printSection(title, contracts, getSize) {
     let contractData = [];
 
     for (const contract of contracts) {
-        const displayName = typeof contract === 'string' && contract.includes(':')
-            ? contract.split(':')[1]
-            : contract;
+        const displayName = typeof contract === 'object'
+            ? contract.name
+            : typeof contract === 'string' && contract.includes(':')
+                ? contract.split(':')[1]
+                : contract;
 
         const size = getSize(contract);
         if (size !== null) {
@@ -207,6 +259,15 @@ const { contractData: supportData, totalSize: totalSupportSize } = printSection(
     getContractSize
 );
 
+const {
+    contractData: accountAbstractionData,
+    totalSize: totalAccountAbstractionSize
+} = printSection(
+    '🧩  Pinned ERC-4337 Contracts:',
+    ACCOUNT_ABSTRACTION,
+    getAccountAbstractionSize
+);
+
 console.log('');
 console.log('='.repeat(70));
 console.log('📊  Summary:');
@@ -226,6 +287,8 @@ console.log(`Total Module Contracts Size:      ${totalModuleSize.toLocaleString(
 console.log(`Average Module Contract Size:     ${Math.round(avgModuleSize).toLocaleString()} bytes`);
 console.log('');
 console.log(`Total Supporting Contracts Size:  ${totalSupportSize.toLocaleString()} bytes`);
+console.log('');
+console.log(`Total ERC-4337 Contracts Size:    ${totalAccountAbstractionSize.toLocaleString()} bytes`);
 console.log('');
 
 // Calculate benefits of modular architecture
@@ -263,7 +326,13 @@ if (gameCount > 0) {
 }
 
 // Check for contracts over limit
-const allContracts = [...factoryData, ...instanceData, ...moduleData, ...supportData];
+const allContracts = [
+    ...factoryData,
+    ...instanceData,
+    ...moduleData,
+    ...supportData,
+    ...accountAbstractionData
+];
 const overLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT);
 const nearLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT * 0.9 && d.bytes <= SPURIOUS_DRAGON_LIMIT);
 const untrackedDeployables = findUntrackedDeployables(new Set(allContracts.map((contract) => contract.name)));

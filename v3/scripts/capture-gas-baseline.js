@@ -137,6 +137,77 @@ async function main() {
     await playWin(instance, 0, 1, signers);
     const final = await playWin(instance, 1, 0, signers);
 
+    const sessionCreator = signers[10];
+    const sessionJoiner = signers[11];
+    const initialCreatorExecutor = signers[12];
+    const joinerExecutor = signers[13];
+    const replacementExecutor = signers[14];
+    const sessionCreationReceipt = await (
+        await factory.connect(sessionCreator).createInstance(
+            2,
+            entryFee,
+            30n * 60n,
+            15n * 60n,
+            30n,
+            initialCreatorExecutor.address,
+            { value: entryFee }
+        )
+    ).wait();
+    const sessionInstanceAddress = parseInstanceAddress(
+        factory,
+        sessionCreationReceipt
+    );
+    const sessionInstance = await hre.ethers.getContractAt(
+        "contracts/TicTacInstance.sol:TicTacInstance",
+        sessionInstanceAddress
+    );
+    const sessionJoinReceipt = await (
+        await sessionInstance
+            .connect(sessionJoiner)
+            .enrollInTournament(joinerExecutor.address, {
+                value: entryFee,
+            })
+    ).wait();
+    const sessionRegistry = await hre.ethers.getContractAt(
+        "contracts/SessionKeyRegistry.sol:SessionKeyRegistry",
+        await factory.SESSION_REGISTRY()
+    );
+    const refreshReceipt = await (
+        await sessionRegistry
+            .connect(sessionCreator)
+            .refreshSession(
+                sessionInstanceAddress,
+                replacementExecutor.address
+            )
+    ).wait();
+    const sessionMatchId = hre.ethers.solidityPackedKeccak256(
+        ["uint8", "uint8"],
+        [0, 0]
+    );
+    const sessionMatch = await sessionInstance.matches(
+        sessionMatchId
+    );
+    const delegatedSigners = new Map([
+        [
+            sessionCreator.address.toLowerCase(),
+            replacementExecutor,
+        ],
+        [sessionJoiner.address.toLowerCase(), joinerExecutor],
+    ]);
+    const delegatedExecutor = delegatedSigners.get(
+        sessionMatch.currentTurn.toLowerCase()
+    );
+    const delegatedMoveReceipt = await (
+        await sessionInstance
+            .connect(delegatedExecutor)
+            .makeMove(0, 0, 0)
+    ).wait();
+    const revokeReceipt = await (
+        await sessionRegistry
+            .connect(sessionCreator)
+            .revokeSession(sessionInstanceAddress)
+    ).wait();
+
     const report = {
         schemaVersion: 1,
         generatedAt: new Date().toISOString(),
@@ -159,6 +230,14 @@ async function main() {
             enrollmentWithoutTournamentStart: enrollmentReceipt.gasUsed.toString(),
             enrollmentWithTournamentStart: startingEnrollmentReceipt.gasUsed.toString(),
             normalMove: semifinal0.normalMove.toString(),
+            delegatedNormalMove:
+                delegatedMoveReceipt.gasUsed.toString(),
+            createAndRegisterCreatorSession:
+                sessionCreationReceipt.gasUsed.toString(),
+            enrollAndRegisterJoinerSession:
+                sessionJoinReceipt.gasUsed.toString(),
+            refreshSession: refreshReceipt.gasUsed.toString(),
+            revokeSession: revokeReceipt.gasUsed.toString(),
             terminalMatchMoveWithoutTournamentSettlement: semifinal0.terminalMove.toString(),
             terminalMoveWithTournamentSettlement: final.terminalMove.toString(),
             standaloneSettlement: null,

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "network": "localhost",
+  "chainId": "412346",
+  "entryPoint": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+  "deterministicDeployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+  "salt": "0x0a59dbff790c23c976a548690c27297883cc66b4c67024f9117b0238995e35e9",
+  "simpleAccountFactory": "0xdaeCF91A87e14dfB1a836186437cA6424EFCaba2",
+  "simpleAccountImplementation": "0xf817D8153d59A0494cfD6c7A8e7057B9999a4D75",
+  "senderCreator": "0x449ED7C3e6Fee6a97311d4b55475DF59C44AdD33"
+}
