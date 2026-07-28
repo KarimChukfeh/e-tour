@@ -23,6 +23,7 @@
     "frontend:abis": "node scripts/generate-and-sync-frontend-v2-abis.js --network localhost",
     "size": "node scripts/check-contract-sizes.js",
     "size:capture": "node scripts/check-contract-sizes.js --write",
+    "contracts:check": "npm run compile && npm run size",
     "storage:check": "node scripts/check-storage-layout.js",
     "storage:capture": "node scripts/check-storage-layout.js --write",
     "static:check": "node scripts/check-static-analysis.js",

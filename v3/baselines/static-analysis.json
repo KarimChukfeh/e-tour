@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T05:02:35.599Z",
+  "generatedAt": "2026-07-28T05:41:16.222Z",
   "tool": "solhint",
-  "total": 921,
+  "total": 907,
   "groups": [
     {
       "source": "contracts/ChessInstance.sol",
@@ -13,31 +13,10 @@
     },
     {
       "source": "contracts/ChessInstance.sol",
-      "ruleId": "gas-indexed-events",
-      "severity": 3,
-      "message": "GC: [from] on Event [MoveMade] could be Indexed",
-      "count": 1
-    },
-    {
-      "source": "contracts/ChessInstance.sol",
-      "ruleId": "gas-indexed-events",
-      "severity": 3,
-      "message": "GC: [to] on Event [MoveMade] could be Indexed",
-      "count": 1
-    },
-    {
-      "source": "contracts/ChessInstance.sol",
       "ruleId": "gas-strict-inequalities",
       "severity": 3,
       "message": "GC: Non strict inequality found. Try converting to a strict one",
       "count": 5
-    },
-    {
-      "source": "contracts/ChessInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, from, to], Found: []",
-      "count": 1
     },
     {
       "source": "contracts/ChessInstance.sol",
@@ -99,13 +78,6 @@
       "source": "contracts/ChessInstance.sol",
       "ruleId": "use-natspec",
       "severity": 3,
-      "message": "Missing @notice tag in event 'MoveMade'",
-      "count": 1
-    },
-    {
-      "source": "contracts/ChessInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
       "message": "Missing @notice tag in function 'getBoard'",
       "count": 1
     },
@@ -128,13 +100,6 @@
       "ruleId": "use-natspec",
       "severity": 3,
       "message": "Missing @notice tag in variable 'CHESS_RULES'",
-      "count": 1
-    },
-    {
-      "source": "contracts/ChessInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Missing @param tag in event 'MoveMade'",
       "count": 1
     },
     {
@@ -279,31 +244,10 @@
     },
     {
       "source": "contracts/ConnectFourInstance.sol",
-      "ruleId": "gas-indexed-events",
-      "severity": 3,
-      "message": "GC: [column] on Event [MoveMade] could be Indexed",
-      "count": 1
-    },
-    {
-      "source": "contracts/ConnectFourInstance.sol",
-      "ruleId": "gas-indexed-events",
-      "severity": 3,
-      "message": "GC: [row] on Event [MoveMade] could be Indexed",
-      "count": 1
-    },
-    {
-      "source": "contracts/ConnectFourInstance.sol",
       "ruleId": "gas-strict-inequalities",
       "severity": 3,
       "message": "GC: Non strict inequality found. Try converting to a strict one",
       "count": 6
-    },
-    {
-      "source": "contracts/ConnectFourInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, column, row], Found: []",
-      "count": 1
     },
     {
       "source": "contracts/ConnectFourInstance.sol",
@@ -344,13 +288,6 @@
       "source": "contracts/ConnectFourInstance.sol",
       "ruleId": "use-natspec",
       "severity": 3,
-      "message": "Missing @notice tag in event 'MoveMade'",
-      "count": 1
-    },
-    {
-      "source": "contracts/ConnectFourInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
       "message": "Missing @notice tag in function 'getBoard'",
       "count": 1
     },
@@ -359,13 +296,6 @@
       "ruleId": "use-natspec",
       "severity": 3,
       "message": "Missing @notice tag in function 'makeMove'",
-      "count": 1
-    },
-    {
-      "source": "contracts/ConnectFourInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Missing @param tag in event 'MoveMade'",
       "count": 1
     },
     {
@@ -5025,20 +4955,6 @@
     },
     {
       "source": "contracts/TicTacInstance.sol",
-      "ruleId": "gas-indexed-events",
-      "severity": 3,
-      "message": "GC: [cellIndex] on Event [MoveMade] could be Indexed",
-      "count": 1
-    },
-    {
-      "source": "contracts/TicTacInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Mismatch in @param names for event 'MoveMade'. Expected: [matchId, player, cellIndex], Found: []",
-      "count": 1
-    },
-    {
-      "source": "contracts/TicTacInstance.sol",
       "ruleId": "use-natspec",
       "severity": 3,
       "message": "Mismatch in @param names for function 'getBoard'. Expected: [roundNumber, matchNumber], Found: []",
@@ -5069,13 +4985,6 @@
       "source": "contracts/TicTacInstance.sol",
       "ruleId": "use-natspec",
       "severity": 3,
-      "message": "Missing @notice tag in event 'MoveMade'",
-      "count": 1
-    },
-    {
-      "source": "contracts/TicTacInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
       "message": "Missing @notice tag in function 'getBoard'",
       "count": 1
     },
@@ -5084,13 +4993,6 @@
       "ruleId": "use-natspec",
       "severity": 3,
       "message": "Missing @notice tag in function 'makeMove'",
-      "count": 1
-    },
-    {
-      "source": "contracts/TicTacInstance.sol",
-      "ruleId": "use-natspec",
-      "severity": 3,
-      "message": "Missing @param tag in event 'MoveMade'",
       "count": 1
     },
     {

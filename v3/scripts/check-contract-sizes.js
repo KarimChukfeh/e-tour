@@ -267,6 +267,9 @@ const allContracts = [...factoryData, ...instanceData, ...moduleData, ...support
 const overLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT);
 const nearLimit = allContracts.filter(d => d.bytes > SPURIOUS_DRAGON_LIMIT * 0.9 && d.bytes <= SPURIOUS_DRAGON_LIMIT);
 const untrackedDeployables = findUntrackedDeployables(new Set(allContracts.map((contract) => contract.name)));
+const writeRequested = process.argv.includes('--write');
+const sizePolicyInvalid =
+    overLimit.length > 0 || untrackedDeployables.length > 0;
 
 if (untrackedDeployables.length > 0) {
     console.error('❌  Deployable contracts missing from the size policy:');
@@ -276,7 +279,15 @@ if (untrackedDeployables.length > 0) {
     process.exitCode = 1;
 }
 
-if (process.argv.includes('--write')) {
+if (writeRequested && sizePolicyInvalid) {
+    console.error('❌  Refusing to capture an invalid contract-size baseline.');
+    console.error(
+        'Optimize the implementation or storage access, extract reusable ' +
+        'logic, or split the contract into modules before continuing.'
+    );
+    console.error('');
+    process.exitCode = 1;
+} else if (writeRequested) {
     fs.mkdirSync(path.dirname(BASELINE_PATH), { recursive: true });
     fs.writeFileSync(BASELINE_PATH, `${JSON.stringify({
         schemaVersion: 1,
@@ -328,18 +339,20 @@ if (process.argv.includes('--write')) {
 }
 
 if (overLimit.length > 0) {
-    console.log('❌  Contracts Over 24KB Limit:');
+    console.log('❌  INVALID: Contracts Over 24KB EIP-170 Limit:');
     console.log('-'.repeat(70));
     for (const contract of overLimit) {
         const excess = contract.bytes - SPURIOUS_DRAGON_LIMIT;
         console.log(`  ${contract.name}: ${excess.toLocaleString()} bytes over limit (${((excess / SPURIOUS_DRAGON_LIMIT) * 100).toFixed(1)}% over)`);
     }
     console.log('');
-    console.log('💡  Recommendations:');
+    console.log('This build cannot be accepted or deployed as V3.');
+    console.log('');
+    console.log('Required remediation options:');
     console.log('  - Increase optimizer runs in hardhat.config.js');
-    console.log('  - Consider splitting large contracts into additional modules');
+    console.log('  - Optimize implementation and storage-access code');
+    console.log('  - Split large contracts into additional modules or libraries');
     console.log('  - Remove unnecessary string error messages (use custom errors)');
-    console.log('  - Use libraries for common functionality');
     console.log('  - Consider moving view functions to separate helper contracts');
     console.log('');
 } else if (nearLimit.length > 0) {

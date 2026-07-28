@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ETourInstance} from "./ETourInstance.sol";
+import {ISessionKeyRegistry} from "./interfaces/ISessionKeyRegistry.sol";
 
 /* solhint-disable gas-custom-errors, gas-small-strings, gas-strict-inequalities, function-max-lines */
 
@@ -261,28 +262,35 @@ abstract contract ETourGame is ETourInstance {
     // ============ Shared move boundary ============
 
     /**
-     * @dev Resolves the primary gameplay actor. Phase 3 preserves direct-wallet
-     * behavior; session authorization can override this hook without changing
-     * concrete game logic.
+     * @notice Resolves an executor to the primary identity it would use for a
+     * move. Enrolled wallets resolve directly; inactive executors resolve to
+     * zero. Full session metadata remains available from SESSION_REGISTRY.
+     * @param executor Wallet or temporary gameplay executor to inspect.
+     * @return player Direct or delegated primary identity, or zero.
      */
-    function _effectiveGameplayPlayer()
-        internal
+    function resolveGameplayPlayer(address executor)
+        public
         view
-        virtual
-        returns (address)
+        returns (address player)
     {
-        return msg.sender;
+        if (isEnrolled[executor]) return executor;
+        (player, , ) = ISessionKeyRegistry(SESSION_REGISTRY).resolveSession(
+            address(this),
+            executor
+        );
     }
 
     function _requireCurrentGameplayPlayer(Match storage matchData)
         internal
         view
-        returns (address player)
+        returns (address player, address executor)
     {
         require(matchData.status == MatchStatus.InProgress, "MA");
-        player = _effectiveGameplayPlayer();
+        executor = msg.sender;
+        player = resolveGameplayPlayer(executor);
         require(
-            player == matchData.player1 || player == matchData.player2,
+            isEnrolled[player] &&
+                (player == matchData.player1 || player == matchData.player2),
             "NP"
         );
         require(player == matchData.currentTurn, "NT");

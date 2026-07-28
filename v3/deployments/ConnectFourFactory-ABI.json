@@ -2454,6 +2454,12 @@
             "type": "address"
           },
           {
+            "indexed": true,
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          },
+          {
             "indexed": false,
             "internalType": "uint8",
             "name": "column",
@@ -3908,6 +3914,25 @@
         "name": "resetEnrollmentWindow",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "executor",
+            "type": "address"
+          }
+        ],
+        "name": "resolveGameplayPlayer",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "player",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {

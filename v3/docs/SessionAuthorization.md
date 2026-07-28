@@ -1,9 +1,9 @@
 # V3 session authorization
 
-This document describes the on-chain session registry and atomic enrollment
-integration delivered in Phases 4 and 5. Gameplay delegation itself is added in
-Phase 6. Until then, a registered executor is visible and recoverable on-chain
-but cannot call `makeMove` on behalf of the primary.
+This document describes the on-chain session registry, atomic enrollment, and
+gameplay authorization delivered in Phases 4 through 6. An active executor can
+submit legal `makeMove` calls for its primary without becoming the tournament
+identity or receiving authority over any other instance entry point.
 
 ## Authority boundary
 
@@ -105,6 +105,38 @@ record.
   binding.
 - `isSessionActive(instance, primary, executor)` checks the complete binding,
   expiry, generation, and conclusion policy.
+- `instance.resolveGameplayPlayer(executor)` reports the direct or delegated
+  primary identity that the instance would use for a move, or zero when the
+  executor is inactive. Full metadata remains in the registry.
+
+## Gameplay authorization and scope
+
+`ETourGame` owns the only delegated identity boundary. During `makeMove`:
+
+1. an enrolled direct caller resolves to itself;
+2. a non-enrolled caller is resolved through
+   `SessionKeyRegistry.resolveSession(address(this), caller)`;
+3. the resolved primary must be enrolled, assigned to that match, and current;
+4. game legality, clock accounting, board ownership, result attribution,
+   profiles, and payouts use the primary; and
+5. `MoveMade` records both the primary and the actual executor.
+
+No other state-changing instance function uses session resolution. A registered
+executor therefore receives no delegated primary authority over enrollment,
+cancellation, force-start, timeout claims, escalation, replacement, rescue,
+ownership, profiles, refunds, prizes, refresh, or revocation.
+
+Some escalation resolutions intentionally remain permissionless to ordinary
+addresses. In particular, an address may claim an abandoned pool after EL2 or
+a replacement slot after ML3 when the public eligibility conditions are met.
+If that address is also a registered executor, it acts only as itself on those
+paths; it is never resolved to the primary. This ordinary permissionless
+authority is separate from delegated gameplay authority.
+
+For direct moves, `MoveMade.player == MoveMade.executor`. For delegated moves,
+`MoveMade.player` is the enrolled primary and `MoveMade.executor` is the active
+session address. Match and tournament completion events continue to name only
+the primary result identity.
 
 ## Atomic enrollment
 
@@ -138,8 +170,8 @@ Fee percentages and accounting are unchanged from V2.
   server logs, or this registry.
 - A one-hour TTL is a containment window, not a promise that every tournament
   completes before expiry.
-- The primary wallet remains the fallback for recovery and, after Phase 6,
-  direct gameplay.
+- The primary wallet always remains the fallback for direct gameplay and
+  primary-authorized session refresh/revocation.
 
 ## Tests and policy gates
 
@@ -147,6 +179,11 @@ The session suites cover every registration rule, exact expiry boundaries,
 refresh, rotation, revocation, conclusion policy, executor uniqueness, expired
 binding reclamation, randomized transition sequences, creator/joiner opt-out,
 identity and fee preservation, and full rollback on registration failure.
+Gameplay coverage adds direct/delegated equivalence for every game, primary and
+executor events, stale/missing/mismatched session rejection, refresh recovery,
+win/draw profile and prize attribution, an ABI-enumerated denial check for
+every non-move mutable instance function, permissionless-path identity, and
+property-style active/rotated/revoked/expired transitions.
 
 The ABI and mutable-selector allowlists, storage-layout comparison, static
 analysis, dependency audit, compiler-warning gate, EIP-170 size check, and full

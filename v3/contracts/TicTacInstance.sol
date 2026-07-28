@@ -22,7 +22,19 @@ contract TicTacInstance is ETourGame {
 
     // ============ Events ============
 
-    event MoveMade(bytes32 indexed matchId, address indexed player, uint8 cellIndex);
+    /**
+     * @notice Records one accepted move and its direct or delegated sender.
+     * @param matchId Canonical match identifier.
+     * @param player Enrolled primary whose game state changed.
+     * @param executor Address that submitted the move transaction.
+     * @param cellIndex Board cell selected by the player.
+     */
+    event MoveMade(
+        bytes32 indexed matchId,
+        address indexed player,
+        address indexed executor,
+        uint8 cellIndex
+    );
 
     // ============ Board Helpers ============
 
@@ -99,7 +111,8 @@ contract TicTacInstance is ETourGame {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
 
-        address player = _requireCurrentGameplayPlayer(m);
+        (address player, address executor) =
+            _requireCurrentGameplayPlayer(m);
         require(_getCell(m.packedBoard, cellIndex) == 0, "CO");
 
         _accountForMove(matchId, m, player);
@@ -115,7 +128,7 @@ contract TicTacInstance is ETourGame {
             m.moves = _uint8ToString(cellIndex);
         }
 
-        emit MoveMade(matchId, player, cellIndex);
+        emit MoveMade(matchId, player, executor, cellIndex);
 
         // Check win condition
         if (_checkWin(m.packedBoard, playerValue)) {

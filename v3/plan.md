@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Implementation — Phases 0–5 complete through tracking item 130
+> Status: Implementation — Phases 0–6 complete through tracking item 171
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -20,7 +20,8 @@ The working convention is:
 2. Read `v3/tracking.md` to identify what has been completed and what must be executed next.
 3. Read the latest entries in `v3/logs.txt` to understand the current repository state and where previous developers stopped.
 4. Perform the next applicable work using the plan as the guide.
-5. Validate the work before declaring it complete.
+5. Validate the work before declaring it complete, including the mandatory
+   compiled contract-size gate whenever Solidity bytecode may have changed.
 6. Update the corresponding checkboxes in `v3/tracking.md`.
 7. Append a concise, dated handoff entry to `v3/logs.txt` describing what changed, what was validated, any blockers or decisions, and what the next developer should do.
 
@@ -42,6 +43,32 @@ Neither `plan.md` nor `tracking.md` is gospel. Both are living documents that de
 - update affected tests, acceptance criteria, risks, and decision records.
 
 The documents exist to support correct implementation, not to force developers to follow assumptions that have become inaccurate. When the code or evidence conflicts with the documents, investigate the conflict, choose the safest technically justified path, and update all three documents so the next developer inherits the current truth.
+
+---
+
+## Mandatory compiled contract-size loop
+
+Any change that can affect Solidity deployed bytecode—including contract,
+library, interface inheritance, compiler, optimizer, dependency, or linking
+changes—must use this loop:
+
+1. Compile the affected contract graph.
+2. Run `npm run size` (or `npm run contracts:check` to compile and check).
+3. Treat every deployable contract above 24,576 bytes as invalid and stop the
+   implementation batch.
+4. Reduce the contract below EIP-170 by optimizing implementation or
+   storage-access code, removing duplication, extracting libraries, or
+   splitting responsibilities into modules.
+5. Recompile and rerun the size check after every remediation.
+6. Run the size gate again with the complete CI checks before marking tracking
+   work complete.
+
+The size checker must cover every compiled deployable production contract,
+fails when a deployable is unclassified, and refuses to capture a baseline
+while any contract is over the EIP-170 limit. A reviewed baseline may record an
+intentional in-limit increase, but it can never waive the protocol limit.
+Documentation-only and test-only changes that cannot affect deployed bytecode
+do not require a redundant size run.
 
 ---
 
@@ -1744,14 +1771,14 @@ Exit gate:
 
 ### Phase 6 — Game authorization integration
 
-- [ ] Implement effective gameplay actor resolution.
-- [ ] Update Tic-Tac-Toe move path.
-- [ ] Update Connect Four move path.
-- [ ] Update Chess move path.
-- [ ] Update move events with primary and executor.
-- [ ] Add scope-isolation tests.
-- [ ] Add direct/session state-equivalence tests.
-- [ ] Add payout/profile attribution tests.
+- [x] Implement effective gameplay actor resolution.
+- [x] Update Tic-Tac-Toe move path.
+- [x] Update Connect Four move path.
+- [x] Update Chess move path.
+- [x] Update move events with primary and executor.
+- [x] Add scope-isolation tests.
+- [x] Add direct/session state-equivalence tests.
+- [x] Add payout/profile attribution tests.
 
 Exit gate:
 
@@ -1926,6 +1953,7 @@ Record decisions in this table rather than allowing implementation choices to re
 | ADR-019 | Authenticate session hosts through matching registries, factory authorization, and `isInstance` provenance | Accepted | 2026-07-28 | Prevents arbitrary contracts from fabricating enrollment or consuming globally unique executors |
 | ADR-020 | Reject refresh after conclusion, permit primary revocation cleanup, and reclaim inactive bindings | Accepted | 2026-07-28 | A concluded game needs no new executor, while explicit cleanup and safe address reuse remain useful |
 | ADR-021 | Make zero an explicit session opt-out and non-zero registration atomic with paid enrollment | Accepted | 2026-07-28 | Preserves the direct-wallet path and prevents partial profile, accounting, or authorization state |
+| ADR-022 | Resolve session identity only at the shared `makeMove` boundary and preserve the executor only in diagnostics | Accepted | 2026-07-28 | Gives all games one narrow delegated authority path while keeping turns, results, profiles, prizes, and every non-move function bound to primary or ordinary caller identity |
 
 ---
 
@@ -1990,3 +2018,12 @@ Append brief dated entries as work proceeds.
   tests. All 277 tests and every compiler, selector, storage, ABI, static,
   dependency, and EIP-170 gate pass. Phase 6 gameplay authorization remains
   intentionally separate.
+- Completed tracking items 132–171 and the Phase 6 exit gate. `ETourGame`
+  now resolves enrolled callers directly and active session executors through
+  the instance-scoped registry only for `makeMove`; all three games preserve
+  primary turn, board, clock, result, profile, and payout identity while move
+  events retain the actual executor.
+- Added cross-game direct/session state-equivalence, lifecycle, TTL, refresh,
+  revocation, mismatch, scope-isolation, payout/profile, permissionless-path,
+  and property-style tests. All 292 tests and every compiler, size, storage,
+  ABI, selector, static, dependency, and gas-capture gate pass.

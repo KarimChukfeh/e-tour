@@ -128,46 +128,47 @@
 - [x] Add joiner tests for enrollment with and without a session executor.
 - [x] Add tests proving failed session registration rolls back enrollment, profile effects, tournament count, and ETH accounting.
 - [x] Add tests proving session registration does not enroll the executor.
-- [ ] Add the shared effective-gameplay-actor resolver to `ETourGame`.
-- [ ] Resolve an enrolled direct caller to itself as both primary player and executor.
-- [ ] Resolve an active registered executor to its enrolled primary player.
-- [ ] Reject missing, expired, revoked, rotated, mismatched, or un-enrolled session resolutions.
-- [ ] Ensure gameplay resolution checks `block.timestamp < validUntil`.
-- [ ] Preserve the actual executor address for events and diagnostics.
-- [ ] Update Tic-Tac-Toe `makeMove` to use the resolved primary player for all authorization and state changes.
-- [ ] Update Connect Four `makeMove` to use the resolved primary player for all authorization and state changes.
-- [ ] Update Chess `makeMove` to use the resolved primary player for all authorization and state changes.
-- [ ] Replace every gameplay use of `msg.sender` with the resolved primary where player identity is intended.
-- [ ] Retain `msg.sender` only as the observed gameplay executor.
-- [ ] Ensure turn selection and next-turn calculation store primary addresses.
-- [ ] Ensure piece, color, and board ownership calculations use the primary address.
-- [ ] Ensure normal wins and draws attribute results to primary addresses.
-- [ ] Ensure match completion, tournament advancement, and profiles use primary addresses.
-- [ ] Ensure prizes and refunds can never be redirected to a session executor by delegated gameplay.
-- [ ] Update all three MoveMade events to include both primary player and executor.
-- [ ] Keep tournament and match-completion events attributed to the primary player.
-- [ ] Add convenient instance/session views without duplicating registry state.
-- [ ] Confirm session resolution is not used by enrollment, cancellation, force-start, timeout, escalation, replacement, rescue, ownership, withdrawal, profile administration, refresh, or revocation paths.
-- [ ] Add direct-primary move tests for all three games.
-- [ ] Add active-session move tests for all three games.
-- [ ] Add unregistered, expired, revoked, and rotated-executor rejection tests for all three games.
-- [ ] Add wrong-turn and illegal-move session tests for all three games.
-- [ ] Add mid-match session refresh and resume tests for all three games.
-- [ ] Add direct-versus-session board-state equivalence tests for all three games.
-- [ ] Add direct-versus-session clock-state equivalence tests for all three games.
-- [ ] Add direct-versus-session tournament-state equivalence tests for all three games.
-- [ ] Add primary profile attribution tests for session wins, losses, and draws.
-- [ ] Add primary prize attribution tests for session-completed tournaments.
-- [ ] Add tests proving `playerPrizes[sessionExecutor]` never increases because of a delegated move.
-- [ ] Attempt every non-move state-changing function from a registered executor.
-- [ ] Prove registered executors receive no delegated primary authority on non-move functions.
-- [ ] Document separately any function that remains intentionally permissionless to all ordinary addresses.
-- [ ] Prove intentionally permissionless functions never resolve the executor as the primary player.
-- [ ] Add session authorization fuzz tests across random moves, rotations, expiries, and revocations.
-- [ ] Add invariants proving expired or revoked executors never change game state.
-- [ ] Add invariants proving delegated moves mutate only the current primary player’s active match.
-- [ ] Re-run every migrated V2 regression test with the V3 session changes.
-- [ ] Update ABI snapshots for all intentional V3 API and event changes.
+- [x] Add the mandatory compiled contract-size development loop and make over-limit builds impossible to baseline.
+- [x] Add the shared effective-gameplay-actor resolver to `ETourGame`.
+- [x] Resolve an enrolled direct caller to itself as both primary player and executor.
+- [x] Resolve an active registered executor to its enrolled primary player.
+- [x] Reject missing, expired, revoked, rotated, mismatched, or un-enrolled session resolutions.
+- [x] Ensure gameplay resolution checks `block.timestamp < validUntil`.
+- [x] Preserve the actual executor address for events and diagnostics.
+- [x] Update Tic-Tac-Toe `makeMove` to use the resolved primary player for all authorization and state changes.
+- [x] Update Connect Four `makeMove` to use the resolved primary player for all authorization and state changes.
+- [x] Update Chess `makeMove` to use the resolved primary player for all authorization and state changes.
+- [x] Replace every gameplay use of `msg.sender` with the resolved primary where player identity is intended.
+- [x] Retain `msg.sender` only as the observed gameplay executor.
+- [x] Ensure turn selection and next-turn calculation store primary addresses.
+- [x] Ensure piece, color, and board ownership calculations use the primary address.
+- [x] Ensure normal wins and draws attribute results to primary addresses.
+- [x] Ensure match completion, tournament advancement, and profiles use primary addresses.
+- [x] Ensure prizes and refunds can never be redirected to a session executor by delegated gameplay.
+- [x] Update all three MoveMade events to include both primary player and executor.
+- [x] Keep tournament and match-completion events attributed to the primary player.
+- [x] Add convenient instance/session views without duplicating registry state.
+- [x] Confirm session resolution is not used by enrollment, cancellation, force-start, timeout, escalation, replacement, rescue, ownership, withdrawal, profile administration, refresh, or revocation paths.
+- [x] Add direct-primary move tests for all three games.
+- [x] Add active-session move tests for all three games.
+- [x] Add unregistered, expired, revoked, and rotated-executor rejection tests for all three games.
+- [x] Add wrong-turn and illegal-move session tests for all three games.
+- [x] Add mid-match session refresh and resume tests for all three games.
+- [x] Add direct-versus-session board-state equivalence tests for all three games.
+- [x] Add direct-versus-session clock-state equivalence tests for all three games.
+- [x] Add direct-versus-session tournament-state equivalence tests for all three games.
+- [x] Add primary profile attribution tests for session wins, losses, and draws.
+- [x] Add primary prize attribution tests for session-completed tournaments.
+- [x] Add tests proving `playerPrizes[sessionExecutor]` never increases because of a delegated move.
+- [x] Attempt every non-move state-changing function from a registered executor.
+- [x] Prove registered executors receive no delegated primary authority on non-move functions.
+- [x] Document separately any function that remains intentionally permissionless to all ordinary addresses.
+- [x] Prove intentionally permissionless functions never resolve the executor as the primary player.
+- [x] Add session authorization fuzz tests across random moves, rotations, expiries, and revocations.
+- [x] Add invariants proving expired or revoked executors never change game state.
+- [x] Add invariants proving delegated moves mutate only the current primary player’s active match.
+- [x] Re-run every migrated V2 regression test with the V3 session changes.
+- [x] Update ABI snapshots for all intentional V3 API and event changes.
 - [ ] Add the pinned ERC-4337 account-abstraction contracts or dependencies.
 - [ ] Build a local test environment using the pinned EntryPoint.
 - [ ] Implement deterministic session-account address derivation from the browser public key and salt.

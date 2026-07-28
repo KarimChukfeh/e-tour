@@ -369,3 +369,52 @@ Begin Phase 6 at tracking item 131. Implement the shared effective-gameplay
 actor resolver in ETourGame, then migrate and test all three makeMove paths
 while preserving primary identity and retaining the actual executor only for
 move-event diagnostics.
+
+2026-07-28 - Phase 6 gameplay authorization complete (tracking items 132-171)
+
+- Added the shared ETourGame gameplay resolver. Enrolled direct callers resolve
+  to themselves; otherwise an active executor resolves through the
+  instance-scoped SessionKeyRegistry. Missing, expired, revoked, rotated, and
+  cross-instance bindings resolve to zero.
+- Updated Tic-Tac-Toe, Connect Four, and Chess makeMove paths to use the
+  resolved primary for turn checks, pieces/colors, clocks, board state, match
+  completion, profiles, prizes, and next-turn state. The actual msg.sender is
+  retained only as the executor in MoveMade.
+- Expanded all three MoveMade events to include indexed primary and executor
+  addresses. Added resolveGameplayPlayer(address) as the instance convenience
+  view without copying registry state.
+- Added test/session/SessionGameplay.test.js. Its 15 tests cover every game’s
+  direct/delegated state equivalence; primary/executor events; strict TTL;
+  refresh, stale key, revoke, missing and mismatched keys; wrong-turn and
+  illegal moves; complete session-driven win/draw profile and payout
+  attribution; ABI-enumerated denial of every non-move mutable instance entry
+  point; ordinary permissionless identity; and property-style active/rotated/
+  revoked/expired transitions.
+- Documented that intentionally permissionless EL2/ML3 calls act as the
+  ordinary caller and never resolve a session executor to its primary.
+- Added npm run contracts:check and made the compiled-size loop mandatory for
+  Solidity changes. The size checker now rejects unclassified deployables,
+  marks any contract over 24,576 bytes invalid, and refuses to baseline an
+  invalid build.
+- Reviewed and refreshed ABI, contract-size, static-analysis, lifecycle-gas,
+  and aggregate gas baselines, then regenerated all committed localhost V3 ABI
+  bundles. Static findings tightened from 921 to 907.
+
+Validation:
+- Clean current compile: 34 Solidity files and zero compiler warnings.
+- Focused Phase 6 suite: 15 passing.
+- Complete behavioral/gas-report suite: 292 passing.
+- CI checks: compiler warnings, EIP-170 sizes, storage, ABI, mutable selectors,
+  static analysis, and dependency audit all passing.
+- Largest game is ConnectFourInstance at 21,702 bytes, leaving 2,874 bytes
+  below the 24,576-byte EIP-170 limit. Chess is 21,291 bytes and Tic-Tac-Toe is
+  21,042 bytes.
+- Lifecycle gas baseline refreshed. Direct normal move is 132,720 gas;
+  delegated and UserOperation gas receive dedicated comparison in later
+  phases.
+
+Next recommended action:
+Begin Phase 7 at tracking item 172. Integrate and test the pinned ERC-4337 v0.8
+account transport in a bounded batch, starting with the local EntryPoint,
+deterministic session-account address derivation, and counterfactual first
+UserOperation deployment before adding SDK or paymaster work.

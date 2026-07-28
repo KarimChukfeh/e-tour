@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "generatedAt": "2026-07-28T05:12:48.195Z",
+  "generatedAt": "2026-07-28T05:46:06.104Z",
   "playerProfile": {
     "PlayerProfileImpl": {
       "abi": [
@@ -4284,6 +4284,12 @@
               "type": "address"
             },
             {
+              "indexed": true,
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            },
+            {
               "indexed": false,
               "internalType": "uint8",
               "name": "cellIndex",
@@ -5737,6 +5743,25 @@
         {
           "inputs": [
             {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "resolveGameplayPlayer",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "uint8",
               "name": "",
               "type": "uint8"
@@ -6065,6 +6090,12 @@
               "indexed": true,
               "internalType": "address",
               "name": "player",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "executor",
               "type": "address"
             },
             {
@@ -7527,6 +7558,25 @@
         {
           "inputs": [
             {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "resolveGameplayPlayer",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "uint8",
               "name": "",
               "type": "uint8"
@@ -7845,6 +7895,12 @@
               "indexed": true,
               "internalType": "address",
               "name": "player",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "executor",
               "type": "address"
             },
             {
@@ -9343,6 +9399,25 @@
           "name": "resetEnrollmentWindow",
           "outputs": [],
           "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "executor",
+              "type": "address"
+            }
+          ],
+          "name": "resolveGameplayPlayer",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "player",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {

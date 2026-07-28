@@ -21,7 +21,21 @@ contract ConnectFourInstance is ETourGame {
     uint8 private constant TOTAL_CELLS = 42;
     uint8 private constant CONNECT_COUNT = 4;
 
-    event MoveMade(bytes32 indexed matchId, address indexed player, uint8 column, uint8 row);
+    /**
+     * @notice Records one accepted move and its direct or delegated sender.
+     * @param matchId Canonical match identifier.
+     * @param player Enrolled primary whose game state changed.
+     * @param executor Address that submitted the move transaction.
+     * @param column Board column selected by the player.
+     * @param row Board row in which the piece landed.
+     */
+    event MoveMade(
+        bytes32 indexed matchId,
+        address indexed player,
+        address indexed executor,
+        uint8 column,
+        uint8 row
+    );
 
     // ============ Board Helpers ============
 
@@ -111,7 +125,8 @@ contract ConnectFourInstance is ETourGame {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
 
-        address player = _requireCurrentGameplayPlayer(m);
+        (address player, address executor) =
+            _requireCurrentGameplayPlayer(m);
 
         // Find landing row (gravity)
         uint8 targetRow = ROWS; // sentinel: no empty cell found
@@ -131,7 +146,7 @@ contract ConnectFourInstance is ETourGame {
         // Move history: each move is 1 byte (column index)
         m.moves = string(abi.encodePacked(m.moves, column));
 
-        emit MoveMade(matchId, player, column, targetRow);
+        emit MoveMade(matchId, player, executor, column, targetRow);
 
         if (_checkWin(m.packedBoard, piece, targetRow, column)) {
             _completeMatchInternal(roundNumber, matchNumber, player, false, MatchCompletionReason.NormalWin);

@@ -75,17 +75,21 @@ A concrete `makeMove` should follow this order:
 1. Validate game-specific input bounds.
 2. Load the canonical `Match`.
 3. Resolve and validate the actor with
-   `_requireCurrentGameplayPlayer(matchData)`.
+   `_requireCurrentGameplayPlayer(matchData)`, retaining both returned values:
+   `(player, executor)`.
 4. Validate the move against game state.
 5. Call `_accountForMove(matchId, matchData, player)` once.
 6. Mutate game state and append move history.
-7. Emit the game-specific move event using the resolved primary player.
+7. Emit the game-specific move event using both the resolved primary player
+   and observed executor.
 8. Call `_completeMatchInternal` for a terminal result or switch turns.
 
-Do not use `msg.sender` as the stored player after actor resolution. The
-effective-player hook currently returns `msg.sender`, but the later session
-authorization phase will resolve an approved executor back to its primary
-wallet without changing concrete game logic.
+Do not use `msg.sender` as the stored player after actor resolution.
+`resolveGameplayPlayer(executor)` returns an enrolled direct caller as itself,
+resolves an active instance-scoped session executor through
+`SessionKeyRegistry`, and returns zero for inactive executors. Only
+`makeMove` uses this resolution. The executor is diagnostic event data; turn,
+piece/color, winner, profile, and payout state always use the primary.
 
 `_accountForMove` updates the correct Fischer clock, applies the configured
 increment, updates `lastMoveTime`, and clears all match escalation state.
@@ -109,6 +113,21 @@ npm run selectors:check
 npm run abi:check
 npm run size
 ```
+
+Session executors have no delegated authority on enrollment, cancellation,
+force-start, timeout, escalation, replacement, rescue, ownership, profile, or
+settlement functions. `claimAbandonedPool` and replacement claims retain their
+documented permissionless ordinary-caller semantics: a session executor may
+call them only as its own address, never as its bound primary.
+
+## Mandatory bytecode-size loop
+
+For every Solidity change, compile and run `npm run size` before considering
+the change complete. `npm run contracts:check` performs both operations.
+Anything above 24,576 deployed bytes is invalid; do not capture a new baseline
+to waive it. Optimize code or storage access, extract shared logic, or split the
+contract into modules/libraries, then repeat the check. Run the size gate again
+as part of `npm run ci:checks` before handoff.
 
 ## Factory integration
 

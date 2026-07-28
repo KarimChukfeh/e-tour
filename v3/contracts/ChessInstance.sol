@@ -36,7 +36,21 @@ contract ChessInstance is ETourGame {
     mapping(bytes32 => mapping(bytes32 => uint8)) internal _positionCounts;
     mapping(bytes32 => uint256) internal _gameNonce;
 
-    event MoveMade(bytes32 indexed matchId, address indexed player, uint8 from, uint8 to);
+    /**
+     * @notice Records one accepted move and its direct or delegated sender.
+     * @param matchId Canonical match identifier.
+     * @param player Enrolled primary whose game state changed.
+     * @param executor Address that submitted the move transaction.
+     * @param from Source square.
+     * @param to Destination square.
+     */
+    event MoveMade(
+        bytes32 indexed matchId,
+        address indexed player,
+        address indexed executor,
+        uint8 from,
+        uint8 to
+    );
 
     // ============ Chess-Specific Initializer ============
 
@@ -157,7 +171,8 @@ contract ChessInstance is ETourGame {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage m = matches[matchId];
 
-        address player = _requireCurrentGameplayPlayer(m);
+        (address player, address executor) =
+            _requireCurrentGameplayPlayer(m);
 
         bool isWhite = player == m.player1;
         uint8 piece = _getPiece(m.packedBoard, from);
@@ -179,7 +194,7 @@ contract ChessInstance is ETourGame {
         bytes32 posHash = _computePositionHash(newBoard, newState, !isWhite, _gameNonce[matchId]);
         uint8 posCount = ++_positionCounts[matchId][posHash];
 
-        emit MoveMade(matchId, player, from, to);
+        emit MoveMade(matchId, player, executor, from, to);
 
         if (gameEnd == 1) { // checkmate
             _completeMatchInternal(roundNumber, matchNumber, player, false, MatchCompletionReason.NormalWin);
