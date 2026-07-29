@@ -2,7 +2,7 @@
   "network": "arbitrumLocal",
   "chainId": "42161",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-07-29T00:23:53.008Z",
+  "timestamp": "2026-07-29T01:23:08.507Z",
   "blockNumber": 24,
   "modules": {
     "ETourInstance_Core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",

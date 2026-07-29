@@ -13,8 +13,21 @@ import "./ChessInstance.sol";
  */
 contract ChessOnChainFactory is ETourFactory {
 
+    /**
+     * @notice Returns chess rules.
+     */
     address public immutable CHESS_RULES;
 
+    /**
+     * @notice Initializes the chess on chain factory constructor.
+     * @param moduleCore The module core address.
+     * @param moduleMatches The module matches address.
+     * @param modulePrizes The module prizes address.
+     * @param moduleEscalation The module escalation address.
+     * @param chessRules The chess rules address.
+     * @param playerRegistry The player registry address.
+     * @param sessionRegistry The session registry address.
+     */
     constructor(
         address moduleCore,
         address moduleMatches,

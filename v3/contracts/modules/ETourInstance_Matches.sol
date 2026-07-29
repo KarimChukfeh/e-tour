@@ -73,6 +73,7 @@ contract ETourInstance_Matches is ETourStorage, ETourModuleGuard {
     /**
      * @dev Initialize a new round with matches.
      * Called via delegatecall from the instance after tournament starts or round completes.
+     * @param roundNumber The round number value.
      */
     function initializeRound(uint8 roundNumber) public payable onlyDelegateCall {
         uint8 playerCount;
@@ -131,6 +132,11 @@ contract ETourInstance_Matches is ETourStorage, ETourModuleGuard {
     /**
      * @dev Complete a match and handle advancement logic.
      * Called via delegatecall from ETourInstance_Base._completeMatchInternal().
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param winner The winner address.
+     * @param isDraw Whether is draw.
+     * @param reason The reason value.
      */
     function completeMatch(
         uint8 roundNumber,
@@ -163,6 +169,12 @@ contract ETourInstance_Matches is ETourStorage, ETourModuleGuard {
 
     // ============ Winner Advancement ============
 
+    /**
+     * @notice Advances a match winner through the bracket.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param winner The winner address.
+     */
     function advanceWinner(uint8 roundNumber, uint8 matchNumber, address winner) public payable onlyDelegateCall {
         uint8 nextRound = roundNumber + 1;
         Round storage nextRoundData = rounds[nextRound];
@@ -380,6 +392,10 @@ contract ETourInstance_Matches is ETourStorage, ETourModuleGuard {
         }
     }
 
+    /**
+     * @notice Consolidates and starts an odd-player round.
+     * @param completedRound The completed round value.
+     */
     function consolidateAndStartOddRound(uint8 completedRound) public payable onlyDelegateCall {
         Round storage completedRoundStruct = rounds[completedRound];
         if (!completedRoundStruct.initialized) return;

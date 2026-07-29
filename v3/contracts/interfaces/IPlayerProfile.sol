@@ -44,14 +44,34 @@ interface IPlayerProfile {
         int256 totalNetEarnings;
     }
 
+    /**
+     * @notice Initializes.
+     * @param _owner The owner address.
+     * @param _registry The registry address.
+     */
     function initialize(address _owner, address _registry) external;
 
+    /**
+     * @notice Records enrollment.
+     * @param instance The instance address.
+     * @param gameType The game type value.
+     * @param entryFee The entry fee value.
+     */
     function recordEnrollment(
         address instance,
         uint8 gameType,
         uint256 entryFee
     ) external;
 
+    /**
+     * @notice Records result.
+     * @param instance The instance address.
+     * @param won Whether won.
+     * @param prize The prize value.
+     * @param payout The payout value.
+     * @param payoutReason The payout reason value.
+     * @param tournamentResolutionReason The tournament resolution reason value.
+     */
     function recordResult(
         address instance,
         bool won,
@@ -61,6 +81,15 @@ interface IPlayerProfile {
         uint8 tournamentResolutionReason
     ) external;
 
+    /**
+     * @notice Records match outcome.
+     * @param instance The instance address.
+     * @param gameType The game type value.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param outcome The outcome value.
+     * @param category The category value.
+     */
     function recordMatchOutcome(
         address instance,
         uint8 gameType,
@@ -70,17 +99,45 @@ interface IPlayerProfile {
         uint8 category
     ) external;
 
+    /**
+     * @notice Returns stats.
+     * @return The requested value.
+     */
     function getStats() external view returns (PlayerStats memory);
 
+    /**
+     * @notice Returns enrollment count.
+     * @return The requested value.
+     */
     function getEnrollmentCount() external view returns (uint256);
 
+    /**
+     * @notice Returns enrollments.
+     * @param offset The offset value.
+     * @param limit The limit value.
+     * @return The requested value.
+     */
     function getEnrollments(uint256 offset, uint256 limit)
         external view returns (EnrollmentRecord[] memory);
 
+    /**
+     * @notice Returns match record count.
+     * @return The requested value.
+     */
     function getMatchRecordCount() external view returns (uint256);
 
+    /**
+     * @notice Returns match records.
+     * @param offset The offset value.
+     * @param limit The limit value.
+     * @return The requested value.
+     */
     function getMatchRecords(uint256 offset, uint256 limit)
         external view returns (PlayerMatchRecord[] memory);
 
+    /**
+     * @notice Returns the primary wallet owner.
+     * @return The requested value.
+     */
     function owner() external view returns (address);
 }

@@ -161,6 +161,8 @@ contract ETourInstance_Escalation is ETourStorage, ETourModuleGuard {
     /**
      * @dev Mark a match as stalled when timeout is claimable.
      * Called via delegatecall from ETourInstance_Base.claimTimeoutWin().
+     * @param matchId The match id data.
+     * @param timeoutOccurredAt The timeout occurred at value.
      */
     function markMatchStalled(bytes32 matchId, uint256 timeoutOccurredAt) external payable onlyDelegateCall {
         MatchTimeoutState storage timeout = matchTimeouts[matchId];
@@ -184,6 +186,10 @@ contract ETourInstance_Escalation is ETourStorage, ETourModuleGuard {
         }
     }
 
+    /**
+     * @notice Clears the escalation state.
+     * @param matchId The match id data.
+     */
     function clearEscalationState(bytes32 matchId) external payable onlyDelegateCall {
         _clearEscalationState(matchId);
     }
@@ -223,6 +229,11 @@ contract ETourInstance_Escalation is ETourStorage, ETourModuleGuard {
 
     // ============ Level 2 Escalation: Advanced player force-eliminates stalled match ============
 
+    /**
+     * @notice Force-eliminates a stalled match.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     */
     function forceEliminateStalledMatch(uint8 roundNumber, uint8 matchNumber) external {
         require(tournament.status == TournamentStatus.InProgress, "Tournament not in progress");
 
@@ -242,6 +253,11 @@ contract ETourInstance_Escalation is ETourStorage, ETourModuleGuard {
 
     // ============ Level 3 Escalation: External player replaces stalled players ============
 
+    /**
+     * @notice Claims a match slot as a replacement player.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     */
     function claimMatchSlotByReplacement(uint8 roundNumber, uint8 matchNumber) external {
         require(tournament.status == TournamentStatus.InProgress, "Tournament not in progress");
 

@@ -41,6 +41,10 @@ contract SessionKeyRegistry is ISessionKeyRegistry {
     error SameExecutor();
     error NoSession();
 
+    /**
+     * @notice Initializes the session key registry constructor.
+     * @param playerRegistry The player registry address.
+     */
     // solhint-disable-next-line func-visibility
     constructor(address playerRegistry) {
         if (playerRegistry == address(0)) revert ZeroAddress();

@@ -71,6 +71,7 @@ contract ETourInstance_Core is ETourStorage, ETourModuleGuard {
      * @dev Enroll a specific player on their behalf.
      * Called via delegatecall from ETourInstance_Base.enrollOnBehalf().
      * Identical to coreEnroll() but uses the provided player address instead of msg.sender.
+     * @param player The player address.
      */
     function coreEnrollOnBehalf(address player) external payable onlyDelegateCall {
         require(tournament.status == TournamentStatus.Enrolling, "Not enrolling");
@@ -251,12 +252,20 @@ contract ETourInstance_Core is ETourStorage, ETourModuleGuard {
 
     // ============ View Helpers ============
 
+    /**
+     * @notice Returns whether claim abandoned pool.
+     * @return The requested value.
+     */
     function canClaimAbandonedPool() external view returns (bool) {
         return tournament.status == TournamentStatus.Enrolling &&
                block.timestamp >= tournament.enrollmentTimeout.escalation2Start &&
                tournament.enrolledCount > 0;
     }
 
+    /**
+     * @notice Returns whether force start.
+     * @return The requested value.
+     */
     function canForceStart() external view returns (bool) {
         return tournament.status == TournamentStatus.Enrolling &&
                isEnrolled[msg.sender] &&

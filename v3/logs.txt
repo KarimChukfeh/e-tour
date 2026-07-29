@@ -729,3 +729,51 @@ send `docs/ExternalAuditScope.md` plus the freeze checksum to the selected
 independent auditor. After remediation, recapture the freeze and rerun
 `npm run coverage:session` and `npm run local:arbitrum:cycle -- --full` before
 requesting authorization for the capped Arbitrum One canary.
+
+2026-07-28 - Local implementation closeout and enforced production NatSpec
+
+- Completed the final locally actionable audit-readiness checklist item:
+  every public/external production function, constructor, receive/fallback
+  function, and public state getter now has complete NatSpec.
+- Added `scripts/check-natspec.js` and wired `npm run natspec:check` into the
+  standard CI policy gates. The AST-based check passes for all 332 production
+  API declarations/getters and excludes only test helpers.
+- Preserved all executable contract logic and ABI signatures during the
+  documentation pass. Static analysis dropped from the reviewed 907-finding
+  baseline to 500 current findings, with no new/increased finding group.
+- The session coverage gate initially exposed an uncovered clock branch. Added
+  a regression proving an exhausted player-two clock is capped at the
+  configured move increment, without lowering any threshold.
+- `npm run coverage:session` passes with 34 tests. SessionKeyRegistry reports
+  97.62% statements, 71.21% branches, 100% functions, and 97.53% executable
+  line coverage; ETourGame reports 73.68% statements, 66% branches, 66.67%
+  functions, and 74.55% executable line coverage.
+- Regenerated and validated the checksum-bearing Arbitrum One release template.
+  The current audit freeze is
+  `58fe5f638e1ea07b9ea715b62788861b7e43723b831a6d6e87379bc94a9a942f`
+  across 128 reviewed source, SDK, test, script, configuration, and baseline
+  inputs.
+- `npm run local:arbitrum:cycle -- --full` passed from start to finish on the
+  isolated local chain ID 42161: 20-contract deployment, 22-address wiring
+  smoke test, two funded bundlers, failover and total-outage recovery, 19
+  sponsored moves, all three game settlements, 338 tests, and every CI gate.
+- All deployables remain below 24,576 bytes. EntryPoint is 21,738 bytes and the
+  largest game implementation is ConnectFourInstance at 21,702 bytes.
+
+External gates intentionally remain open:
+
+- Commission and complete the independent security audit, record and remediate
+  its findings, and attach the final report checksum to the frozen candidate.
+- Obtain production deployment authority, deploy and verify the audited set on
+  Arbitrum One, fund only the capped canary budget, enable monitoring, and run
+  the all-game canary.
+- After explicit canary approval, publish final addresses, update the frontend
+  and indexer generation routing, remove V2 creation, retain V2 reads/gameplay,
+  and record the final cutover evidence.
+
+Next recommended action:
+Commit the exact frozen candidate and send `docs/ExternalAuditScope.md` with
+freeze checksum
+`58fe5f638e1ea07b9ea715b62788861b7e43723b831a6d6e87379bc94a9a942f`
+to the selected independent auditor. Any audit remediation must be followed by
+a new freeze, coverage run, and full local-Arbitrum acceptance cycle.

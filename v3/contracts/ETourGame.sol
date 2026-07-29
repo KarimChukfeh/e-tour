@@ -187,6 +187,7 @@ abstract contract ETourGame is ETourInstance {
     }
 
     /// @notice Reads the configured Fischer increment.
+    /// @return The requested value.
     function _getTimeIncrement()
         public
         view
@@ -198,6 +199,7 @@ abstract contract ETourGame is ETourInstance {
 
     /// @notice Reports whether the current player exhausted their clock.
     /// @param matchId Canonical match identifier.
+    /// @return The requested value.
     function _hasCurrentPlayerTimedOut(bytes32 matchId)
         public
         view
@@ -215,6 +217,7 @@ abstract contract ETourGame is ETourInstance {
 
     /// @notice Reports whether a match remains active.
     /// @param matchId Canonical match identifier.
+    /// @return The requested value.
     function _isMatchActive(bytes32 matchId)
         public
         view
@@ -231,6 +234,7 @@ abstract contract ETourGame is ETourInstance {
     /// @param matchId Canonical match identifier.
     /// @param roundNumber Round containing the match.
     /// @param matchNumber Match index within the round.
+    /// @return The requested value.
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 roundNumber,

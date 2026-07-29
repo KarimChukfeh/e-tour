@@ -58,14 +58,30 @@ contract PlayerRegistry is IPlayerRegistry {
 
     // ============ State ============
 
+    /**
+     * @notice Returns owner.
+     */
     address public owner;
+    /**
+     * @notice Returns profile implementation.
+     */
     address public immutable profileImplementation;
 
+    /**
+     * @notice Returns profiles.
+     */
     mapping(address => mapping(uint8 => address)) public profiles; // player → gameType → profile address
+    /**
+     * @notice Returns authorized factories.
+     */
     mapping(address => bool)    public authorizedFactories;
 
     // ============ Constructor ============
 
+    /**
+     * @notice Initializes the player registry constructor.
+     * @param _profileImplementation The profile implementation address.
+     */
     constructor(address _profileImplementation) {
         if (_profileImplementation == address(0)) revert ZeroAddress();
         owner = msg.sender;
@@ -81,17 +97,29 @@ contract PlayerRegistry is IPlayerRegistry {
 
     // ============ Owner Admin ============
 
+    /**
+     * @notice Authorizes a game factory.
+     * @param factory The factory address.
+     */
     function authorizeFactory(address factory) external onlyOwner {
         if (factory == address(0)) revert ZeroAddress();
         authorizedFactories[factory] = true;
         emit FactoryAuthorized(factory);
     }
 
+    /**
+     * @notice Deauthorizes a game factory.
+     * @param factory The factory address.
+     */
     function deauthorizeFactory(address factory) external onlyOwner {
         authorizedFactories[factory] = false;
         emit FactoryDeauthorized(factory);
     }
 
+    /**
+     * @notice Transfers ownership.
+     * @param newOwner The new owner address.
+     */
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
         owner = newOwner;
@@ -103,6 +131,10 @@ contract PlayerRegistry is IPlayerRegistry {
      * @dev Record a player enrollment. Called by factory.registerPlayer().
      * Creates a PlayerProfile clone if the player doesn't have one yet.
      * Silently ignores failures to never block enrollment.
+     * @param player The player address.
+     * @param instance The instance address.
+     * @param gameType The game type value.
+     * @param entryFee The entry fee value.
      */
     function recordEnrollment(
         address player,
@@ -127,6 +159,13 @@ contract PlayerRegistry is IPlayerRegistry {
      * @dev Record a tournament result for a player. Called by instance conclusion logic.
      * The calling instance's parent factory must be authorized.
      * Silently ignores failures to never block conclusion.
+     * @param player The player address.
+     * @param instance The instance address.
+     * @param won Whether won.
+     * @param prize The prize value.
+     * @param payout The payout value.
+     * @param payoutReason The payout reason value.
+     * @param tournamentResolutionReason The tournament resolution reason value.
      */
     function recordResult(
         address player,
@@ -167,6 +206,15 @@ contract PlayerRegistry is IPlayerRegistry {
         } catch { }
     }
 
+    /**
+     * @notice Records match outcome.
+     * @param player The player address.
+     * @param instance The instance address.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param outcome The outcome value.
+     * @param category The category value.
+     */
     function recordMatchOutcome(
         address player,
         address instance,
@@ -207,6 +255,12 @@ contract PlayerRegistry is IPlayerRegistry {
 
     // ============ IPlayerRegistry — View ============
 
+    /**
+     * @notice Returns profile.
+     * @param player The player address.
+     * @param gameType The game type value.
+     * @return The requested value.
+     */
     function getProfile(address player, uint8 gameType) external view override returns (address) {
         return profiles[player][gameType];
     }

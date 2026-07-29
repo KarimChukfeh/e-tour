@@ -1681,6 +1681,10 @@ Before production:
 - `MigrationFromV2.md`: source and production cutover.
 - NatSpec for every public/external V3 API.
 
+The NatSpec surface is mechanically enforced by `npm run natspec:check`. The
+gate covers every public/external production function, constructor, receive or
+fallback function, and public state getter, while excluding test helpers.
+
 User-facing documentation must explain:
 
 - one wallet confirmation is still required to stake/create/join;
@@ -1855,9 +1859,10 @@ Exit gate:
   smoke, verification, secret-output, and V2/V3 ABI diagnostics.
 - [x] Run the complete local regression, CI, gas, and bytecode gates.
 - [x] Produce and enforce the session-authorization `solidity-coverage`
-  report. The release campaign passes 33 tests with `SessionKeyRegistry` at
+  report. The release campaign passes 34 tests with `SessionKeyRegistry` at
   97.62% statements, 71.21% branches, 100% functions, and 92.86% lines; the
-  canonical gameplay resolver also clears its recorded thresholds.
+  canonical gameplay layer reports 66% branch coverage and also clears its
+  recorded thresholds.
 
 Exit gate:
 
@@ -1888,6 +1893,8 @@ Exit gate:
 - [x] Complete internal call-graph and privilege review.
 - [x] Run static analysis and fuzz/invariant campaigns.
 - [x] Freeze public APIs and storage.
+- [x] Complete and mechanically enforce NatSpec for all 332 public/external
+  production API declarations and getters.
 - [ ] Obtain external audit focused on:
   - delegatecall storage and bridge authorization;
   - session registry and identity resolution;
@@ -2151,7 +2158,7 @@ Append brief dated entries as work proceeds.
   paymaster has fully on-chain deterministic policy with no verifier key.
 - Added ADR-023 for atomic, self-describing, network-scoped manifests.
   Relative links across all 13 V3 Markdown documents and the secret-output
-  policy pass. Complete NatSpec remains a separate open audit-readiness item.
+  policy pass. Complete production NatSpec is enforced as a CI policy gate.
 - Refined ADR-014 and the deployment route to remove Arbitrum Sepolia from the
   V3 development cycle. Added `arbitrumLocal`, an isolated Hardhat chain using
   chain ID 42161, port 8546, 250 deterministic funded wallets, the canonical

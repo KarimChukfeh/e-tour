@@ -1,7 +1,7 @@
 {
   "network": "arbitrumLocal",
   "chainId": "42161",
-  "generatedAt": "2026-07-29T00:23:59.444Z",
+  "generatedAt": "2026-07-29T01:23:15.109Z",
   "playerProfile": {
     "PlayerProfileImpl": {
       "abi": [

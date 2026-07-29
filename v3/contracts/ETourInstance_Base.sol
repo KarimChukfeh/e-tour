@@ -31,10 +31,22 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Constants ============
 
+    /**
+     * @notice Returns participants share bps.
+     */
     uint256 public constant PARTICIPANTS_SHARE_BPS = 9500;  // 95% to prize pool
+    /**
+     * @notice Returns owner share bps.
+     */
     uint256 public constant OWNER_SHARE_BPS = 500;          // 5% to owner
+    /**
+     * @notice Returns basis points.
+     */
     uint256 public constant BASIS_POINTS = 10000;
 
+    /**
+     * @notice Returns no round.
+     */
     uint8 public constant NO_ROUND = 255;
 
     bytes32 internal constant ENTROPY_INIT = keccak256("ETOUR_ENTROPY_INIT");
@@ -498,6 +510,13 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Abstract Functions (implemented by game contracts) ============
 
+    /**
+     * @notice Executes the protected create match game self-call bridge.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param player1 The player1 address.
+     * @param player2 The player2 address.
+     */
     function _createMatchGame(
         uint8 roundNumber,
         uint8 matchNumber,
@@ -505,34 +524,88 @@ abstract contract ETourInstance_Base is ETourStorage {
         address player2
     ) public virtual;
 
+    /**
+     * @notice Executes the protected reset match game self-call bridge.
+     * @param matchId The match id data.
+     */
     function _resetMatchGame(bytes32 matchId) public virtual;
 
+    /**
+     * @notice Executes the protected get match result self-call bridge.
+     * @param matchId The match id data.
+     * @return winner The winner.
+     * @return isDraw The is draw.
+     * @return status The status.
+     */
     function _getMatchResult(bytes32 matchId)
         public view virtual
         returns (address winner, bool isDraw, MatchStatus status);
 
+    /**
+     * @notice Executes the protected get match players self-call bridge.
+     * @param matchId The match id data.
+     * @return player1 The player1.
+     * @return player2 The player2.
+     */
     function _getMatchPlayers(bytes32 matchId)
         public view virtual
         returns (address player1, address player2);
 
+    /**
+     * @notice Executes the protected set match player self-call bridge.
+     * @param matchId The match id data.
+     * @param slot The slot value.
+     * @param player The player address.
+     */
     function _setMatchPlayer(bytes32 matchId, uint8 slot, address player)
         public
         virtual;
 
+    /**
+     * @notice Executes the protected initialize match for play self-call bridge.
+     * @param matchId The match id data.
+     */
     function _initializeMatchForPlay(bytes32 matchId) public virtual;
 
+    /**
+     * @notice Executes the protected complete match with result self-call bridge.
+     * @param matchId The match id data.
+     * @param winner The winner address.
+     * @param isDraw Whether is draw.
+     */
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) public virtual;
 
+    /**
+     * @notice Executes the protected get time increment self-call bridge.
+     * @return The requested value.
+     */
     function _getTimeIncrement() public view virtual returns (uint256);
 
+    /**
+     * @notice Executes the protected has current player timed out self-call bridge.
+     * @param matchId The match id data.
+     * @return The requested value.
+     */
     function _hasCurrentPlayerTimedOut(bytes32 matchId) public view virtual returns (bool);
 
+    /**
+     * @notice Executes the protected is match active self-call bridge.
+     * @param matchId The match id data.
+     * @return The requested value.
+     */
     function _isMatchActive(bytes32 matchId)
         public
         view
         virtual
         returns (bool);
 
+    /**
+     * @notice Executes the protected get active match data self-call bridge.
+     * @param matchId The match id data.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return The requested value.
+     */
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 roundNumber,
@@ -582,9 +655,14 @@ abstract contract ETourInstance_Base is ETourStorage {
         MatchCompletionReason reason
     ) internal virtual;
 
+    /**
+     * @notice Initializes round.
+     * @param roundNumber The round number value.
+     */
     function initializeRound(uint8 roundNumber) public payable virtual;
 
     /// @notice Whether this permanent tournament instance has concluded.
+    /// @return The requested value.
     function isConcluded() external view returns (bool) {
         return tournament.status == TournamentStatus.Concluded;
     }
@@ -688,6 +766,9 @@ abstract contract ETourInstance_Base is ETourStorage {
         );
     }
 
+    /**
+     * @notice Force-starts the tournament when its prerequisites are met.
+     */
     function forceStartTournament() external virtual notConcluded {
         TournamentStatus oldStatus = tournament.status;
 
@@ -710,6 +791,9 @@ abstract contract ETourInstance_Base is ETourStorage {
         }
     }
 
+    /**
+     * @notice Cancels the tournament.
+     */
     function cancelTournament() external virtual notConcluded {
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("coreCancelTournament()")
@@ -718,6 +802,9 @@ abstract contract ETourInstance_Base is ETourStorage {
         _handleTournamentConclusion();
     }
 
+    /**
+     * @notice Resets the enrollment window.
+     */
     function resetEnrollmentWindow() external virtual notConcluded {
         (bool success, ) = MODULE_CORE.delegatecall(
             abi.encodeWithSignature("coreResetEnrollmentWindow()")
@@ -725,6 +812,10 @@ abstract contract ETourInstance_Base is ETourStorage {
         require(success, "Reset failed");
     }
 
+    /**
+     * @notice Returns whether force start tournament.
+     * @return The requested value.
+     */
     function canForceStartTournament() external view returns (bool) {
         return tournament.status == TournamentStatus.Enrolling &&
             isEnrolled[msg.sender] &&
@@ -732,12 +823,20 @@ abstract contract ETourInstance_Base is ETourStorage {
             tournament.enrolledCount >= 2;
     }
 
+    /**
+     * @notice Returns whether cancel tournament.
+     * @return The requested value.
+     */
     function canCancelTournament() external view returns (bool) {
         return tournament.status == TournamentStatus.Enrolling &&
             isEnrolled[msg.sender] &&
             tournament.enrolledCount == 1;
     }
 
+    /**
+     * @notice Returns whether reset enrollment window.
+     * @return The requested value.
+     */
     function canResetEnrollmentWindow() external view returns (bool) {
         return tournament.status == TournamentStatus.Enrolling &&
             isEnrolled[msg.sender] &&
@@ -747,6 +846,7 @@ abstract contract ETourInstance_Base is ETourStorage {
     /**
      * @dev Rescue any ETH stuck on a concluded instance (e.g. failed prize or owner-share transfer).
      * Only callable by the factory owner.
+     * @param to The to address.
      */
     function rescueStuckFunds(address to) external {
         (bool ok, bytes memory ret) = factory.staticcall(abi.encodeWithSignature("owner()"));
@@ -758,6 +858,9 @@ abstract contract ETourInstance_Base is ETourStorage {
         require(sent, "Transfer failed");
     }
 
+    /**
+     * @notice Claims an abandoned prize pool.
+     */
     function claimAbandonedPool() external notConcluded {
         bool claimerWasEnrolled = isEnrolled[msg.sender];
 
@@ -775,6 +878,11 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Escalation: Claim Timeout Win ============
 
+    /**
+     * @notice Claims a win after the opponent times out.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     */
     function claimTimeoutWin(uint8 roundNumber, uint8 matchNumber) external nonReentrant notConcluded {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         Match storage matchData = matches[matchId];
@@ -803,6 +911,12 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Escalation Availability Views ============
 
+    /**
+     * @notice Returns whether match esc l2 available.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return The requested value.
+     */
     function isMatchEscL2Available(uint8 roundNumber, uint8 matchNumber) external view returns (bool) {
         if (tournament.status != TournamentStatus.InProgress) return false;
 
@@ -825,6 +939,12 @@ abstract contract ETourInstance_Base is ETourStorage {
         return block.timestamp >= timeout.escalation1Start;
     }
 
+    /**
+     * @notice Returns whether match esc l3 available.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return The requested value.
+     */
     function isMatchEscL3Available(uint8 roundNumber, uint8 matchNumber) external view returns (bool) {
         if (tournament.status != TournamentStatus.InProgress) return false;
 
@@ -847,6 +967,12 @@ abstract contract ETourInstance_Base is ETourStorage {
         return block.timestamp >= timeout.escalation2Start;
     }
 
+    /**
+     * @notice Returns whether player in advanced round.
+     * @param stalledRoundNumber The stalled round number value.
+     * @param player The player address.
+     * @return The requested value.
+     */
     function isPlayerInAdvancedRound(uint8 stalledRoundNumber, address player) external view returns (bool) {
         if (!isEnrolled[player]) return false;
 
@@ -873,6 +999,23 @@ abstract contract ETourInstance_Base is ETourStorage {
 
     // ============ Permanent Record View Functions ============
 
+    /**
+     * @notice Returns instance info.
+     * @return tierKey The tier key.
+     * @return playerCount The player count.
+     * @return entryFee The entry fee.
+     * @return instanceCreator The instance creator.
+     * @return createdAt The created at.
+     * @return startTime The start time.
+     * @return status The status.
+     * @return enrolledCount The enrolled count.
+     * @return totalEntryFeesAccrued The total entry fees accrued.
+     * @return winner The winner.
+     * @return completionReason The completion reason.
+     * @return completionCategory The completion category.
+     * @return prizeAwarded The prize awarded.
+     * @return prizeRecipient The prize recipient.
+     */
     function getInstanceInfo() external view returns (
         bytes32 tierKey,
         uint8 playerCount,
@@ -907,10 +1050,20 @@ abstract contract ETourInstance_Base is ETourStorage {
         );
     }
 
+    /**
+     * @notice Returns players.
+     * @return The requested value.
+     */
     function getPlayers() external view returns (address[] memory) {
         return enrolledPlayers;
     }
 
+    /**
+     * @notice Returns bracket.
+     * @return totalRounds The total rounds.
+     * @return matchCounts The match counts.
+     * @return completedCounts The completed counts.
+     */
     function getBracket() external view returns (
         uint8 totalRounds,
         uint8[] memory matchCounts,
@@ -925,6 +1078,21 @@ abstract contract ETourInstance_Base is ETourStorage {
         }
     }
 
+    /**
+     * @notice Returns match.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return player1 The player1.
+     * @return player2 The player2.
+     * @return matchWinner The match winner.
+     * @return isDraw The is draw.
+     * @return status The status.
+     * @return startTime The start time.
+     * @return lastMoveTime The last move time.
+     * @return moves The moves.
+     * @return completionReason The completion reason.
+     * @return completionCategory The completion category.
+     */
     function getMatch(uint8 roundNumber, uint8 matchNumber) external view returns (
         address player1,
         address player2,
@@ -953,11 +1121,22 @@ abstract contract ETourInstance_Base is ETourStorage {
         );
     }
 
+    /**
+     * @notice Returns match moves.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return The requested value.
+     */
     function getMatchMoves(uint8 roundNumber, uint8 matchNumber) external view returns (string memory) {
         bytes32 matchId = _getMatchId(roundNumber, matchNumber);
         return matches[matchId].moves;
     }
 
+    /**
+     * @notice Returns prize distribution.
+     * @return players The players.
+     * @return amounts The amounts.
+     */
     function getPrizeDistribution() external view returns (
         address[] memory players,
         uint256[] memory amounts
@@ -969,6 +1148,15 @@ abstract contract ETourInstance_Base is ETourStorage {
         }
     }
 
+    /**
+     * @notice Returns player result.
+     * @param player The player address.
+     * @return participated The participated.
+     * @return prizeWon The prize won.
+     * @return isWinner The is winner.
+     * @return payout The payout.
+     * @return payoutReason The payout reason.
+     */
     function getPlayerResult(address player) external view returns (
         bool participated,
         uint256 prizeWon,

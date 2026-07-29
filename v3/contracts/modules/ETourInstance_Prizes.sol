@@ -25,6 +25,9 @@ contract ETourInstance_Prizes is ETourStorage, ETourModuleGuard {
     /**
      * @dev Distribute prize to tournament winner (winner-takes-all).
      * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * @param winnersPot The winners pot value.
+     * @return winners The winners.
+     * @return prizes The prizes.
      */
     function distributePrizes(uint256 winnersPot) payable
         external
@@ -43,6 +46,10 @@ contract ETourInstance_Prizes is ETourStorage, ETourModuleGuard {
     /**
      * @dev Distribute equal prizes to all remaining players (all-draw scenario).
      * Called via delegatecall from ETourInstance_Base._handleTournamentConclusion().
+     * @param remainingPlayers The remaining players value.
+     * @param winnersPot The winners pot value.
+     * @return winners The winners.
+     * @return prizes The prizes.
      */
     function distributeEqualPrizes(address[] memory remainingPlayers, uint256 winnersPot) payable
         external

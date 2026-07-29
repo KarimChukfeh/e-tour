@@ -116,6 +116,10 @@ contract ConnectFourInstance is ETourGame {
 
     /**
      * @dev Drop a piece into the given column. Gravity places it in the lowest empty row.
+     * @notice Executes a game move.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param column The column value.
      */
     function makeMove(uint8 roundNumber, uint8 matchNumber, uint8 column)
         external nonReentrant notConcluded
@@ -162,6 +166,12 @@ contract ConnectFourInstance is ETourGame {
 
     // ============ View ============
 
+    /**
+     * @notice Returns board.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return board The board.
+     */
     function getBoard(uint8 roundNumber, uint8 matchNumber)
         external view returns (uint8[42] memory board)
     {

@@ -10,6 +10,15 @@ import "./TicTacInstance.sol";
  */
 contract TicTacChainFactory is ETourFactory {
 
+    /**
+     * @notice Initializes the tic tac chain factory constructor.
+     * @param moduleCore The module core address.
+     * @param moduleMatches The module matches address.
+     * @param modulePrizes The module prizes address.
+     * @param moduleEscalation The module escalation address.
+     * @param playerRegistry The player registry address.
+     * @param sessionRegistry The session registry address.
+     */
     constructor(
         address moduleCore,
         address moduleMatches,

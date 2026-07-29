@@ -66,20 +66,24 @@ interface IETourInstanceSelf {
     function _completeMatchWithResult(bytes32 matchId, address winner, bool isDraw) external;
 
     /// @notice Reads the configured Fischer increment.
+    /// @return The requested value.
     function _getTimeIncrement() external view returns (uint256);
 
     /// @notice Reports whether the current player has exhausted their clock.
     /// @param matchId Canonical match identifier.
+    /// @return The requested value.
     function _hasCurrentPlayerTimedOut(bytes32 matchId) external view returns (bool);
 
     /// @notice Reports whether a match is active.
     /// @param matchId Canonical match identifier.
+    /// @return The requested value.
     function _isMatchActive(bytes32 matchId) external view returns (bool);
 
     /// @notice Reads common active-match state used by infrastructure modules.
     /// @param matchId Canonical match identifier.
     /// @param roundNumber Round containing the match.
     /// @param matchNumber Match index within the round.
+    /// @return The requested value.
     function _getActiveMatchData(
         bytes32 matchId,
         uint8 roundNumber,

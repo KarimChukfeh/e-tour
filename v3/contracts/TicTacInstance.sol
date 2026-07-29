@@ -100,6 +100,7 @@ contract TicTacInstance is ETourGame {
      * @param roundNumber Round number within this instance
      * @param matchNumber Match number within the round
      * @param cellIndex Board cell index (0-8, row-major)
+     * @notice Executes a game move.
      */
     function makeMove(
         uint8 roundNumber,
@@ -148,6 +149,12 @@ contract TicTacInstance is ETourGame {
 
     // ============ View ============
 
+    /**
+     * @notice Returns board.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return board The board.
+     */
     function getBoard(uint8 roundNumber, uint8 matchNumber)
         external view
         returns (uint8[9] memory board)

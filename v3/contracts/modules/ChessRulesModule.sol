@@ -21,82 +21,230 @@ contract ChessRulesModule {
 
     // ============ Constants ============
 
+    /**
+     * @notice Returns no en passant.
+     */
     uint8 public constant NO_EN_PASSANT = 63;  // Max 6-bit value (bits 0-5), not 64 which overlaps bit 6
 
     // Piece types
+    /**
+     * @notice Returns piece none.
+     */
     uint8 public constant PIECE_NONE = 0;
+    /**
+     * @notice Returns piece pawn.
+     */
     uint8 public constant PIECE_PAWN = 1;
+    /**
+     * @notice Returns piece knight.
+     */
     uint8 public constant PIECE_KNIGHT = 2;
+    /**
+     * @notice Returns piece bishop.
+     */
     uint8 public constant PIECE_BISHOP = 3;
+    /**
+     * @notice Returns piece rook.
+     */
     uint8 public constant PIECE_ROOK = 4;
+    /**
+     * @notice Returns piece queen.
+     */
     uint8 public constant PIECE_QUEEN = 5;
+    /**
+     * @notice Returns piece king.
+     */
     uint8 public constant PIECE_KING = 6;
 
+    /**
+     * @notice Returns black offset.
+     */
     uint8 public constant BLACK_OFFSET = 6;
 
     // Packed piece values
+    /**
+     * @notice Returns white pawn.
+     */
     uint8 public constant WHITE_PAWN = 1;
+    /**
+     * @notice Returns white knight.
+     */
     uint8 public constant WHITE_KNIGHT = 2;
+    /**
+     * @notice Returns white bishop.
+     */
     uint8 public constant WHITE_BISHOP = 3;
+    /**
+     * @notice Returns white rook.
+     */
     uint8 public constant WHITE_ROOK = 4;
+    /**
+     * @notice Returns white queen.
+     */
     uint8 public constant WHITE_QUEEN = 5;
+    /**
+     * @notice Returns white king.
+     */
     uint8 public constant WHITE_KING = 6;
+    /**
+     * @notice Returns black pawn.
+     */
     uint8 public constant BLACK_PAWN = 7;
+    /**
+     * @notice Returns black knight.
+     */
     uint8 public constant BLACK_KNIGHT = 8;
+    /**
+     * @notice Returns black bishop.
+     */
     uint8 public constant BLACK_BISHOP = 9;
+    /**
+     * @notice Returns black rook.
+     */
     uint8 public constant BLACK_ROOK = 10;
+    /**
+     * @notice Returns black queen.
+     */
     uint8 public constant BLACK_QUEEN = 11;
+    /**
+     * @notice Returns black king.
+     */
     uint8 public constant BLACK_KING = 12;
 
     // State bit flags
+    /**
+     * @notice Returns ep mask.
+     */
     uint256 public constant EP_MASK = 0x3F;
+    /**
+     * @notice Returns white king moved.
+     */
     uint256 public constant WHITE_KING_MOVED = 1 << 6;
+    /**
+     * @notice Returns black king moved.
+     */
     uint256 public constant BLACK_KING_MOVED = 1 << 7;
+    /**
+     * @notice Returns white rook a moved.
+     */
     uint256 public constant WHITE_ROOK_A_MOVED = 1 << 8;
+    /**
+     * @notice Returns white rook h moved.
+     */
     uint256 public constant WHITE_ROOK_H_MOVED = 1 << 9;
+    /**
+     * @notice Returns black rook a moved.
+     */
     uint256 public constant BLACK_ROOK_A_MOVED = 1 << 10;
+    /**
+     * @notice Returns black rook h moved.
+     */
     uint256 public constant BLACK_ROOK_H_MOVED = 1 << 11;
+    /**
+     * @notice Returns white in check.
+     */
     uint256 public constant WHITE_IN_CHECK = 1 << 12;
+    /**
+     * @notice Returns black in check.
+     */
     uint256 public constant BLACK_IN_CHECK = 1 << 13;
+    /**
+     * @notice Returns half move shift.
+     */
     uint256 public constant HALF_MOVE_SHIFT = 14;
+    /**
+     * @notice Returns half move mask.
+     */
     uint256 public constant HALF_MOVE_MASK = 0xFF << HALF_MOVE_SHIFT;
+    /**
+     * @notice Returns full move shift.
+     */
     uint256 public constant FULL_MOVE_SHIFT = 22;
+    /**
+     * @notice Returns full move mask.
+     */
     uint256 public constant FULL_MOVE_MASK = 0x3FF << FULL_MOVE_SHIFT;
 
     // Initial positions
+    /**
+     * @notice Returns initial board.
+     */
     uint256 public constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
+    /**
+     * @notice Returns initial state.
+     */
     uint256 public constant INITIAL_STATE = NO_EN_PASSANT | (1 << FULL_MOVE_SHIFT);
 
     // ============ Board Helpers ============
 
+    /**
+     * @notice Returns piece.
+     * @param board The board value.
+     * @param square The square value.
+     * @return The requested value.
+     */
     function getPiece(uint256 board, uint8 square) public pure returns (uint8) {
         return uint8((board >> (square * 4)) & 0xF);
     }
 
+    /**
+     * @notice Updates piece.
+     * @param board The board value.
+     * @param square The square value.
+     * @param piece The piece value.
+     * @return The requested value.
+     */
     function setPiece(uint256 board, uint8 square, uint8 piece) public pure returns (uint256) {
         uint256 mask = ~(uint256(0xF) << (square * 4));
         return (board & mask) | (uint256(piece) << (square * 4));
     }
 
+    /**
+     * @notice Returns whether white piece.
+     * @param piece The piece value.
+     * @return The requested value.
+     */
     function isWhitePiece(uint8 piece) public pure returns (bool) {
         return piece >= 1 && piece <= 6;
     }
 
+    /**
+     * @notice Returns whether black piece.
+     * @param piece The piece value.
+     * @return The requested value.
+     */
     function isBlackPiece(uint8 piece) public pure returns (bool) {
         return piece >= 7 && piece <= 12;
     }
 
+    /**
+     * @notice Returns piece type.
+     * @param piece The piece value.
+     * @return The requested value.
+     */
     function getPieceType(uint8 piece) public pure returns (uint8) {
         if (piece == 0) return PIECE_NONE;
         if (piece <= 6) return piece;
         return piece - BLACK_OFFSET;
     }
 
+    /**
+     * @notice Returns whether own piece.
+     * @param piece The piece value.
+     * @param isWhite Whether is white.
+     * @return The requested value.
+     */
     function isOwnPiece(uint8 piece, bool isWhite) public pure returns (bool) {
         if (isWhite) return isWhitePiece(piece);
         return isBlackPiece(piece);
     }
 
+    /**
+     * @notice Returns whether enemy piece.
+     * @param piece The piece value.
+     * @param isWhite Whether is white.
+     * @return The requested value.
+     */
     function isEnemyPiece(uint8 piece, bool isWhite) public pure returns (bool) {
         if (piece == 0) return false;
         if (isWhite) return isBlackPiece(piece);
@@ -105,44 +253,105 @@ contract ChessRulesModule {
 
     // ============ State Helpers ============
 
+    /**
+     * @notice Returns en passant square.
+     * @param state The state value.
+     * @return The requested value.
+     */
     function getEnPassantSquare(uint256 state) public pure returns (uint8) {
         return uint8(state & EP_MASK);
     }
 
+    /**
+     * @notice Updates en passant square.
+     * @param state The state value.
+     * @param square The square value.
+     * @return The requested value.
+     */
     function setEnPassantSquare(uint256 state, uint8 square) public pure returns (uint256) {
         return (state & ~EP_MASK) | square;
     }
 
+    /**
+     * @notice Returns half move clock.
+     * @param state The state value.
+     * @return The requested value.
+     */
     function getHalfMoveClock(uint256 state) public pure returns (uint8) {
         return uint8((state & HALF_MOVE_MASK) >> HALF_MOVE_SHIFT);
     }
 
+    /**
+     * @notice Updates half move clock.
+     * @param state The state value.
+     * @param value The value value.
+     * @return The requested value.
+     */
     function setHalfMoveClock(uint256 state, uint8 value) public pure returns (uint256) {
         return (state & ~HALF_MOVE_MASK) | (uint256(value) << HALF_MOVE_SHIFT);
     }
 
+    /**
+     * @notice Returns full move number.
+     * @param state The state value.
+     * @return The requested value.
+     */
     function getFullMoveNumber(uint256 state) public pure returns (uint16) {
         return uint16((state & FULL_MOVE_MASK) >> FULL_MOVE_SHIFT);
     }
 
+    /**
+     * @notice Updates full move number.
+     * @param state The state value.
+     * @param value The value value.
+     * @return The requested value.
+     */
     function setFullMoveNumber(uint256 state, uint16 value) public pure returns (uint256) {
         return (state & ~FULL_MOVE_MASK) | (uint256(value) << FULL_MOVE_SHIFT);
     }
 
+    /**
+     * @notice Returns whether flag.
+     * @param state The state value.
+     * @param flag The flag value.
+     * @return The requested value.
+     */
     function hasFlag(uint256 state, uint256 flag) public pure returns (bool) {
         return (state & flag) != 0;
     }
 
+    /**
+     * @notice Updates flag.
+     * @param state The state value.
+     * @param flag The flag value.
+     * @return The requested value.
+     */
     function setFlag(uint256 state, uint256 flag) public pure returns (uint256) {
         return state | flag;
     }
 
+    /**
+     * @notice Clears the requested state flag.
+     * @param state The state value.
+     * @param flag The flag value.
+     * @return The requested value.
+     */
     function clearFlag(uint256 state, uint256 flag) public pure returns (uint256) {
         return state & ~flag;
     }
 
     // ============ Move Validation ============
 
+    /**
+     * @notice Returns whether valid move.
+     * @param board The board value.
+     * @param state The state value.
+     * @param from The from value.
+     * @param to The to value.
+     * @param isWhite Whether is white.
+     * @param promotion The promotion value.
+     * @return The requested value.
+     */
     function isValidMove(
         uint256 board,
         uint256 state,
@@ -343,6 +552,12 @@ contract ChessRulesModule {
 
     // ============ Check Detection ============
 
+    /**
+     * @notice Returns whether king in check.
+     * @param board The board value.
+     * @param isWhite Whether is white.
+     * @return The requested value.
+     */
     function isKingInCheck(uint256 board, bool isWhite) public pure returns (bool) {
         uint8 kingSquare = _findKing(board, isWhite);
         return _isSquareAttacked(board, kingSquare, isWhite);
@@ -422,6 +637,13 @@ contract ChessRulesModule {
 
     // ============ Legal Move Detection ============
 
+    /**
+     * @notice Returns whether legal moves.
+     * @param board The board value.
+     * @param state The state value.
+     * @param isWhite Whether is white.
+     * @return The requested value.
+     */
     function hasLegalMoves(uint256 board, uint256 state, bool isWhite) public pure returns (bool) {
         for (uint8 from = 0; from < 64; from++) {
             uint8 piece = getPiece(board, from);
@@ -444,6 +666,11 @@ contract ChessRulesModule {
 
     // ============ Draw Detection ============
 
+    /**
+     * @notice Returns whether insufficient material.
+     * @param board The board value.
+     * @return The requested value.
+     */
     function isInsufficientMaterial(uint256 board) public pure returns (bool) {
         uint8 whitePieceCount = 0;
         uint8 blackPieceCount = 0;
@@ -486,6 +713,17 @@ contract ChessRulesModule {
     /**
      * @dev Execute a move and return the updated board and state
      * This is a pure function that computes the new game state
+     * @param board The board value.
+     * @param state The state value.
+     * @param from The from value.
+     * @param to The to value.
+     * @param promotion The promotion value.
+     * @param isWhite Whether is white.
+     * @return newBoard The new board.
+     * @return newState The new state.
+     * @return isCapture The is capture.
+     * @return isPawnMove The is pawn move.
+     * @return capturedEnPassantSquare The captured en passant square.
      */
     function executeMove(
         uint256 board,
@@ -607,6 +845,16 @@ contract ChessRulesModule {
      * @dev Combined function: validate move, execute it, and determine game result
      * Returns gameEnd: 0=ongoing, 1=checkmate, 2=stalemate, 3=fifty-move, 4=insufficient
      * This reduces external calls from 4-5 to just 1
+     * @param board The board value.
+     * @param state The state value.
+     * @param from The from value.
+     * @param to The to value.
+     * @param promotion The promotion value.
+     * @param isWhite Whether is white.
+     * @return valid The valid.
+     * @return newBoard The new board.
+     * @return newState The new state.
+     * @return gameEnd The game end.
      */
     function processMove(
         uint256 board, uint256 state, uint8 from, uint8 to, uint8 promotion, bool isWhite

@@ -261,7 +261,7 @@
 - [x] Write the V3 deployment and verification guide.
 - [x] Write the bundler failover, paymaster refill, monitoring, and incident operations runbook.
 - [x] Write the V2-to-V3 source and production migration guide.
-- [ ] Complete NatSpec for every public and external V3 API.
+- [x] Complete NatSpec for every public and external V3 API.
 - [x] Update user-facing documentation for one-confirmation enrollment, session moves, expiry, browser loss, recovery, and direct fallback.
 - [x] Deploy the pinned local EntryPoint and complete local end-to-end create, join, move, rotate, revoke, and conclude flows.
 - [x] Complete local end-to-end tournaments for all three games using session UserOperations.

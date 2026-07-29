@@ -48,7 +48,13 @@ contract PlayerProfile is IPlayerProfile {
 
     bool private _initialized;
 
+    /**
+     * @notice Returns owner.
+     */
     address public override owner;
+    /**
+     * @notice Returns registry.
+     */
     address public registry;
 
     EnrollmentRecord[] private _enrollments;
@@ -62,6 +68,11 @@ contract PlayerProfile is IPlayerProfile {
 
     // ============ Initializer ============
 
+    /**
+     * @notice Initializes.
+     * @param _owner The owner address.
+     * @param _registry The registry address.
+     */
     function initialize(address _owner, address _registry) external override {
         if (_initialized) revert AlreadyInitialized();
         _initialized = true;
@@ -74,6 +85,9 @@ contract PlayerProfile is IPlayerProfile {
     /**
      * @dev Record a new tournament enrollment.
      * Called by PlayerRegistry when a player enrolls in any instance.
+     * @param instance The instance address.
+     * @param gameType The game type value.
+     * @param entryFee The entry fee value.
      */
     function recordEnrollment(
         address instance,
@@ -107,6 +121,12 @@ contract PlayerProfile is IPlayerProfile {
      * @dev Record the result of a concluded tournament.
      * Called by PlayerRegistry when an instance concludes.
      * Idempotent: if already recorded, does nothing.
+     * @param instance The instance address.
+     * @param won Whether won.
+     * @param prize The prize value.
+     * @param payout The payout value.
+     * @param payoutReason The payout reason value.
+     * @param tournamentResolutionReason The tournament resolution reason value.
      */
     function recordResult(
         address instance,
@@ -149,6 +169,15 @@ contract PlayerProfile is IPlayerProfile {
         );
     }
 
+    /**
+     * @notice Records match outcome.
+     * @param instance The instance address.
+     * @param gameType The game type value.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @param outcome The outcome value.
+     * @param category The category value.
+     */
     function recordMatchOutcome(
         address instance,
         uint8 gameType,
@@ -186,14 +215,26 @@ contract PlayerProfile is IPlayerProfile {
 
     // ============ View Functions ============
 
+    /**
+     * @notice Returns stats.
+     * @return The requested value.
+     */
     function getStats() external view override returns (PlayerStats memory) {
         return _stats;
     }
 
+    /**
+     * @notice Returns enrollment count.
+     * @return The requested value.
+     */
     function getEnrollmentCount() external view override returns (uint256) {
         return _enrollments.length;
     }
 
+    /**
+     * @notice Returns match record count.
+     * @return The requested value.
+     */
     function getMatchRecordCount() external view override returns (uint256) {
         return _matchRecords.length;
     }
@@ -202,6 +243,8 @@ contract PlayerProfile is IPlayerProfile {
      * @dev Paginated enrollment history, newest-first.
      * @param offset Number of records to skip from the most recent.
      * @param limit  Max records to return. Pass 0 for all remaining.
+     * @notice Returns enrollments.
+     * @return result The result.
      */
     function getEnrollments(uint256 offset, uint256 limit)
         external view override
@@ -220,6 +263,12 @@ contract PlayerProfile is IPlayerProfile {
         }
     }
 
+    /**
+     * @notice Returns match records.
+     * @param offset The offset value.
+     * @param limit The limit value.
+     * @return result The result.
+     */
     function getMatchRecords(uint256 offset, uint256 limit)
         external view override
         returns (PlayerMatchRecord[] memory result)
@@ -239,6 +288,8 @@ contract PlayerProfile is IPlayerProfile {
     /**
      * @dev Get a single enrollment record by instance address.
      * Returns a zero-value record if not found (check enrolledAt != 0).
+     * @param instance The instance address.
+     * @return The requested value.
      */
     function getEnrollmentByInstance(address instance)
         external view
@@ -251,6 +302,13 @@ contract PlayerProfile is IPlayerProfile {
         return _enrollments[idx1 - 1];
     }
 
+    /**
+     * @notice Returns match record by key.
+     * @param instance The instance address.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return The requested value.
+     */
     function getMatchRecordByKey(
         address instance,
         uint8 roundNumber,

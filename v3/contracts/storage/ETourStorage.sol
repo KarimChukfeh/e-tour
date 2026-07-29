@@ -177,26 +177,74 @@ abstract contract ETourStorage is ReentrancyGuard {
     // V2-compatible canonical order. ReentrancyGuard._status precedes these.
     bool internal _initialized;
 
+    /**
+     * @notice Returns factory.
+     */
     address public factory;
+    /**
+     * @notice Returns creator.
+     */
     address public creator;
+    /**
+     * @notice Returns module core.
+     */
     address public MODULE_CORE;
+    /**
+     * @notice Returns module matches.
+     */
     address public MODULE_MATCHES;
+    /**
+     * @notice Returns module prizes.
+     */
     address public MODULE_PRIZES;
+    /**
+     * @notice Returns module escalation.
+     */
     address public MODULE_ESCALATION;
 
+    /**
+     * @notice Returns tier config.
+     */
     TierConfig public tierConfig;
+    /**
+     * @notice Returns tournament.
+     */
     TournamentState public tournament;
 
+    /**
+     * @notice Returns enrolled players.
+     */
     address[] public enrolledPlayers;
+    /**
+     * @notice Returns whether a player is enrolled.
+     */
     mapping(address => bool) public isEnrolled;
+    /**
+     * @notice Returns rounds.
+     */
     mapping(uint8 => Round) public rounds;
+    /**
+     * @notice Returns matches.
+     */
     mapping(bytes32 => Match) public matches;
+    /**
+     * @notice Returns match timeouts.
+     */
     mapping(bytes32 => MatchTimeoutState) public matchTimeouts;
+    /**
+     * @notice Returns player prizes.
+     */
     mapping(address => uint256) public playerPrizes;
+    /**
+     * @notice Returns draw participants.
+     */
     mapping(uint8 => mapping(uint8 => mapping(address => bool))) public drawParticipants;
 
     bytes32 internal _entropyState;
     uint256 internal _entropyNonce;
+    /**
+     * @notice Returns player payout reasons.
+     */
     mapping(address => PayoutReason) public playerPayoutReasons;
 
     // V3 fields are append-only below this line.

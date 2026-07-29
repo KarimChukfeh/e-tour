@@ -10,6 +10,15 @@ import "./ConnectFourInstance.sol";
  */
 contract ConnectFourFactory is ETourFactory {
 
+    /**
+     * @notice Initializes the connect four factory constructor.
+     * @param moduleCore The module core address.
+     * @param moduleMatches The module matches address.
+     * @param modulePrizes The module prizes address.
+     * @param moduleEscalation The module escalation address.
+     * @param playerRegistry The player registry address.
+     * @param sessionRegistry The session registry address.
+     */
     constructor(
         address moduleCore,
         address moduleMatches,

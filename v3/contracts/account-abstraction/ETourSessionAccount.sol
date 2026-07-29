@@ -14,13 +14,28 @@ import {PackedUserOperation, IEntryPointV08} from "./ERC4337Types.sol";
  * instance-scoped SessionKeyRegistry.
  */
 contract ETourSessionAccount {
+    /**
+     * @notice Returns entry point.
+     */
     address public immutable ENTRY_POINT;
+    /**
+     * @notice Returns owner.
+     */
     address public immutable owner;
+    /**
+     * @notice Returns factory.
+     */
     address public immutable factory;
 
     error UnauthorizedCaller();
     error TransferFailed();
 
+    /**
+     * @notice Initializes the etour session account constructor.
+     * @param entryPoint_ The entry point address.
+     * @param owner_ The owner address.
+     * @param factory_ The factory address.
+     */
     constructor(address entryPoint_, address owner_, address factory_) {
         if (
             entryPoint_ == address(0) ||
@@ -32,11 +47,17 @@ contract ETourSessionAccount {
         factory = factory_;
     }
 
+    /**
+     * @notice Accepts native ETH sent directly to this contract.
+     */
     receive() external payable {}
 
     /**
      * @notice Executes one call authorized by EntryPoint validation or owner.
      * @dev The paymaster separately restricts sponsored calls to game moves.
+     * @param target The target address.
+     * @param value The value value.
+     * @param data The data data.
      */
     function execute(
         address target,
@@ -58,6 +79,9 @@ contract ETourSessionAccount {
     /**
      * @notice ERC-4337 account validation entry point.
      * @return validationData Zero for a valid signature, one otherwise.
+     * @param userOp The user op configuration.
+     * @param userOpHash The user op hash data.
+     * @param missingAccountFunds The missing account funds value.
      */
     function validateUserOp(
         PackedUserOperation calldata userOp,
@@ -78,16 +102,28 @@ contract ETourSessionAccount {
         return 0;
     }
 
+    /**
+     * @notice Deposits ETH into the EntryPoint.
+     */
     function addDeposit() external payable {
         IEntryPointV08(ENTRY_POINT).depositTo{value: msg.value}(
             address(this)
         );
     }
 
+    /**
+     * @notice Returns deposit.
+     * @return The requested value.
+     */
     function getDeposit() external view returns (uint256) {
         return IEntryPointV08(ENTRY_POINT).balanceOf(address(this));
     }
 
+    /**
+     * @notice Withdraws deposit to.
+     * @param withdrawAddress The withdraw address.
+     * @param amount The amount value.
+     */
     function withdrawDepositTo(
         address payable withdrawAddress,
         uint256 amount

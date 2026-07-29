@@ -26,6 +26,8 @@ abstract contract ETourInstance is ETourInstance_Base {
     /**
      * @dev ML2: Advanced player force-eliminates both stalled players.
      * Delegates to Escalation module.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
      */
     function forceEliminateStalledMatch(uint8 roundNumber, uint8 matchNumber)
         external
@@ -45,6 +47,8 @@ abstract contract ETourInstance is ETourInstance_Base {
     /**
      * @dev ML3: External player replaces stalled players and takes the match.
      * Delegates to Escalation module.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
      */
     function claimMatchSlotByReplacement(uint8 roundNumber, uint8 matchNumber)
         external

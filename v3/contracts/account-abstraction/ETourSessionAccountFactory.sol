@@ -12,8 +12,17 @@ import {ETourSessionAccount} from "./ETourSessionAccount.sol";
  * accounts accepted by the ETour paymaster.
  */
 contract ETourSessionAccountFactory {
+    /**
+     * @notice Returns entry point.
+     */
     address public immutable ENTRY_POINT;
+    /**
+     * @notice Returns sender creator.
+     */
     address public immutable SENDER_CREATOR;
+    /**
+     * @notice Returns whether an address was deployed by this factory.
+     */
     mapping(address account => bool created) public isAccount;
 
     error InvalidEntryPoint();
@@ -26,6 +35,10 @@ contract ETourSessionAccountFactory {
         uint256 indexed salt
     );
 
+    /**
+     * @notice Initializes the etour session account factory constructor.
+     * @param entryPoint_ The entry point address.
+     */
     constructor(address entryPoint_) {
         if (entryPoint_ == address(0)) revert InvalidEntryPoint();
         ENTRY_POINT = entryPoint_;
@@ -36,6 +49,9 @@ contract ETourSessionAccountFactory {
     /**
      * @notice Deploys or returns the deterministic account.
      * @dev EntryPoint v0.8 routes initCode through SenderCreator.
+     * @param owner The owner address.
+     * @param salt The salt value.
+     * @return account The account.
      */
     function createAccount(
         address owner,
@@ -60,6 +76,9 @@ contract ETourSessionAccountFactory {
     }
 
     /// @notice Computes the session executor before deployment.
+    /// @param owner The owner address.
+    /// @param salt The salt value.
+    /// @return The requested value.
     function getAddress(
         address owner,
         uint256 salt

@@ -418,6 +418,13 @@ describe("V3 session-authorized gameplay", function () {
             winner === env.owner.address
                 ? env.joiner.address
                 : env.owner.address;
+        const completedState = await captureGameplayState(instance);
+        await expect(
+            instance.connect(env.ownerExecutor).makeMove(0, 0, 5)
+        ).to.be.revertedWith("Instance concluded");
+        expect(await captureGameplayState(instance)).to.deep.equal(
+            completedState
+        );
         expect(tournament.winner).to.equal(winner);
         expect(tournament.prizeRecipient).to.equal(winner);
         expect(
@@ -695,6 +702,30 @@ describe("V3 session-authorized gameplay", function () {
                 .connect(executor)
                 .initializeChessRules(executor.address)
         ).to.be.revertedWith("Only factory");
+    });
+
+    it("caps an exhausted player-two clock at the configured move increment", async function () {
+        const env = await loadFixture(protocolFixture);
+        const instance = await createGame(env, GAMES[0]);
+        let match = await instance.matches(MATCH_ID);
+
+        if (match.currentTurn !== match.player2) {
+            await instance
+                .connect(executorFor(env, match.currentTurn))
+                .makeMove(0, 0, 0);
+            match = await instance.matches(MATCH_ID);
+        }
+
+        expect(match.currentTurn).to.equal(match.player2);
+        await time.setNextBlockTimestamp(
+            match.lastMoveTime + MATCH_TIME + 1n
+        );
+        await instance
+            .connect(executorFor(env, match.player2))
+            .makeMove(0, 0, 1);
+
+        const updated = await instance.matches(MATCH_ID);
+        expect(updated.player2TimeRemaining).to.equal(MOVE_INCREMENT);
     });
 
     it("keeps permissionless abandonment identity separate from delegated primary identity", async function () {

@@ -4,6 +4,19 @@ pragma solidity ^0.8.20;
 import {ETourGame} from "./ETourGame.sol";
 
 interface IChessRules {
+    /**
+     * @notice Validates and applies a chess move.
+     * @param board The board value.
+     * @param state The state value.
+     * @param from The from value.
+     * @param to The to value.
+     * @param promotion The promotion value.
+     * @param isWhite Whether is white.
+     * @return valid The valid.
+     * @return newBoard The new board.
+     * @return newState The new state.
+     * @return gameEnd The game end.
+     */
     function processMove(
         uint256 board,
         uint256 state,
@@ -26,6 +39,9 @@ interface IChessRules {
  */
 contract ChessInstance is ETourGame {
 
+    /**
+     * @notice Returns chess rules.
+     */
     IChessRules public CHESS_RULES;
 
     uint256 private constant INITIAL_BOARD = 0xA89CB98A77777777000000000000000000000000000000001111111142365324;
@@ -158,6 +174,7 @@ contract ChessInstance is ETourGame {
      * @param from Source square (0-63)
      * @param to   Destination square (0-63)
      * @param promotion Promotion piece type (0 = none, 5 = queen, etc.)
+     * @notice Executes a game move.
      */
     function makeMove(
         uint8 roundNumber,
@@ -209,6 +226,13 @@ contract ChessInstance is ETourGame {
 
     // ============ View ============
 
+    /**
+     * @notice Returns board.
+     * @param roundNumber The round number value.
+     * @param matchNumber The match number value.
+     * @return board The board.
+     * @return state The state.
+     */
     function getBoard(uint8 roundNumber, uint8 matchNumber)
         external view returns (uint256 board, uint256 state)
     {

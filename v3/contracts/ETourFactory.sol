@@ -64,53 +64,119 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Constants ============
 
+    /**
+     * @notice Returns min entry fee.
+     */
     uint256 public constant MIN_ENTRY_FEE = 0.0001 ether;
+    /**
+     * @notice Returns fee increment.
+     */
     uint256 public constant FEE_INCREMENT = 0.0001 ether;
+    /**
+     * @notice Returns basis points.
+     */
     uint256 public constant BASIS_POINTS = 10000;
 
     // Escalation delay constants (not user-configurable)
+    /**
+     * @notice Returns match level 2 delay.
+     */
     uint256 public constant MATCH_LEVEL_2_DELAY = 2 minutes;      // ML2: 2 mins after ML1
+    /**
+     * @notice Returns match level 3 delay.
+     */
     uint256 public constant MATCH_LEVEL_3_DELAY = 3 minutes;      // ML3: 3 mins after ML2 (5 mins total)
+    /**
+     * @notice Returns enrollment level 2 delay.
+     */
     uint256 public constant ENROLLMENT_LEVEL_2_DELAY = 2 minutes; // EL2: 2 mins after EL1
 
     // ============ State ============
 
+    /**
+     * @notice Returns owner.
+     */
     address public owner;
+    /**
+     * @notice Returns implementation.
+     */
     address public immutable implementation;  // EIP-1167 clone target
+    /**
+     * @notice Returns player registry.
+     */
     address public immutable PLAYER_REGISTRY;
     /// @notice Shared registry used by instances for session authorization.
     address public immutable SESSION_REGISTRY;
 
     // Module addresses passed to each created instance
+    /**
+     * @notice Returns module core.
+     */
     address public immutable MODULE_CORE;
+    /**
+     * @notice Returns module matches.
+     */
     address public immutable MODULE_MATCHES;
+    /**
+     * @notice Returns module prizes.
+     */
     address public immutable MODULE_PRIZES;
+    /**
+     * @notice Returns module escalation.
+     */
     address public immutable MODULE_ESCALATION;
 
+    /**
+     * @notice Returns max entry fee.
+     */
     uint256 public maxEntryFee = 1 ether;
 
     // Tier registry
+    /**
+     * @notice Returns tier registry.
+     */
     mapping(bytes32 => TierConfig) public tierRegistry;
+    /**
+     * @notice Returns tier keys.
+     */
     bytes32[] public tierKeys;
+    /**
+     * @notice Returns tier instances.
+     */
     mapping(bytes32 => address[]) public tierInstances;  // tierKey → instance addresses
 
     // Instance tracking (global list for this factory)
+    /**
+     * @notice Returns instances.
+     */
     address[] public instances;
     /// @notice Whether an address is a clone created by this factory.
     mapping(address => bool) public isInstance;
 
     // Player profile tracking for this factory's game only: player wallet → profile contract address.
     // Populated on first enrollment; mirrors PlayerRegistry.getProfile(player, gameType()) for quick lookup.
+    /**
+     * @notice Returns players.
+     */
     mapping(address => address) public players;
 
     // Tournament lifecycle tracking
+    /**
+     * @notice Returns active tournaments.
+     */
     address[] public activeTournaments;   // instances not yet concluded
+    /**
+     * @notice Returns past tournaments.
+     */
     address[] public pastTournaments;     // concluded instances
     mapping(address => uint256) private _activeTournamentIndex; // instance → index+1 (0 = not tracked)
 
     // Owner-share fallback bucket. Successful conclusion payouts are forwarded
     // to owner immediately; this balance is only used for direct ETH receipts
     // or if an owner-forwarding attempt fails.
+    /**
+     * @notice Returns owner balance.
+     */
     uint256 public ownerBalance;
 
     // ============ Events ============
@@ -129,6 +195,16 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Constructor ============
 
+    /**
+     * @notice Initializes the etour factory constructor.
+     * @param _implementation The implementation address.
+     * @param _moduleCore The module core address.
+     * @param _moduleMatches The module matches address.
+     * @param _modulePrizes The module prizes address.
+     * @param _moduleEscalation The module escalation address.
+     * @param _playerRegistry The player registry address.
+     * @param _sessionRegistry The session registry address.
+     */
     constructor(
         address _implementation,
         address _moduleCore,
@@ -237,6 +313,8 @@ contract ETourFactory is ReentrancyGuard {
      * @dev Register a player's participation in an instance.
      * Called by each instance during enrollment (best-effort, does not revert).
      * Delegates to PlayerRegistry to create/update the player's profile.
+     * @param player The player address.
+     * @param entryFee The entry fee value.
      */
     function registerPlayer(address player, uint256 entryFee) external {
         if (!isInstance[msg.sender]) revert Unauthorized();
@@ -303,6 +381,9 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Owner Withdrawal ============
 
+    /**
+     * @notice Withdraws owner balance.
+     */
     function withdrawOwnerBalance() external onlyOwner nonReentrant {
         uint256 amount = ownerBalance;
         ownerBalance = 0;
@@ -311,17 +392,30 @@ contract ETourFactory is ReentrancyGuard {
         emit OwnerWithdrawn(owner, amount);
     }
 
+    /**
+     * @notice Transfers ownership.
+     * @param newOwner The new owner address.
+     */
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Zero address");
         owner = newOwner;
     }
 
+    /**
+     * @notice Updates max entry fee.
+     * @param newMax The new max value.
+     */
     function setMaxEntryFee(uint256 newMax) external onlyOwner {
         maxEntryFee = newMax;
     }
 
     // ============ View Functions ============
 
+    /**
+     * @notice Returns player profile.
+     * @param player The player address.
+     * @return The requested value.
+     */
     function getPlayerProfile(address player) external view returns (address) {
         // Use local mirror first (cheaper); fall back to registry for edge cases
         address local = players[player];
@@ -333,18 +427,36 @@ contract ETourFactory is ReentrancyGuard {
         return abi.decode(ret, (address));
     }
 
+    /**
+     * @notice Returns the factory game-type identifier.
+     * @return The requested value.
+     */
     function gameType() external view returns (uint8) {
         return _gameType();
     }
 
+    /**
+     * @notice Returns active tournament count.
+     * @return The requested value.
+     */
     function getActiveTournamentCount() external view returns (uint256) {
         return activeTournaments.length;
     }
 
+    /**
+     * @notice Returns past tournament count.
+     * @return The requested value.
+     */
     function getPastTournamentCount() external view returns (uint256) {
         return pastTournaments.length;
     }
 
+    /**
+     * @notice Returns instances.
+     * @param offset The offset value.
+     * @param limit The limit value.
+     * @return result The result.
+     */
     function getInstances(uint256 offset, uint256 limit) external view returns (address[] memory result) {
         uint256 total = instances.length;
         if (offset >= total) return new address[](0);
@@ -356,14 +468,28 @@ contract ETourFactory is ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Returns instance count.
+     * @return The requested value.
+     */
     function getInstanceCount() external view returns (uint256) {
         return instances.length;
     }
 
+    /**
+     * @notice Returns tier instances.
+     * @param tierKey The tier key data.
+     * @return The requested value.
+     */
     function getTierInstances(bytes32 tierKey) external view returns (address[] memory) {
         return tierInstances[tierKey];
     }
 
+    /**
+     * @notice Returns active tier configs.
+     * @return keys The keys.
+     * @return configs The configs.
+     */
     function getActiveTierConfigs() external view returns (bytes32[] memory keys, TierConfig[] memory configs) {
         keys = tierKeys;
         configs = new TierConfig[](tierKeys.length);
@@ -556,6 +682,9 @@ contract ETourFactory is ReentrancyGuard {
 
     // ============ Receive ============
 
+    /**
+     * @notice Accepts native ETH sent directly to this contract.
+     */
     receive() external payable {
         // Accept ETH sent directly (e.g. rescue fallback) into the manual
         // withdrawal bucket.

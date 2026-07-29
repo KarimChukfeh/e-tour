@@ -134,6 +134,7 @@ manifest, smoke, verification, bundler, test, and size checks pass.
 | `npm run test:sdk` | Run browser session SDK tests |
 | `npm run test:fuzz` | Run the extended session/game/provenance invariant campaign |
 | `npm run coverage:session` | Produce and enforce the session-authorization coverage report |
+| `npm run natspec:check` | Require complete NatSpec on every public/external production API |
 | `npm run size` | Reject EIP-170 or reviewed-baseline violations |
 | `npm run storage:check` | Verify canonical delegatecall storage |
 | `npm run selectors:check` | Verify the complete mutable instance surface |

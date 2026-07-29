@@ -69,9 +69,11 @@ interface ISessionKeyRegistry {
     );
 
     /// @notice Returns the immutable duration of every issued session.
+    /// @return The requested value.
     function SESSION_TTL() external view returns (uint48);
 
     /// @notice Returns the player registry anchoring factory authorization.
+    /// @return The requested value.
     function PLAYER_REGISTRY() external view returns (address);
 
     /// @notice Registers an executor during atomic instance enrollment.
@@ -91,6 +93,7 @@ interface ISessionKeyRegistry {
     /// @notice Returns the stored session record.
     /// @param instance Tournament instance namespace.
     /// @param player Enrolled primary wallet.
+    /// @return The requested value.
     function getSession(address instance, address player)
         external
         view
@@ -98,6 +101,7 @@ interface ISessionKeyRegistry {
 
     /// @notice Returns an executor's reverse binding.
     /// @param executor Temporary executor to inspect.
+    /// @return The requested value.
     function getExecutorBinding(address executor)
         external
         view
@@ -121,6 +125,7 @@ interface ISessionKeyRegistry {
      * @param instance Tournament instance namespace.
      * @param player Enrolled primary wallet.
      * @param executor Temporary executor to inspect.
+     * @return The requested value.
      */
     function isSessionActive(
         address instance,
