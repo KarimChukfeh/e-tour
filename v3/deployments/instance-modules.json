@@ -1,23 +1,23 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-07-28T21:24:35.852Z",
+  "timestamp": "2026-07-29T02:21:20.560Z",
   "modules": {
-    "core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "matches": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "prizes": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    "escalation": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+    "core": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "matches": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "prizes": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+    "escalation": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
   },
   "artifactHashes": {
-    "core": "0xbc2aa2f1bafd6782a233e09b15f9db457cb4381f5d0e7945b432974d0bad038c",
-    "matches": "0x165e2cb24ac93432bceada113494f26acee281d2ad91ee1dcd90f779ec4d63be",
-    "prizes": "0x448a2b275647bd42eac4fb4b304e962d47741bd5be90a49f6d18d476714a3257",
-    "escalation": "0x990768d69a283b871df3d7316ade4cb43d6e0423f2e50c34bfc0e9771b3fa35f"
+    "core": "0xe6fafbe69bd3fcd670b2d8acd809fc400835116fffea00dab0acd1b121a674b4",
+    "matches": "0x6532be4255adee585c77ad992884efb18373b6b23fa5199c68d44b4e049a1d6d",
+    "prizes": "0x0ad21f322f6d5838a846ba33d1526c0e5a3bb90d24762370739609aa8179b6af",
+    "escalation": "0x405d5df22179efbb79cb82b92e0be7ee9442775fbd17b8b633e4039e98588021"
   },
   "codeHashes": {
-    "core": "0xbc2aa2f1bafd6782a233e09b15f9db457cb4381f5d0e7945b432974d0bad038c",
-    "matches": "0x165e2cb24ac93432bceada113494f26acee281d2ad91ee1dcd90f779ec4d63be",
-    "prizes": "0x448a2b275647bd42eac4fb4b304e962d47741bd5be90a49f6d18d476714a3257",
-    "escalation": "0x990768d69a283b871df3d7316ade4cb43d6e0423f2e50c34bfc0e9771b3fa35f"
+    "core": "0xe6fafbe69bd3fcd670b2d8acd809fc400835116fffea00dab0acd1b121a674b4",
+    "matches": "0x6532be4255adee585c77ad992884efb18373b6b23fa5199c68d44b4e049a1d6d",
+    "prizes": "0x0ad21f322f6d5838a846ba33d1526c0e5a3bb90d24762370739609aa8179b6af",
+    "escalation": "0x405d5df22179efbb79cb82b92e0be7ee9442775fbd17b8b633e4039e98588021"
   }
 }

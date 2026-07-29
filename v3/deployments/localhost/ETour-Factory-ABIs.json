@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "generatedAt": "2026-07-28T22:29:23.260Z",
+  "generatedAt": "2026-07-29T02:21:46.684Z",
   "playerProfile": {
     "PlayerProfileImpl": {
       "abi": [
@@ -1041,7 +1041,7 @@
   },
   "sessionAuthorization": {
     "SessionKeyRegistry": {
-      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "address": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
       "abi": [
         {
           "inputs": [
@@ -1446,7 +1446,7 @@
   },
   "factories": {
     "TicTacChainFactory": {
-      "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "address": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
       "abi": [
         {
           "inputs": [
@@ -2353,12 +2353,12 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-      "playerProfileImpl": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-      "sessionRegistry": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      "playerRegistry": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+      "playerProfileImpl": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      "sessionRegistry": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
     },
     "ConnectFourFactory": {
-      "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+      "address": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
       "abi": [
         {
           "inputs": [
@@ -3265,12 +3265,12 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-      "playerProfileImpl": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-      "sessionRegistry": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      "playerRegistry": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+      "playerProfileImpl": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      "sessionRegistry": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
     },
     "ChessOnChainFactory": {
-      "address": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+      "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
       "abi": [
         {
           "inputs": [
@@ -4195,14 +4195,14 @@
           "type": "receive"
         }
       ],
-      "playerRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-      "playerProfileImpl": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-      "sessionRegistry": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      "playerRegistry": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+      "playerProfileImpl": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      "sessionRegistry": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
     }
   },
   "instances": {
     "TicTacChainInstance": {
-      "address": "0x8e80FFe6Dc044F4A766Afd6e5a8732Fe0977A493",
+      "address": "0xDC17C27Ae8bE831AF07CC38C02930007060020F4",
       "abi": [
         {
           "inputs": [],
@@ -6001,7 +6001,7 @@
       ]
     },
     "ConnectFourInstance": {
-      "address": "0x24B3c7704709ed1491473F30393FFc93cFB0FC34",
+      "address": "0xf0D7de80A1C242fA3C738b083C422d65c6c7ABF1",
       "abi": [
         {
           "inputs": [],
@@ -7816,7 +7816,7 @@
       ]
     },
     "ChessOnChainInstance": {
-      "address": "0x5E3d0fdE6f793B3115A9E7f5EBC195bbeeD35d6C",
+      "address": "0x4F57F9239eFCBf43e5920f579D03B3849C588396",
       "abi": [
         {
           "inputs": [],
