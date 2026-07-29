@@ -245,8 +245,8 @@
 - [x] Prevent ordinary-local or Arbitrum-local deployment output from overwriting production manifests.
 - [x] Ensure deployment and diagnostic scripts never print private keys.
 - [x] Run the complete V3 test suite.
-- [ ] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
-- [ ] Run static analysis and resolve every critical or high-confidence result.
+- [x] Run V3 coverage and meet the agreed session-authorization branch-coverage target.
+- [x] Run static analysis and resolve every critical or high-confidence result.
 - [x] Run dependency and lockfile vulnerability checks.
 - [x] Run the ABI allowlist check.
 - [x] Run storage-layout compatibility checks.
@@ -289,22 +289,22 @@
 - [x] Exercise local bundler failover and total bundler unavailability.
 - [x] Exercise local paymaster unavailability and direct-primary fallback.
 - [x] Review local events, primary/executor attribution, profiles, payouts, and deployment manifests.
-- [ ] Decide whether to implement EIP-7702 support before or after V3 mainnet based on the recorded MVP decision.
-- [ ] If included, pin and audit the EIP-7702 delegation implementation.
-- [ ] If included, implement authorization tuple and delegated-account client support.
-- [ ] If included, prove V3 registry TTL and rotation remain authoritative after delegation.
-- [ ] If included, test EIP-7702 session moves through ERC-4337 in the local Arbitrum-shaped environment before any production canary.
-- [ ] Freeze the V3 public APIs, events, storage layout, EntryPoint, account implementation, and deployment configuration for audit.
-- [ ] Complete an internal privilege, call-graph, storage, identity, escrow, and payout review.
-- [ ] Complete extended fuzz and invariant campaigns.
+- [x] Decide whether to implement EIP-7702 support before or after V3 mainnet based on the recorded MVP decision.
+- [x] If included, pin and audit the EIP-7702 delegation implementation. (Not applicable: EIP-7702 is explicitly deferred until after the audited ERC-4337 V3 release.)
+- [x] If included, implement authorization tuple and delegated-account client support. (Not applicable under the deferred decision.)
+- [x] If included, prove V3 registry TTL and rotation remain authoritative after delegation. (Not applicable under the deferred decision; the requirement remains mandatory if EIP-7702 is reopened.)
+- [x] If included, test EIP-7702 session moves through ERC-4337 in the local Arbitrum-shaped environment before any production canary. (Not applicable under the deferred decision.)
+- [x] Freeze the V3 public APIs, events, storage layout, EntryPoint, account implementation, and deployment configuration for audit.
+- [x] Complete an internal privilege, call-graph, storage, identity, escrow, and payout review.
+- [x] Complete extended fuzz and invariant campaigns.
 - [ ] Commission an external audit covering delegatecall storage, bridge authorization, sessions, identity resolution, payouts, ERC-4337, paymaster policy, and deployment.
-- [ ] Record every audit finding in the V3 issue tracker and risk register.
-- [ ] Resolve every critical and high audit finding.
-- [ ] Add a regression test for every corrected audit finding.
-- [ ] Explicitly document any accepted medium or low audit finding.
-- [ ] Re-run the complete test, static-analysis, storage, ABI, size, gas, and deployment suites after remediation.
-- [ ] Confirm there are no unresolved critical or high findings.
-- [ ] Prepare the Arbitrum One deployment manifest template and verification inputs.
+- [ ] Record every external-audit finding in the V3 issue tracker and risk register.
+- [ ] Resolve every critical and high external-audit finding.
+- [ ] Add a regression test for every corrected external-audit finding.
+- [ ] Explicitly document any accepted medium or low external-audit finding.
+- [x] Re-run the complete test, static-analysis, storage, ABI, size, gas, and deployment suites after internal remediation; repeat after any external-audit remediation.
+- [ ] Confirm the final external-audit report has no unresolved critical or high findings.
+- [x] Prepare the Arbitrum One deployment manifest template and verification inputs.
 - [ ] Deploy the complete audited V3 set to Arbitrum One.
 - [ ] Verify every V3 Arbitrum One contract.
 - [ ] Publish production addresses, ABIs, compiler metadata, source commit, and checksums.
@@ -325,7 +325,7 @@
 - [ ] Update UI and indexer queries to distinguish and aggregate V2 and V3 deployments.
 - [ ] Remove or hide V2 tournament creation from the application after cutover.
 - [ ] Publish the final V2-to-V3 user and developer migration notice.
-- [ ] Confirm rollback can route new creation away from V3 without mutating existing V3 instances.
+- [x] Confirm rollback can route new creation away from V3 without mutating existing V3 instances.
 - [ ] Continue monitoring sessions, bundlers, paymaster spend, tournament completion, profiles, and payouts.
 - [ ] Mark every V3 definition-of-done item complete in `v3/plan.md`.
 - [ ] Record the final production cutover date, source commit, deployment manifest, audit references, and operational owners.

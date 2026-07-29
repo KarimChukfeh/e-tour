@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "manifestKind": "arbitrum-one-v3-release-template",
+  "generatedAt": "2026-07-29T00:22:57.861Z",
+  "generation": "v3",
+  "network": "arbitrumOne",
+  "chainId": "42161",
+  "source": {
+    "commit": "5636bc0ab286fe658af575218657c99c9946874f",
+    "dirty": true
+  },
+  "entryPoint": {
+    "version": "0.8.0",
+    "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"
+  },
+  "releaseGates": {
+    "externalAuditReport": null,
+    "externalAuditReportSha256": null,
+    "unresolvedCritical": null,
+    "unresolvedHigh": null,
+    "freezeFile": "baselines/release-freeze.json",
+    "securityRegister": "baselines/internal-security-review.json"
+  },
+  "roleInputs": {
+    "deployer": "DEPLOYER_ADDRESS",
+    "protocolOwner": "PROTOCOL_OWNER_ADDRESS",
+    "paymasterOwner": "PAYMASTER_OWNER_ADDRESS",
+    "paymasterFundingWallet": "PAYMASTER_FUNDING_ADDRESS"
+  },
+  "canaryInputs": {
+    "paymasterDepositWei": "PAYMASTER_DEPOSIT_WEI",
+    "lowBalanceThresholdWei": "PAYMASTER_ALERT_THRESHOLD_WEI",
+    "primaryBundler": "PIMLICO_API_KEY",
+    "failoverBundler": "ALCHEMY_API_KEY",
+    "explorerVerification": "ARBISCAN_API_KEY"
+  },
+  "expectedContracts": {
+    "ETourInstance_Core": {
+      "sourceName": "contracts/modules/ETourInstance_Core.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xc786c819220d24b8fb7294ab3c46ed6de6c902efca613eb08758b268231fa957",
+      "deployedBytecodeKeccak256": "0xbc2aa2f1bafd6782a233e09b15f9db457cb4381f5d0e7945b432974d0bad038c",
+      "abiSha256": "ee1149ba433df8acf18c8944158bb2208f09b64fdd29ca47357b3bf4ba0fafa9"
+    },
+    "ETourInstance_Matches": {
+      "sourceName": "contracts/modules/ETourInstance_Matches.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x8e5561f726f6fe5b7e0dd8fdfb7eeaaa9ea21b483e08899599189fc1f6641f13",
+      "deployedBytecodeKeccak256": "0x165e2cb24ac93432bceada113494f26acee281d2ad91ee1dcd90f779ec4d63be",
+      "abiSha256": "0b782cf91dbc60aac141cef03b7899f8a7acb6340153cb1a6cb2a3b75057473c"
+    },
+    "ETourInstance_Prizes": {
+      "sourceName": "contracts/modules/ETourInstance_Prizes.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x01c63907c41da568fe21159fda141c7587adee990014cb4f128156079fc4efbb",
+      "deployedBytecodeKeccak256": "0x448a2b275647bd42eac4fb4b304e962d47741bd5be90a49f6d18d476714a3257",
+      "abiSha256": "e3acfe9a5ad82cd7fde3d626e333b1626f2b12f4ed2fc9a9da5da309e3ee69b3"
+    },
+    "ETourInstance_Escalation": {
+      "sourceName": "contracts/modules/ETourInstance_Escalation.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x30cfb13ce63ffbfa53d32fc0677274fd85d15ff4104545a6fbc7586fbfe97ef7",
+      "deployedBytecodeKeccak256": "0x990768d69a283b871df3d7316ade4cb43d6e0423f2e50c34bfc0e9771b3fa35f",
+      "abiSha256": "e85934c010d91ff2f6fb9c7e5357d82ea883dd6cc7498fc713154c99682024f4"
+    },
+    "ChessRulesModule": {
+      "sourceName": "contracts/modules/ChessRulesModule.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xc1c338ec63501482bc9c6adc3a1839a19a16ba267e49efff477bee5b1e5cca3f",
+      "deployedBytecodeKeccak256": "0x20e55afbe44675cf1cb92c1aff7969ad8f49d7a96b81fddc1c83cb35801c8902",
+      "abiSha256": "98db4af2de17d538ab9687114fc5653e05686f9702789329af415c7202c7e686"
+    },
+    "PlayerProfile": {
+      "sourceName": "contracts/PlayerProfile.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x359ae14dea3be6472c221ec38446919d1e449dedd2eac2a42e4c4c2a01e38046",
+      "deployedBytecodeKeccak256": "0x26e558f8f0061cd023ffcb929f8b58c8b7a6bebe66904b2319ca3c12848d0c5b",
+      "abiSha256": "b7bffc7b446ea0f4c91df15c035dcdb645174720bcc50dae734f2ad5a660c500"
+    },
+    "PlayerRegistry": {
+      "sourceName": "contracts/PlayerRegistry.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xc63064b7a6a9457526a921807505a09aebd855d041debf84384e44e7486c32b0",
+      "deployedBytecodeKeccak256": "0x41ec5006750a0ae6282f41f6ef14d05cca67c9f97dd2e4011d69e6837f98815d",
+      "abiSha256": "8db349e49d09824297393d3df396b9ddad6b9d34464657a012f2254f11253ccf"
+    },
+    "SessionKeyRegistry": {
+      "sourceName": "contracts/SessionKeyRegistry.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xe2144a9839e313600a8b342e757d6380869923f83e1864c294c28aee67c63f93",
+      "deployedBytecodeKeccak256": "0xd4c33462ed28e15e19c9657e4512664fc78468ec557c72f3a194d55f33156ff9",
+      "abiSha256": "a4f9366755ec7d3bb341a9c9ac2149e3d7e2b9d10f8275dd5a93d086db9a82d9"
+    },
+    "ETourSessionAccount": {
+      "sourceName": "contracts/account-abstraction/ETourSessionAccount.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xdf36bfa29cb876a2ee52a0c8ddf1d1f2d484578b25d386953997d37144da7752",
+      "deployedBytecodeKeccak256": "0x9bd537b8ef81ed5d4a1b3c515746af93fd3b6795209a3d26f64966fa29f5573c",
+      "abiSha256": "955f4d8b4bb203f3c0a9c9b8d7dd6701f801882d531094fbc70f56db72a91a3f"
+    },
+    "ETourSessionAccountFactory": {
+      "sourceName": "contracts/account-abstraction/ETourSessionAccountFactory.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xfde287005a28c49a94bb0b144e64aa34f12023e544d5664497047ae064ee52f0",
+      "deployedBytecodeKeccak256": "0x208f1a03c7e169b2194aa194611eab08e30a4f620dcf46ed82b53f3ef7b4c075",
+      "abiSha256": "daa991d1ac6557d5915509c4ea7e9a299796e68439b5ea728ebe574884dfa50c"
+    },
+    "ETourSessionPaymaster": {
+      "sourceName": "contracts/account-abstraction/ETourSessionPaymaster.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x9fb785220bf2e40be5483d0f8ce21a101683990ee12ee780c3ef7b1738ce1f76",
+      "deployedBytecodeKeccak256": "0x2d3cd6a3e56aea12c053c0d76a602c1a5608bae11b49c300279711c8ed5f8b6b",
+      "abiSha256": "3ffec18594be51d6d7780bfb6f5eabc0fbc0ebef7622f2141e5a5d6150642d74"
+    },
+    "TicTacInstance": {
+      "sourceName": "contracts/TicTacInstance.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xf730014b339dbcf02117f1e84ce0e054def50caf523214388dd060554dd305fd",
+      "deployedBytecodeKeccak256": "0x64b67864c576b90153680c352cec084184b5603db6d7d8819b1478626ccd876c",
+      "abiSha256": "6d598fb5b79ce66615da53801a251200727101daeefdcb88b461702144001110"
+    },
+    "ConnectFourInstance": {
+      "sourceName": "contracts/ConnectFourInstance.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xc8fd67217c42d75223494fe216a81f96dbdfa7d34ea91395e457c1f8ad8cec5e",
+      "deployedBytecodeKeccak256": "0x6663dd31711a95afcd0ee3849aa691790acb7c20525404cebdeb8bcdcc95e1d6",
+      "abiSha256": "57786424d4898bc7494c964aa169433ecb293468aaa7f86c7f0636d6303e7a82"
+    },
+    "ChessInstance": {
+      "sourceName": "contracts/ChessInstance.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x37e8a68943516bba89b79a10485d21c408da3ffa0f3dc44c2b0d6973d3f6e0f5",
+      "deployedBytecodeKeccak256": "0xc69d12afdc9a8befd2541729345d43bd6378bbb5f0e282093cd9b17a3daf9b98",
+      "abiSha256": "6928284350b4ed31f38885f77c39dc59eeb87e014614a2d00a3330af6324ee5d"
+    },
+    "TicTacChainFactory": {
+      "sourceName": "contracts/TicTacChainFactory.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x1d1b633d7c34acfd24d447f6eaf01c74762f9f92f6f59a75905b0cc7c7c3066e",
+      "deployedBytecodeKeccak256": "0x6b376e93a00522ca9191e12a070e8b180bfb71a7cc87861bf8ff6b5071458427",
+      "abiSha256": "9d422a9b1724de360ffa9f389b055c0b6b2ccc89a80669a712aaf6d4d09b28b8"
+    },
+    "ConnectFourFactory": {
+      "sourceName": "contracts/ConnectFourFactory.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0x95ab480dd1da2769df836e3072a06eb76cb8d7c1337540a353e80b342fa3bd49",
+      "deployedBytecodeKeccak256": "0x92312179651d36c33284aacefe1b1358d40506047d2ba5f8eaf7c2826d4dd513",
+      "abiSha256": "9d422a9b1724de360ffa9f389b055c0b6b2ccc89a80669a712aaf6d4d09b28b8"
+    },
+    "ChessOnChainFactory": {
+      "sourceName": "contracts/ChessOnChainFactory.sol",
+      "address": null,
+      "verified": false,
+      "creationBytecodeKeccak256": "0xefb7f863d5ebfca69d55bf706c4731c732f13a507da34378b9ae54d98a95ecda",
+      "deployedBytecodeKeccak256": "0x3e59c618bcd84645db186feb53019b5bc778870aa2980e38a4b9c8cec8dd6076",
+      "abiSha256": "78ff6961fbd520e1d75e125cf9748de95412fb5a624afe4875be9cb3a62d806d"
+    }
+  },
+  "deploymentManifest": "deployments/arbitrumOne/manifest.json",
+  "addressBook": "deployments/arbitrumOne/address-book.json",
+  "verificationCommand": "npm run deployment:verify:arbitrum",
+  "postDeploymentGates": [
+    "validate canonical manifest and runtime bytecode",
+    "verify every contract on Arbiscan",
+    "publish checksummed address book and ABI checksums",
+    "enable monitoring before funding the capped canary deposit",
+    "complete all three game canaries, recovery, failover, and direct fallback",
+    "obtain explicit cutover approval"
+  ]
+}

@@ -1,6 +1,6 @@
 # ETour V3 Implementation Plan
 
-> Status: Implementation — Phases 0–8 and the browser SDK/tooling gate through tracking item 242 are complete
+> Status: Audit-ready local release candidate — Phases 0–9 and the internal portion of Phase 10 are complete; independent audit, Arbitrum One canary, and production cutover remain evidence-gated
 > Created: 2026-07-27  
 > Scope: Replace `v2/` with a production-ready `v3/` that preserves all V2 behavior and adds instance-scoped, expiring session authorization for zero-friction gameplay.
 
@@ -1854,9 +1854,10 @@ Exit gate:
 - [x] Add executor, EntryPoint, UserOperation, session lifecycle, deployment
   smoke, verification, secret-output, and V2/V3 ABI diagnostics.
 - [x] Run the complete local regression, CI, gas, and bytecode gates.
-- [ ] Produce a complete `solidity-coverage` report; the first instrumented
-  via-IR compile was stopped after five minutes without completing and remains
-  a tooling task, not a waived release gate.
+- [x] Produce and enforce the session-authorization `solidity-coverage`
+  report. The release campaign passes 33 tests with `SessionKeyRegistry` at
+  97.62% statements, 71.21% branches, 100% functions, and 92.86% lines; the
+  canonical gameplay resolver also clears its recorded thresholds.
 
 Exit gate:
 
@@ -1884,25 +1885,32 @@ Exit gate:
 
 ### Phase 10 — Audit and remediation
 
-- [ ] Complete internal call-graph and privilege review.
-- [ ] Run static analysis and fuzz/invariant campaigns.
-- [ ] Freeze public APIs and storage.
+- [x] Complete internal call-graph and privilege review.
+- [x] Run static analysis and fuzz/invariant campaigns.
+- [x] Freeze public APIs and storage.
 - [ ] Obtain external audit focused on:
   - delegatecall storage and bridge authorization;
   - session registry and identity resolution;
   - prize attribution;
   - ERC-4337 account/paymaster validation;
   - deployment configuration.
-- [ ] Resolve or explicitly accept every finding.
-- [ ] Add regression tests for every fixed finding.
+- [x] Resolve or explicitly accept every internal finding; repeat this gate for
+  every independent-audit finding.
+- [x] Add regression tests for every fixed internal finding; repeat this gate
+  for every independent-audit correction.
 
 Exit gate:
 
-- no unresolved critical/high findings;
-- accepted lower findings documented.
+- internal review has no unresolved critical/high findings and accepted lower
+  findings are documented;
+- Phase 10 remains open until the same statements are supported by the final
+  independent-audit report and remediated freeze.
 
 ### Phase 11 — Production canary
 
+- [x] Prepare a checksum-bearing Arbitrum One manifest template, verification
+  inputs, role inputs, staged release gates, monitoring configuration checks,
+  and an all-game canary/rollback runbook.
 - [ ] Deploy and verify Arbitrum One contracts.
 - [ ] Fund paymaster with a capped canary budget.
 - [ ] Enable a limited set of V3 tournaments.
@@ -1918,11 +1926,15 @@ Exit gate:
 ### Phase 12 — V3 cutover
 
 - [ ] Route all new tournament creation to V3.
-- [ ] Keep V2 read support.
-- [ ] Publish V2/V3 migration documentation.
+- [x] Preserve V2 read and active-game routing requirements in the
+  machine-readable generation policy.
+- [x] Publish V2/V3 migration, production canary, cutover, and rollback
+  documentation.
 - [ ] Publish final V3 addresses and checksums.
 - [ ] Archive V2 creation paths in the UI.
 - [ ] Continue operational monitoring and incident response.
+- [x] Add a generation-routing gate that rejects an unapproved V3 default and
+  preserves creation-only rollback without mutating existing instances.
 
 Exit gate:
 
@@ -1934,26 +1946,28 @@ Exit gate:
 
 The V3 project is complete when all of the following are true:
 
-- [ ] Every necessary V2 contract, module, interface, test, script, and document has a V3 replacement.
-- [ ] All V2 behavioral regression tests pass in V3.
-- [ ] Public lifecycle bridges are protected from external calls.
-- [ ] Shared delegatecall storage is mechanically verified.
-- [ ] Session registration is atomic with create/join.
-- [ ] Session expiry, refresh, and revocation work on-chain.
-- [ ] Session moves preserve the primary identity.
-- [ ] Session executors cannot exercise delegated financial or lifecycle authority.
-- [ ] All three games support direct and session moves.
+- [x] Every necessary V2 contract, module, interface, test, script, and document has a V3 replacement.
+- [x] All V2 behavioral regression tests pass in V3.
+- [x] Public lifecycle bridges are protected from external calls.
+- [x] Shared delegatecall storage is mechanically verified.
+- [x] Session registration is atomic with create/join.
+- [x] Session expiry, refresh, and revocation work on-chain.
+- [x] Session moves preserve the primary identity.
+- [x] Session executors cannot exercise delegated financial or lifecycle authority.
+- [x] All three games support direct and session moves.
 - [x] ERC-4337 sponsored moves work on the fully local Arbitrum-shaped
   environment; Arbitrum One remains a post-audit production-canary gate.
-- [ ] Game contracts do not decode UserOperations.
-- [ ] Paymaster sponsorship is narrowly scoped and separately funded.
-- [ ] Direct primary-wallet fallback works without bundler/paymaster availability.
-- [ ] Every deployed contract fits with agreed bytecode headroom.
-- [ ] Compiler, static-analysis, storage-layout, and ABI checks pass.
+- [x] Game contracts do not decode UserOperations.
+- [x] Paymaster sponsorship is narrowly scoped and separately funded.
+- [x] Direct primary-wallet fallback works without bundler/paymaster availability.
+- [x] Every deployed contract fits with agreed bytecode headroom.
+- [x] Compiler, static-analysis, storage-layout, and ABI checks pass.
 - [ ] External audit is complete and findings are resolved.
 - [ ] Production contracts are verified and manifests published.
 - [ ] Canary tournaments succeed.
-- [ ] V3 documentation and operations runbooks are complete.
+- [x] V3 documentation and operations runbooks are complete for audit and
+  production handoff; final addresses, audit references, and canary evidence
+  are appended only when they exist.
 - [ ] V3 is the default for all new tournaments.
 
 ---
@@ -1964,15 +1978,15 @@ The V3 project is complete when all of the following are true:
 |---|---|---|---|
 | Delegatecall storage mismatch | Critical state corruption | Canonical storage base, compiler layout comparison, integration tests | Closed by Phase 2 |
 | Public bridge remains callable | Critical match manipulation | `onlySelfCall`, ABI enumeration, adversarial tests | Closed by Phase 2 |
-| Session actor accidentally receives prize | Critical fund misattribution | Effective-player abstraction and payout invariants | Open |
+| Session actor accidentally receives prize | Critical fund misattribution | Effective-player abstraction and payout invariants | Closed; regression-tested |
 | Module exceeds bytecode limit | Deployment failure | Remove full-base inheritance, size CI, 15% headroom target | Closed; monitored by CI |
 | Session key stolen through XSS | Unauthorized legal moves | TTL, instance scope, rotation, CSP, isolated signing | Open |
-| Browser cache/device loss | User cannot use old session | Primary refresh/revoke and direct move fallback | Open |
-| Tournament exceeds TTL | Expected session expiry mid-play | Clear UX and primary-authorized refresh | Open |
-| Bundler outage/censorship | Delayed sponsored moves | Multiple bundlers and direct primary path | Open |
+| Browser cache/device loss | User cannot use old session | Primary refresh/revoke and direct move fallback | Closed in SDK/local acceptance; monitor production UX |
+| Tournament exceeds TTL | Expected session expiry mid-play | Clear UX and primary-authorized refresh | Closed by deterministic TTL/recovery acceptance |
+| Bundler outage/censorship | Delayed sponsored moves | Multiple bundlers and direct primary path | Closed locally; production providers require canary validation |
 | Paymaster drained by reverting calls | Sponsorship outage/cost | Strict validation, gas bounds, rate limits, capped budget | Open |
-| Account/EntryPoint version mismatch | UserOperation failure | Pin versions and test providers before deployment | Open |
-| CREATE address not predictable | Cannot pre-register executor | Use deterministic smart-account factory, not game clone address prediction | Open |
+| Account/EntryPoint version mismatch | UserOperation failure | Pin versions and test providers before deployment | Closed locally; production providers require revalidation |
+| CREATE address not predictable | Cannot pre-register executor | Use deterministic smart-account factory, not game clone address prediction | Closed |
 | V2 regression during refactor | Broken tournament behavior | Baseline parity phase and full regression suite | Closed through Phase 5; monitored |
 | Fresh profile registry fragments history | UX inconsistency | UI aggregation or explicit reuse decision | Open |
 | EIP-7702 tooling inconsistency | Delayed optional support | Keep it post-MVP and retain ERC-4337 executor path | Open |

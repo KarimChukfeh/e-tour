@@ -132,6 +132,8 @@ manifest, smoke, verification, bundler, test, and size checks pass.
 | `npm test` | Build the SDK and run the complete suite |
 | `npm run test:aa` | Run EntryPoint, UserOperation, paymaster, and failover tests |
 | `npm run test:sdk` | Run browser session SDK tests |
+| `npm run test:fuzz` | Run the extended session/game/provenance invariant campaign |
+| `npm run coverage:session` | Produce and enforce the session-authorization coverage report |
 | `npm run size` | Reject EIP-170 or reviewed-baseline violations |
 | `npm run storage:check` | Verify canonical delegatecall storage |
 | `npm run selectors:check` | Verify the complete mutable instance surface |
@@ -141,6 +143,10 @@ manifest, smoke, verification, bundler, test, and size checks pass.
 | `npm run local:arbitrum:cycle:full` | Add full tests and CI gates to that cycle |
 | `npm run frontend:abis` | Generate, validate, and sync frontend ABI JSON |
 | `npm run paymaster:inspect` | Report deposit, stake, pause, and sponsored spend |
+| `npm run release:prepare` | Generate the checksum-bearing Arbitrum One release template |
+| `npm run release:freeze:check` | Verify the exact audit-candidate source/tooling/test freeze |
+| `npm run release:ready -- local` | Validate the current staged release evidence |
+| `npm run routing:check` | Reject unsafe V2/V3 creation and rollback routing |
 
 Capture commands such as `size:capture`, `storage:capture`, and `abi:capture`
 change reviewed baselines. Use them only after inspecting and approving the
@@ -164,6 +170,12 @@ underlying change; never capture a baseline to hide an invalid regression.
   pause, incidents, and recovery
 - [`docs/MigrationFromV2.md`](./docs/MigrationFromV2.md): dual-generation
   rollout, history, cutover, and rollback
+- [`docs/SecurityReview.md`](./docs/SecurityReview.md): internal privilege,
+  call-graph, identity, escrow, payout, and finding review
+- [`docs/ExternalAuditScope.md`](./docs/ExternalAuditScope.md): independent
+  audit boundary, evidence, and remediation requirements
+- [`docs/ProductionRelease.md`](./docs/ProductionRelease.md): staged readiness,
+  Arbitrum One canary, cutover, generation routing, and rollback
 
 `plan.md`, `tracking.md`, and `logs.txt` are living coordination documents.
 They should be corrected when implementation evidence changes the route, while

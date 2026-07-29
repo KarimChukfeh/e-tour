@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "defaultCreationGeneration": "v2",
+  "creationEnabled": {
+    "v2": true,
+    "v3": false
+  },
+  "readEnabled": {
+    "v2": true,
+    "v3": true
+  },
+  "activeGameplayEnabled": {
+    "v2": true,
+    "v3": true
+  },
+  "sources": {
+    "v2": {
+      "status": "historical-and-active",
+      "addressBook": "../v2/deployments",
+      "abiDirectory": "../v2/deployments"
+    },
+    "v3": {
+      "status": "local-release-candidate",
+      "addressBook": "deployments/arbitrumOne/address-book.json",
+      "abiDirectory": "deployments/arbitrumOne"
+    }
+  },
+  "cutoverRule": "V3 creation may become the default only after external audit, Arbitrum One deployment and verification, capped canary approval, and explicit release approval.",
+  "rollbackRule": "Rollback changes only the default generation for new creation. It never mutates or disables existing V2 or V3 instances."
+}

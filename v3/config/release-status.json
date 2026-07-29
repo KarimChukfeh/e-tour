@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "candidate": "ETour V3",
+  "eip7702": {
+    "decision": "deferred",
+    "includedInV3": false,
+    "rationale": "ERC-4337 already supplies the required session transport. EIP-7702 adds a separate delegation trust surface and will be reconsidered only after the audited ERC-4337 V3 release is stable."
+  },
+  "internalReview": {
+    "status": "complete",
+    "report": "docs/SecurityReview.md",
+    "register": "baselines/internal-security-review.json"
+  },
+  "externalAudit": {
+    "required": true,
+    "status": "not-commissioned",
+    "auditor": null,
+    "report": null,
+    "reportSha256": null,
+    "unresolvedCritical": null,
+    "unresolvedHigh": null
+  },
+  "production": {
+    "network": "arbitrumOne",
+    "chainId": "42161",
+    "deploymentStatus": "not-deployed",
+    "manifest": null,
+    "addressBook": null,
+    "allContractsVerified": false,
+    "monitoringEnabled": false,
+    "cappedPaymasterFunded": false,
+    "canaryStatus": "not-run",
+    "canaryReport": null
+  },
+  "cutover": {
+    "status": "not-approved",
+    "approvedBy": null,
+    "approvedAt": null,
+    "defaultCreationGeneration": "v2",
+    "v2ReadsEnabled": true,
+    "v2ActivePlayEnabled": true
+  }
+}

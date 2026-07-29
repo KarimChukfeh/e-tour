@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "reviewDate": "2026-07-28",
+  "scope": [
+    "delegatecall storage and self-call bridges",
+    "factory and instance provenance",
+    "primary-player and session-executor identity",
+    "escrow, refunds, prizes, owner accounting, and profiles",
+    "session registration, expiry, rotation, and revocation",
+    "ERC-4337 account validation and replay resistance",
+    "paymaster target, selector, value, sender, factory, and gas policy",
+    "deployment configuration and operational roles"
+  ],
+  "findings": [
+    {
+      "id": "V3-INT-001",
+      "severity": "high",
+      "status": "fixed",
+      "title": "PlayerRegistry accepted result calls from unrecognized contracts spoofing an authorized factory",
+      "resolution": "Require caller == supplied instance and require the authorized factory to attest isInstance(instance).",
+      "regressionTests": [
+        "test/factory/PlayerProfile.test.js: ignores result writes from a contract spoofing an authorized parent factory"
+      ]
+    },
+    {
+      "id": "V3-INT-002",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Factory profile and owner-share callbacks were callable by arbitrary addresses",
+      "resolution": "Restrict registerPlayer and receiveOwnerShare to factory-created instances and validate enrollment provenance in PlayerRegistry.",
+      "regressionTests": [
+        "test/factory/PlayerProfile.test.js: rejects direct factory profile registration from non-instances",
+        "test/factory/PlayerProfile.test.js: rejects owner-share lifecycle calls from non-instances",
+        "test/factory/PlayerProfile.test.js: requires authorized factories to attest enrollment instance provenance"
+      ]
+    },
+    {
+      "id": "V3-INT-003",
+      "severity": "medium",
+      "status": "accepted",
+      "title": "A valid session can submit policy-compliant moves that revert and consume sponsored gas",
+      "rationale": "Reverting gameplay cannot affect escrow or identity, but can consume the isolated paymaster budget. The release requires a capped deposit, emergency pause, spend alerts, provider rate limits, and direct-primary fallback.",
+      "owner": "operations"
+    },
+    {
+      "id": "V3-INT-004",
+      "severity": "low",
+      "status": "accepted",
+      "title": "Protocol administration retains deployment, factory authorization, paymaster pause, and post-conclusion rescue powers",
+      "rationale": "These powers cannot authorize session gameplay or redirect an active tournament pot. Production ownership must use the recorded multisig roles and every action must be monitored.",
+      "owner": "security-and-operations"
+    }
+  ]
+}

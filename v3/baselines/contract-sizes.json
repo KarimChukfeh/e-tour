@@ -1,31 +1,31 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-28T23:12:31.246Z",
+  "generatedAt": "2026-07-28T23:51:05.345Z",
   "deployedBytecodeLimit": 24576,
   "contracts": [
     {
       "name": "ChessOnChainFactory",
-      "bytes": 8049,
-      "kb": "7.86",
-      "percentage": "32.8"
+      "bytes": 8120,
+      "kb": "7.93",
+      "percentage": "33.0"
     },
     {
       "name": "TicTacChainFactory",
-      "bytes": 7849,
-      "kb": "7.67",
-      "percentage": "31.9"
+      "bytes": 7920,
+      "kb": "7.73",
+      "percentage": "32.2"
     },
     {
       "name": "ConnectFourFactory",
-      "bytes": 7849,
-      "kb": "7.67",
-      "percentage": "31.9"
+      "bytes": 7920,
+      "kb": "7.73",
+      "percentage": "32.2"
     },
     {
       "name": "ETourFactory",
-      "bytes": 7849,
-      "kb": "7.67",
-      "percentage": "31.9"
+      "bytes": 7920,
+      "kb": "7.73",
+      "percentage": "32.2"
     },
     {
       "name": "ConnectFourInstance",
@@ -119,9 +119,9 @@
     },
     {
       "name": "PlayerRegistry",
-      "bytes": 2988,
-      "kb": "2.92",
-      "percentage": "12.2"
+      "bytes": 3246,
+      "kb": "3.17",
+      "percentage": "13.2"
     },
     {
       "name": "ETourSessionAccount",

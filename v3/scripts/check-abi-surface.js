@@ -60,6 +60,9 @@ function collectAbis() {
         if (!artifact.sourceName || !artifact.contractName || !Array.isArray(artifact.abi)) {
             continue;
         }
+        if (artifact.sourceName.includes("/test-helpers/")) {
+            continue;
+        }
 
         const key = `${artifact.sourceName}:${artifact.contractName}`;
         contracts[key] = artifact.abi

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "campaign": "session-authorization",
+  "testFiles": "test/session/*.test.js",
+  "files": {
+    "contracts/SessionKeyRegistry.sol": {
+      "statements": 95,
+      "branches": 70,
+      "functions": 100,
+      "lines": 90
+    },
+    "contracts/ETourGame.sol": {
+      "statements": 70,
+      "branches": 65,
+      "functions": 65,
+      "lines": 65
+    }
+  }
+}

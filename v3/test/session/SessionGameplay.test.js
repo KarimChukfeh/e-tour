@@ -243,10 +243,13 @@ describe("V3 session-authorized gameplay", function () {
                 "evm_snapshot",
                 []
             );
+            const moveTimestamp = BigInt(await time.latest()) + 10n;
+            await time.setNextBlockTimestamp(moveTimestamp);
             await instance.connect(primary).makeMove(...game.move);
             const directState = await captureGameplayState(instance);
             await hre.ethers.provider.send("evm_revert", [snapshot]);
 
+            await time.setNextBlockTimestamp(moveTimestamp);
             const delegatedTx = await instance
                 .connect(executor)
                 .makeMove(...game.move);

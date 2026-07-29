@@ -156,6 +156,11 @@ RPC, faucet, hosted bundler, or API key.
 
 The decision and evidence must be recorded in `logs.txt` and the release
 record. Never use `tracking.md` completion alone as production approval.
+The machine-readable release state is `config/release-status.json`; generation
+routing is `config/generation-routing.json`. The latter deliberately keeps V2
+as the pre-cutover creation default and rejects an unapproved switch to V3.
+See [`ProductionRelease.md`](./ProductionRelease.md) for the staged canary and
+cutover procedure.
 
 ## Rollback
 

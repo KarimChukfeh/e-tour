@@ -239,6 +239,7 @@ contract ETourFactory is ReentrancyGuard {
      * Delegates to PlayerRegistry to create/update the player's profile.
      */
     function registerPlayer(address player, uint256 entryFee) external {
+        if (!isInstance[msg.sender]) revert Unauthorized();
         uint8 game = _gameType();
 
         // Delegate to PlayerRegistry (best-effort — failure must not block enrollment)
@@ -274,6 +275,7 @@ contract ETourFactory is ReentrancyGuard {
      * Also moves the instance from activeTournaments → pastTournaments.
      */
     function receiveOwnerShare() external payable nonReentrant {
+        if (!isInstance[msg.sender]) revert Unauthorized();
         if (msg.value > 0) {
             (bool ok, ) = payable(owner).call{value: msg.value}("");
             if (!ok) {

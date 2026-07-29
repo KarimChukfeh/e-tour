@@ -285,6 +285,106 @@ describe("PlayerRegistry — authorization & clone idempotency", function () {
         ).to.be.revertedWithCustomError(registry, "Unauthorized");
     });
 
+    it("rejects direct factory profile registration from non-instances", async function () {
+        const [, , attacker] = signers;
+        await expect(
+            factory.connect(attacker).registerPlayer(
+                attacker.address,
+                hre.ethers.parseEther("0.001")
+            )
+        ).to.be.revertedWithCustomError(factory, "Unauthorized");
+
+        expect(
+            await getProfileForGame(registry, attacker.address)
+        ).to.equal(hre.ethers.ZeroAddress);
+    });
+
+    it("rejects owner-share lifecycle calls from non-instances", async function () {
+        const [, , attacker] = signers;
+        await expect(
+            factory.connect(attacker).receiveOwnerShare({
+                value: hre.ethers.parseEther("0.001"),
+            })
+        ).to.be.revertedWithCustomError(factory, "Unauthorized");
+    });
+
+    it("ignores result writes from a contract spoofing an authorized parent factory", async function () {
+        const entryFee = hre.ethers.parseEther("0.001");
+        const instance = await createInstance(factory, 2, entryFee, signers[0]);
+        const instanceAddress = await instance.getAddress();
+        const profileAddress = await getProfileForGame(
+            registry,
+            signers[0].address
+        );
+        const profile = await hre.ethers.getContractAt(
+            "contracts/PlayerProfile.sol:PlayerProfile",
+            profileAddress
+        );
+
+        const AttackHarness = await hre.ethers.getContractFactory(
+            "contracts/test-helpers/PlayerRegistryAttackHarness.sol:PlayerRegistryAttackHarness"
+        );
+        const attackHarness = await AttackHarness.deploy(
+            await factory.getAddress()
+        );
+        await attackHarness.waitForDeployment();
+
+        await attackHarness.forwardResult(
+            await registry.getAddress(),
+            signers[0].address,
+            instanceAddress,
+            true,
+            hre.ethers.parseEther("100"),
+            hre.ethers.parseEther("100"),
+            1,
+            TOURNAMENT_REASON.R0
+        );
+        await attackHarness.forwardMatchOutcome(
+            await registry.getAddress(),
+            signers[0].address,
+            instanceAddress,
+            1,
+            0,
+            1,
+            0
+        );
+
+        const [record, stats, matchRecords] = await Promise.all([
+            profile.getEnrollmentByInstance(instanceAddress),
+            profile.getStats(),
+            profile.getMatchRecords(0, 10),
+        ]);
+        expect(record.concluded).to.equal(false);
+        expect(stats.totalPlayed).to.equal(0n);
+        expect(stats.totalWins).to.equal(0n);
+        expect(matchRecords).to.have.length(0);
+    });
+
+    it("requires authorized factories to attest enrollment instance provenance", async function () {
+        const [, , attacker] = signers;
+        const AttackHarness = await hre.ethers.getContractFactory(
+            "contracts/test-helpers/PlayerRegistryAttackHarness.sol:PlayerRegistryAttackHarness"
+        );
+        const fakeFactory = await AttackHarness.deploy(
+            await factory.getAddress()
+        );
+        await fakeFactory.waitForDeployment();
+        await registry.authorizeFactory(await fakeFactory.getAddress());
+
+        await expect(
+            fakeFactory.forwardEnrollment(
+                await registry.getAddress(),
+                attacker.address,
+                attacker.address,
+                TICTAC_GAME_TYPE,
+                hre.ethers.parseEther("0.001")
+            )
+        ).to.be.revertedWithCustomError(registry, "Unauthorized");
+        expect(
+            await getProfileForGame(registry, attacker.address)
+        ).to.equal(hre.ethers.ZeroAddress);
+    });
+
     it("allows owner to authorize and deauthorize factories", async function () {
         const [owner, rando] = signers;
         const fakeFactory = rando.address;

@@ -15,8 +15,9 @@ import "./interfaces/IPlayerProfile.sol";
  * Only the protocol owner can authorize factories via authorizeFactory().
  * Only authorized factories (and their child instances) can write to profiles.
  *
- * Instances are trusted implicitly through their parent factory:
- * recordResult() accepts calls from any address whose parent factory is authorized.
+ * Instances are trusted only after explicit provenance checks:
+ * recordResult() accepts calls only from addresses that report an authorized
+ * parent factory and that the parent factory recognizes through isInstance().
  * The factory address is read from the instance via instance.factory().
  * If the call cannot be validated, it is silently ignored (best-effort).
  *
@@ -109,7 +110,9 @@ contract PlayerRegistry is IPlayerRegistry {
         uint8 gameType,
         uint256 entryFee
     ) external override {
-        if (!authorizedFactories[msg.sender]) revert Unauthorized();
+        (bool authorized, uint8 registeredGameType) =
+            _getAuthorizedFactoryGameType(msg.sender, instance);
+        if (!authorized || registeredGameType != gameType) revert Unauthorized();
         if (player == address(0)) return;
 
         address profile = _getOrCreate(player, gameType);
@@ -137,7 +140,8 @@ contract PlayerRegistry is IPlayerRegistry {
         // Validate: msg.sender must be an instance whose factory is authorized.
         // We read factory() from the instance (the caller itself).
         // If the call fails or factory is not authorized, silently return.
-        (bool authorized, uint8 gameType) = _getAuthorizedInstanceGameType(msg.sender);
+        (bool authorized, uint8 gameType) =
+            _getAuthorizedInstanceGameType(msg.sender, instance);
         if (!authorized) return;
         if (player == address(0)) return;
 
@@ -171,7 +175,8 @@ contract PlayerRegistry is IPlayerRegistry {
         uint8 outcome,
         uint8 category
     ) external override {
-        (bool authorized, uint8 gameType) = _getAuthorizedInstanceGameType(msg.sender);
+        (bool authorized, uint8 gameType) =
+            _getAuthorizedInstanceGameType(msg.sender, instance);
         if (!authorized) return;
         if (player == address(0)) return;
 
@@ -226,13 +231,36 @@ contract PlayerRegistry is IPlayerRegistry {
      * @dev Check whether msg.sender is an instance whose parent factory is authorized.
      * Reads factory() from the calling contract. Returns false on any failure.
      */
-    function _getAuthorizedInstanceGameType(address instance) internal view returns (bool authorized, uint8 gameType) {
-        (bool ok, bytes memory ret) = instance.staticcall(
+    function _getAuthorizedInstanceGameType(
+        address caller,
+        address instance
+    ) internal view returns (bool authorized, uint8 gameType) {
+        if (caller != instance) return (false, 0);
+        (bool ok, bytes memory ret) = caller.staticcall(
             abi.encodeWithSignature("factory()")
         );
         if (!ok || ret.length < 32) return (false, 0);
         address factoryAddr = abi.decode(ret, (address));
+
+        return _getAuthorizedFactoryGameType(factoryAddr, instance);
+    }
+
+    /**
+     * @dev Validate that `factoryAddr` is authorized and explicitly recognizes
+     * `instance` as one of its deployed children, then return its game type.
+     */
+    function _getAuthorizedFactoryGameType(
+        address factoryAddr,
+        address instance
+    ) internal view returns (bool authorized, uint8 gameType) {
         if (!authorizedFactories[factoryAddr]) return (false, 0);
+
+        (bool ok, bytes memory ret) = factoryAddr.staticcall(
+            abi.encodeWithSignature("isInstance(address)", instance)
+        );
+        if (!ok || ret.length < 32 || !abi.decode(ret, (bool))) {
+            return (false, 0);
+        }
 
         (ok, ret) = factoryAddr.staticcall(
             abi.encodeWithSignature("gameType()")

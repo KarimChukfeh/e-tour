@@ -650,3 +650,82 @@ Proceed to audit readiness: complete public/external NatSpec, obtain the
 outstanding coverage evidence, perform the internal privilege/call-graph
 review, and extend fuzz/invariant campaigns. No public deployment is required
 for the development cycle; Arbitrum One remains a post-audit capped canary.
+
+2026-07-28 - Final-phase audit readiness and production/cutover gates
+
+- Completed the internal portion of Phase 10 and the locally provable
+  preparation work for Phases 11 and 12. EIP-7702 remains explicitly deferred
+  until after the audited ERC-4337 V3 release.
+- Found and fixed two high-severity internal provenance issues. Factory
+  `registerPlayer` and `receiveOwnerShare` callbacks now accept only
+  factory-created instances. PlayerRegistry now requires the caller to equal
+  the supplied instance, requires the parent factory to be authorized, and
+  requires that factory to attest `isInstance(instance)` before enrollment,
+  result, or match-outcome writes are accepted.
+- Added adversarial regressions proving direct factory abuse, false lifecycle
+  callbacks, spoofed parent-factory result writes, spoofed match writes, and
+  false enrollment provenance cannot change profiles or accounting. The
+  focused profile/accounting suite passes 38 tests.
+- Added the machine-readable internal finding register and security checker.
+  The reviewed register contains two fixed high findings, one accepted medium
+  sponsorship-budget risk, one accepted low administrative-trust risk, zero
+  open findings, and zero unresolved internal critical/high findings.
+- Added `docs/SecurityReview.md`, `docs/ExternalAuditScope.md`, and
+  `docs/ProductionRelease.md` with the privilege/call graph, identity/escrow/
+  payout review, independent-audit package, staged Arbitrum One canary,
+  explicit cutover, dual-generation reads, and creation-only rollback.
+- Completed the first passing instrumented coverage campaign. All 33 session
+  tests pass under coverage. SessionKeyRegistry reports 97.62% statements,
+  71.21% branches, 100% functions, and 92.86% lines; ETourGame clears the
+  recorded session-resolution thresholds. `npm run coverage:session` now
+  reproduces and enforces the campaign.
+- Fixed the gameplay equivalence test to mine direct and delegated comparison
+  moves at the identical timestamp, removing a slow-coverage-only Chess clock
+  flake without weakening clock-state equivalence.
+- Added an Arbitrum One release template generator and validator. The checked
+  template records EntryPoint v0.8, required production roles and secrets,
+  expected creation/runtime hashes, ABI checksums, verification inputs, and
+  canary gates while deliberately leaving all deployment/audit evidence empty.
+- Added staged `local`, `audit`, `production`, and `cutover` readiness checks.
+  Later stages cannot pass without a checksummed independent report, zero
+  unresolved critical/high findings, a real verified Arbitrum One manifest,
+  monitoring, capped paymaster funding, an approved all-game canary, and named
+  cutover approval.
+- Added generation routing, monitoring configuration, release address-book,
+  and rollback checks. The safe pre-cutover state remains V2 for new
+  production creation while both V2 and V3 reads/gameplay stay enabled.
+- Cleaned the ABI gate so test-helper artifacts cannot enter the production ABI
+  baseline. The reviewed production surface contains 33 contract/interface
+  ABIs.
+- Captured audit freeze
+  `89518b931acee469ef58472f702391acd90056a6a0e8212e8ff20a19dbc08d3b`
+  across 127 Solidity, SDK, deployment/release script, test, compiler,
+  dependency, configuration, ABI, storage, size, and finding-register inputs.
+- Final `npm run local:arbitrum:cycle -- --full` passed from start to finish:
+  canonical local EntryPoint deployment, 20-contract manifest, 22-address
+  wiring smoke test, both local bundlers, 19 sponsored moves, rotation,
+  revocation, total bundler outage, paymaster outage, direct-primary recovery,
+  all three game settlements, ABI regeneration, all 337 tests, and every CI
+  policy gate.
+- Contract sizes remain valid. EntryPoint is 21,738 bytes, the largest game
+  implementation is ConnectFourInstance at 21,702 bytes, and every deployable
+  is below 24,576 bytes and its reviewed baseline.
+
+External gates intentionally still open:
+
+- Complete public/external NatSpec remains an audit-readiness documentation
+  task.
+- An independent audit must be commissioned, its findings recorded/remediated,
+  and the final report checksum entered before the `audit` gate can pass.
+- No Arbitrum One deployment, verification, paymaster funding, production
+  monitoring, or canary transaction was fabricated or executed.
+- Production UI/indexer routing, V2 creation removal, final addresses,
+  production canary report, explicit approval, and V3-default declaration wait
+  for the real audited deployment.
+
+Next recommended action:
+Complete the remaining NatSpec pass, commit the exact frozen candidate, and
+send `docs/ExternalAuditScope.md` plus the freeze checksum to the selected
+independent auditor. After remediation, recapture the freeze and rerun
+`npm run coverage:session` and `npm run local:arbitrum:cycle -- --full` before
+requesting authorization for the capped Arbitrum One canary.
