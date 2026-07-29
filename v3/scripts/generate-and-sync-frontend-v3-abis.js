@@ -1,3 +1,5 @@
+// Generates the exact ABI/deployment payloads imported by the V3 frontend,
+// stages them locally, and copies them only when explicitly requested.
 import fs from "fs";
 import path from "path";
 import { spawnSync } from "child_process";
@@ -18,8 +20,13 @@ const DEFAULT_FRONTEND_ABIS_DIR = path.resolve(
     "..",
     "tic-tac-react",
     "src",
-    "v2",
+    "v3",
     "ABIs"
+);
+const STAGING_ROOT = path.join(
+    V3_DIR,
+    "cache",
+    "frontend-abis"
 );
 
 const GAME_SPECS = [
@@ -64,6 +71,8 @@ function parseArgs(argv) {
         frontendAbisDir: DEFAULT_FRONTEND_ABIS_DIR,
         checkOnly: false,
         skipCompile: false,
+        generateOnly: false,
+        copyOnly: false,
     };
 
     for (let i = 0; i < argv.length; i++) {
@@ -75,11 +84,20 @@ function parseArgs(argv) {
             args.checkOnly = true;
         } else if (argv[i] === "--skip-compile") {
             args.skipCompile = true;
+        } else if (argv[i] === "--generate-only") {
+            args.generateOnly = true;
+        } else if (argv[i] === "--copy-only") {
+            args.copyOnly = true;
         } else {
             throw new Error(`Unknown or incomplete argument: ${argv[i]}`);
         }
     }
 
+    if (args.generateOnly && args.copyOnly) {
+        throw new Error(
+            "--generate-only and --copy-only are mutually exclusive"
+        );
+    }
     return args;
 }
 
@@ -173,11 +191,11 @@ function walkSourceFiles(rootDir, excludedDir) {
     return files;
 }
 
-function discoverImportedAbiFiles(frontendV2Dir, frontendAbisDir) {
+function discoverImportedAbiFiles(frontendV3Dir, frontendAbisDir) {
     const imported = new Set();
     const importPattern = /["'][^"']*\/ABIs\/([^"']+\.json)["']/g;
 
-    for (const sourcePath of walkSourceFiles(frontendV2Dir, frontendAbisDir)) {
+    for (const sourcePath of walkSourceFiles(frontendV3Dir, frontendAbisDir)) {
         const source = fs.readFileSync(sourcePath, "utf8");
         for (const match of source.matchAll(importPattern)) {
             imported.add(match[1]);
@@ -185,7 +203,7 @@ function discoverImportedAbiFiles(frontendV2Dir, frontendAbisDir) {
     }
 
     if (imported.size === 0) {
-        throw new Error(`No ABI JSON imports found under ${frontendV2Dir}`);
+        throw new Error(`No ABI JSON imports found under ${frontendV3Dir}`);
     }
     return imported;
 }
@@ -350,7 +368,7 @@ function buildFrontendPayloads(network) {
 async function verifyLiveLocalDeployment(network, payloads) {
     if (network !== "localhost") return;
 
-    await verifyLocalhostBytecode();
+    await verifyLocalhostBytecode({ required: true });
 
     const rpcUrl = process.env.LOCAL_RPC_URL || "http://127.0.0.1:8545";
     const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -401,6 +419,7 @@ function assertImportCoverage(importedFiles, payloads) {
 }
 
 function writePayloadsAtomically(frontendAbisDir, payloads) {
+    fs.mkdirSync(frontendAbisDir, { recursive: true });
     const tempFiles = [];
     try {
         for (const [fileName, payload] of payloads) {
@@ -421,28 +440,77 @@ function writePayloadsAtomically(frontendAbisDir, payloads) {
     }
 }
 
+function readStagedPayloads(network, importedFiles) {
+    const stagingDirectory = path.join(STAGING_ROOT, network);
+    if (!fs.existsSync(stagingDirectory)) {
+        throw new Error(
+            `Generated ABI staging directory not found: ${stagingDirectory}. ` +
+                "Run npm run abis:generate:local first."
+        );
+    }
+
+    const payloads = new Map();
+    for (const fileName of importedFiles) {
+        const filePath = path.join(stagingDirectory, fileName);
+        payloads.set(
+            fileName,
+            readJson(filePath, `generated ${fileName}`)
+        );
+    }
+    return payloads;
+}
+
 async function main() {
-    const { network, frontendAbisDir, checkOnly, skipCompile } =
+    const {
+        network,
+        frontendAbisDir,
+        checkOnly,
+        skipCompile,
+        generateOnly,
+        copyOnly,
+    } =
         parseArgs(process.argv.slice(2));
-    const frontendV2Dir = path.dirname(frontendAbisDir);
+    const frontendV3Dir = path.dirname(frontendAbisDir);
+    const importedFiles = discoverImportedAbiFiles(
+        frontendV3Dir,
+        frontendAbisDir
+    );
 
     if (!fs.existsSync(frontendAbisDir)) {
         throw new Error(`Frontend ABI directory not found: ${frontendAbisDir}`);
     }
-    if (!skipCompile) {
-        runNodeStep("Compiling V3 contracts", HARDHAT_CLI, ["compile"]);
+
+    let payloads;
+    if (copyOnly) {
+        payloads = readStagedPayloads(network, importedFiles);
+    } else {
+        if (!skipCompile) {
+            runNodeStep("Compiling V3 contracts", HARDHAT_CLI, ["compile"]);
+        }
+        runNodeStep("Regenerating V3 ABI bundles", REGENERATE_SCRIPT, [
+            "--network",
+            network,
+        ]);
+
+        payloads = buildFrontendPayloads(network);
+        assertImportCoverage(importedFiles, payloads);
+        await verifyLiveLocalDeployment(network, payloads);
+
+        const stagingDirectory = path.join(STAGING_ROOT, network);
+        writePayloadsAtomically(stagingDirectory, payloads);
+        console.log(
+            `\nGenerated and validated ${payloads.size} frontend ABI ` +
+                `payloads in ${stagingDirectory}.`
+        );
     }
-    runNodeStep("Regenerating V3 ABI bundles", REGENERATE_SCRIPT, [
-        "--network",
-        network,
-    ]);
 
-    const importedFiles = discoverImportedAbiFiles(frontendV2Dir, frontendAbisDir);
-    const payloads = buildFrontendPayloads(network);
-    assertImportCoverage(importedFiles, payloads);
-    await verifyLiveLocalDeployment(network, payloads);
-
-    console.log(`\nValidated ${payloads.size} frontend ABI/deployment JSON payloads.`);
+    if (generateOnly) {
+        console.log(
+            "Generation-only mode: staged payloads are ready; " +
+                "the frontend was not changed."
+        );
+        return;
+    }
     if (checkOnly) {
         console.log("Check-only mode: no frontend files were changed.");
         return;

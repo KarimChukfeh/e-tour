@@ -1,12 +1,12 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "timestamp": "2026-07-29T03:32:13.068Z",
+  "timestamp": "2026-07-29T05:09:02.065Z",
   "modules": {
-    "core": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "matches": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "prizes": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "escalation": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "matches": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "prizes": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "escalation": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
   },
   "artifactHashes": {
     "core": "0xe6fafbe69bd3fcd670b2d8acd809fc400835116fffea00dab0acd1b121a674b4",

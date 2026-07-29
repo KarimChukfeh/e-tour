@@ -806,3 +806,41 @@ Next recommended action:
 Run `npm run test:report` whenever the complete V3 test evidence changes, and
 publish the regenerated `v3/test-report-v3.html` alongside the corresponding
 source freeze and release evidence.
+
+2026-07-29 - Persistent local V3 stack and separated frontend ABI workflow
+
+- Added `npm run local:stack:fresh`. It safely replaces a recognized
+  Anvil/Hardhat listener on port 8545, starts a persistent Hardhat node on chain
+  ID 412346, seeds 250 deterministic wallets with 10,000 ETH each, force
+  deploys the complete V3 stack, validates the 20-contract canonical manifest,
+  and smoke-checks code and wiring at 22 addresses.
+- Added `local:stack:status` and `local:stack:stop`. The stack command remains
+  attached to its terminal so the backend lifetime is explicit and reliable;
+  node output containing deterministic development keys is restricted to the
+  ignored `v3/cache/local-stack/node.log`.
+- Split frontend ABI handling into two deliberate commands.
+  `abis:generate:local` compiles, regenerates, discovers the actual imports
+  under `tic-tac-react/src/v3`, validates the live deployment and stages exactly
+  ten JSON payloads under `v3/cache/frontend-abis/localhost` without touching
+  the client. `abis:copy:client` copies only those staged payloads.
+- Changed the frontend destination from the former `src/v2/ABIs` compatibility
+  path to `/Users/karim/Documents/workspace/zero-trust/tic-tac-react/src/v3/ABIs`.
+  The existing `frontend:abis` command remains as a convenience alias that
+  performs generation followed by copying.
+- End-to-end verification passed: the managed backend reported healthy chain,
+  manifest, factory, implementation, player registry, session registry,
+  EntryPoint, account factory, paymaster, and module wiring; ABI generation
+  staged ten files; ABI copying wrote the same ten files consumed by the V3
+  client.
+- The stop command cleanly terminated both the managed node and foreground
+  stack command; a subsequent fresh start passed and was left running for
+  development. All ten staged/client payload checksums match.
+- Refreshed the reviewed freeze to
+  `9c85c1c2678884ea1d2216d821179110c910e70087676dcf301e74f936eaafc4`
+  across 130 files. Every CI policy gate, including the 24 KB contract-size
+  gate, and local release readiness pass.
+
+Next recommended action:
+Use `local:stack:fresh` in the backend terminal, then
+`abis:generate:local` and `abis:copy:client` from a second terminal whenever
+contracts or deployment addresses change.

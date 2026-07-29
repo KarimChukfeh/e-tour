@@ -94,31 +94,34 @@ npm run local:arbitrum:cycle:full
 That adds the complete test suite and every CI policy gate. Set
 `ARBITRUM_LOCAL_PORT` only when the isolated default port must change.
 
-The ordinary chain-ID-412346 workflow remains available for frontend
-compatibility work:
+For the persistent frontend-development environment, start the complete local
+backend in its own terminal:
 
-Start the local chain:
-
-```sh
-cd v3
-npx hardhat node
+```bash
+npm --prefix v3 run local:stack:fresh
 ```
 
-Then deploy and validate in another terminal:
+This replaces any recognized Anvil/Hardhat listener on port 8545, starts a
+fresh Hardhat chain with chain ID 412346 and 250 deterministic wallets funded
+with 10,000 ETH each, force-deploys the complete V3 stack, validates the
+manifest, and smoke-tests live bytecode and wiring. Keep that terminal open.
 
-```sh
-cd v3
-npm run deploy:all:force
-npm run deployment:manifest:check
-npm run deployment:smoke
-npm run frontend:abis
+In another terminal, generate and validate the ten frontend payloads without
+changing the client:
+
+```bash
+npm --prefix v3 run abis:generate:local
 ```
 
-The complete manifest is
-`deployments/localhost/manifest.json`. The frontend ABI command regenerates the
-V3 ABIs, validates deployed bytecode and every imported frontend JSON, and
-atomically copies the ten required compatibility payloads to the existing
-`tic-tac-react/src/v2/ABIs/` integration directory.
+Then copy only those staged payloads into the V3 client:
+
+```bash
+npm --prefix v3 run abis:copy:client
+```
+
+The destination is `tic-tac-react/src/v3/ABIs/`. The convenience command
+`npm --prefix v3 run frontend:abis` performs the last two commands together.
+The complete manifest remains `v3/deployments/localhost/manifest.json`.
 
 See [`docs/Deployment.md`](./docs/Deployment.md) before a production canary. Do
 not deploy public contracts from a dirty tree or publish output before
@@ -141,9 +144,13 @@ manifest, smoke, verification, bundler, test, and size checks pass.
 | `npm run selectors:check` | Verify the complete mutable instance surface |
 | `npm run deployment:manifest:check` | Validate the canonical localhost manifest |
 | `npm run deployment:smoke` | Verify deployed code and protocol wiring |
+| `npm run local:stack:fresh` | Reset, deploy, validate, and keep the persistent frontend backend running |
+| `npm run local:stack:stop` | Stop the managed frontend-development backend |
+| `npm run abis:generate:local` | Generate and validate the ten staged V3 frontend payloads |
+| `npm run abis:copy:client` | Copy staged payloads into `tic-tac-react/src/v3/ABIs/` |
 | `npm run local:arbitrum:cycle` | Run the isolated local Arbitrum-shaped acceptance cycle |
 | `npm run local:arbitrum:cycle:full` | Add full tests and CI gates to that cycle |
-| `npm run frontend:abis` | Generate, validate, and sync frontend ABI JSON |
+| `npm run frontend:abis` | Generate, validate, and copy V3 frontend ABI JSON |
 | `npm run paymaster:inspect` | Report deposit, stake, pause, and sponsored spend |
 | `npm run release:prepare` | Generate the checksum-bearing Arbitrum One release template |
 | `npm run release:freeze:check` | Verify the exact audit-candidate source/tooling/test freeze |

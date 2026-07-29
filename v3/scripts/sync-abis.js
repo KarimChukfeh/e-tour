@@ -124,12 +124,20 @@ function getImmutableReferences(sourceName, contractName) {
     return getImmutableReferenceMap().get(`${sourceName}:${contractName}`) ?? {};
 }
 
-export async function verifyLocalhostBytecode() {
+export async function verifyLocalhostBytecode(
+    { required = false } = {}
+) {
     const provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
 
     try {
         await provider.getBlockNumber();
     } catch {
+        if (required) {
+            throw new Error(
+                `Local RPC is unavailable at ${LOCAL_RPC_URL}. ` +
+                    "Start it with npm run local:stack:fresh."
+            );
+        }
         console.log(`Skipping localhost bytecode verification (${LOCAL_RPC_URL} unavailable).`);
         return;
     }

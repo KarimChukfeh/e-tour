@@ -121,23 +121,35 @@ factory; it has no singleton deployment address.
 
 ## Ordinary local deployment
 
-Start a clean local node in one terminal:
+From the repository root, start the persistent local V3 backend in one
+terminal:
 
-```sh
-cd v3
-npx hardhat node
+```bash
+npm --prefix v3 run local:stack:fresh
 ```
 
-In a second terminal:
+The command resets port 8545 when it is owned by a recognized Anvil/Hardhat
+node, starts Hardhat with chain ID 412346 and 250 funded deterministic wallets,
+force-deploys the complete contract set, validates the canonical manifest, and
+smoke-tests the deployed bytecode and wiring. Keep the command running while
+developing.
 
-```sh
-cd v3
-npm run contracts:check
-npm run deploy:all:force
-npm run deployment:manifest:check
-npm run deployment:smoke
-npm run abi:generate -- --network localhost
-npm run frontend:abis
+In a second terminal, generate the exact ten ABI/deployment payloads imported
+by `tic-tac-react/src/v3`:
+
+```bash
+npm --prefix v3 run abis:generate:local
+```
+
+Generation compiles the current contracts, rebuilds the localhost ABI bundles,
+checks the client import set, and validates the payload addresses and bytecode
+against the live local deployment. It stages the resulting files under the V3
+cache without modifying the client.
+
+Copy the staged payloads into the client only when generation succeeds:
+
+```bash
+npm --prefix v3 run abis:copy:client
 ```
 
 Then run the focused EntryPoint/UserOperation and full protocol suites:
@@ -150,7 +162,8 @@ npm run size
 ```
 
 The local deployment defaults to a 0.5 ETH paymaster deposit. `FORCE=1`
-redeploys modules instead of reusing a bytecode-validated local module cache.
+is built into `local:stack:fresh`, so no prior module deployment is reused.
+Use `npm --prefix v3 run local:stack:stop` to stop the managed backend.
 
 ## Fully local Arbitrum-shaped acceptance
 

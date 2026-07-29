@@ -68,11 +68,10 @@ APIs; factory `isInstance`; the session-account factory/paymaster surfaces; and
 new custom errors. Consumers must use V3 ABI bundles for V3 addresses rather
 than mixing generations.
 
-The compatibility frontend generator writes the currently imported names under
-`tic-tac-react/src/v2/ABIs/`, including legacy game naming aliases. The directory
-name is a frontend compatibility constraint, not evidence that V3 addresses
-are V2 contracts. Each JSON's network, chain, and addresses must be validated
-before use.
+The V3 frontend generator stages the currently imported names, including game
+naming aliases retained by the client, and the separate copy command writes
+them under `tic-tac-react/src/v3/ABIs/`. Each JSON's network, chain, and
+addresses are validated against the live local deployment before staging.
 
 ## Frontend migration
 

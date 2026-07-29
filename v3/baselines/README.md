@@ -154,4 +154,4 @@ ABI generation requires fresh V3 deployment manifests. Both `abi:sync` and
 `frontend:abis` run the complete localhost workflow: compile V3, regenerate ABI
 bundles, verify the live Anvil bytecode, convert V3 contract names to the legacy
 frontend aliases, discover every JSON imported by `tic-tac-react/src/v2`, and
-atomically replace all ten required files under `src/v2/ABIs/`.
+atomically replace all ten required files under `src/v3/ABIs/`.

@@ -54,7 +54,7 @@ export default {
       blockGasLimit: 300000000,
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
+      url: process.env.LOCAL_RPC_URL || "http://127.0.0.1:8545",
       chainId: 412346,
       gasPrice: 1000000000,
       allowUnlimitedContractSize: true,
