@@ -777,3 +777,32 @@ freeze checksum
 `58fe5f638e1ea07b9ea715b62788861b7e43723b831a6d6e87379bc94a9a942f`
 to the selected independent auditor. Any audit remediation must be followed by
 a new freeze, coverage run, and full local-Arbitrum acceptance cycle.
+
+2026-07-28 - Reproducible V3 HTML test report
+
+- Added `npm run test:report`, backed by a dedicated Mocha reporter and
+  self-contained HTML generator.
+- The command builds the browser SDK, executes every V3 Hardhat test, captures
+  suite hierarchy, source files, status, duration, speed, assertion failures,
+  hook failures, run timestamps, Git provenance, and then atomically regenerates
+  `v3/test-report-v3.html`.
+- Generated the report from a fresh complete run: 338 of 338 tests passed, with
+  zero failures and zero pending tests across 47 top-level suites and 17 test
+  files.
+- The report follows the dark gradient presentation of
+  `test-report-beta.html` while adding live search, pass/fail filtering,
+  collapsible suites and tests, slow-scenario analysis, run provenance, and
+  responsive layouts. It has no external scripts, fonts, trackers, or network
+  dependencies.
+- Browser QA confirmed the summary and suite rendering, a search narrowed
+  `SessionKeyRegistry` to 11 tests in one suite, and the failed-test filter
+  correctly displayed the empty state for the all-passing run.
+- Refreshed the reviewed tooling freeze after adding the reporter. The current
+  audit freeze is
+  `12739928ca21dd5136102a0e87bbf444b1f1edac6bde05fbbd2830de15a0e262`
+  across 129 files. All CI policy gates and local release readiness pass.
+
+Next recommended action:
+Run `npm run test:report` whenever the complete V3 test evidence changes, and
+publish the regenerated `v3/test-report-v3.html` alongside the corresponding
+source freeze and release evidence.

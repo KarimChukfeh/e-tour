@@ -86,5 +86,8 @@ export default {
   },
   mocha: {
     timeout: 40000,
+    reporter: process.env.V3_TEST_REPORT_JSON
+      ? join(__dirname, "scripts", "test-report-reporter.cjs")
+      : "spec",
   },
 };

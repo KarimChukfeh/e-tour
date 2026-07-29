@@ -130,6 +130,7 @@ manifest, smoke, verification, bundler, test, and size checks pass.
 | --- | --- |
 | `npm run compile` | Compile protocol contracts |
 | `npm test` | Build the SDK and run the complete suite |
+| `npm run test:report` | Run the complete suite and regenerate `test-report-v3.html` |
 | `npm run test:aa` | Run EntryPoint, UserOperation, paymaster, and failover tests |
 | `npm run test:sdk` | Run browser session SDK tests |
 | `npm run test:fuzz` | Run the extended session/game/provenance invariant campaign |

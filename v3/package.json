@@ -12,6 +12,7 @@
     "clean": "hardhat clean",
     "compile": "hardhat compile",
     "test": "npm run sdk:build && hardhat test",
+    "test:report": "node scripts/generate-test-report.js",
     "test:focused": "hardhat test",
     "test:aa": "hardhat test test/account-abstraction/*.test.js",
     "test:sdk": "npm run sdk:build && hardhat test test/sdk/*.test.js",
