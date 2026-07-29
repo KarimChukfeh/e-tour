@@ -4,11 +4,11 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-07-29T05:09:02.563Z",
+  "timestamp": "2026-07-29T05:11:31.378Z",
   "blockNumber": 24,
   "source": {
-    "commit": "3d8dfb77cb0e476bf287af8630cb5bd916ddd97d",
-    "dirty": true
+    "commit": "42e95a5eef9484c713bc5e23ec4c7f0a9a9d2e50",
+    "dirty": false
   },
   "compiler": {
     "version": "0.8.20",
