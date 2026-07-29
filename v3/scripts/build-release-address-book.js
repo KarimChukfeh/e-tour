@@ -28,6 +28,7 @@ for (const [name, record] of Object.entries(manifest.contracts ?? {})) {
         sourceName: record.sourceName,
         abiSha256: sha256(Buffer.from(`${JSON.stringify(record.abi)}\n`)),
         deployedBytecodeHash: record.deployedBytecodeHash,
+        runtimeBytecodeHash: record.runtimeBytecodeHash,
     };
 }
 assert(Object.keys(contracts).length >= 19, "complete deployment addresses are missing");

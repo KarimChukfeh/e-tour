@@ -568,5 +568,32 @@ describe("V3 browser session SDK", function () {
                 directFallbackRecommended: false,
             });
         });
+
+        it("does not misclassify bundler validation responses as transport failures", function () {
+            expect(
+                mapV3Error({
+                    name: "BundlerRpcError",
+                    message:
+                        "UserOperation validation simulation failed",
+                    data: "execution reverted: OT",
+                    provider: "primary",
+                })
+            ).to.include({
+                code: "NOT_YOUR_TURN",
+                directFallbackRecommended: false,
+            });
+            expect(
+                mapV3Error({
+                    name: "BundlerRpcError",
+                    message:
+                        "UserOperation validation simulation failed",
+                    data: "execution reverted without a reason",
+                    provider: "primary",
+                })
+            ).to.include({
+                code: "TRANSACTION_FAILED",
+                directFallbackRecommended: false,
+            });
+        });
     });
 });

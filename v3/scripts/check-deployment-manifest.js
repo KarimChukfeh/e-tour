@@ -24,7 +24,7 @@ const normalizedChainId = assertDeploymentTarget(
     manifest.chainId
 );
 
-assert(manifest.schemaVersion === 2, "schemaVersion must be 2");
+assert(manifest.schemaVersion === 3, "schemaVersion must be 3");
 assert(
     manifest.manifestKind === "complete-v3-deployment",
     "manifestKind must identify a complete V3 deployment"
@@ -127,7 +127,15 @@ for (const [name, expectedAddress] of Object.entries(
             record.address === null,
             `${name} must be marked counterfactual`
         );
+        assert(
+            record.runtimeBytecodeHash === null,
+            `${name} live runtime hash must be null`
+        );
     } else {
+        assertHash(
+            record.runtimeBytecodeHash,
+            `${name} live runtime hash`
+        );
         assert(
             isAddress(expectedAddress),
             `${name} expected address is invalid`

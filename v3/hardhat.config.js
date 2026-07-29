@@ -50,6 +50,10 @@ export default {
         auto: true,
         interval: 0,
       },
+      // Keep browser-wallet fee suggestions valid after the deployment-heavy
+      // bootstrap blocks. With a non-zero EIP-1559 base fee, those blocks can
+      // ratchet the next-block base fee above MetaMask's cached max fee.
+      initialBaseFeePerGas: 0,
       allowUnlimitedContractSize: true,
       blockGasLimit: 300000000,
     },

@@ -1,14 +1,14 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "generation": "v3",
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-07-29T06:50:52.480Z",
+  "timestamp": "2026-07-29T08:18:53.173Z",
   "blockNumber": 24,
   "source": {
-    "commit": "1ba319b83a5fdd279401a74966570389a079ae69",
-    "dirty": false
+    "commit": "35e3bb766c048486079d408235d31139ec1d3795",
+    "dirty": true
   },
   "compiler": {
     "version": "0.8.20",
@@ -1171,7 +1171,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x95d7a5f85c1554678398794b9c46b73e99faf1dba3af6ec42d2f6db6f72c0a3e"
     },
     "SimpleAccountImplementation": {
       "sourceName": "contracts/accounts/SimpleAccount.sol",
@@ -1739,7 +1740,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xe071c7055b56e70a4502f223a19dc1679e825152b9e0a70d7f25fcc0f7d0efe2"
     },
     "SimpleAccountFactory": {
       "sourceName": "contracts/accounts/SimpleAccountFactory.sol",
@@ -1837,7 +1839,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x4dfa344a661a3399f53a10749e46d55a54d264886e76fdca51a947ac989371e6"
     },
     "ETourInstance_Core": {
       "sourceName": "contracts/modules/ETourInstance_Core.sol",
@@ -2495,7 +2498,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x6917b2623e5751fe18662392ec0d26b183727b6673333d6a495ff08a79543740"
     },
     "ETourInstance_Matches": {
       "sourceName": "contracts/modules/ETourInstance_Matches.sol",
@@ -3161,7 +3165,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xbfddf7672e9e9066d1e8f7745b35fef08597e5985ad1c0b1c33ea04a7e8acb98"
     },
     "ETourInstance_Prizes": {
       "sourceName": "contracts/modules/ETourInstance_Prizes.sol",
@@ -3798,7 +3803,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x44752d5d736c1a3f7105bc9d6e93a9b461b310880a8bf85f43e3a95987f38809"
     },
     "ETourInstance_Escalation": {
       "sourceName": "contracts/modules/ETourInstance_Escalation.sol",
@@ -4498,7 +4504,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x38af32f96467fc5a04dd495e7f33a3cfa57af9e1a879ee5d44267ffa4bc02970"
     },
     "ChessRulesModule": {
       "sourceName": "contracts/modules/ChessRulesModule.sol",
@@ -5575,7 +5582,8 @@
           "stateMutability": "pure",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x138496e185dc8ae53c0fa0aeda3585b3b41d8bba59cbf66de0b63c76972a6421"
     },
     "PlayerProfile": {
       "sourceName": "contracts/PlayerProfile.sol",
@@ -6178,7 +6186,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x4dd69abc0b15b47e0f33befaa8d5fed5dee4a2799eecd4e9e516f0a1de8ae4fa"
     },
     "PlayerRegistry": {
       "sourceName": "contracts/PlayerRegistry.sol",
@@ -6626,7 +6635,8 @@
           "stateMutability": "nonpayable",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xebebd472f93be978a9eb6a4e0bab3005bbd2410ed104d00e18882d9810782758"
     },
     "SessionKeyRegistry": {
       "sourceName": "contracts/SessionKeyRegistry.sol",
@@ -7037,7 +7047,8 @@
           "stateMutability": "nonpayable",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xde4a4704425ab86096e7d30a0d5590ab65be6d5f96189c8a586bafafff8f58ab"
     },
     "ETourSessionAccount": {
       "sourceName": "contracts/account-abstraction/ETourSessionAccount.sol",
@@ -7291,7 +7302,8 @@
         "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
         "<browser-session-owner>",
         "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
-      ]
+      ],
+      "runtimeBytecodeHash": null
     },
     "ETourSessionAccountFactory": {
       "sourceName": "contracts/account-abstraction/ETourSessionAccountFactory.sol",
@@ -7448,7 +7460,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xc67ac81fd6f3daae18450b78531f8b210ee09a1dc854753d6fdf9521da96594d"
     },
     "ETourSessionPaymaster": {
       "sourceName": "contracts/account-abstraction/ETourSessionPaymaster.sol",
@@ -8029,7 +8042,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x1a8bf0fff67a94f8b5eb411dc06aebbff2136d9a115710e293e59352d16902bf"
     },
     "TicTacChainFactory": {
       "sourceName": "contracts/TicTacChainFactory.sol",
@@ -8951,7 +8965,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x8621a1fec8a5e9d17e03d867fee0cd05f07ac29fa1d925b38ec519a3cc7b7ac7"
     },
     "ConnectFourFactory": {
       "sourceName": "contracts/ConnectFourFactory.sol",
@@ -9873,7 +9888,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x5c11053ee1c6f5b4eb93ee95ee5c2f1d9b0f27945e7c8f60dc906aaad0659b00"
     },
     "ChessOnChainFactory": {
       "sourceName": "contracts/ChessOnChainFactory.sol",
@@ -10814,7 +10830,8 @@
           "stateMutability": "payable",
           "type": "receive"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x78e2b2a77d11d29e5afe1eb8f73c7c0905386e9ce3f3875d6a7d68a8457fb765"
     },
     "TicTacInstance": {
       "sourceName": "contracts/TicTacInstance.sol",
@@ -12619,7 +12636,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xb0a7edc36c997981f0b151a8def75abfed97c460c337b3a4937b63e153ecf050"
     },
     "ConnectFourInstance": {
       "sourceName": "contracts/ConnectFourInstance.sol",
@@ -14440,7 +14458,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0xda08b5da8be5b491aa9b5847d766317cf6ad394e2a93d3846f2bb330824ba5ce"
     },
     "ChessInstance": {
       "sourceName": "contracts/ChessInstance.sol",
@@ -16292,7 +16311,8 @@
           "stateMutability": "view",
           "type": "function"
         }
-      ]
+      ],
+      "runtimeBytecodeHash": "0x25af8388918090cd48d4cea65dc6e49ea6aacd9516ed574ea7e7d3bc5955e8a8"
     }
   }
 }

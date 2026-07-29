@@ -1,7 +1,6 @@
 {
   "network": "localhost",
-  "chainId": "412346",
-  "deployedAt": "2026-07-29T06:50:52.480Z",
+  "generatedAt": "2026-07-29T08:18:55.525Z",
   "contract": {
     "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
     "abi": [
@@ -404,5 +403,10 @@
         "type": "function"
       }
     ]
+  },
+  "addressesByGame": {
+    "TicTacChainFactory": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "ConnectFourFactory": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "ChessOnChainFactory": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
   }
 }

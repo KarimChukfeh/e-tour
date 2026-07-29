@@ -225,9 +225,13 @@ function collect(
     if (value instanceof Error && value.message.trim()) {
         messages.push(value.message.trim());
     }
-    for (const child of Object.values(
+    for (const [key, child] of Object.entries(
         value as Record<string, unknown>
     )) {
+        // Error class names such as BundlerRpcError describe where a
+        // deterministic validation error was reported, not whether the
+        // transport itself failed.
+        if (key === "name") continue;
         collect(child, data, messages, seen);
     }
 }

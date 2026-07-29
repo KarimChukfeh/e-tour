@@ -251,7 +251,7 @@ async function main() {
     const timestamp   = new Date().toISOString();
 
     const deployment = {
-        schemaVersion: 2,
+        schemaVersion: 3,
         generation: "v3",
         network,
         chainId: normalizedChainId,
@@ -788,6 +788,22 @@ async function main() {
             { address: chessImplAddr }
         ),
     };
+    for (const record of Object.values(contracts)) {
+        if (!record.address) {
+            record.runtimeBytecodeHash = null;
+            continue;
+        }
+        const runtimeBytecode =
+            await hre.ethers.provider.getCode(record.address);
+        if (!runtimeBytecode || runtimeBytecode === "0x") {
+            throw new Error(
+                `missing runtime bytecode for ${record.contractName} ` +
+                    `at ${record.address}`
+            );
+        }
+        record.runtimeBytecodeHash =
+            hre.ethers.keccak256(runtimeBytecode);
+    }
     const completeManifest = {
         ...deployment,
         manifestKind: "complete-v3-deployment",
