@@ -1,8 +1,8 @@
 {
   "network": "localhost",
-  "generatedAt": "2026-07-29T02:21:46.684Z",
+  "generatedAt": "2026-07-29T03:32:55.516Z",
   "contract": {
-    "address": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
+    "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
     "abi": [
       {
         "inputs": [
@@ -405,8 +405,8 @@
     ]
   },
   "addressesByGame": {
-    "TicTacChainFactory": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
-    "ConnectFourFactory": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
-    "ChessOnChainFactory": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
+    "TicTacChainFactory": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "ConnectFourFactory": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "ChessOnChainFactory": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
   }
 }

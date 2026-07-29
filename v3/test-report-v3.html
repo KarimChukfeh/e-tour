@@ -26,8 +26,8 @@
   <p>Complete behavioral validation of the V3 factory/instance architecture, tournament accounting, session authorization, browser SDK, ERC-4337 account abstraction, sponsorship policy, and recovery paths.</p>
   <div class="badges">
     <span class="badge good">✓ All tests passed</span>
-    <span class="badge">Generated July 28, 2026 at 11:20:23 p.m. EDT</span>
-    <span class="badge">Commit 3b60a6128260</span>
+    <span class="badge">Generated July 28, 2026 at 11:36:52 p.m. EDT</span>
+    <span class="badge">Commit 55201d0054fb</span>
     <span class="badge">dirty development tree</span>
   </div>
 </header>
@@ -36,7 +36,7 @@
   <div class="stat good"><span>Passing</span><strong>338</strong></div>
   <div class="stat "><span>Failing</span><strong>0</strong></div>
   <div class="stat"><span>Pass rate</span><strong>100.0%</strong></div>
-  <div class="stat"><span>Duration</span><strong>24.5 s</strong></div>
+  <div class="stat"><span>Duration</span><strong>21.3 s</strong></div>
 </section>
 <section class="section">
   <div class="section-title"><div><div class="eyebrow">Evidence map</div><h2>Suite organization</h2></div><p>47 top-level suites · 17 test files</p></div>
@@ -87,7 +87,7 @@
             <span class="suite-metrics">
                 <span>24/24 passed</span>
                 <span>100.0%</span>
-                <span>107 ms</span>
+                <span>77 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -97,7 +97,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">registry.getProfile(creator) returns non-zero address</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 1: PlayerRegistry has profiles for BOTH players</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 1: playerregistry has profiles for both players registry.getprofile(joiner) returns non-zero address test/factory/verify-both-players-complete-flow.test.js">
@@ -125,7 +125,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">factory.getPlayerProfile(creator) returns non-zero address</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 3: Factory.getPlayerProfile() works for BOTH players</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 3: factory.getplayerprofile() works for both players factory.getplayerprofile(joiner) returns non-zero address test/factory/verify-both-players-complete-flow.test.js">
@@ -153,7 +153,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creator profile: enrollment record has correct instance address</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 4: Creator&#039;s PlayerProfile contract has enrollment data</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 4: creator&#039;s playerprofile contract has enrollment data creator profile: enrollment record has correct entryfee test/factory/verify-both-players-complete-flow.test.js">
@@ -181,7 +181,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">joiner profile: getEnrollmentCount() returns 1</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 5: Joiner&#039;s PlayerProfile contract has enrollment data</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 5: joiner&#039;s playerprofile contract has enrollment data joiner profile: getenrollments() returns 1 record test/factory/verify-both-players-complete-flow.test.js">
@@ -209,7 +209,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">joiner profile: enrollment record has correct gameType (TicTac = 0)</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 5: Joiner&#039;s PlayerProfile contract has enrollment data</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 5: joiner&#039;s playerprofile contract has enrollment data joiner profile: getenrollmentbyinstance() returns correct data test/factory/verify-both-players-complete-flow.test.js">
@@ -230,35 +230,35 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance.isEnrolled(joiner) returns true</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 6: Instance contract shows BOTH players enrolled</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 6: instance contract shows both players enrolled instance.getplayers() returns both creator and joiner test/factory/verify-both-players-complete-flow.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance.getPlayers() returns both creator and joiner</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 6: Instance contract shows BOTH players enrolled</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 7: simulating ui queries - both players should be found ui query for creator works test/factory/verify-both-players-complete-flow.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">UI query for CREATOR works</span>
-            <span class="test-duration">17 ms</span>
+            <span class="test-duration">15 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 7: SIMULATING UI QUERIES - Both players should be found</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 7: simulating ui queries - both players should be found ui query for joiner works test/factory/verify-both-players-complete-flow.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">UI query for JOINER works</span>
-            <span class="test-duration">18 ms</span>
+            <span class="test-duration">14 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 7: SIMULATING UI QUERIES - Both players should be found</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="comprehensive: both players get profiles with enrollment data step 8: final summary prints complete summary for both players test/factory/verify-both-players-complete-flow.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">prints complete summary for both players</span>
-            <span class="test-duration">45 ms</span>
+            <span class="test-duration">28 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Step 8: FINAL SUMMARY</div><div><strong>File:</strong> <code>test/factory/verify-both-players-complete-flow.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -272,7 +272,7 @@
             <span class="suite-metrics">
                 <span>1/1 passed</span>
                 <span>100.0%</span>
-                <span>106 ms</span>
+                <span>66 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -282,7 +282,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">awards C the prize and records ML3 finals completion after replacing A and D</span>
-            <span class="test-duration">106 ms</span>
+            <span class="test-duration">66 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/ConnectFourInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -296,7 +296,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>55 ms</span>
+                <span>48 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -306,21 +306,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">factory.players() is populated for creator after createInstance</span>
-            <span class="test-duration">9 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/debug-factory-players-mapping.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="debug: factory.players() mapping population factory.players() is populated for joiner after enrollintournament test/factory/debug-factory-players-mapping.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">factory.players() is populated for joiner after enrollInTournament</span>
-            <span class="test-duration">25 ms</span>
+            <span class="test-duration">21 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/debug-factory-players-mapping.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="debug: factory.players() mapping population both factory.players() entries exist after full 2-player enrollment test/factory/debug-factory-players-mapping.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">BOTH factory.players() entries exist after full 2-player enrollment</span>
-            <span class="test-duration">21 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/debug-factory-players-mapping.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -334,7 +334,7 @@
             <span class="suite-metrics">
                 <span>4/4 passed</span>
                 <span>100.0%</span>
-                <span>79 ms</span>
+                <span>69 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -344,28 +344,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">holds for 1 enrolled player</span>
-            <span class="test-duration">19 ms</span>
+            <span class="test-duration">16 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="deferred fees — invariant: prizepool + owneraccrued == entryfee × enrolled holds for 2 enrolled players test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">holds for 2 enrolled players</span>
-            <span class="test-duration">22 ms</span>
+            <span class="test-duration">19 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="deferred fees — invariant: prizepool + owneraccrued == entryfee × enrolled instance eth balance equals total deferred fees test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance ETH balance equals total deferred fees</span>
-            <span class="test-duration">20 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="deferred fees — invariant: prizepool + owneraccrued == entryfee × enrolled fee buckets match expected bps splits test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">fee buckets match expected BPS splits</span>
-            <span class="test-duration">18 ms</span>
+            <span class="test-duration">16 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -379,7 +379,7 @@
             <span class="suite-metrics">
                 <span>4/4 passed</span>
                 <span>100.0%</span>
-                <span>50 ms</span>
+                <span>41 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -403,7 +403,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">atomically replaces JSON without leaving a temporary file</span>
-            <span class="test-duration">49 ms</span>
+            <span class="test-duration">40 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/tooling/DeploymentOutput.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="deployment output safety blocks dirty public deployments but permits local work test/tooling/deploymentoutput.test.js">
@@ -424,7 +424,7 @@
             <span class="suite-metrics">
                 <span>4/4 passed</span>
                 <span>100.0%</span>
-                <span>97 ms</span>
+                <span>89 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -434,28 +434,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">solo player receives 100% of entry fee back</span>
-            <span class="test-duration">21 ms</span>
+            <span class="test-duration">23 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="el0 — solo enroll → cancel → 100% refund owner receives nothing on el0 test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">owner receives nothing on EL0</span>
-            <span class="test-duration">21 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="el0 — solo enroll → cancel → 100% refund instance balance is 0 after el0 test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance balance is 0 after EL0</span>
-            <span class="test-duration">19 ms</span>
+            <span class="test-duration">17 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="el0 — solo enroll → cancel → 100% refund profile result stores refund separately from prize on el0 cancel test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">profile result stores refund separately from prize on EL0 cancel</span>
-            <span class="test-duration">36 ms</span>
+            <span class="test-duration">31 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -469,7 +469,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>86 ms</span>
+                <span>75 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -479,21 +479,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">claimer receives 95% of all enrolled entry fees</span>
-            <span class="test-duration">25 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="el2 — partial enroll → abandoned claim → standard fee splits owner wallet receives the 5% share on el2 test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">owner wallet receives the 5% share on EL2</span>
-            <span class="test-duration">22 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="el2 — partial enroll → abandoned claim → standard fee splits non-enrolled el2 claimer gets a zero-fee profile enrollment and winning result test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">non-enrolled EL2 claimer gets a zero-fee profile enrollment and winning result</span>
-            <span class="test-duration">39 ms</span>
+            <span class="test-duration">35 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -507,7 +507,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>702 ms</span>
+                <span>616 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -517,21 +517,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">records Victory payout metadata for a paid winner</span>
-            <span class="test-duration">226 ms</span>
+            <span class="test-duration">201 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PrizeRedistribution.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="etourinstance_prizes redistribution on failed payouts redistributes a rejecting winner&#039;s full prize across the other enrolled player test/factory/prizeredistribution.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">redistributes a rejecting winner&#039;s full prize across the other enrolled player</span>
-            <span class="test-duration">231 ms</span>
+            <span class="test-duration">195 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PrizeRedistribution.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="etourinstance_prizes redistribution on failed payouts keeps redistributing failed shares until only accepting enrolled players remain test/factory/prizeredistribution.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">keeps redistributing failed shares until only accepting enrolled players remain</span>
-            <span class="test-duration">245 ms</span>
+            <span class="test-duration">220 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PrizeRedistribution.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -545,7 +545,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>94 ms</span>
+                <span>74 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -555,21 +555,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">owner wallet receives exactly 5% × 2 players at conclusion</span>
-            <span class="test-duration">34 ms</span>
+            <span class="test-duration">25 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="normal 2-player conclusion — fee distribution instance balance is 0 after conclusion test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance balance is 0 after conclusion</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">25 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="normal 2-player conclusion — fee distribution winner receives ~95% of total pot test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner receives ~95% of total pot</span>
-            <span class="test-duration">29 ms</span>
+            <span class="test-duration">24 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -583,7 +583,7 @@
             <span class="suite-metrics">
                 <span>2/2 passed</span>
                 <span>100.0%</span>
-                <span>6 ms</span>
+                <span>4 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -593,14 +593,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects playerCount of 64</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="player count cap accepts playercount of 32 test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts playerCount of 32</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -614,7 +614,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>86 ms</span>
+                <span>81 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -631,14 +631,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">profile enrollment count increases after enrolling in instances</span>
-            <span class="test-duration">35 ms</span>
+            <span class="test-duration">32 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerprofile — enrollment &amp; result recording profile enrollment record has correct fields test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">profile enrollment record has correct fields</span>
-            <span class="test-duration">34 ms</span>
+            <span class="test-duration">32 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -652,7 +652,7 @@
             <span class="suite-metrics">
                 <span>10/10 passed</span>
                 <span>100.0%</span>
-                <span>317 ms</span>
+                <span>276 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -662,28 +662,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creates a profile on first enrollment</span>
-            <span class="test-duration">23 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency returns the same profile address for repeated enrollments test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">returns the same profile address for repeated enrollments</span>
-            <span class="test-duration">43 ms</span>
+            <span class="test-duration">36 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency creates distinct profiles for the same player in different games test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creates distinct profiles for the same player in different games</span>
-            <span class="test-duration">174 ms</span>
+            <span class="test-duration">151 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency rejects recordenrollment from unauthorized caller test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects recordEnrollment from unauthorized caller</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency rejects direct factory profile registration from non-instances test/factory/playerprofile.test.js">
@@ -704,14 +704,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">ignores result writes from a contract spoofing an authorized parent factory</span>
-            <span class="test-duration">51 ms</span>
+            <span class="test-duration">45 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency requires authorized factories to attest enrollment instance provenance test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">requires authorized factories to attest enrollment instance provenance</span>
-            <span class="test-duration">17 ms</span>
+            <span class="test-duration">16 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="playerregistry — authorization &amp; clone idempotency allows owner to authorize and deauthorize factories test/factory/playerprofile.test.js">
@@ -739,7 +739,7 @@
             <span class="suite-metrics">
                 <span>6/6 passed</span>
                 <span>100.0%</span>
-                <span>328 ms</span>
+                <span>294 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -749,42 +749,42 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">BOTH players get profiles: creator via enrollOnBehalf, joiner via enrollInTournament</span>
-            <span class="test-duration">24 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile creation — both players (creator + joiner) creator profile has enrollment record after createinstance test/factory/profile-creation-both-players.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creator profile has enrollment record after createInstance</span>
-            <span class="test-duration">20 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile creation — both players (creator + joiner) joiner profile has enrollment record after enrollintournament test/factory/profile-creation-both-players.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">joiner profile has enrollment record after enrollInTournament</span>
-            <span class="test-duration">36 ms</span>
+            <span class="test-duration">34 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile creation — both players (creator + joiner) both profiles show enrollment records for the same instance test/factory/profile-creation-both-players.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">BOTH profiles show enrollment records for the SAME instance</span>
-            <span class="test-duration">50 ms</span>
+            <span class="test-duration">46 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile creation — both players (creator + joiner) creator profile shows stats after tournament completes test/factory/profile-creation-both-players.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creator profile shows stats AFTER tournament completes</span>
-            <span class="test-duration">40 ms</span>
+            <span class="test-duration">38 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile creation — both players (creator + joiner) bug check: without factory authorization, no profiles are created test/factory/profile-creation-both-players.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">BUG CHECK: without factory authorization, NO profiles are created</span>
-            <span class="test-duration">158 ms</span>
+            <span class="test-duration">138 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/profile-creation-both-players.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -798,7 +798,7 @@
             <span class="suite-metrics">
                 <span>9/9 passed</span>
                 <span>100.0%</span>
-                <span>554 ms</span>
+                <span>465 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -808,63 +808,63 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">finalizes both winner and loser profiles when the winning move uses estimated gas</span>
-            <span class="test-duration">84 ms</span>
+            <span class="test-duration">74 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion winner profile: totalwins=1, totalplayed=1 after conclusion test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner profile: totalWins=1, totalPlayed=1 after conclusion</span>
-            <span class="test-duration">46 ms</span>
+            <span class="test-duration">36 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion loser profile: totallosses=1, totalwins=0 after conclusion test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">loser profile: totalLosses=1, totalWins=0 after conclusion</span>
-            <span class="test-duration">47 ms</span>
+            <span class="test-duration">41 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion records evensplit payout metadata for every player when an entire round draws test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">records EvenSplit payout metadata for every player when an entire round draws</span>
-            <span class="test-duration">125 ms</span>
+            <span class="test-duration">97 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion winner profile: concluded=true, won=true on enrollment record test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner profile: concluded=true, won=true on enrollment record</span>
-            <span class="test-duration">49 ms</span>
+            <span class="test-duration">37 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion stores tournament resolution metadata and per-match outcomes separately test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">stores tournament resolution metadata and per-match outcomes separately</span>
-            <span class="test-duration">64 ms</span>
+            <span class="test-duration">51 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion loser profile: concluded=true, won=false on enrollment record test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">loser profile: concluded=true, won=false on enrollment record</span>
-            <span class="test-duration">46 ms</span>
+            <span class="test-duration">38 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion winner net earnings = prize - entryfee (positive) test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner net earnings = prize - entryFee (positive)</span>
-            <span class="test-duration">46 ms</span>
+            <span class="test-duration">37 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="profile push — stats updated automatically at conclusion loser net earnings = 0 - entryfee (negative) test/factory/playerprofile.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">loser net earnings = 0 - entryFee (negative)</span>
-            <span class="test-duration">47 ms</span>
+            <span class="test-duration">54 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/PlayerProfile.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -878,7 +878,7 @@
             <span class="suite-metrics">
                 <span>11/11 passed</span>
                 <span>100.0%</span>
-                <span>440 ms</span>
+                <span>384 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -888,21 +888,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">has a fixed one-hour TTL and no privileged mutation API</span>
-            <span class="test-duration">156 ms</span>
+            <span class="test-duration">140 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry registers an enrolled primary with timestamps, generation, reverse binding, and event test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">registers an enrolled primary with timestamps, generation, reverse binding, and event</span>
-            <span class="test-duration">8 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry rejects zero addresses, primary-as-executor, un-enrolled players, and invalid hosts test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects zero addresses, primary-as-executor, un-enrolled players, and invalid hosts</span>
-            <span class="test-duration">60 ms</span>
+            <span class="test-duration">52 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry rejects duplicate active sessions and globally live executor reuse test/session/sessionkeyregistry.test.js">
@@ -916,28 +916,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">uses strict expiry immediately before and exactly at validUntil</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry refreshes atomically, invalidates the old executor, and increments generation test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">refreshes atomically, invalidates the old executor, and increments generation</span>
-            <span class="test-duration">13 ms</span>
+            <span class="test-duration">10 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry rejects refresh to another live binding test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects refresh to another live binding</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry revokes atomically, cleans the reverse binding, and increments generation test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">revokes atomically, cleans the reverse binding, and increments generation</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry rejects refresh after conclusion but permits explicit revocation cleanup test/session/sessionkeyregistry.test.js">
@@ -951,14 +951,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">allows one primary to use distinct executors in distinct instances</span>
-            <span class="test-duration">6 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="sessionkeyregistry reclaims expired bindings and preserves uniqueness through randomized transitions test/session/sessionkeyregistry.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">reclaims expired bindings and preserves uniqueness through randomized transitions</span>
-            <span class="test-duration">170 ms</span>
+            <span class="test-duration">147 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionKeyRegistry.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -972,7 +972,7 @@
             <span class="suite-metrics">
                 <span>5/5 passed</span>
                 <span>100.0%</span>
-                <span>17 ms</span>
+                <span>11 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -982,7 +982,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">playing a draw completes the match as draw</span>
-            <span class="test-duration">13 ms</span>
+            <span class="test-duration">9 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 2-player draw in finals, equal prize split tournament concludes after the draw test/factory/tictacinstance.test.js">
@@ -996,14 +996,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tournament winner is address(0) for a draw conclusion</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 2-player draw in finals, equal prize split prize pool is split equally between both players test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">prize pool is split equally between both players</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 2-player draw in finals, equal prize split instance balance is zero after distribution test/factory/tictacinstance.test.js">
@@ -1024,7 +1024,7 @@
             <span class="suite-metrics">
                 <span>6/6 passed</span>
                 <span>100.0%</span>
-                <span>18 ms</span>
+                <span>14 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1048,14 +1048,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">round 0 is initialized with exactly 1 match</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 2-player, 0.001 eth, single-round tournament tournament concludes after playing round 0 (no further rounds) test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tournament concludes after playing round 0 (no further rounds)</span>
-            <span class="test-duration">11 ms</span>
+            <span class="test-duration">8 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 2-player, 0.001 eth, single-round tournament champion received the prize pool (instance balance = 0) test/factory/tictacinstance.test.js">
@@ -1083,7 +1083,7 @@
             <span class="suite-metrics">
                 <span>1/1 passed</span>
                 <span>100.0%</span>
-                <span>6 ms</span>
+                <span>7 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1093,7 +1093,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">sets the same payout and EvenSplit payoutReason for every player</span>
-            <span class="test-duration">6 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1107,7 +1107,7 @@
             <span class="suite-metrics">
                 <span>36/36 passed</span>
                 <span>100.0%</span>
-                <span>253 ms</span>
+                <span>201 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1124,7 +1124,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creates a 4-player 0.002 ETH instance</span>
-            <span class="test-duration">33 ms</span>
+            <span class="test-duration">32 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Factory &amp; Instance Deployment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize factory &amp; instance deployment instance references back to the factory test/factory/tictacinstance.test.js">
@@ -1138,7 +1138,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance tier config matches creation params</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Factory &amp; Instance Deployment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize factory &amp; instance deployment instance starts in enrolling status test/factory/tictacinstance.test.js">
@@ -1159,7 +1159,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects incorrect entry fee</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Enrollment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize enrollment creator is auto-enrolled on instance creation test/factory/tictacinstance.test.js">
@@ -1173,14 +1173,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts the second player at the correct fee</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Enrollment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize enrollment rejects duplicate enrollment test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects duplicate enrollment</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Enrollment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize enrollment routes fees correctly on each enrollment (deferred — held on instance) test/factory/tictacinstance.test.js">
@@ -1208,14 +1208,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">final player enrollment auto-starts the tournament</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Enrollment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize enrollment prize pool equals 95% of total fees collected test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">prize pool equals 95% of total fees collected</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Enrollment</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize semi-finals (round 0): 2 matches, 4 → 2 players round 0 is initialized with 2 matches test/factory/tictacinstance.test.js">
@@ -1236,14 +1236,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">semifinal match 0 completes with a winner</span>
-            <span class="test-duration">9 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Semi-finals (Round 0): 2 matches, 4 → 2 players</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize semi-finals (round 0): 2 matches, 4 → 2 players semifinal match 1 completes with a winner test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">semifinal match 1 completes with a winner</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Semi-finals (Round 0): 2 matches, 4 → 2 players</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize semi-finals (round 0): 2 matches, 4 → 2 players round 0 is fully completed test/factory/tictacinstance.test.js">
@@ -1264,7 +1264,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">final match is initialized with the two semi-final winners</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Finals (Round 1): champion wins the prize pool</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize finals (round 1): champion wins the prize pool final match is inprogress test/factory/tictacinstance.test.js">
@@ -1278,7 +1278,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">champion wins the final and tournament concludes</span>
-            <span class="test-duration">10 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Finals (Round 1): champion wins the prize pool</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize finals (round 1): champion wins the prize pool prize pool was sent to the champion test/factory/tictacinstance.test.js">
@@ -1306,7 +1306,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance is permanently locked — no further enrollment</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Finals (Round 1): champion wins the prize pool</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize finals (round 1): champion wins the prize pool instance is permanently locked — no further moves test/factory/tictacinstance.test.js">
@@ -1320,7 +1320,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">owner wallet received the correct 5% share at conclusion</span>
-            <span class="test-duration">0 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Fee Accounting on Factory</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize fee accounting on factory factory ownerbalance stays at 0 after successful owner payout test/factory/tictacinstance.test.js">
@@ -1334,35 +1334,35 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance balance is 0 after prize and owner-share settlement</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Fee Accounting on Factory</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize fee accounting on factory falls back to ownerbalance when the owner address rejects eth test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">falls back to ownerBalance when the owner address rejects ETH</span>
-            <span class="test-duration">30 ms</span>
+            <span class="test-duration">27 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Fee Accounting on Factory</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize tier deduplication creating two instances with same params reuses the same tierkey test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creating two instances with same params reuses the same tierKey</span>
-            <span class="test-duration">66 ms</span>
+            <span class="test-duration">57 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Tier Deduplication</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize tier deduplication changing only timeout params creates a different tierkey test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">changing only timeout params creates a different tierKey</span>
-            <span class="test-duration">59 ms</span>
+            <span class="test-duration">36 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Tier Deduplication</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 4-player, 0.002 eth, finalist wins prize tier deduplication factory has exactly one tier entry for that config test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">factory has exactly one tier entry for that config</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> Tier Deduplication</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1376,7 +1376,7 @@
             <span class="suite-metrics">
                 <span>11/11 passed</span>
                 <span>100.0%</span>
-                <span>65 ms</span>
+                <span>50 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1400,21 +1400,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">round 0 (quarter-finals) has 4 matches</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket all 4 quarter-final matches complete test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">all 4 quarter-final matches complete</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">25 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket tournament advances to round 1 (semi-finals) test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tournament advances to round 1 (semi-finals)</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket round 1 (semi-finals) has 2 matches test/factory/tictacinstance.test.js">
@@ -1428,14 +1428,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">both semi-final matches complete</span>
-            <span class="test-duration">16 ms</span>
+            <span class="test-duration">12 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket tournament advances to round 2 (finals) test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tournament advances to round 2 (finals)</span>
-            <span class="test-duration">0 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket round 2 (finals) has 1 match test/factory/tictacinstance.test.js">
@@ -1449,14 +1449,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">final match completes and tournament concludes</span>
-            <span class="test-duration">12 ms</span>
+            <span class="test-duration">9 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — 8-player, 0.003 eth, 3-round bracket champion received the full prize pool test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">champion received the full prize pool</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1470,7 +1470,7 @@
             <span class="suite-metrics">
                 <span>6/6 passed</span>
                 <span>100.0%</span>
-                <span>293 ms</span>
+                <span>254 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1480,42 +1480,42 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">factory has no legacy protocol raffle API</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — conclusion settlement owner share stays on instance until conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">owner share stays on instance until conclusion</span>
-            <span class="test-duration">21 ms</span>
+            <span class="test-duration">19 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — conclusion settlement pays the deferred 5% owner share to the owner wallet at conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">pays the deferred 5% owner share to the owner wallet at conclusion</span>
-            <span class="test-duration">29 ms</span>
+            <span class="test-duration">25 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — conclusion settlement extra forced eth remains untouched after conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">extra forced ETH remains untouched after conclusion</span>
-            <span class="test-duration">33 ms</span>
+            <span class="test-duration">24 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — conclusion settlement el2 gives the claimant the 95% prize pool and pays 5% to the owner wallet test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet</span>
-            <span class="test-duration">182 ms</span>
+            <span class="test-duration">160 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — conclusion settlement instance balance is 0 after conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance balance is 0 after conclusion</span>
-            <span class="test-duration">27 ms</span>
+            <span class="test-duration">24 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1529,7 +1529,7 @@
             <span class="suite-metrics">
                 <span>10/10 passed</span>
                 <span>100.0%</span>
-                <span>69 ms</span>
+                <span>58 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1539,7 +1539,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tournament is Enrolling with only 1 player</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) solo enrolled player can cancel and reset immediately, but cannot force start test/factory/tictacinstance.test.js">
@@ -1553,21 +1553,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">forceStartTournament reverts before the enrollment window expires</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) forcestarttournament still reverts after the enrollment window expires if only 1 player is enrolled test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">forceStartTournament still reverts after the enrollment window expires if only 1 player is enrolled</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) canceltournament succeeds immediately for a solo enrolled player test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">cancelTournament succeeds immediately for a solo enrolled player</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) solo player received 100% of entry fee back on el0 cancel test/factory/tictacinstance.test.js">
@@ -1581,28 +1581,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">cancelTournament is not available once a second player enrolls</span>
-            <span class="test-duration">8 ms</span>
+            <span class="test-duration">5 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) resetenrollmentwindow pushes el1 and el2 deadlines forward for the solo player test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">resetEnrollmentWindow pushes EL1 and EL2 deadlines forward for the solo player</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) forcestarttournament succeeds after enrollment window expires when 2 players are enrolled test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">forceStartTournament succeeds after enrollment window expires when 2 players are enrolled</span>
-            <span class="test-duration">9 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — enrollment escalations (el0 / el1) awards the auto-advanced player if the only played el1 semifinal ends in a draw test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">awards the auto-advanced player if the only played EL1 semifinal ends in a draw</span>
-            <span class="test-duration">32 ms</span>
+            <span class="test-duration">28 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1616,7 +1616,7 @@
             <span class="suite-metrics">
                 <span>24/24 passed</span>
                 <span>100.0%</span>
-                <span>45 ms</span>
+                <span>37 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1626,7 +1626,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects non-power-of-2 player count (e.g. 3)</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects player count 0 test/factory/tictacinstance.test.js">
@@ -1647,14 +1647,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts the new minimum entry fee of 0.0001 ETH</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects entry fee that is not a multiple of 0.0001 eth test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects entry fee that is not a multiple of 0.0001 ETH</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects zero entry fee test/factory/tictacinstance.test.js">
@@ -1668,7 +1668,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects entry fee above the 1 ETH max</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects createinstance with mismatched msg.value (less than entryfee) test/factory/tictacinstance.test.js">
@@ -1682,7 +1682,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects enrollment window below 2 minutes</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects enrollment window above 30 minutes test/factory/tictacinstance.test.js">
@@ -1710,7 +1710,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts enrollment window for an in-range custom minute value</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails accepts enrollment window at the maximum boundary test/factory/tictacinstance.test.js">
@@ -1724,7 +1724,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects time per player below 1 minute</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects time per player above 20 minutes test/factory/tictacinstance.test.js">
@@ -1759,14 +1759,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts time per player at the maximum boundary</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails rejects increment time above 60 seconds test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects increment time above 60 seconds</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory creation guardrails accepts increment time at the minimum boundary test/factory/tictacinstance.test.js">
@@ -1801,7 +1801,7 @@
             <span class="suite-metrics">
                 <span>9/9 passed</span>
                 <span>100.0%</span>
-                <span>83 ms</span>
+                <span>78 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1825,7 +1825,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">getInstances(1, 2) returns 2 instances starting at offset 1</span>
-            <span class="test-duration">0 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory instance tracking and pagination getinstances(3, 10) returns empty array (offset past end) test/factory/tictacinstance.test.js">
@@ -1839,14 +1839,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">two instances with same params share a tierKey</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">29 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory instance tracking and pagination instance with different params has a different tierkey test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance with different params has a different tierKey</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">28 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory instance tracking and pagination factory tracks 2 tier keys total test/factory/tictacinstance.test.js">
@@ -1860,7 +1860,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">player profile tracks all instances creator enrolled in</span>
-            <span class="test-duration">14 ms</span>
+            <span class="test-duration">13 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — factory instance tracking and pagination getactivetierconfigs returns both tier configs test/factory/tictacinstance.test.js">
@@ -1881,7 +1881,7 @@
             <span class="suite-metrics">
                 <span>5/5 passed</span>
                 <span>100.0%</span>
-                <span>111 ms</span>
+                <span>88 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1891,14 +1891,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">match 1 completes normally (player for ML2 needs to have won a match)</span>
-            <span class="test-duration">8 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — ml2 escalation (forceeliminatestalledmatch) match 0 stalls — current turn player&#039;s time expires test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">match 0 stalls — current turn player&#039;s time expires</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — ml2 escalation (forceeliminatestalledmatch) ml2 is available for match 0 after timeout + l2 delay test/factory/tictacinstance.test.js">
@@ -1912,14 +1912,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner of match 1 can force-eliminate stalled match 0</span>
-            <span class="test-duration">6 ms</span>
+            <span class="test-duration">5 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — ml2 escalation (forceeliminatestalledmatch) a finalist triggering ml2 on the other stalled semifinal eliminates both players and wins the tournament test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">a finalist triggering ML2 on the other stalled semifinal eliminates both players and wins the tournament</span>
-            <span class="test-duration">94 ms</span>
+            <span class="test-duration">75 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1933,7 +1933,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>10 ms</span>
+                <span>6 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1950,14 +1950,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">ML3 is available for match 0</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — ml3 escalation (claimmatchslotbyreplacement) outsider can claim a slot via ml3 replacement test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">outsider can claim a slot via ML3 replacement</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">4 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -1971,7 +1971,7 @@
             <span class="suite-metrics">
                 <span>10/10 passed</span>
                 <span>100.0%</span>
-                <span>316 ms</span>
+                <span>270 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -1981,70 +1981,70 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should record single move correctly</span>
-            <span class="test-duration">25 ms</span>
+            <span class="test-duration">22 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for ongoing match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for ongoing match should record multiple moves with comma separation test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should record multiple moves with comma separation</span>
-            <span class="test-duration">26 ms</span>
+            <span class="test-duration">21 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for ongoing match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for ongoing match should track full game sequence in ongoing match test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should track full game sequence in ongoing match</span>
-            <span class="test-duration">26 ms</span>
+            <span class="test-duration">23 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for ongoing match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for ongoing match should preserve move order in ongoing match test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should preserve move order in ongoing match</span>
-            <span class="test-duration">27 ms</span>
+            <span class="test-duration">23 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for ongoing match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for ongoing match should handle edge cell indices correctly test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should handle edge cell indices correctly</span>
-            <span class="test-duration">26 ms</span>
+            <span class="test-duration">22 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for ongoing match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for completed match should preserve full move history after win test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should preserve full move history after win</span>
-            <span class="test-duration">29 ms</span>
+            <span class="test-duration">24 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for completed match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for completed match should preserve full move history after draw test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should preserve full move history after draw</span>
-            <span class="test-duration">36 ms</span>
+            <span class="test-duration">30 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for completed match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for completed match should preserve move history after tournament conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should preserve move history after tournament conclusion</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">27 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for completed match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for completed match should track move history across multiple matches in tournament test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should track move history across multiple matches in tournament</span>
-            <span class="test-duration">54 ms</span>
+            <span class="test-duration">46 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for completed match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move history tracking move history for completed match should return empty string for match with no moves test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">should return empty string for match with no moves</span>
-            <span class="test-duration">36 ms</span>
+            <span class="test-duration">32 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move history for completed match</div><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2058,7 +2058,7 @@
             <span class="suite-metrics">
                 <span>5/5 passed</span>
                 <span>100.0%</span>
-                <span>19 ms</span>
+                <span>13 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2075,7 +2075,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects moving out of turn</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move validation edge cases rejects an out-of-bounds cell (index &gt;= 9) test/factory/tictacinstance.test.js">
@@ -2089,14 +2089,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects playing on an occupied cell</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — move validation edge cases rejects moves after the match has completed test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects moves after the match has completed</span>
-            <span class="test-duration">10 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2110,7 +2110,7 @@
             <span class="suite-metrics">
                 <span>7/7 passed</span>
                 <span>100.0%</span>
-                <span>6 ms</span>
+                <span>5 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2141,7 +2141,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">getMatch returns full match detail</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — permanent record view functions getmatchmoves returns non-empty moves string test/factory/tictacinstance.test.js">
@@ -2176,7 +2176,7 @@
             <span class="suite-metrics">
                 <span>5/5 passed</span>
                 <span>100.0%</span>
-                <span>5 ms</span>
+                <span>4 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2200,7 +2200,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">match record: matchWinner=address(0), isDraw=true</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: draw getprizedistribution: total equals 95% of pool test/factory/tictacinstance.test.js">
@@ -2259,7 +2259,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>4 ms</span>
+                <span>3 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2283,7 +2283,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">outsider: enrolled in tournament and isWinner=true</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2297,7 +2297,7 @@
             <span class="suite-metrics">
                 <span>6/6 passed</span>
                 <span>100.0%</span>
-                <span>29 ms</span>
+                <span>22 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2321,14 +2321,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">all 3 rounds have completed matches for the champion&#039;s path</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: multi-round match tracking getmatchmoves non-empty for all 3 rounds of champion&#039;s path test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">getMatchMoves non-empty for all 3 rounds of champion&#039;s path</span>
-            <span class="test-duration">5 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: multi-round match tracking first-round loser: participated=true, iswinner=false, prizewon=0 test/factory/tictacinstance.test.js">
@@ -2342,7 +2342,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">non-enrolled address: participated=false, isWinner=false, prizeWon=0</span>
-            <span class="test-duration">14 ms</span>
+            <span class="test-duration">11 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2356,7 +2356,7 @@
             <span class="suite-metrics">
                 <span>6/6 passed</span>
                 <span>100.0%</span>
-                <span>5 ms</span>
+                <span>6 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2373,14 +2373,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">loser: participated=true, isWinner=false, prizeWon=0</span>
-            <span class="test-duration">0 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: normal win match record: winner set, isdraw=false, status=completed test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">match record: winner set, isDraw=false, status=Completed</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: normal win getmatchmoves returns non-empty moves string test/factory/tictacinstance.test.js">
@@ -2394,7 +2394,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">getPrizeDistribution: winner received 95% of pool</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: normal win completionreason is r0 / normalwin (0) test/factory/tictacinstance.test.js">
@@ -2415,7 +2415,7 @@
             <span class="suite-metrics">
                 <span>4/4 passed</span>
                 <span>100.0%</span>
-                <span>6 ms</span>
+                <span>3 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2425,7 +2425,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">winner: isWinner=true, prizeWon&gt;0</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: timeout win (ml1) loser: iswinner=false, prizewon=0 test/factory/tictacinstance.test.js">
@@ -2439,14 +2439,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">match record: winner set, isDraw=false, status=Completed</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — player activity: timeout win (ml1) completionreason is ml1 / timeout (1) test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">completionReason is ML1 / Timeout (1)</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2460,7 +2460,7 @@
             <span class="suite-metrics">
                 <span>9/9 passed</span>
                 <span>100.0%</span>
-                <span>126 ms</span>
+                <span>110 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2484,7 +2484,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">instance appears in activeTournaments immediately after creation</span>
-            <span class="test-duration">21 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — players, activetournaments, pasttournaments players[owner] is set after creator&#039;s first enrollment test/factory/tictacinstance.test.js">
@@ -2505,28 +2505,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">players[p1] is zero before p1 enrolls</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — players, activetournaments, pasttournaments players[p1] set after p1 enrolls; instance moves to pasttournaments on conclusion test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">players[p1] set after p1 enrolls; instance moves to pastTournaments on conclusion</span>
-            <span class="test-duration">12 ms</span>
+            <span class="test-duration">11 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — players, activetournaments, pasttournaments swap-and-pop: completing middle tournament leaves activetournaments consistent test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">swap-and-pop: completing middle tournament leaves activeTournaments consistent</span>
-            <span class="test-duration">66 ms</span>
+            <span class="test-duration">58 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — players, activetournaments, pasttournaments el0 cancel also moves instance to pasttournaments (even with 0 owner share) test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">EL0 cancel also moves instance to pastTournaments (even with 0 owner share)</span>
-            <span class="test-duration">23 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2540,7 +2540,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>8 ms</span>
+                <span>4 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2550,7 +2550,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">both players start with matchTimePerPlayer time bank</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — time bank (fischer clock) after a move, the moving player&#039;s time bank decreases (and gains increment) test/factory/tictacinstance.test.js">
@@ -2564,7 +2564,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">lastMoveTime is updated after each move</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2578,7 +2578,7 @@
             <span class="suite-metrics">
                 <span>2/2 passed</span>
                 <span>100.0%</span>
-                <span>10 ms</span>
+                <span>7 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2588,14 +2588,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">claimTimeoutWin reverts if opponent has not yet timed out</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="tictacinstance — timeout claim (claimtimeoutwin) claimtimeoutwin succeeds after opponent&#039;s time expires test/factory/tictacinstance.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">claimTimeoutWin succeeds after opponent&#039;s time expires</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">5 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/TicTacInstance.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2619,21 +2619,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">uses getRandomValues, never a primary-wallet signature</span>
-            <span class="test-duration">23 ms</span>
+            <span class="test-duration">21 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> browser key generation and encrypted persistence</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk browser key generation and encrypted persistence persists only aes-gcm ciphertext under a non-extractable wrapping key test/sdk/sessionsdk.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">persists only AES-GCM ciphertext under a non-extractable wrapping key</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> browser key generation and encrypted persistence</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk browser key generation and encrypted persistence rejects ciphertext tampering instead of loading a corrupted key test/sdk/sessionsdk.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects ciphertext tampering instead of loading a corrupted key</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> browser key generation and encrypted persistence</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk cross-tab state and nonce coordination delivers only public session state to local subscribers test/sdk/sessionsdk.test.js">
@@ -2654,14 +2654,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">encodes all three canonical move shapes and validates uint8 inputs</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move and lifecycle helpers</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk move and lifecycle helpers computes the counterfactual executor through the pinned factory test/sdk/sessionsdk.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">computes the counterfactual executor through the pinned factory</span>
-            <span class="test-duration">11 ms</span>
+            <span class="test-duration">9 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> move and lifecycle helpers</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk move and lifecycle helpers classifies missing, revoked, rotated, expired, inactive, and active records test/sdk/sessionsdk.test.js">
@@ -2682,21 +2682,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creates a fresh executor per instance and rotates only after wallet confirmation</span>
-            <span class="test-duration">9 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> high-level client recovery and fallback</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk high-level client recovery and fallback stages refresh encryption and preserves the active key when the wallet rejects test/sdk/sessionsdk.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">stages refresh encryption and preserves the active key when the wallet rejects</span>
-            <span class="test-duration">4 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> high-level client recovery and fallback</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk high-level client recovery and fallback uses direct primary-wallet fallback only for session transport failures test/sdk/sessionsdk.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">uses direct primary-wallet fallback only for session transport failures</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> high-level client recovery and fallback</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 browser session sdk client-facing error map decodes reviewed custom errors and terse game reasons test/sdk/sessionsdk.test.js">
@@ -2710,7 +2710,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">recommends primary fallback for transport failures but not reverted moves</span>
-            <span class="test-duration">1 ms</span>
+            <span class="test-duration">0 ms</span>
         </summary>
         <div class="test-detail"><div><strong>Context:</strong> client-facing error map</div><div><strong>File:</strong> <code>test/sdk/SessionSdk.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2724,7 +2724,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>400 ms</span>
+                <span>326 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2734,21 +2734,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">creates and tracks all game instances through the canonical flow</span>
-            <span class="test-duration">341 ms</span>
+            <span class="test-duration">281 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/GameFactoryAbstraction.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 canonical game and factory abstraction configures chess rules exactly once through the factory-only post hook test/factory/gamefactoryabstraction.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">configures Chess rules exactly once through the factory-only post hook</span>
-            <span class="test-duration">26 ms</span>
+            <span class="test-duration">19 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/GameFactoryAbstraction.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 canonical game and factory abstraction preserves chess repetition nonces across shared reset and restart test/factory/gamefactoryabstraction.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">preserves Chess repetition nonces across shared reset and restart</span>
-            <span class="test-duration">33 ms</span>
+            <span class="test-duration">26 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/factory/GameFactoryAbstraction.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2762,7 +2762,7 @@
             <span class="suite-metrics">
                 <span>11/11 passed</span>
                 <span>100.0%</span>
-                <span>3.3 s</span>
+                <span>3.0 s</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2772,14 +2772,14 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">pins the official EntryPoint and deterministic SimpleAccount factory</span>
-            <span class="test-duration">3.0 s</span>
+            <span class="test-duration">2.8 s</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor registers counterfactual executors before either account is deployed test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">registers counterfactual executors before either account is deployed</span>
-            <span class="test-duration">7 ms</span>
+            <span class="test-duration">6 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor deploys a first-use account and executes a legal move through the entrypoint test/account-abstraction/sessionuseroperation.test.js">
@@ -2793,21 +2793,21 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tracks ERC-7769 operation receipts and omits deployment after first use</span>
-            <span class="test-duration">55 ms</span>
+            <span class="test-duration">51 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor rejects wrong browser owners and leaves counterfactual state untouched test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects wrong browser owners and leaves counterfactual state untouched</span>
-            <span class="test-duration">23 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor binds signatures to the configured chain and entrypoint test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">binds signatures to the configured chain and EntryPoint</span>
-            <span class="test-duration">16 ms</span>
+            <span class="test-duration">17 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor rejects replayed nonces without replaying game state test/account-abstraction/sessionuseroperation.test.js">
@@ -2821,28 +2821,28 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">distinguishes accepted game reverts from bundler validation failures</span>
-            <span class="test-duration">19 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor reports account wrapper execution reverts without mutating the game test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">reports account wrapper execution reverts without mutating the game</span>
-            <span class="test-duration">11 ms</span>
+            <span class="test-duration">8 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor completes terminal settlement while retaining primary identity test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">completes terminal settlement while retaining primary identity</span>
-            <span class="test-duration">95 ms</span>
+            <span class="test-duration">87 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 erc-4337 session executor keeps packeduseroperation structs outside every game abi test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">keeps PackedUserOperation structs outside every game ABI</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2856,7 +2856,7 @@
             <span class="suite-metrics">
                 <span>3/3 passed</span>
                 <span>100.0%</span>
-                <span>13 ms</span>
+                <span>12 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2873,7 +2873,7 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">never automatically resubmits an ambiguous nonce to a second bundler</span>
-            <span class="test-duration">3 ms</span>
+            <span class="test-duration">2 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/BundlerFailover.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 multi-bundler safety polls all providers for inclusion without resubmitting test/account-abstraction/bundlerfailover.test.js">
@@ -2894,7 +2894,7 @@
             <span class="suite-metrics">
                 <span>9/9 passed</span>
                 <span>100.0%</span>
-                <span>277 ms</span>
+                <span>254 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2904,63 +2904,63 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">sponsors first-use deployment and terminal settlement without charging the account</span>
-            <span class="test-duration">100 ms</span>
+            <span class="test-duration">96 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy charges deliberately reverting moves to the paymaster and reports the game reason test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">charges deliberately reverting moves to the paymaster and reports the game reason</span>
-            <span class="test-duration">25 ms</span>
+            <span class="test-duration">22 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy rejects nonzero value, unknown selectors, and non-instance targets test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects nonzero value, unknown selectors, and non-instance targets</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">26 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy rejects paused, unapproved-factory, and over-budget operations test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects paused, unapproved-factory, and over-budget operations</span>
-            <span class="test-duration">24 ms</span>
+            <span class="test-duration">20 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy rejects expired, revoked, and rotated-away session accounts test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects expired, revoked, and rotated-away session accounts</span>
-            <span class="test-duration">48 ms</span>
+            <span class="test-duration">46 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy rejects senders that were not created by the pinned account factory test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects senders that were not created by the pinned account factory</span>
-            <span class="test-duration">6 ms</span>
+            <span class="test-duration">7 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy rejects malformed wrappers, paymaster data, and every gas/cost bound test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects malformed wrappers, paymaster data, and every gas/cost bound</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">27 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy keeps primary-wallet gameplay available when sponsorship has no funds test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">keeps primary-wallet gameplay available when sponsorship has no funds</span>
-            <span class="test-duration">10 ms</span>
+            <span class="test-duration">9 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 on-chain session sponsorship policy isolates paymaster funds from tournament escrow accounting test/account-abstraction/sessionuseroperation.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">isolates paymaster funds from tournament escrow accounting</span>
-            <span class="test-duration">2 ms</span>
+            <span class="test-duration">1 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/account-abstraction/SessionUserOperation.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -2974,7 +2974,7 @@
             <span class="suite-metrics">
                 <span>5/5 passed</span>
                 <span>100.0%</span>
-                <span>338 ms</span>
+                <span>291 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -2984,35 +2984,35 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects every bridge when called directly by an EOA on every game</span>
-            <span class="test-duration">269 ms</span>
+            <span class="test-duration">238 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/security/SelfCallBridges.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 protected self-call bridges rejects every bridge when called through an unrelated contract test/security/selfcallbridges.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects every bridge when called through an unrelated contract</span>
-            <span class="test-duration">22 ms</span>
+            <span class="test-duration">18 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/security/SelfCallBridges.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 protected self-call bridges leaves canonical and match state unchanged after all rejected calls test/security/selfcallbridges.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">leaves canonical and match state unchanged after all rejected calls</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">24 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/security/SelfCallBridges.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 protected self-call bridges keeps production module-driven round creation working for every game test/security/selfcallbridges.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">keeps production module-driven round creation working for every game</span>
-            <span class="test-duration">10 ms</span>
+            <span class="test-duration">8 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/security/SelfCallBridges.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 protected self-call bridges accepts all six bridges from a legitimate delegatecall module test/security/selfcallbridges.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">accepts all six bridges from a legitimate delegatecall module</span>
-            <span class="test-duration">6 ms</span>
+            <span class="test-duration">3 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/security/SelfCallBridges.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -3026,7 +3026,7 @@
             <span class="suite-metrics">
                 <span>16/16 passed</span>
                 <span>100.0%</span>
-                <span>1.1 s</span>
+                <span>946 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -3036,112 +3036,112 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tictac: direct and delegated moves produce identical state with explicit executor attribution</span>
-            <span class="test-duration">282 ms</span>
+            <span class="test-duration">246 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay tictac: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tictac: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state</span>
-            <span class="test-duration">53 ms</span>
+            <span class="test-duration">42 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay tictac: the exclusive ttl boundary disables delegation without disabling the primary wallet test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">tictac: the exclusive TTL boundary disables delegation without disabling the primary wallet</span>
-            <span class="test-duration">32 ms</span>
+            <span class="test-duration">27 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay connectfour: direct and delegated moves produce identical state with explicit executor attribution test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">connectfour: direct and delegated moves produce identical state with explicit executor attribution</span>
-            <span class="test-duration">35 ms</span>
+            <span class="test-duration">30 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay connectfour: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">connectfour: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state</span>
-            <span class="test-duration">55 ms</span>
+            <span class="test-duration">43 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay connectfour: the exclusive ttl boundary disables delegation without disabling the primary wallet test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">connectfour: the exclusive TTL boundary disables delegation without disabling the primary wallet</span>
-            <span class="test-duration">33 ms</span>
+            <span class="test-duration">28 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay chess: direct and delegated moves produce identical state with explicit executor attribution test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">chess: direct and delegated moves produce identical state with explicit executor attribution</span>
-            <span class="test-duration">48 ms</span>
+            <span class="test-duration">38 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay chess: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">chess: rotation resumes play while stale, revoked, wrong-turn, and missing executors cannot mutate state</span>
-            <span class="test-duration">58 ms</span>
+            <span class="test-duration">47 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay chess: the exclusive ttl boundary disables delegation without disabling the primary wallet test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">chess: the exclusive TTL boundary disables delegation without disabling the primary wallet</span>
-            <span class="test-duration">37 ms</span>
+            <span class="test-duration">33 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay attributes a fully delegated win, prize, and profile outcomes only to primary wallets test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">attributes a fully delegated win, prize, and profile outcomes only to primary wallets</span>
-            <span class="test-duration">97 ms</span>
+            <span class="test-duration">78 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay attributes a fully delegated draw record and even split only to primary wallets test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">attributes a fully delegated draw record and even split only to primary wallets</span>
-            <span class="test-duration">77 ms</span>
+            <span class="test-duration">66 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay rejects session executors from every non-move state-changing instance entry point test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects session executors from every non-move state-changing instance entry point</span>
-            <span class="test-duration">81 ms</span>
+            <span class="test-duration">66 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay caps an exhausted player-two clock at the configured move increment test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">caps an exhausted player-two clock at the configured move increment</span>
-            <span class="test-duration">26 ms</span>
+            <span class="test-duration">22 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay keeps permissionless abandonment identity separate from delegated primary identity test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">keeps permissionless abandonment identity separate from delegated primary identity</span>
-            <span class="test-duration">27 ms</span>
+            <span class="test-duration">22 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay rejects an executor whose live binding belongs to a different instance test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rejects an executor whose live binding belongs to a different instance</span>
-            <span class="test-duration">49 ms</span>
+            <span class="test-duration">43 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-authorized gameplay property-checks active, rotated, revoked, and expired session transitions without unauthorized state changes test/session/sessiongameplay.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">property-checks active, rotated, revoked, and expired session transitions without unauthorized state changes</span>
-            <span class="test-duration">140 ms</span>
+            <span class="test-duration">115 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionGameplay.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -3155,7 +3155,7 @@
             <span class="suite-metrics">
                 <span>7/7 passed</span>
                 <span>100.0%</span>
-                <span>426 ms</span>
+                <span>367 ms</span>
                 <span class="chevron">›</span>
             </span>
         </button>
@@ -3165,49 +3165,49 @@
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">threads the registry through the factory and every initialized instance</span>
-            <span class="test-duration">266 ms</span>
+            <span class="test-duration">234 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment atomically registers the creator session without changing primary identity or fees test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">atomically registers the creator session without changing primary identity or fees</span>
-            <span class="test-duration">44 ms</span>
+            <span class="test-duration">37 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment supports creator opt-out without creating a session test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">supports creator opt-out without creating a session</span>
-            <span class="test-duration">24 ms</span>
+            <span class="test-duration">19 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment atomically registers a joiner session without enrolling the executor test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">atomically registers a joiner session without enrolling the executor</span>
-            <span class="test-duration">27 ms</span>
+            <span class="test-duration">23 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment supports joiner opt-out without changing enrollment behavior test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">supports joiner opt-out without changing enrollment behavior</span>
-            <span class="test-duration">24 ms</span>
+            <span class="test-duration">21 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment rolls back clone tracking, tier creation, profiles, and eth when creator registration fails test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rolls back clone tracking, tier creation, profiles, and ETH when creator registration fails</span>
-            <span class="test-duration">10 ms</span>
+            <span class="test-duration">8 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details><details class="test-row passed" data-status="passed" data-search="v3 session-enabled enrollment rolls back join enrollment, profile writes, tournament state, and eth when registration fails test/session/sessionenrollment.test.js">
         <summary>
             <span class="status-dot" aria-hidden="true"></span>
             <span class="test-name">rolls back join enrollment, profile writes, tournament state, and ETH when registration fails</span>
-            <span class="test-duration">31 ms</span>
+            <span class="test-duration">25 ms</span>
         </summary>
         <div class="test-detail"><div><strong>File:</strong> <code>test/session/SessionEnrollment.test.js</code></div><div class="success-note">Completed without an assertion or runtime failure.</div></div>
     </details></div>
@@ -3216,14 +3216,14 @@
   <div class="empty" id="empty" hidden>No tests match the current filters.</div>
 </section>
 <section class="section grid">
-  <div class="panel"><h3>Slowest scenarios</h3><div class="slow"><span>V3 ERC-4337 session executor pins the official EntryPoint and deterministic SimpleAccount factory</span><span>3.0 s</span></div><div class="slow"><span>V3 canonical game and factory abstraction creates and tracks all game instances through the canonical flow</span><span>341 ms</span></div><div class="slow"><span>V3 session-authorized gameplay tictac: direct and delegated moves produce identical state with explicit executor attribution</span><span>282 ms</span></div><div class="slow"><span>V3 protected self-call bridges rejects every bridge when called directly by an EOA on every game</span><span>269 ms</span></div><div class="slow"><span>V3 session-enabled enrollment threads the registry through the factory and every initialized instance</span><span>266 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts keeps redistributing failed shares until only accepting enrolled players remain</span><span>245 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts redistributes a rejecting winner&#039;s full prize across the other enrolled player</span><span>231 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts records Victory payout metadata for a paid winner</span><span>226 ms</span></div><div class="slow"><span>TicTacInstance — conclusion settlement EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet</span><span>182 ms</span></div><div class="slow"><span>PlayerRegistry — authorization &amp; clone idempotency creates distinct profiles for the same player in different games</span><span>174 ms</span></div></div>
+  <div class="panel"><h3>Slowest scenarios</h3><div class="slow"><span>V3 ERC-4337 session executor pins the official EntryPoint and deterministic SimpleAccount factory</span><span>2.8 s</span></div><div class="slow"><span>V3 canonical game and factory abstraction creates and tracks all game instances through the canonical flow</span><span>281 ms</span></div><div class="slow"><span>V3 session-authorized gameplay tictac: direct and delegated moves produce identical state with explicit executor attribution</span><span>246 ms</span></div><div class="slow"><span>V3 protected self-call bridges rejects every bridge when called directly by an EOA on every game</span><span>238 ms</span></div><div class="slow"><span>V3 session-enabled enrollment threads the registry through the factory and every initialized instance</span><span>234 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts keeps redistributing failed shares until only accepting enrolled players remain</span><span>220 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts records Victory payout metadata for a paid winner</span><span>201 ms</span></div><div class="slow"><span>ETourInstance_Prizes redistribution on failed payouts redistributes a rejecting winner&#039;s full prize across the other enrolled player</span><span>195 ms</span></div><div class="slow"><span>TicTacInstance — conclusion settlement EL2 gives the claimant the 95% prize pool and pays 5% to the owner wallet</span><span>160 ms</span></div><div class="slow"><span>PlayerRegistry — authorization &amp; clone idempotency creates distinct profiles for the same player in different games</span><span>151 ms</span></div></div>
   <div class="panel"><h3>Run provenance</h3><dl class="meta">
     <dt>Command</dt><dd><code>npm run test:report</code></dd>
-    <dt>Started</dt><dd>2026-07-29T03:19:58.845Z</dd>
-    <dt>Completed</dt><dd>2026-07-29T03:20:23.374Z</dd>
+    <dt>Started</dt><dd>2026-07-29T03:36:30.759Z</dd>
+    <dt>Completed</dt><dd>2026-07-29T03:36:52.065Z</dd>
     <dt>Node</dt><dd>v22.21.0</dd>
     <dt>Platform</dt><dd>darwin arm64</dd>
-    <dt>Commit</dt><dd><code>3b60a6128260bfefad13d2ce9139b5dc52ccbe31</code></dd>
+    <dt>Commit</dt><dd><code>55201d0054fbf14e834f2745f4c7dbb7977bf97e</code></dd>
     <dt>Tree</dt><dd>dirty development tree</dd>
     <dt>Hook failures</dt><dd>0</dd>
   </dl></div>

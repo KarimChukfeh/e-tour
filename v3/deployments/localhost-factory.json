@@ -4,10 +4,10 @@
   "network": "localhost",
   "chainId": "412346",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-07-29T02:21:36.175Z",
-  "blockNumber": 35648,
+  "timestamp": "2026-07-29T03:32:28.668Z",
+  "blockNumber": 48,
   "source": {
-    "commit": "634ca701029123c295243571fda26fc103304fdd",
+    "commit": "55201d0054fbf14e834f2745f4c7dbb7977bf97e",
     "dirty": false
   },
   "compiler": {
@@ -24,25 +24,25 @@
     }
   },
   "modules": {
-    "ETourInstance_Core": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-    "ETourInstance_Matches": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-    "ETourInstance_Prizes": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-    "ETourInstance_Escalation": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
-    "ChessRulesModule": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c"
+    "ETourInstance_Core": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "ETourInstance_Matches": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "ETourInstance_Prizes": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "ETourInstance_Escalation": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "ChessRulesModule": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
   },
   "playerProfile": {
-    "PlayerProfileImpl": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
-    "PlayerRegistry": "0x59b670e9fA9D0A427751Af201D676719a970857b"
+    "PlayerProfileImpl": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "PlayerRegistry": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
   },
   "sessionAuthorization": {
-    "SessionKeyRegistry": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
+    "SessionKeyRegistry": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
     "ttlSeconds": "3600"
   },
   "accountAbstraction": {
     "entryPoint": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
     "officialSimpleAccountFactory": "0xdaeCF91A87e14dfB1a836186437cA6424EFCaba2",
-    "sessionAccountFactory": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-    "sessionPaymaster": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+    "sessionAccountFactory": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "sessionPaymaster": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
     "paymasterDeposit": "500000000000000000",
     "paymasterOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "paymasterFundingAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -50,14 +50,14 @@
     "senderCreator": "0x449ED7C3e6Fee6a97311d4b55475DF59C44AdD33"
   },
   "factories": {
-    "TicTacChainFactory": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
-    "ConnectFourFactory": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
-    "ChessOnChainFactory": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E"
+    "TicTacChainFactory": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "ConnectFourFactory": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "ChessOnChainFactory": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE"
   },
   "implementations": {
-    "TicTacInstance": "0xDC17C27Ae8bE831AF07CC38C02930007060020F4",
-    "ConnectFourInstance": "0xf0D7de80A1C242fA3C738b083C422d65c6c7ABF1",
-    "ChessInstance": "0x4F57F9239eFCBf43e5920f579D03B3849C588396"
+    "TicTacInstance": "0x32467b43BFa67273FC7dDda0999Ee9A12F2AaA08",
+    "ConnectFourInstance": "0x524F04724632eED237cbA3c37272e018b3A7967e",
+    "ChessInstance": "0x2b961E3959b79326A8e7F64Ef0d2d825707669b5"
   },
   "manifestKind": "complete-v3-deployment",
   "compilers": {
@@ -1842,7 +1842,7 @@
     "ETourInstance_Core": {
       "sourceName": "contracts/modules/ETourInstance_Core.sol",
       "contractName": "ETourInstance_Core",
-      "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x6a15b59616619908c6d389c07cb5019aff3a9ca36741bce215c970a763cfc65d",
@@ -2500,7 +2500,7 @@
     "ETourInstance_Matches": {
       "sourceName": "contracts/modules/ETourInstance_Matches.sol",
       "contractName": "ETourInstance_Matches",
-      "address": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x1ec9d5dd7947d48ff4db46a6e1aba60c0fa34f0c47fe65fb4c8e77f72ab0a6bd",
@@ -3166,7 +3166,7 @@
     "ETourInstance_Prizes": {
       "sourceName": "contracts/modules/ETourInstance_Prizes.sol",
       "contractName": "ETourInstance_Prizes",
-      "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+      "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x47a74e55148e193b86cb3dc2c663e8d3928e9997f60574357cbb5bd29828f54c",
@@ -3803,7 +3803,7 @@
     "ETourInstance_Escalation": {
       "sourceName": "contracts/modules/ETourInstance_Escalation.sol",
       "contractName": "ETourInstance_Escalation",
-      "address": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+      "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x0ee1123ad48239fb7ea0b9a17daed948a4a1d193e0c9c9dd4e55c77d46192196",
@@ -4503,7 +4503,7 @@
     "ChessRulesModule": {
       "sourceName": "contracts/modules/ChessRulesModule.sol",
       "contractName": "ChessRulesModule",
-      "address": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c",
+      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x6fd683264f57420e2ff55741b613cac9eb4970c6f07a4f213b53fa8d43677d6d",
@@ -5580,7 +5580,7 @@
     "PlayerProfile": {
       "sourceName": "contracts/PlayerProfile.sol",
       "contractName": "PlayerProfile",
-      "address": "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d",
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0xc0f697ba79b53b38c1e061dbd997a702ba44172024b603a8c9cce0cf4f1a6b10",
@@ -6183,10 +6183,10 @@
     "PlayerRegistry": {
       "sourceName": "contracts/PlayerRegistry.sol",
       "contractName": "PlayerRegistry",
-      "address": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
       "deployment": "singleton",
       "constructorArguments": [
-        "0xc6e7DF5E7b4f2A278906862b61205850344D4e7d"
+        "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
       ],
       "creationBytecodeHash": "0x7ad5a670af2ba9cf56554b5172e33f5d8f057b16037a3b7ba1a49e40fc39433f",
       "deployedBytecodeHash": "0xb492014dd598a9b53081cca08487d0fd0c7fa689f12eafc5463e1b25125d6e91",
@@ -6631,10 +6631,10 @@
     "SessionKeyRegistry": {
       "sourceName": "contracts/SessionKeyRegistry.sol",
       "contractName": "SessionKeyRegistry",
-      "address": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
+      "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
       "deployment": "singleton",
       "constructorArguments": [
-        "0x59b670e9fA9D0A427751Af201D676719a970857b"
+        "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
       ],
       "creationBytecodeHash": "0xbb5a393b4e4373826956b34f049c41ffb0aaeaef0b44d90593e42b7910e6f65c",
       "deployedBytecodeHash": "0xbab8d36adc5d7318a16624b393fdfda7c2a9e5586e2dcd163a22c36f83707e72",
@@ -7290,13 +7290,13 @@
       "constructorArgumentPolicy": [
         "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
         "<browser-session-owner>",
-        "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44"
+        "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
       ]
     },
     "ETourSessionAccountFactory": {
       "sourceName": "contracts/account-abstraction/ETourSessionAccountFactory.sol",
       "contractName": "ETourSessionAccountFactory",
-      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
       "deployment": "singleton",
       "constructorArguments": [
         "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"
@@ -7453,12 +7453,12 @@
     "ETourSessionPaymaster": {
       "sourceName": "contracts/account-abstraction/ETourSessionPaymaster.sol",
       "contractName": "ETourSessionPaymaster",
-      "address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+      "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
       "deployment": "singleton",
       "constructorArguments": [
         "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
-        "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
-        "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44"
+        "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
       ],
       "creationBytecodeHash": "0xd346326ef2cd21ef7240c57b196fc8b5fc4c136f64b660ead9e226189395b5b6",
       "deployedBytecodeHash": "0x0612661ab6d79886ca8d0261d9d65160e20743c487bf0ac7be2a2c762cfc46fe",
@@ -8034,15 +8034,15 @@
     "TicTacChainFactory": {
       "sourceName": "contracts/TicTacChainFactory.sol",
       "contractName": "TicTacChainFactory",
-      "address": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+      "address": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
       "deployment": "singleton",
       "constructorArguments": [
-        "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-        "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-        "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-        "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
-        "0x59b670e9fA9D0A427751Af201D676719a970857b",
-        "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
+        "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+        "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+        "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
       ],
       "creationBytecodeHash": "0xebe5cf4fde362d9059a9d2cc88df01120af60af85e0a8c06c172ef0aa9b9a20e",
       "deployedBytecodeHash": "0x33eadfcaa1f429a0b6deeb1093d02fdb8f273bea7f276f7bc67ee1bafd47bdbb",
@@ -8956,15 +8956,15 @@
     "ConnectFourFactory": {
       "sourceName": "contracts/ConnectFourFactory.sol",
       "contractName": "ConnectFourFactory",
-      "address": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+      "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
       "deployment": "singleton",
       "constructorArguments": [
-        "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-        "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-        "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-        "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
-        "0x59b670e9fA9D0A427751Af201D676719a970857b",
-        "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
+        "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+        "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+        "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
       ],
       "creationBytecodeHash": "0xc3046c52cf82d5ee7f382e4dd97d7b43c836afba6627dc171075669853a1eb73",
       "deployedBytecodeHash": "0x511c40962eab41b6ed17ff33e55773ec2f60b8103e7e3a05d468176058195446",
@@ -9878,16 +9878,16 @@
     "ChessOnChainFactory": {
       "sourceName": "contracts/ChessOnChainFactory.sol",
       "contractName": "ChessOnChainFactory",
-      "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+      "address": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
       "deployment": "singleton",
       "constructorArguments": [
-        "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-        "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-        "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
-        "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
-        "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c",
-        "0x59b670e9fA9D0A427751Af201D676719a970857b",
-        "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1"
+        "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+        "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+        "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
       ],
       "creationBytecodeHash": "0x40403e01cf4fa2e7200e2085ac7703ef963d799a9819f50f39b9d50e185fc3f0",
       "deployedBytecodeHash": "0x5af229496224acdc8bc4812a55fd8099a340bae55e6e28bf97c8b0c9571a2d2f",
@@ -10819,7 +10819,7 @@
     "TicTacInstance": {
       "sourceName": "contracts/TicTacInstance.sol",
       "contractName": "TicTacInstance",
-      "address": "0xDC17C27Ae8bE831AF07CC38C02930007060020F4",
+      "address": "0x32467b43BFa67273FC7dDda0999Ee9A12F2AaA08",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0xf566c4d7be4a8063607d0eb9b0faded71a089097999ed8c8a40612b2c06539c1",
@@ -12624,7 +12624,7 @@
     "ConnectFourInstance": {
       "sourceName": "contracts/ConnectFourInstance.sol",
       "contractName": "ConnectFourInstance",
-      "address": "0xf0D7de80A1C242fA3C738b083C422d65c6c7ABF1",
+      "address": "0x524F04724632eED237cbA3c37272e018b3A7967e",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x8251985ee4a6b064883082fca4e6b22143d1cc0fec5d82344bfd3bdeec24dbe5",
@@ -14445,7 +14445,7 @@
     "ChessInstance": {
       "sourceName": "contracts/ChessInstance.sol",
       "contractName": "ChessInstance",
-      "address": "0x4F57F9239eFCBf43e5920f579D03B3849C588396",
+      "address": "0x2b961E3959b79326A8e7F64Ef0d2d825707669b5",
       "deployment": "singleton",
       "constructorArguments": [],
       "creationBytecodeHash": "0x96cf052bcdc65429b7013424f3996da5c0cc7f61fe766f90d638f60b8ed6e5d5",
