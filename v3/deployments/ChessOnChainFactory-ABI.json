@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": "412346",
-  "deployedAt": "2026-08-01T04:13:11.481Z",
+  "deployedAt": "2026-08-01T05:14:23.295Z",
   "modules": {
     "ETourInstance_Core": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     "ETourInstance_Matches": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
