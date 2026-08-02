@@ -65,6 +65,23 @@ const GAME_SPECS = [
     },
 ];
 
+function networkFile(network, fileName) {
+    return `${network}-${fileName}`;
+}
+
+function expectedFrontendFiles(network) {
+    return new Set([
+        networkFile(network, "hardhat-factory.json"),
+        networkFile(network, "ETour-Factory-ABIs.json"),
+        networkFile(network, "PlayerProfile-ABI.json"),
+        networkFile(network, "PlayerRegistry-ABI.json"),
+        ...GAME_SPECS.flatMap((spec) => [
+            networkFile(network, spec.frontendAbiFile),
+            spec.deploymentFile(network),
+        ]),
+    ]);
+}
+
 function parseArgs(argv) {
     const args = {
         network: "localhost",
@@ -177,37 +194,6 @@ function validateGameBundle(bundle, spec, network) {
     );
 }
 
-function walkSourceFiles(rootDir, excludedDir) {
-    const files = [];
-    for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
-        const fullPath = path.join(rootDir, entry.name);
-        if (path.resolve(fullPath) === path.resolve(excludedDir)) continue;
-        if (entry.isDirectory()) {
-            files.push(...walkSourceFiles(fullPath, excludedDir));
-        } else if (/\.(?:js|jsx|ts|tsx|mjs|cjs)$/.test(entry.name)) {
-            files.push(fullPath);
-        }
-    }
-    return files;
-}
-
-function discoverImportedAbiFiles(frontendV3Dir, frontendAbisDir) {
-    const imported = new Set();
-    const importPattern = /["'][^"']*\/ABIs\/([^"']+\.json)["']/g;
-
-    for (const sourcePath of walkSourceFiles(frontendV3Dir, frontendAbisDir)) {
-        const source = fs.readFileSync(sourcePath, "utf8");
-        for (const match of source.matchAll(importPattern)) {
-            imported.add(match[1]);
-        }
-    }
-
-    if (imported.size === 0) {
-        throw new Error(`No ABI JSON imports found under ${frontendV3Dir}`);
-    }
-    return imported;
-}
-
 function buildFrontendPayloads(network) {
     const gameBundles = new Map();
     const localDeployments = new Map();
@@ -302,7 +288,7 @@ function buildFrontendPayloads(network) {
         const bundle = gameBundles.get(spec.frontendFactoryKey);
         const deployment = localDeployments.get(spec.frontendFactoryKey);
 
-        payloads.set(spec.frontendAbiFile, bundle);
+        payloads.set(networkFile(network, spec.frontendAbiFile), bundle);
         combinedPayload.factories[spec.frontendFactoryKey] = {
             address: bundle.factory.address,
             abi: bundle.factory.abi,
@@ -344,19 +330,19 @@ function buildFrontendPayloads(network) {
         });
     }
 
-    payloads.set("ETour-Factory-ABIs.json", combinedPayload);
-    payloads.set("PlayerProfile-ABI.json", {
+    payloads.set(networkFile(network, "ETour-Factory-ABIs.json"), combinedPayload);
+    payloads.set(networkFile(network, "PlayerProfile-ABI.json"), {
         ...profilePayload,
         network,
         generatedAt,
     });
-    payloads.set("PlayerRegistry-ABI.json", {
+    payloads.set(networkFile(network, "PlayerRegistry-ABI.json"), {
         ...registryPayload,
         network,
         generatedAt,
         addressesByGame: registryAddressesByGame,
     });
-    payloads.set("hardhat-factory.json", {
+    payloads.set(networkFile(network, "hardhat-factory.json"), {
         ...sharedDeployment,
         factories: hardhatFactories,
         implementations: hardhatImplementations,
@@ -372,7 +358,9 @@ async function verifyLiveLocalDeployment(network, payloads) {
 
     const rpcUrl = process.env.LOCAL_RPC_URL || "http://127.0.0.1:8545";
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const expectedChainId = BigInt(payloads.get("ETour-Factory-ABIs.json").chainId);
+    const expectedChainId = BigInt(
+        payloads.get(networkFile(network, "ETour-Factory-ABIs.json")).chainId
+    );
     const actualChainId = (await provider.getNetwork()).chainId;
     if (actualChainId !== expectedChainId) {
         throw new Error(
@@ -399,14 +387,14 @@ async function verifyLiveLocalDeployment(network, payloads) {
     }
 }
 
-function assertImportCoverage(importedFiles, payloads) {
-    const missingGenerators = [...importedFiles].filter((file) => !payloads.has(file));
-    const unusedGenerators = [...payloads.keys()].filter((file) => !importedFiles.has(file));
+function assertPayloadCoverage(expectedFiles, payloads) {
+    const missingGenerators = [...expectedFiles].filter((file) => !payloads.has(file));
+    const unusedGenerators = [...payloads.keys()].filter((file) => !expectedFiles.has(file));
 
     if (missingGenerators.length || unusedGenerators.length) {
         throw new Error(
             [
-                "Frontend ABI import/generator mismatch.",
+                "Frontend ABI artifact/generator mismatch.",
                 missingGenerators.length
                     ? `Missing generators: ${missingGenerators.join(", ")}`
                     : null,
@@ -440,17 +428,17 @@ function writePayloadsAtomically(frontendAbisDir, payloads) {
     }
 }
 
-function readStagedPayloads(network, importedFiles) {
+function readStagedPayloads(network, expectedFiles) {
     const stagingDirectory = path.join(STAGING_ROOT, network);
     if (!fs.existsSync(stagingDirectory)) {
         throw new Error(
             `Generated ABI staging directory not found: ${stagingDirectory}. ` +
-                "Run npm run abis:generate:local first."
+                `Run npm run abis:generate:${network === "localhost" ? "local" : network} first.`
         );
     }
 
     const payloads = new Map();
-    for (const fileName of importedFiles) {
+    for (const fileName of expectedFiles) {
         const filePath = path.join(stagingDirectory, fileName);
         payloads.set(
             fileName,
@@ -470,11 +458,7 @@ async function main() {
         copyOnly,
     } =
         parseArgs(process.argv.slice(2));
-    const frontendV3Dir = path.dirname(frontendAbisDir);
-    const importedFiles = discoverImportedAbiFiles(
-        frontendV3Dir,
-        frontendAbisDir
-    );
+    const expectedFiles = expectedFrontendFiles(network);
 
     if (!fs.existsSync(frontendAbisDir)) {
         throw new Error(`Frontend ABI directory not found: ${frontendAbisDir}`);
@@ -482,7 +466,7 @@ async function main() {
 
     let payloads;
     if (copyOnly) {
-        payloads = readStagedPayloads(network, importedFiles);
+        payloads = readStagedPayloads(network, expectedFiles);
     } else {
         if (!skipCompile) {
             runNodeStep("Compiling V3 contracts", HARDHAT_CLI, ["compile"]);
@@ -493,7 +477,7 @@ async function main() {
         ]);
 
         payloads = buildFrontendPayloads(network);
-        assertImportCoverage(importedFiles, payloads);
+        assertPayloadCoverage(expectedFiles, payloads);
         await verifyLiveLocalDeployment(network, payloads);
 
         const stagingDirectory = path.join(STAGING_ROOT, network);
